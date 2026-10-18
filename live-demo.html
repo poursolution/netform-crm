@@ -171,6 +171,57 @@ body.exec .sv .cam{position:absolute;left:0;top:0;transform-origin:0 0;transitio
 body.exec .sv img{display:block;width:100%;height:100%}
 body.exec .sv .box{position:absolute;border:3px solid var(--tk-blue);border-radius:12px;box-shadow:0 0 0 9999px rgba(25,31,40,.38);opacity:0;transition:opacity .6s .9s}
 body.exec #card .bl:has(> div:nth-child(4):last-child){grid-template-columns:repeat(4,1fr)}
+body.exec #card.visc{justify-content:flex-start;padding:5vh 4.5vw 4vh;gap:2.6vh}
+body.exec #card.visc h2{font-size:clamp(30px,2.9vw,54px)}
+body.exec .vis{flex:1;min-height:0;display:grid;gap:1.6vw;align-items:center;align-content:center}
+body.exec .vf{margin:0;background:#fff;border:1px solid var(--tk-line);border-radius:20px;overflow:hidden;box-shadow:0 10px 28px rgba(25,31,40,.07)}
+body.exec .vimg{width:100%;background-repeat:no-repeat;border-bottom:1px solid var(--tk-line)}
+body.exec .vf figcaption{padding:1.6vh 1.2vw 1.9vh}
+body.exec .vf figcaption b{display:block;font-size:clamp(13px,.95vw,17px);font-weight:700;color:var(--tk-blue);margin-bottom:.5vh}
+body.exec .vf figcaption span{display:block;font-size:clamp(17px,1.4vw,26px);font-weight:700;letter-spacing:-.02em;color:var(--tk-ink);line-height:1.35}
+body.exec .vw3{grid-template-columns:repeat(3,1fr)}
+body.exec .vw4{grid-template-columns:repeat(4,1fr)}
+body.exec .vw5{grid-template-columns:repeat(5,1fr);gap:1.1vw}
+body.exec .vw5 .vf figcaption b{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--tk-blue);color:#fff;align-items:center;justify-content:center;font-size:14px;margin:0 0 .8vh}
+body.exec .vp01{grid-template-columns:1fr 64px 1.25fr;gap:2.4vw}
+body.exec .scat{position:relative;height:min(50vh,470px)}
+body.exec .pap{position:absolute;left:var(--x);top:var(--y);width:56%;background:#fff;border:1px solid var(--tk-line);border-radius:16px;padding:2.4vh 1.4vw;transform:rotate(var(--r));box-shadow:0 12px 30px rgba(25,31,40,.09)}
+body.exec .pap b{font-size:clamp(16px,1.3vw,24px);font-weight:700;color:var(--tk-ink)}
+body.exec .pap i{display:block;height:10px;border-radius:5px;background:var(--tk-gray);margin-top:14px;width:82%}
+body.exec .pap i:nth-of-type(2){width:58%}
+body.exec .ask{position:absolute;right:0;bottom:2%;margin:0;background:var(--tk-ink);color:#fff;border-radius:20px 20px 4px 20px;padding:1.5vh 1.3vw;font-size:clamp(15px,1.25vw,23px);font-weight:600}
+body.exec .arw{width:64px;height:64px;border-radius:50%;background:var(--tk-blue-bg);display:flex;align-items:center;justify-content:center}
+body.exec .arw::after{content:'→';font-size:30px;font-weight:700;color:var(--tk-blue)}
+body.exec .va10{grid-template-columns:2.1fr 1fr 1fr;align-items:stretch}
+body.exec .st{background:var(--tk-gray);border-radius:24px;padding:2.4vh 1.3vw;display:flex;flex-direction:column;gap:1.6vh}
+body.exec .st h4{margin:0;font-size:clamp(15px,1.15vw,21px);font-weight:700;color:var(--tk-ink);display:flex;align-items:center;gap:8px}
+body.exec .st h4 i{width:10px;height:10px;border-radius:50%;background:#12b76a}
+body.exec .st.ing h4 i{background:var(--tk-blue)}
+body.exec .st.plan h4 i{background:var(--tk-mut)}
+body.exec .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+body.exec .mini .vf{border-radius:14px;box-shadow:none}
+body.exec .mini .vf figcaption{padding:.9vh .7vw}
+body.exec .mini .vf figcaption span{font-size:clamp(13px,.95vw,17px)}
+body.exec .st ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+body.exec .st li{background:#fff;border-radius:14px;padding:1.8vh 1vw;font-size:clamp(15px,1.15vw,21px);font-weight:600;color:var(--tk-ink)}
+body.exec .st.plan li{color:var(--tk-sub)}
+body.exec .vtk{grid-template-columns:1fr;align-content:start;gap:3vh;justify-items:center}
+body.exec .trk{list-style:none;margin:0;padding:0;display:flex;width:100%;position:relative}
+body.exec .trk::before{content:'';position:absolute;left:6%;right:6%;top:15px;height:3px;background:var(--tk-line)}
+body.exec .trk li{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:1.2vh}
+body.exec .trk li i{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--tk-blue);box-sizing:border-box}
+body.exec .trk li:last-child i{background:var(--tk-blue)}
+body.exec .trk span{font-size:clamp(15px,1.25vw,23px);font-weight:700;color:var(--tk-ink)}
+body.exec .vtk .vf{width:min(100%,104vh)}
+body.exec .vnote{margin:0;background:var(--tk-blue-bg);color:var(--tk-blue);border-radius:999px;padding:1.1vh 1.3vw;font-size:clamp(15px,1.15vw,21px);font-weight:600}
+body.exec .vimg{height:40vh}
+body.exec .vw3 .vimg{height:44vh}
+body.exec .vw4 .vimg{height:46vh}
+body.exec .vw5 .vimg{height:46vh}
+body.exec .vp01 .vimg{height:46vh}
+body.exec .mini .vimg{height:15vh}
+body.exec .vtk .vimg{height:34vh}
+body.exec .vtk .vf{width:100%}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -1833,6 +1884,31 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
  window.EXEC_SHOTS={"a05:0":{"img":"demo-media/shot-a05-0.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":235,"w":1241,"h":190}},"a05:1":{"img":"demo-media/shot-a05-1.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":480,"w":1250,"h":598}},"a06:0":{"img":"demo-media/shot-a06-0.jpg","W":1920,"H":1302,"r":{"x":240,"y":140,"w":1650,"h":640}},"a07:0":{"img":"demo-media/shot-a07-0.jpg","W":1920,"H":1302,"r":{"x":1440,"y":192,"w":322,"h":250}},"a08:0":{"img":"demo-media/shot-a08-0.jpg","W":1920,"H":1302,"r":{"x":442,"y":192,"w":994,"h":826}},"a09:0":{"img":"demo-media/shot-a09-0.jpg","W":1920,"H":1302,"r":{"x":252,"y":140,"w":1640,"h":620}},"x01:0":{"img":"demo-media/shot-x01-0.jpg","W":1920,"H":1302,"r":{"x":280,"y":157.6875,"w":1588,"h":82.4734375}}};
  {let n=0;E_.forEach(s=>{if(!/^x/.test(s.id))s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}
  const WHO_LINE={"a05":"<b>바뀌는 일</b> 담당자 — 접수 뒤 바로 이어서 응대 · 관리자 — 빠진 곳만 확인","a06":"<b>바뀌는 일</b> 관리자 — 담당자마다 진행을 묻던 일 → 끊긴 건만 보고 필요한 지원을 정함","a07":"<b>바뀌는 일</b> 영업담당자 — 지난 기록 · 약속 · 이번에 확인할 것을 한 화면에서","a08":"<b>바뀌는 일</b> 인계받는 사람 — 선배에게 다시 묻기 전에 이전 약속 · 판단 근거부터 확인","a09":"<b>바뀌는 일</b> 주간 회의 — 지난주 미처리 → 이번 주 조치 → 결과 순서로 봄"};E_.forEach(s=>{if(WHO_LINE[s.id])s.who=WHO_LINE[s.id]});
+
+ Object.assign(window.EXEC_SHOTS,{'k01:0':{img:'demo-media/shot-k01-0.jpg',W:1920,H:1080},'k02:0':{img:'demo-media/shot-k02-0.jpg',W:1920,H:1080},'k03:0':{img:'demo-media/shot-k03-0.jpg',W:1920,H:1080}});
+ {const VI=(k,r)=>'<div class="vimg" data-k="'+k+'" data-r="'+[r.x,r.y,r.w,r.h].join(',')+'"></div>';
+  window.EXEC_VFIT=root=>(root||document).querySelectorAll('#card .vimg[data-k]').forEach(el=>{const m=window.EXEC_SHOTS[el.dataset.k];const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
+   let [x,y,w,hh]=el.dataset.r.split(',').map(Number);if(w/hh<asp){const nw=hh*asp;x-=(nw-w)/2;w=nw}else{const nh=w/asp;y-=(nh-hh)/2;hh=nh}
+   if(w>m.W){w=m.W;hh=w/asp}if(hh>m.H){hh=m.H;w=hh*asp}x=Math.max(0,Math.min(m.W-w,x));y=Math.max(0,Math.min(m.H-hh,y));
+   const s=W0/w;el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=(m.W*s).toFixed(1)+'px '+(m.H*s).toFixed(1)+'px';el.style.backgroundPosition=(-x*s).toFixed(1)+'px '+(-y*s).toFixed(1)+'px'});
+  addEventListener('resize',()=>window.EXEC_VFIT());
+  const CR={inq:['a05:0',{x:276,y:235,w:1250,h:500}],today:['a06:0',{x:251,y:355,w:1342,h:403}],now:['a07:0',{x:1400,y:180,w:440,h:300}],hist:['a08:0',{x:460,y:200,w:980,h:560}],
+   brief:['a09:0',{x:251,y:182,w:1328,h:480}],brief2:['a09:0',{x:251,y:538,w:1328,h:125}],pipe:['x01:0',{x:278,y:158,w:1584,h:475}],
+   rules:['k01:0',{x:255,y:82,w:1636,h:398}],dup:['k02:0',{x:252,y:82,w:1644,h:580}],exp:['k03:0',{x:252,y:154,w:1644,h:422}],card1:['a06:0',{x:269,y:427,w:319,h:331}],brief1:['a09:0',{x:251,y:182,w:670,h:400}],hist1:['a08:0',{x:470,y:230,w:420,h:512}],nowT:['a07:0',{x:1440,y:180,w:330,h:420}],cardT:['a06:0',{x:262,y:420,w:335,h:420}],briefT:['a09:0',{x:251,y:182,w:620,h:740}],inqN:['a05:0',{x:276,y:235,w:560,h:843}],cardN:['a06:0',{x:262,y:420,w:335,h:500}],nowN:['a07:0',{x:1430,y:180,w:340,h:515}],histN:['a08:0',{x:470,y:230,w:340,h:515}],briefN:['a09:0',{x:251,y:182,w:420,h:640}],cardW:['a06:0',{x:262,y:420,w:680,h:576}],briefW:['a09:0',{x:251,y:182,w:700,h:593}],rulesW:['k01:0',{x:470,y:240,w:600,h:520}],pipeT:['x01:0',{x:278,y:158,w:520,h:634}],expT:['k03:0',{x:252,y:154,w:560,h:683}],dupT:['k02:0',{x:252,y:82,w:560,h:683}],rulesT:['k01:0',{x:461,y:192,w:560,h:683}]};
+  const FIG=(n,asp,b,t)=>'<figure class="vf">'+VI(CR[n][0],CR[n][1],asp)+'<figcaption>'+(b?'<b>'+b+'</b>':'')+'<span>'+t+'</span></figcaption></figure>';
+  const TRK=a=>'<ol class="trk">'+a.map(t=>'<li><i></i><span>'+t+'</span></li>').join('')+'</ol>';
+  window.EXEC_VIS={
+   p01:()=>'<div class="vis vp01"><div class="scat"><div class="pap" style="--r:-6deg;--x:2%;--y:4%"><b>영업활동 기록</b><i></i><i></i><i></i></div><div class="pap" style="--r:5deg;--x:38%;--y:22%"><b>견적문의</b><i></i><i></i></div><div class="pap" style="--r:-2deg;--x:8%;--y:52%"><b>실적 자료</b><i></i><i></i><i></i></div><p class="ask">"지금 어디까지 왔어요?"</p></div><div class="arw"></div>'+FIG('inq',1.6,'지금','남긴 기록이 다음 할 일로 이어짐')+'</div>',
+   w01:()=>'<div class="vis vw4">'+FIG('nowT',0,'영업담당자','오늘 이어갈 약속')+FIG('cardT',0,'관리자','막힌 이유부터')+FIG('briefT',0,'대표 · 상무님','판단이 필요한 곳')+FIG('hist1',0,'신규 · 인계받는 사람','묻기 전에 이해')+'</div>',
+   q04:()=>'<div class="vis vw5">'+FIG('inqN',0,'1','견적문의')+FIG('cardN',0,'2','관리자 화면')+FIG('nowN',0,'3','영업담당자 화면')+FIG('histN',0,'4','이력')+FIG('briefN',0,'5','주간 보고')+'</div>',
+   a10:()=>'<div class="vis va10"><section class="st ok"><h4><i></i>운영 중 · 지금 화면에서 확인</h4><div class="mini">'+[['inq','견적문의'],['today','오늘 업무'],['pipe','파이프라인'],['now','지금 할 일'],['hist','이력'],['brief','주간 브리핑']].map(([n,t])=>FIG(n,1.6,'',t)).join('')+'</div></section>'
+     +'<section class="st ing"><h4><i></i>검증 중</h4><ul><li>과거 자료 · 진행 자료 분리</li><li>화면별 집계 기준 통일</li><li>표준 용어 맞추기</li><li>기술자문 · 계약 연결</li></ul></section>'
+     +'<section class="st plan"><h4><i></i>다음 계획</h4><ul><li>아파트별 이력 한 화면</li><li>견적 버전 관리</li><li>다음 업무 자동 생성</li><li>전환율 · 병목 분석</li></ul></section></div>',
+   a11:()=>'<div class="vis vw3">'+FIG('cardW',0,'매일','끊긴 건 → 이유 → 처리 결과까지')+FIG('briefW',0,'매주','지난주 문제 → 조치 → 결과')+FIG('rulesW',0,'기준이 바뀔 때','영업지침과 CRM 기준을 같은 날')+'</div>',
+   x00:()=>'<div class="vis vw4">'+FIG('pipeT',0,'부록 1','Pipeline 단계 기준')+FIG('expT',0,'부록 2','수주 이후 연결')+FIG('dupT',0,'부록 3','데이터 정합성')+FIG('rulesT',0,'부록 4','영업표준화')+'</div>',
+   x02:()=>'<div class="vis vtk">'+TRK(['계약정보','착공일','시공 인계','준공','사후관리','추가 영업'])+FIG('exp',2.9,'확장관리','준공 뒤 사후 연락 → 니즈 확인 → 새 영업건')+'<p class="vnote">기술자문은 낙찰금액(VAT 별도)으로 따로 집계</p></div>',
+   x04:()=>'<div class="vis vtk">'+TRK(['회사 영업정책','담당자 행동','CRM 기록','관리자 확인','개선'])+FIG('rules',2.9,'운영 기준 설정','정한 기준이 화면 계산에 그대로 반영')+'<p class="vnote">예) 견적 발송 후 7일 → 7일째 후속 확인이 오늘 업무에</p></div>'};
+  const VMAP={p01:'p01',w01:'w01',q04:'q04',a10:'a10',a11:'a11',x00:'x00',x02:'x02',x04:'x04'};E_.forEach(s=>{if(VMAP[s.id])s.vis=VMAP[s.id]})}
  E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
@@ -2237,6 +2313,7 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
     if(one)one.textContent=s.keyMessage||'';if(bD)bD.hidden=!(s.details&&s.details.length);closeDv()};
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
+  c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c))}
   c.classList.toggle('shotc',!!s.shot);if(s.shot){const ti=cur().ti,m=(window.EXEC_SHOTS||{})[s.id+':'+ti];if(m){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});
    const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);
    const lay=()=>{const cw=sv.clientWidth,ch=sv.clientHeight;if(!cw||!ch)return;const k=Math.min(cw/m.W,ch/m.H),w0=m.W*k,h0=m.H*k;cam.style.width=w0+'px';cam.style.height=h0+'px';const ox=(cw-w0)/2,oy=(ch-h0)/2;
