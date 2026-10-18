@@ -382,6 +382,10 @@ body.exec #card[data-mo=relay] .sp.mv,body.exec #card[data-mo=relay] .rc.mv{anim
 body.exec #card[data-mo=hub] .spk.s0.mv,body.exec #card[data-mo=hub] .spk.s1.mv,body.exec #card[data-mo=hub] .spk.s2.mv{animation:vfromL .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
 body.exec #card[data-mo=hub] .spk.s3.mv,body.exec #card[data-mo=hub] .spk.s4.mv,body.exec #card[data-mo=hub] .spk.s5.mv{animation:vfromR .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
 @media (prefers-reduced-motion:reduce){body.exec #card *{animation:none!important}}
+body.exec #card{overflow-x:hidden}
+body.exec .sv .lens{position:absolute;z-index:2;border-radius:10px;background-repeat:no-repeat;box-shadow:0 0 0 3px var(--tk-blue);transform:scale(1);transition:transform .9s cubic-bezier(.2,.8,.2,1),box-shadow .9s}
+body.exec .sv.go .lens{transform:scale(var(--sc,1.06));box-shadow:0 0 0 3px var(--tk-blue),0 24px 60px rgba(25,31,40,.30)}
+body.exec .sv .box{border-color:transparent;box-shadow:0 0 0 9999px rgba(25,31,40,.30)}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2612,9 +2616,11 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
     cam.style.transition='none';cam.style.transform='translate('+ox+'px,'+oy+'px) scale(1)';const r=m.r;
     if(r){bx.style.left=(r.x*k-6)+'px';bx.style.top=(r.y*k-6)+'px';bx.style.width=(r.w*k+12)+'px';bx.style.height=(r.h*k+12)+'px'}else bx.style.display='none';
     void cam.offsetWidth;cam.style.transition='';
-    setTimeout(()=>{if(!r){sv.classList.add('go');return}const z=Math.max(1,Math.min(2.4,cw*.86/(r.w*k),ch*.84/(r.h*k)));const cx=(r.x+r.w/2)*k,cy=(r.y+r.h/2)*k;
-     let tx=cw/2-cx*z,ty=ch/2-cy*z;tx=Math.min(0,Math.max(cw-w0*z,tx));ty=Math.min(0,Math.max(ch-h0*z,ty));if(w0*z<cw)tx=(cw-w0*z)/2;if(h0*z<ch)ty=(ch-h0*z)/2;
-     cam.style.transform='translate('+tx+'px,'+ty+'px) scale('+z+')';sv.classList.add('go')},500)};
+    setTimeout(()=>{if(r){const L=r.x*k,Tp=r.y*k,Wd=r.w*k,Hd=r.h*k,ln=document.createElement('div');ln.className='lens';
+     Object.assign(ln.style,{left:L+'px',top:Tp+'px',width:Wd+'px',height:Hd+'px',backgroundImage:'url('+im.src+')',backgroundSize:w0+'px '+h0+'px',backgroundPosition:(-L)+'px '+(-Tp)+'px',
+      transformOrigin:(w0>Wd?L/(w0-Wd)*100:50).toFixed(1)+'% '+(h0>Hd?Tp/(h0-Hd)*100:50).toFixed(1)+'%'});
+     ln.style.setProperty('--sc',Math.max(1.02,Math.min(1.1,(w0-6)/Wd,(h0-6)/Hd)).toFixed(3));cam.appendChild(ln)}
+     requestAnimationFrame(()=>sv.classList.add('go'))},450)};
    requestAnimationFrame(lay)}}}}
   upd();if(!PRES){setTimeout(()=>go(pos,false,true),50)}
 }
