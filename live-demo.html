@@ -308,12 +308,9 @@ body.exec .cg ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:
 body.exec .cg li{background:#fff;border-radius:14px;padding:1.5vh 1.1vw;font-size:clamp(15px,1.3vw,24px);font-weight:600;color:var(--tk-ink)}
 body.exec .r2{display:flex;flex-direction:column;gap:1.6vh}
 body.exec .r2 .dst{padding:3.4vh 2.2vw}
-:root{--fm-main:#2AC1BC;--fm-bg:#E4F7F6;--fm-warm:#FF6B4A}
-body.exec #card.bm{--tk-blue:var(--fm-main);--tk-blue-bg:var(--fm-bg);background:linear-gradient(180deg,#fff 0%,#fff 72%,#F1FAF9 100%)}
-body.exec #card.bm h2{font-family:'Do Hyeon','Pretendard Variable','Pretendard',sans-serif;font-weight:400;letter-spacing:-.01em}
-body.exec #card.bm.visc h2,body.exec #card.bm.shotc h2{font-size:clamp(32px,3.1vw,58px)}
-body.exec #card.bm .eb{display:inline-flex;align-self:flex-start;background:var(--fm-main);color:#fff;border-radius:999px;padding:.6vh 1.1vw;font-family:'Jua','Pretendard',sans-serif;font-weight:400}
-body.exec #card.bm .vis b,body.exec #card.bm .tag,body.exec #card.bm .spk,body.exec #card.bm .ln h4,body.exec #card.bm .who b{font-family:'Jua','Pretendard',sans-serif;font-weight:400}
+:root{--fm-main:#FF6F0F;--fm-bg:#FFF1E6;--fm-warm:#F04452}
+body.exec #card.bm{--tk-blue:var(--fm-main);--tk-blue-bg:var(--fm-bg);background:#fff}
+body.exec #card.bm .eb{color:var(--fm-main);font-weight:700}
 body.exec .vhub{grid-template-columns:1fr 1.15fr 1fr;grid-template-rows:auto auto auto auto;gap:2vh 2vw;align-items:center}
 body.exec .spk{margin:0;background:#fff;border:2px solid var(--tk-line);border-radius:18px;padding:2.2vh 1.2vw;font-size:clamp(17px,1.45vw,27px);text-align:center;color:var(--tk-ink)}
 body.exec .spk.s0,body.exec .spk.s1,body.exec .spk.s2{grid-column:1}
@@ -345,6 +342,46 @@ body.exec .v5 .arw{width:40px;height:40px}
 body.exec .v5 .sp{min-height:32vh;padding:3vh 1vw}
 body.exec .v5 .sp b{font-size:clamp(17px,1.45vw,27px)}
 body.exec .v5 .sp p{font-size:clamp(13px,1.05vw,19px)}
+@keyframes vfromL{from{opacity:0;transform:translateX(-80px)}to{opacity:1;transform:none}}
+@keyframes vfromR{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:none}}
+@keyframes vchat{0%{opacity:0;transform:translateX(-28px) scale(.85)}70%{opacity:1;transform:scale(1.03)}100%{opacity:1;transform:none}}
+@keyframes vdrop{from{opacity:0;transform:translateY(-60px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes vflip{from{opacity:0;transform:perspective(900px) rotateY(-75deg)}to{opacity:1;transform:perspective(900px) rotateY(0)}}
+@keyframes vstamp{0%{opacity:0;transform:scale(1.45) rotate(-4deg)}60%{opacity:1;transform:scale(.97) rotate(1deg)}100%{opacity:1;transform:none}}
+@keyframes vglow{0%,100%{box-shadow:0 0 0 0 transparent}45%{box-shadow:0 0 0 4px var(--tk-blue)}}
+@keyframes vsweep{to{background-size:100% 100%}}
+@keyframes vmask{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -2% 0 0)}}
+@keyframes vshake{0%,100%{transform:none}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes vstrike{to{transform:scaleX(1)}}
+@keyframes vtick{0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.35)}100%{opacity:1;transform:scale(1)}}
+/* 글자 연출 */
+body.exec #card.play[data-ty=sweep] h2 em{background:linear-gradient(transparent 60%,var(--tk-blue-bg) 60%) no-repeat 0 0/0% 100%;animation:vin .8s .3s both,vsweep .9s 1.1s cubic-bezier(.6,0,.2,1) forwards}
+body.exec #card.play[data-ty=mask] h2{animation:vmask 1s .1s cubic-bezier(.7,0,.2,1) both}
+body.exec #card.play[data-ty=mask] h2 em{animation:vmask 1s .55s cubic-bezier(.7,0,.2,1) both}
+body.exec #card.play[data-ty=words] h2,body.exec #card.play[data-ty=words] h2 em{animation:none}
+body.exec #card.play[data-ty=words] h2 .w{display:inline-block;animation:vin .55s calc(.1s + var(--w) * .065s) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card.play[data-ty=shake] h2 em{animation:vin .8s .35s both,vshake .6s 1.3s both}
+/* 움직임: 화두별 */
+body.exec #card[data-mo=lr] .me.st1.mv,body.exec #card[data-mo=check] .cg.old.mv{animation:vfromL .8s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=lr] .me.st2.mv,body.exec #card[data-mo=check] .cg.new.mv{animation:vfromR .8s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=check] .cg li.mv::before,body.exec #card[data-mo=check] .chk p.mv::before{content:'✓';display:inline-block;color:var(--tk-blue);font-weight:800;margin-right:.6vw;animation:vtick .45s calc(var(--d) + .35s) both}
+body.exec #card[data-mo=check] .cg.old b{position:relative;align-self:flex-start}
+body.exec #card[data-mo=check] .cg.old b::after{content:'';position:absolute;left:-2%;right:-2%;top:50%;height:4px;border-radius:2px;background:var(--fm-warm,#F04452);transform:scaleX(0);transform-origin:left;animation:vstrike .6s 1.2s cubic-bezier(.6,0,.2,1) forwards}
+body.exec #card[data-mo=chat] .qb.mv{transform-origin:left center;animation:vchat .55s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=chat] .vav:first-child span{animation:vpulse 2s 1.2s ease-in-out infinite}
+body.exec #card[data-mo=fly] .src p.mv{animation:vfly .9s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=fly] .src p:nth-child(1){--r:-4deg}body.exec #card[data-mo=fly] .src p:nth-child(2){--r:3deg;margin-left:6%}body.exec #card[data-mo=fly] .src p:nth-child(3){--r:-2deg;margin-left:2%}
+body.exec #card[data-mo=fly] .src p{transform:rotate(var(--r))}
+body.exec #card[data-mo=fly] .r2>.mv,body.exec #card[data-mo=stamp] .dst.mv{animation:vstamp .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=stamp] .src .dl{display:inline-block;animation:vtick .45s calc(var(--d,0s) + .9s) both}
+body.exec #card[data-mo=stamp] .src p.mv{animation:vfromL .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=drop] .hub.mv{animation:vpop .55s var(--d) both}
+body.exec #card[data-mo=drop] .rc.mv{animation:vdrop .75s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=flip] .me.mv,body.exec #card[data-mo=flip] .sp.mv{transform-origin:left center;animation:vflip .85s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=relay] .sp.mv,body.exec #card[data-mo=relay] .rc.mv{animation:vin .6s var(--d) cubic-bezier(.2,.8,.2,1) both,vglow 1.1s calc(var(--d) * 2.2 + .9s) both}
+body.exec #card[data-mo=hub] .spk.s0.mv,body.exec #card[data-mo=hub] .spk.s1.mv,body.exec #card[data-mo=hub] .spk.s2.mv{animation:vfromL .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec #card[data-mo=hub] .spk.s3.mv,body.exec #card[data-mo=hub] .spk.s4.mv,body.exec #card[data-mo=hub] .spk.s5.mv{animation:vfromR .7s var(--d) cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion:reduce){body.exec #card *{animation:none!important}}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2142,7 +2179,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   const VM2={r01:'r01',r02:'r02',p34:'p34',p02:'p02',p03:'p03',p04:'p04',p05:'p05',c12:'c12',c13:'c13',c14:'c14',c15:'c15'};E_.forEach(s=>{if(VM2[s.id])s.vis=VM2[s.id]})}
 
  /* 현장관리 파트(배민풍: 민트 · 도현체) · 자기성찰 수정 · 실행 약속 (2026-10-18) */
- {if(!document.getElementById('bmFont')){const l=document.createElement('link');l.id='bmFont';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap';document.head.appendChild(l)}
+ {
   Object.assign(window.EXEC_SHOTS,{
    'g04:0':{img:'demo-media/shot-f01-0.jpg',W:1920,H:1080,r:{x:251,y:100,w:814,h:826}},
    'g04:1':{img:'demo-media/shot-f02-0.jpg',W:1920,H:1080,r:{x:251,y:100,w:1640,h:780}},
@@ -2161,6 +2198,8 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    g07:()=>'<div class="vis vcol"><div class="vstep v5">'+[['1','계획할 때','결과물 · 필요한 자료 · 중간 점검일'],['2','시작할 때','기한이 가까운 일 · 먼저 끝낼 일'],['3','막혔을 때','이유 · 요청할 사람 · 다음 조치, 미리 공유'],['4','마칠 때','요청과 완료를 구분해 실제 결과 확인'],['5','점검할 때','끝났는지 · 지난 일 · 반복되는 취합']].map(x=>'<div class="sp"><span class="n">'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>').join(ARW)+'</div></div>'});
   const VM3={g01:1,g02:1,g03:1,g05:1,g06:1,g07:1};E_.forEach(s=>{if(VM3[s.id])s.vis=s.id;if(/^g0[1-6]$/.test(s.id))s.bm=true});
   {const g=E_.find(s=>s.id==='g04');if(g)g.who='<b>현재 범위</b> 현장 단위로 모아 보기까지 → <em>반복 입력 줄이기 · 누락 대조는 앞으로</em>'}}
+ for(let k=E_.length-1;k>=0;k--)if(/^x0/.test(E_[k].id))E_.splice(k,1);
+ {const MO={"r01":["lr","sweep"],"r02":["check","mask"],"p02":["chat","shake"],"p34":["fly","words"],"p05":["drop","sweep"],"b06":["","mask"],"b07":["","words"],"b08":["","mask"],"b09":["","words"],"b10":["","mask"],"b11":["","words"],"c12":["relay","words"],"c13":["relay","mask"],"c14":["relay","sweep"],"c15":["flip","words"],"g01":["hub","words"],"g02":["","mask"],"g03":["stamp","sweep"],"g04":["","mask"],"g05":["check","words"],"g06":["flip","sweep"],"g07":["relay","words"],"q16":["","words"],"x02":["","mask"]};E_.forEach(s=>{const m=MO[s.id];if(m){s.mo=m[0];s.ty=m[1]}})}
  E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
@@ -2566,7 +2605,7 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
   c.classList.toggle('bm',!!s.bm);c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.spk,.core,.chk p,.ln,.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
-  c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
+  c.dataset.mo=s.mo||'';c.dataset.ty=s.ty||'';if(s.ty==='words'){const hh=c.querySelector('h2');if(hh&&!hh.querySelector('.w')){let k=0;const walk=n=>{[...n.childNodes].forEach(x=>{if(x.nodeType===3){const fr=document.createDocumentFragment();x.nodeValue.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p))fr.appendChild(document.createTextNode(p));else{const sp=document.createElement('span');sp.className='w';sp.style.setProperty('--w',k++);sp.textContent=p;fr.appendChild(sp)}});x.replaceWith(fr)}else if(x.nodeType===1&&x.tagName!=='BR')walk(x)})};walk(hh)}}c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
   c.classList.toggle('shotc',!!s.shot);if(s.shot){const ti=cur().ti,m=(window.EXEC_SHOTS||{})[s.id+':'+ti];if(m){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});
    const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);
    const lay=()=>{const cw=sv.clientWidth,ch=sv.clientHeight;if(!cw||!ch)return;const k=Math.min(cw/m.W,ch/m.H),w0=m.W*k,h0=m.H*k;cam.style.width=w0+'px';cam.style.height=h0+'px';const ox=(cw-w0)/2,oy=(ch-h0)/2;
