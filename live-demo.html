@@ -524,6 +524,17 @@ body.exec .vstp .sf{display:flex;flex-direction:column;align-items:center}
 body.exec .vstp .sf .vimg{margin:0 auto;max-width:100%;border-radius:14px;box-shadow:0 0 0 1px var(--tk-line),0 18px 40px rgba(25,31,40,.10)}
 body.exec .vstp .sf figcaption{align-self:stretch}
 body.exec .vstp .sf .vimg{height:60vh}
+/* 단계형 장 — 말하는 곳 표시 */
+body.exec .vstp .sf .vimg{position:relative;overflow:visible}
+body.exec .fo{position:absolute;pointer-events:none}
+body.exec .fodim{left:0;top:0;fill:rgba(25,31,40,.34);border-radius:14px;animation:fofade .5s .25s both}
+@keyframes fofade{from{opacity:0}to{opacity:1}}
+body.exec .fobox{border:3px solid var(--tk-blue);border-radius:10px;box-shadow:0 0 0 5px rgba(47,111,237,.16);box-sizing:border-box;animation:fopop .45s var(--d) cubic-bezier(.2,.8,.2,1) both}
+@keyframes fopop{from{opacity:0;transform:scale(1.06)}to{opacity:1;transform:none}}
+body.exec .fobox span{position:absolute;left:-3px;bottom:calc(100% + 6px);background:var(--tk-blue);color:#fff;font-weight:800;font-size:clamp(12px,.92vw,18px);padding:.45vh .7vw;border-radius:8px;white-space:nowrap;box-shadow:0 6px 16px rgba(25,31,40,.18)}
+body.exec .fobox.lb-b span{top:calc(100% + 6px);bottom:auto}
+body.exec .fobox.lb-r span{left:auto;right:-3px}
+body.exec .fomask{background:#e6e9ee;border-radius:4px}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2264,7 +2275,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   window.EXEC_VFIT=root=>(root||document).querySelectorAll('#card .vimg[data-k]').forEach(el=>{const m=window.EXEC_SHOTS[el.dataset.k];if(el.closest('.sf')&&m){const q=el.dataset.r.split(',').map(Number),ra=q[2]/q[3],mw=el.parentElement.clientWidth,mh=el.clientHeight;if(mw&&mh){if(ra<mw/mh)el.style.width=Math.round(mh*ra)+'px';else el.style.height=Math.round(mw/ra)+'px'}}const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
    let [x,y,w,hh]=el.dataset.r.split(',').map(Number);if(w/hh<asp){const nw=hh*asp;x-=(nw-w)/2;w=nw}else{const nh=w/asp;y-=(nh-hh)/2;hh=nh}
    if(w>m.W){w=m.W;hh=w/asp}if(hh>m.H){hh=m.H;w=hh*asp}x=Math.max(0,Math.min(m.W-w,x));y=Math.max(0,Math.min(m.H-hh,y));
-   const s=W0/w;el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=(m.W*s).toFixed(1)+'px '+(m.H*s).toFixed(1)+'px';el.style.backgroundPosition=(-x*s).toFixed(1)+'px '+(-y*s).toFixed(1)+'px'});
+   const s=W0/w;el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=(m.W*s).toFixed(1)+'px '+(m.H*s).toFixed(1)+'px';el.style.backgroundPosition=(-x*s).toFixed(1)+'px '+(-y*s).toFixed(1)+'px';if(el.closest('.sf')&&window.EXEC_FOCUS)window.EXEC_FOCUS(el,x,y,s)});
   addEventListener('resize',()=>window.EXEC_VFIT());
   const CR={inq:['a05:0',{x:276,y:235,w:1250,h:500}],today:['a06:0',{x:251,y:355,w:1342,h:403}],now:['a07:0',{x:1400,y:180,w:440,h:300}],hist:['a08:0',{x:460,y:200,w:980,h:560}],
    brief:['a09:0',{x:251,y:182,w:1328,h:480}],brief2:['a09:0',{x:251,y:538,w:1328,h:125}],pipe:['x01:0',{x:278,y:158,w:1584,h:475}],
@@ -2430,7 +2441,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}
   ['g01','g02','g03','g04','g05','g06'].forEach(id=>{const s=E_.find(x=>x.id===id);if(s)s.bm=true});
   window.__STPIDS=Object.keys(STP);
-  const TR={r02:'그래서 이번 발표를 한 문장으로 정리하면 이렇습니다.',b10:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',g06:'이제 업무를 어떻게 나눠 이어갈지 말씀드리겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});}
+  const TR={r02:'먼저 영업관리입니다. 가장 먼저 바꿔야 했던 업무는 견적문의 관리였습니다.',b10:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',g06:'이제 업무를 어떻게 나눠 이어갈지 말씀드리겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});}
 
  /* ───── 2026-10-18 보강 2: 성과분석 · 컨트롤타워 · 고객자산 독립 장면 + 현장 데이터분석 향후계획 ───── */
  {const SH={};['e1','e2','e3','e3b','e4','e5'].forEach(k=>{SH[k+':0']={img:'demo-media/shot-'+k+'-0.jpg',W:1920,H:1302}});Object.assign(window.EXEC_SHOTS,SH);
@@ -2683,9 +2694,27 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   {const s=E_.find(x=>x.id==='g01');if(s)s.transition='숫자로 먼저 보겠습니다.'}
   {const s=E_.find(x=>x.id==='b21');if(s)s.transition='그다음은 실제 조치입니다. 먼저 숫자 하나를 보겠습니다.'}
   {const s=E_.find(x=>x.id==='b23');if(s)s.transition='고객자산 가운데 공사를 끝낸 고객은 따로 봅니다. 먼저 숫자입니다.'}
-  const ORD=['r01','r02','m00','p02','p34','p05','b06','b07','b08','k1','b21','k2','b22','b09','b10','b23','k3','b24','s01','g01','k4','g02','g03','g08','g04','g09','g05','g06','d01','d02','d03','d04','h01','h02','h03','c13','c14','g07','q16'];
+  const ORD=['r01','r02','p02','p34','p05','b06','b07','b08','k1','b21','k2','b22','b09','b10','b23','k3','b24','s01','g01','k4','g02','g03','g08','g04','g09','g05','g06','d01','d02','d03','d04','h01','h02','h03','c13','c14','g07','q16'];
   const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
   {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ /* ───── 2026-10-18 보강 5: 단계형 장 — 말하는 곳에 ①②③ 상자 + 나머지 살짝 어둡게(f = [x,y,w,h,'설명'] · 6번째 값 1 = 이름 가림) ───── */
+ {const S=window.EXEC_STP.b06.items,F=(k,r,f)=>{if(S[k]){S[k].r=r;S[k].f=f}};
+  F(0,'144,29,528,643',[[158,32,500,72,'① 누가 · 어디서 · 어떤 공사'],[155,185,290,70,'② 고객이 직접 남긴 말'],[155,445,290,160,'③ 비어 있는 정보는 바로 표시']]);
+  F(1,'1406,182,360,452',[[1416,187,170,92,'① 지금 할 일 = 담당자 배정'],[1419,322,343,168,'② 공종 경험 · 업무량 · 지역으로 추천'],[1419,555,343,68,'③ 지사로 넘기면 지사가 지정'],[1454,334,44,22,'',1],[1454,434,44,22,'',1]]);
+  F(2,'470,180,985,880',[[535,193,100,22,'① 시도와 실제 연결을 따로 셈'],[480,247,250,100,'② 남긴 기록이 시간순으로'],[480,897,530,30,'③ 연결됨 · 회신 받음만 실제 연결']]);
+  F(3,'1406,180,370,460',[[1419,190,343,115,'① 지금 할 일 · 전화 첫마디'],[1419,386,343,106,'② 다음 단계 = 현장방문 · 견적서'],[1419,520,343,100,'③ 같은 공사면 기존 영업건에 붙임']]);
+  F(4,'1553,235,320,562',[[1574,355,279,68,'① 얼마나 기다렸나 · 담당'],[1574,480,279,120,'② 다음 할 일 · 한 일 · 빠진 정보'],[1574,610,279,105,'③ 확인 필요 → 바로 처리']]);
+  F(5,'144,185,310,600',[[158,283,283,202,'① 같은 단지의 지난 영업'],[158,494,283,61,'② 통화 전에 예전 기록 확인'],[158,587,283,157,'③ 문의 정보가 그대로 이어짐']]);
+  window.EXEC_FOCUS=(el,x,y,s)=>{el.querySelectorAll('.fo').forEach(n=>n.remove());const v=el.closest('.vstp'),on=v&&v.querySelector('li.on[data-stp]');if(!on)return;
+   const q=on.dataset.stp.split(':'),it=((window.EXEC_STP[q[0]]||{}).items||[])[+q[1]];if(!it||!it.f)return;
+   const W=el.clientWidth,H=el.clientHeight,R=b=>({l:(b[0]-x)*s,t:(b[1]-y)*s,w:b[2]*s,h:b[3]*s}),P=6;
+   const holes=it.f.filter(b=>!b[5]).map(R);
+   el.insertAdjacentHTML('beforeend','<svg class="fo fodim" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><path fill-rule="evenodd" d="M0 0H'+W+'V'+H+'H0Z'+holes.map(r=>'M'+(r.l-P)+' '+(r.t-P)+'h'+(r.w+2*P)+'v'+(r.h+2*P)+'h'+(-(r.w+2*P))+'Z').join('')+'"/></svg>');
+   it.f.forEach((b,i)=>{const r=R(b),d=document.createElement('div');
+    if(b[5]){d.className='fo fomask';Object.assign(d.style,{left:r.l+'px',top:r.t+'px',width:r.w+'px',height:r.h+'px'})}
+    else{d.className='fo fobox'+(r.t<40?' lb-b':'')+(r.l+r.w/2>W*.6?' lb-r':'');d.style.setProperty('--d',(.45+i*.4)+'s');d.innerHTML='<span>'+b[4]+'</span>';Object.assign(d.style,{left:(r.l-P)+'px',top:(r.t-P)+'px',width:(r.w+2*P)+'px',height:(r.h+2*P)+'px'})}
+    el.appendChild(d)})}}
 
  E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});{const EN={b09:6,b10:7};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
