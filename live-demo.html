@@ -2733,8 +2733,8 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    if(fig&&fb.length){const cap=fig.querySelector('figcaption');const ol=document.createElement('ol');ol.className='fol';ol.innerHTML=fb.map((b,i)=>'<li style="--d:'+(.45+(i+1)*.35)+'s"><i>'+(i+1)+'</i>'+String(b[4]).replace(/^[①-⑩]\s*/,'')+'</li>').join('');(cap||fig).appendChild(ol)}}}
 
  /* 숫자 훅 장(k1~k4)은 대표 요청으로 뺌 — 전 상태로 되돌림 */
- {const K=['k1','k2','k3','k4'];for(let i=E_.length-1;i>=0;i--)if(K.includes(E_[i].id))E_.splice(i,1);
-  const TR={g01:'실제 업무를 보면 이렇습니다.',b21:'어디서 막혔는지 보였다면, 그다음은 실제 조치입니다.',b23:'고객자산 가운데 공사를 끝낸 고객은 확장관리에서 따로 봅니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+ {const K=['k1','k2','k3','k4','m00'];for(let i=E_.length-1;i>=0;i--)if(K.includes(E_[i].id))E_.splice(i,1);
+  const TR={r02:'먼저 영업관리에서 무엇이 문제였는지부터 말씀드리겠습니다.',g01:'실제 업무를 보면 이렇습니다.',b21:'어디서 막혔는지 보였다면, 그다음은 실제 조치입니다.',b23:'고객자산 가운데 공사를 끝낸 고객은 확장관리에서 따로 봅니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
   const it=(window.EXEC_STP.b21||{items:[]}).items.find(x=>x.t==='왜 졌는지');if(it)it.hook='실주는 31건입니다.<br><em>왜 졌는지 남은 건 1건입니다.</em>';
   {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});{const EN={b09:6,b10:7};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
