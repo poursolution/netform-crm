@@ -120,7 +120,7 @@
   if(slot&&t){host.__tools=t;if(t.parentNode!==slot)slot.append(t);}
  }
  function render(){
-  const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-toss');
+  skin();const page=document.getElementById('pg-inq');if(!page)return;let host=document.getElementById('inq-toss');
   if(!on()){page.classList.remove('inq-toss');if(host){const t=host.__tools,s=document.querySelector('#inq-v5 .i5-more-slot');if(t&&s)s.append(t);host.remove();}return;}
   page.classList.add('inq-toss');
   if(!host){host=document.createElement('div');host.id='inq-toss';const v5=document.getElementById('inq-v5');if(v5)v5.after(host);else page.append(host);host.addEventListener('click',onClick);host.addEventListener('keydown',onKey);}
@@ -150,5 +150,10 @@
  /* v5 가 그린 뒤에 그 자리를 대신한다(v5 는 가려 두고, 끄면 그대로 나온다) */
  const basePaint=root.paintInq;
  if(typeof basePaint==='function')root.paintInq=function(){const r=basePaint.apply(this,arguments);try{render();}catch(err){const p=document.getElementById('pg-inq');if(p)p.classList.remove('inq-toss');const hst=document.getElementById('inq-toss');if(hst)hst.remove();if(root.console)root.console.warn('inquiry toss: '+err.message);}return r;};
- root.InquiryToss={on,render,compute,state:st,GROUPS:ORDER.slice(),groupOf,badge,action};
+ /* 상세 창도 같은 모양(2026-10-18 대표 "상세 창도 토스 방식") — 모양만 inquiry-toss-detail.css. 어디서 열든 같게 html 에 표시를 붙인다 */
+ const skinOn=()=>!(root.G&&(root.G.inqTossOff||root.G.inqTossDetailOff));
+ function skin(){try{document.documentElement.classList.toggle('tq-on',skinOn());}catch(e){}}
+ skin();
+ if(root.InquiryWorkbench&&typeof root.InquiryWorkbench.open==='function'){const op=root.InquiryWorkbench.open;root.InquiryWorkbench.open=function(){skin();return op.apply(this,arguments);};}
+ root.InquiryToss={on,render,skin,compute,state:st,GROUPS:ORDER.slice(),groupOf,badge,action};
 })(window);

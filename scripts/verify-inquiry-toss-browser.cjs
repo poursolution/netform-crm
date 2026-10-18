@@ -74,6 +74,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await T.innerText(),/02-933-1180/,'연락처');
   if(shot)await page.screenshot({path:shot,fullPage:true});
   await row('중계청구').click();const D=page.locator('#inq-inbox-dialog');await D.waitFor();assert.match(await D.innerText(),/중계청구3차/);
+  /* 상세 창도 같은 모양(모양만): 회색 바탕 · 흰 상자 · 단계 둥근 칸 · 파란 전화 버튼 */
+  assert.deepEqual(await page.evaluate(()=>{const q=s=>document.querySelector('#inq-inbox-dialog '+s),cs=s=>getComputedStyle(q(s));
+   return [document.documentElement.classList.contains('tq-on'),cs('.inq-dialog').backgroundColor,cs('.idv3-c2').borderRadius,cs('.idv3-steps.i5-mini>div').clipPath,cs('.idv3-call').backgroundColor];}),
+   [true,'rgb(242, 244, 246)','20px','none','rgb(59, 108, 228)'],'상세 창 토스 모양');
+  if(process.argv[3])await page.screenshot({path:process.argv[3]});
+  assert.equal(await page.evaluate(()=>{G.inqTossDetailOff=true;InquiryToss.skin();const r=document.documentElement.classList.contains('tq-on');G.inqTossDetailOff=false;InquiryToss.skin();return r;}),false,'상세 창 모양만 따로 끌 수 있다');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(150);
   await row('한강반도').locator('.tq-btn').click();await D.waitFor();assert.match(await D.innerText(),/한강반도유보라/,'버튼 = 상세 창');
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(150);
