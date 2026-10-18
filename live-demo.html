@@ -265,6 +265,49 @@ body.exec .sp p{margin:0;color:var(--tk-sub);font-size:clamp(15px,1.2vw,22px);fo
 body.exec .vcol .vf .vimg{height:15vh}
 body.exec .vcol .vnote{justify-self:center}
 body.exec .vcol .vf{width:100%}
+@keyframes vin{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes vpop{0%{opacity:0;transform:scale(.6)}75%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+@keyframes vfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes vdot{to{background:var(--tk-blue)}}
+@keyframes vnudge{0%,100%{transform:translateX(0)}50%{transform:translateX(7px)}}
+@keyframes vfly{from{opacity:0;transform:translate(-40px,30px) rotate(calc(var(--r) - 8deg))}to{opacity:1;transform:rotate(var(--r))}}
+body.exec #card.play .eb{animation:vin .6s both}
+body.exec #card.play h2{animation:vin .8s .08s both}
+body.exec #card.play h2 em{display:inline-block;animation:vin .8s .45s both}
+body.exec #card.play .who{animation:vin .6s .6s both}
+body.exec #card.play .flow span{animation:vin .6s both}
+body.exec #card.play .flow span:nth-child(1){animation-delay:.7s}body.exec #card.play .flow span:nth-child(3){animation-delay:.85s}body.exec #card.play .flow span:nth-child(5){animation-delay:1s}body.exec #card.play .flow span:nth-child(7){animation-delay:1.15s}
+body.exec .mv{animation:vin .7s cubic-bezier(.2,.8,.2,1) var(--d) both}
+body.exec .arw.mv,body.exec .vav.mv,body.exec .trk li.mv i,body.exec .sp.mv .n,body.exec .ini{animation:vpop .55s cubic-bezier(.2,.8,.2,1) var(--d) both}
+body.exec .arw.mv::after{display:inline-block;animation:vnudge 1.6s ease-in-out calc(var(--d) + .6s) infinite}
+body.exec .pap.mv{animation:vfly .8s cubic-bezier(.2,.8,.2,1) var(--d) both}
+body.exec .trk li{z-index:1}
+body.exec .trk li i{position:relative;z-index:1}
+body.exec .trk::after{content:'';position:absolute;left:6%;right:6%;top:15px;height:3px;background:var(--tk-blue);transform-origin:left;animation:vfill calc(var(--n,6) * .16s + .4s) .3s cubic-bezier(.4,0,.2,1) both}
+body.exec .trk li.mv i{animation:vpop .5s cubic-bezier(.2,.8,.2,1) var(--d) both,vdot .3s calc(var(--d) + .35s) both}
+body.exec .sp.mv:last-child{animation:vin .7s var(--d) both}
+body.exec .vf.mv .vimg{animation:vin .9s calc(var(--d) + .15s) both}
+@media (prefers-reduced-motion:reduce){body.exec .mv,body.exec #card.play *{animation:none!important}}
+body.exec #card .who em{font-style:normal;color:var(--tk-blue);font-weight:700}
+body.exec .vme{grid-template-columns:1fr 1fr;gap:2vw;align-items:stretch}
+body.exec .me{border-radius:28px;padding:5vh 2.6vw;display:flex;flex-direction:column;gap:2vh;min-height:36vh;box-sizing:border-box}
+body.exec .me.st1{background:var(--tk-blue-bg)}
+body.exec .me.st2{background:var(--tk-gray)}
+body.exec .tag{align-self:flex-start;border-radius:999px;padding:.7vh 1.1vw;font-size:clamp(14px,1.05vw,19px);font-weight:700;background:#fff;color:var(--tk-blue)}
+body.exec .st2 .tag,body.exec .cg.old .tag{color:var(--tk-sub)}
+body.exec .me b{font-size:clamp(26px,2.5vw,46px);line-height:1.3;letter-spacing:-.03em;color:var(--tk-ink)}
+body.exec .me p{margin:0;font-size:clamp(16px,1.35vw,25px);color:var(--tk-sub);font-weight:600}
+body.exec .vchg{grid-template-columns:1fr 64px 1.25fr;gap:2vw;align-items:stretch}
+body.exec .vchg .arw{align-self:center}
+body.exec .cg{border-radius:28px;padding:5vh 2.4vw;display:flex;flex-direction:column;gap:2vh;box-sizing:border-box;min-height:36vh}
+body.exec .cg.old{background:var(--tk-gray)}
+body.exec .cg.new{background:var(--tk-blue-bg)}
+body.exec .cg b{font-size:clamp(24px,2.3vw,42px);line-height:1.3;letter-spacing:-.03em;color:var(--tk-ink)}
+body.exec .cg.old b{color:var(--tk-sub)}
+body.exec .cg ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1vh}
+body.exec .cg li{background:#fff;border-radius:14px;padding:1.5vh 1.1vw;font-size:clamp(15px,1.3vw,24px);font-weight:600;color:var(--tk-ink)}
+body.exec .r2{display:flex;flex-direction:column;gap:1.6vh}
+body.exec .r2 .dst{padding:3.4vh 2.2vw}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -1846,25 +1889,25 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
  const Z=o=>Object.assign({motion:'spotlight'},o||{});
  const E_=[
  /* ───── PART 1 문제인식 ───── */
- EX('q01','01 · 시작','','영업 CRM 구축 및 향후 운영계획 | 서비스운영팀 송보람 | 2026.10','영업 진행은 챙기고 있었지만,<br><em>진행 과정은 한눈에 보이지 않았습니다.</em>',{flow:['문제인식','개선','향후계획']},
-  `기존에도 견적이 늦어지면 담당자에게 확인하고, 진행이 안 되면 다시 요청하면서 영업업무를 챙기고 있었습니다.
-하지만 문의가 들어온 뒤 누가 무엇을 했고, 현재 어디까지 진행됐는지는 한곳에서 확인하기 어려웠습니다.
-이번 CRM은 이 문제를 해결하기 위해 시작했습니다. 오늘은 문제인식, 개선, 향후계획 순서로 말씀드리겠습니다.`,
-  '가장 먼저 불편했던 것은 견적문의 관리였습니다.'),
- EX('p02','02 · 문제 1','견적문의 처리 과정이 문의별로 모이지 않았습니다.','PART 1 문제인식 · 문제 1','견적이 왜 안 나왔는지,<br><em>매번 다시 물어봐야 했습니다.</em>',{},
-  `견적서를 왜 아직 안 했는지 확인하고 챙기는 업무는 있었지만, 그 내용을 문의별로 어디에 기록하고 함께 볼지는 정리되어 있지 않았습니다.
-누가 맡았는지, 고객과 연락했는지, 견적이 왜 아직인지를 그때그때 물어서 확인했고, 확인한 답이 그 문의에 남지 않았습니다.
-제가 확인한 내용과 영업담당자가 진행한 일이 같은 문의 안에서 이어져야 했습니다.`,
-  '그런데 견적 진행만 확인한다고, 그 현장의 영업상황까지 알 수 있는 것은 아니었습니다.'),
- EX('p03','03 · 문제 2','활동 기록과 영업 진척이 이어져 보이지 않았습니다.','PART 1 문제인식 · 문제 2','무엇을 했는지는 적혀 있어도,<br><em>얼마나 진행됐는지는 판단하기 어려웠습니다.</em>',{},
-  `기존에도 영업활동 기록은 남아 있었습니다.
-하지만 고객과 어떤 이야기를 했고, 그 결과 현장이 어디까지 진행됐으며, 다음에 무엇을 해야 하는지는 기록을 다시 읽고 연결해야 했습니다.
-활동을 남기는 것과 진행상황을 함께 보는 것은 달랐습니다.`,
-  '이렇게 흩어진 내용을 보고하려면, 다시 자료를 모으는 과정이 필요했습니다.'),
- EX('p04','04 · 문제 3','보고할 때마다 자료를 다시 모아야 했습니다.','PART 1 문제인식 · 문제 3','현황을 관리하는 일과,<br><em>보고자료를 만드는 일이 따로였습니다.</em>',{},
-  `영업현황과 실적이 나뉘어 있다 보니 회의나 보고를 준비할 때 자료를 다시 취합해야 했습니다.
-그 결과 이번 주 실적뿐 아니라, 지난주에 막혔던 일이 어떻게 달라졌는지까지 같이 보려면 별도의 정리가 필요했습니다.`,
-  '그래서 이번에는 화면 몇 개를 추가하는 것이 아니라, 문의와 활동, 진행상황과 결과를 연결하려고 했습니다.'),
+ EX('r01','01 · 나의 업무방식','강점은 살리고, 관리하는 방식은 바꿉니다.','영업 CRM 구축 및 향후 운영계획 | 서비스운영팀 송보람 | 2026.10','업무를 개선하려는 태도는 살리고,<br><em>관리하는 방식은 바꾸고자 했습니다.</em>',{},
+  `이번 CRM을 설명드리기 전에, 먼저 제가 업무를 대하던 방식부터 말씀드리겠습니다.
+제 강점은 반복되거나 불편한 업무가 있으면, 그대로 처리하기보다 더 나은 방법을 찾아 실제 업무에 적용하려는 점이라고 생각합니다.
+다만 영업관리에서는 견적이 왜 아직 안 나왔는지 확인하고, 담당자에게 진행을 요청하는 데 업무가 집중돼 있었습니다. 확인한 내용을 한곳에 남기고, 전체 진행과 다음 조치까지 이어서 관리하는 부분은 보완이 필요했습니다.`,
+  '그래서 앞으로 일을 대하는 방식을 이렇게 정했습니다.'),
+ EX('r02','02 · 앞으로의 업무 태도','처리 여부뿐 아니라, 일이 이어지는 방식까지.','PART 1 문제인식 · 업무 태도','앞으로는 처리 여부뿐 아니라,<br><em>일이 이어지는 방식까지 보겠습니다.</em>',{},
+  `그래서 앞으로는 제가 더 자주 확인해야겠다는 방식만으로 접근하지 않으려고 합니다.
+누가 어떤 일을 했는지, 현재 어디까지 진행됐는지, 다음에 무엇을 해야 하는지를 담당자와 함께 볼 수 있어야 한다고 생각했습니다.
+업무를 개선하려는 제 강점은 살리되, 그 개선이 저 혼자 사용하는 방식이 아니라 다른 담당자도 이어서 사용할 수 있는 방식이 되도록 만들고자 했습니다.`,
+  '그 변화가 가장 필요했던 업무가 견적문의 관리였습니다.'),
+ EX('p02','03 · 문제 1 · 견적문의','견적문의 처리 과정이 문의별로 모이지 않았습니다.','PART 1 문제인식 · 문제 1','견적 진행은 챙기고 있었지만,<br><em>문의별 진행 과정은 모이지 않았습니다.</em>',{},
+  `기존에도 견적 진행은 계속 챙기고 있었습니다. 견적서가 작성되지 않으면 이유를 확인하고, 늦어지면 담당자에게 다시 요청했습니다.
+하지만 누가 맡았는지, 고객과 연락했는지, 견적이 왜 아직인지를 그때그때 물어서 확인했고, 그 답이 문의별로 남지 않았습니다.
+문의별로 그 내용을 어디에 기록하고, 담당자가 무엇을 했으며, 현재 어느 단계에 있는지를 함께 확인할 수 있는 취합 · 관리 시스템이 없었습니다.`,
+  '그리고 견적 진행만 확인한다고, 그 현장의 영업상황과 보고까지 해결되는 것은 아니었습니다.'),
+ EX('p34','04 · 문제 2 · 진척과 보고','활동 기록과 진척, 현황과 보고가 따로였습니다.','PART 1 문제인식 · 문제 2','무엇을 했는지는 적혀 있어도,<br><em>진척과 보고는 다시 맞춰야 했습니다.</em>',{},
+  `기존에도 영업활동 기록은 남아 있었습니다. 하지만 고객과 어떤 이야기를 했고, 그 결과 현장이 어디까지 진행됐으며, 다음에 무엇을 해야 하는지는 기록을 다시 읽고 연결해야 했습니다.
+또 영업현황과 실적이 나뉘어 있다 보니, 회의나 보고를 준비할 때마다 자료를 다시 취합해야 했습니다. 지난주에 막혔던 일이 어떻게 달라졌는지까지 보려면 별도의 정리가 필요했습니다.`,
+  '그래서 문의와 활동, 진행상황과 결과를 연결하는 방향으로 CRM을 구축하게 됐습니다.'),
  EX('p05','05 · 구축 목적','같은 기록을 각자 필요한 방식으로 봅니다.','PART 1 문제인식 · 구축 목적','누가 무엇을 했고, 지금 어디까지 왔는지<br><em>함께 보기 위해 만들었습니다.</em>',{},
   `관리자는 매번 물어보기 전에 진행상황을 확인하고, 영업담당자는 자신이 맡은 현장에서 한 일과 다음 일을 이어서 볼 수 있어야 한다고 생각했습니다.
 그리고 대표님과 상무님은 그 과정이 영업 결과로 어떻게 이어지는지 판단할 수 있어야 합니다.`,
@@ -1872,19 +1915,22 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 
  /* ───── PART 2 개선 (운영 화면 캡처 · 전체 → 설명할 곳 확대) ───── */
  ES('b06','06 · 개선 1 · 견적문의','inq','먼저, 문의를 모으고 담당자와 처리기록을 연결했습니다.',[
-  T('견적문의 목록',`먼저 들어온 문의를 한곳에서 확인하고, 누가 맡았는지와 어떤 처리를 했는지를 같은 문의에서 볼 수 있도록 구성했습니다.
+  T('견적문의 목록',`기존에는 견적 진행을 문의마다 따로 물어봤습니다. 이제는 문의별로 담당자와 처리내용을 함께 확인하도록 바꿨습니다.
+먼저 들어온 문의를 한곳에서 확인하고, 누가 맡았는지와 어떤 처리를 했는지를 같은 문의에서 볼 수 있도록 구성했습니다.
 목록은 할 일 순서로 묶여 있습니다. 담당자를 정해야 하는 문의, 첫 연락이 필요한 문의가 위에 있고, 줄마다 담당자와 접수일이 있습니다.`,'#inq-toss .tq-main',Z()),
   T('문의 한 건',`한 건을 고르면 그 문의에 남은 내용이 모입니다. 담당, 연락처, 다음 할 일, 지금까지 한 일, 빠진 정보입니다.
 견적이 늦어지는 이유는 따로 칸이 있는 것이 아니라, 문의 상세의 응대 기록에 연락 결과와 함께 남깁니다.
 이제 견적 진행을 확인할 때도 흩어진 내용을 찾는 것이 아니라, 그 문의에 남은 내용을 기준으로 확인하려는 것입니다.`,'#inq-toss .tq-side',Z())],
   '문의가 모였다면, 그다음에는 현재 어디까지 진행됐는지가 보여야 합니다.'),
  ES('b07','07 · 개선 2 · 진행 단계','pipe','한 일과 현재 단계, 다음 일을 이어서 볼 수 있게 했습니다.',[
-  T('파이프라인',`문의가 영업으로 이어진 뒤에는 파이프라인에서 봅니다. 컨설팅 설계부터 수주, 실주까지 어느 단계에 몇 건이 있는지 한 화면에 나옵니다.`,'#pipeline-stage-root .ps-kanban',Z({click:'body:has(#pipeline-list-v2) .mi[data-p="pipe"]'})),
+  T('파이프라인',`기존에는 활동 기록을 다시 읽어 상황을 짐작했습니다. 이제는 최근 활동과 현재 단계, 다음 업무를 이어서 봅니다.
+문의가 영업으로 이어진 뒤에는 파이프라인에서 봅니다. 컨설팅 설계부터 수주, 실주까지 어느 단계에 몇 건이 있는지 한 화면에 나옵니다.`,'#pipeline-stage-root .ps-kanban',Z({click:'body:has(#pipeline-list-v2) .mi[data-p="pipe"]'})),
   T('영업건 상세',`영업건을 열면 위에 현재 단계, 가운데 고객과 접촉한 기록, 오른쪽에 지금 처리할 일과 다음 업무 날짜가 함께 있습니다.
 어떤 활동을 했는지만이 아니라 고객이 지금 어떤 상황인지, 다음에 무엇을 할지를 이어서 보도록 구성했습니다.`,'#detailView',Z({modal:'deal'}))],
   '이 흐름이 보이면, 제가 따로 확인해야 할 일도 구분할 수 있습니다.'),
  ES('b08','08 · 개선 3 · 관리자 확인','today','전체를 다시 묻는 대신, 확인이 필요한 일을 먼저 봅니다.',[
-  T('오늘 손댈 것',`관리자 오늘 업무입니다. 모든 영업건을 하나씩 열고 진행 여부를 반복해서 묻는 방식에는 한계가 있었습니다.
+  T('오늘 손댈 것',`기존에는 진행 여부를 반복해서 요청했습니다. 이제는 멈춘 이유를 먼저 확인하고 필요한 조치를 정합니다.
+관리자 오늘 업무입니다. 모든 영업건을 하나씩 열고 진행 여부를 반복해서 묻는 방식에는 한계가 있었습니다.
 그래서 오늘 확인이 필요한 건만 모아, 단계별 · 담당자별로 몇 건인지 먼저 봅니다.`,'#pg-today',Z()),
   T('뽑힌 이유',`그중 오늘 넘기면 놓치는 건이 카드로 올라오고, 카드마다 뽑힌 이유가 적혀 있습니다. 담당 배정이 안 된 건, 재배정 뒤 처리 기록이 없는 건처럼요.
 이유를 보고 담당자가 필요한지, 자료가 부족한지, 별도의 결정이 필요한지 확인합니다.
@@ -1892,21 +1938,24 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   T('요청 처리 상태',`오른쪽에는 제가 보낸 요청과 답을 기다리는 건이 있습니다. 요청을 보냈다는 것에서 끝나지 않고, 회신과 처리 상태까지 여기서 확인합니다.`,'#pg-today',Z())],
   '관리자가 이렇게 확인한다면, 영업담당자는 어디에서 기록하고 일을 이어갈까요?'),
  ES('b09','09 · 개선 4 · 담당자 기록','pipe','담당자는 같은 현장에서 처리내용을 남기고 다음 일을 이어갑니다.',[
-  T('기록하는 곳',`취합 화면만 만들면 관리자가 다시 내용을 대신 모으는 일이 반복됩니다.
+  T('기록하는 곳',`기존에는 기록할 곳과 다음 업무를 따로 챙겨야 했습니다. 이제는 그 현장에서 기록하고 다음 업무를 이어갑니다.
+취합 화면만 만들면 관리자가 다시 내용을 대신 모으는 일이 반복됩니다.
 그래서 고객을 만난 담당자가 그 현장 상세 아래 '응대 기록'에 상담 내용과 진행 상황을 남기게 했습니다. 전화, 카카오, 문자, 이메일, 방문 모두 여기 적습니다.`,'#detailView',Z({modal:'deal'})),
   T('다음 업무와 날짜',`오른쪽 '지금 처리'에는 지금 할 일과 다음 업무 · 날짜가 붙어 있고, 날짜는 담당자가 '변경'으로 다시 잡습니다.`,'#detailView',Z({modal:'deal'})),
   T('오늘 업무로 다시',`그리고 기한이 된 일이나 기록이 빠진 일은 오늘 업무로 다시 올라옵니다.
 한 번 남긴 기록이 그다음 할 일을 확인하는 데 다시 쓰이는 구조입니다.`,'#pg-today',Z())],
   '이렇게 남은 기록은 오늘의 업무뿐 아니라, 이후 영업을 이어갈 때도 필요합니다.'),
  ES('b10','10 · 개선 5 · 이전 맥락','pipe','이전 견적과 상담을, 다음 영업에서도 이어서 봅니다.',[
-  T('단지 · 결정권자',`같은 아파트라도 시간이 지나거나 관계자가 바뀌면 이전에 어떤 견적을 주고받았는지 다시 확인해야 합니다. 관리소장이 바뀌면 요구하는 공법이나 조건이 달라지기도 합니다.
+  T('단지 · 결정권자',`기존에는 이전 견적과 상담을 담당자의 기억에 기대야 했습니다. 이제는 현장 기록에서 이어서 봅니다.
+같은 아파트라도 시간이 지나거나 관계자가 바뀌면 이전에 어떤 견적을 주고받았는지 다시 확인해야 합니다. 관리소장이 바뀌면 요구하는 공법이나 조건이 달라지기도 합니다.
 그래서 상세 왼쪽에 단지 공통 연락처와 결정권자, 이 단지의 지난 영업이 함께 나오고, 관리소장이 바뀐 경우를 표시하는 자리도 있습니다.`,'#detailView',Z({modal:'deal'})),
   T('상담 · 변경 이력',`가운데에는 고객 접촉과 내부 변경이 나뉘어 시간 순서로 쌓입니다.
 이전 상담과 변경 내용을 남겨, 그다음 영업에서 기억이 아니라 기록을 보고 이어서 판단하려는 것입니다.
 관리소장이 예전에 맡았던 다른 아파트까지 이어 보는 것은 아직 되어 있지 않아, 향후 보완 과제로 두었습니다.`,'#detailView',Z({modal:'deal'}))],
   '이제 이 개별 기록들을, 팀 전체의 영업 결과와 함께 보겠습니다.'),
  ES('b11','11 · 개선 6 · 과정과 결과','brief','실적뿐 아니라, 그 결과까지의 진행을 함께 봅니다.',[
-  T('이번 주 한 줄',`주간 브리핑입니다. 최종 실적만 보면 얼마를 했는지는 알 수 있지만, 어느 문의가 진행됐고 어디에서 멈췄는지는 따로 확인해야 합니다.
+  T('이번 주 한 줄',`기존에는 보고할 때마다 자료를 다시 모았습니다. 이제는 진행과 결과를 같은 화면에서 봅니다.
+주간 브리핑입니다. 최종 실적만 보면 얼마를 했는지는 알 수 있지만, 어느 문의가 진행됐고 어디에서 멈췄는지는 따로 확인해야 합니다.
 그래서 맨 위에 이번 주 문의, 적합, 견적, 계약을 한 줄로 봅니다.`,'#pg-brief',Z()),
   T('단계 이동 · 계약실적',`아래에는 이번 주 영업 단계 이동과, 계약 체결일 기준 계약실적이 나란히 있습니다.`,'#pg-brief',Z()),
   T('담당자별',`담당자별로 진행 건, 장기 정체, 문의 · 견적, 계약이 한 줄씩 나오고, 끝에 지금 먼저 확인할 것이 적혀 있습니다.
@@ -1928,15 +1977,17 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 지난주에 진행되지 않았던 건에 어떤 조치를 했고, 이번 주에 무엇이 달라졌는지 같이 보겠습니다. 아직 해결되지 않은 건은 이유와 필요한 결정을 정리하겠습니다.
 주간 브리핑에 이 칸은 만들어 두었고, 이번 달부터 실제로 채워 가겠습니다.`,
   '이 관리방식이 사람마다 달라지지 않도록, 영업표준과 교육에도 연결하겠습니다.'),
- EX('c15','15 · 정착 계획','표준화 · 교육 · 보완을 함께 운영합니다.','PART 3 향후계획 · 정착','담당자가 달라도,<br><em>같은 기준으로 관리되도록 정착시키겠습니다.</em>',{},
-  `상무님이 작성하신 영업정책과 회의에서 확정된 기준을 바탕으로, 상황별 행동과 기록 위치를 함께 정리하겠습니다.
-신규 영업사원도 문의를 받았을 때 무엇을 확인하고 어디에 남겨야 하는지 이해할 수 있도록 교육하겠습니다.
-사용 중 불편하거나 흐름이 끊기는 부분은 취합해 보완하겠습니다. 지금 확인된 보완 과제는 관리소장이 예전에 맡았던 현장까지 이어 보는 것입니다.`,
-  '결국 이번 CRM으로 바꾸려는 것은 화면의 수가 아니라 영업을 관리하는 방식입니다.'),
- EX('q16','16 · 마무리','','마무리','진행을 물어보는 관리에서,<br><em>진행을 확인하고 조치하는 관리로 바꾸겠습니다.</em>',{},
-  `기존에는 견적이 왜 안 나왔는지, 지금 어디까지 진행됐는지를 다시 물어보며 관리했습니다.
-앞으로는 문의별로 남은 기록과 현재 진행을 확인하고, 그다음에 필요한 조치가 이어지도록 관리하겠습니다.
-영업담당자는 자신의 현장과 고객을 이어서 관리하고, 저는 전체 과정에서 빠진 부분이 없는지 챙기겠습니다. 감사합니다.`),
+ EX('c15','15 · 정착 계획','만든 것을 실제 업무방식으로 정착시킵니다.','PART 3 향후계획 · 정착','만드는 데서 끝내지 않고,<br><em>실제로 쓰이는지까지 확인하겠습니다.</em>',{},
+  `만든 화면을 늘리는 것보다, 지금 만든 것을 실제 업무방식으로 정착시키는 것을 먼저 하겠습니다.
+상무님이 작성하신 영업정책과 회의에서 확정된 기준을 바탕으로, 무엇을 어디에 남겨야 하는지 담당자에게 분명하게 안내하겠습니다. 신규 영업사원 교육에도 같은 기준을 쓰겠습니다.
+담당자들이 실제로 기록하고 있는지, 그 기록이 다음 업무로 이어지는지 확인하고, 같은 문제가 반복되면 기준과 교육, 화면 보완으로 연결하겠습니다.
+지금 확인된 보완 과제는 관리소장이 예전에 맡았던 현장까지 이어 보는 것입니다.`,
+  '마지막으로, 처음에 말씀드린 제 업무방식으로 돌아가겠습니다.'),
+ EX('q16','16 · 마무리','','마무리','제가 하나씩 확인하고 챙기는 방식에서,<br><em>함께 진행을 보고 끝까지 조치하는 방식으로 바꾸겠습니다.</em>',{},
+  `불편한 업무를 발견하고 개선하려는 강점은 계속 살리겠습니다.
+다만 앞으로는 만드는 데서 끝내지 않고, 담당자들이 실제로 사용할 수 있는지, 기록이 다음 업무로 이어지는지, 같은 문제가 반복되는지까지 확인하겠습니다.
+영업담당자는 자신이 진행한 내용과 다음 업무를 남기고, 저는 전체 흐름에서 멈춘 이유와 필요한 조치를 확인하겠습니다.
+제가 하나씩 확인하고 챙기는 방식에서, 함께 진행을 보고 끝까지 조치하는 방식으로 업무를 바꾸겠습니다. 감사합니다.`),
 
  /* ───── 부록(질문이 나오면) ───── */
  ES('x01','부록 · Pipeline 단계 기준','pipe','단계는 고객이 한 행동으로 바뀝니다.',[
@@ -1989,8 +2040,8 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   'b11:0':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:182,w:1328,h:341}},
   'b11:1':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:677,w:1328,h:312}},
   'b11:2':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:1006,w:1328,h:296}}});
- {const PRB={b06:'문제 1 · 견적문의 처리 과정이 모이지 않음',b07:'문제 2 · 기록만으로 진척을 판단하기 어려움',b08:'문제 1 · 매번 다시 물어봐야 함',b09:'문제 2 · 한 일과 다음 일이 이어지지 않음',b10:'문제 2 · 담당자 · 관리소장이 바뀌면 맥락이 끊김',b11:'문제 3 · 보고할 때마다 다시 취합'};
-  E_.forEach(s=>{if(PRB[s.id])s.who='<b>답하는 문제</b> '+PRB[s.id]})}
+ {const PRB={"b06":"<b>문제 1</b> 진행을 문의마다 따로 물어봄 → <em>문의별 담당자 · 처리내용을 함께 확인</em>","b07":"<b>문제 2</b> 기록을 다시 읽어 짐작 → <em>최근 활동 · 현재 단계 · 다음 업무를 이어서</em>","b08":"<b>문제 1</b> 진행 여부를 반복해서 요청 → <em>멈춘 이유를 보고 필요한 조치를 정함</em>","b09":"<b>문제 1</b> 기록할 곳 · 다음 업무를 따로 챙김 → <em>그 현장에서 기록하고 다음 업무로</em>","b10":"<b>문제 2</b> 이전 견적 · 상담은 기억에 의존 → <em>현장 기록에서 이어서 봄</em>","b11":"<b>문제 2</b> 보고 때마다 다시 취합 → <em>진행과 결과를 같은 화면에서</em>"};
+  E_.forEach(s=>{if(PRB[s.id])s.who=PRB[s.id]})}
  {const ARW='<div class="arw"></div>';
   const RC=a=>'<div class="rc"><span class="ini">'+a[0]+'</span><b>'+a[1]+'</b><p>'+a[2]+'</p></div>';
   const STEP=a=>'<div class="vstep">'+a.map(x=>'<div class="sp"><span class="n">'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>').join(ARW)+'</div>';
@@ -2003,8 +2054,11 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    c12:()=>'<div class="vis vflow3">'+[['영','영업담당자','상담 · 진행 · 다음 업무를 남깁니다'],['송','송보람','멈춘 이유를 확인하고, 조치를 요청하고, 결과까지 확인합니다'],['대','대표 · 상무','협의 · 승인이 필요한 일을 판단합니다']].map(RC).join(ARW)+'</div>',
    c13:()=>'<div class="vis vcol">'+STEP([['1','진행 확인','새 문의 · 배정 · 약속한 업무'],['2','원인 확인','미처리 · 고객과 정한 대기 · 기록 누락'],['3','담당 · 기한 지정','누가, 언제까지'],['4','처리결과 확인','요청이 아니라 실제 조치까지']])+'</div>',
    c14:()=>'<div class="vis vcol">'+STEP([['1','전주 미처리','지난주에 진행되지 않은 건'],['2','이번 주 조치','누가 무엇을 했는가'],['3','확인된 결과','무엇이 달라졌는가'],['4','남은 과제','이유와 필요한 결정']])+crop('a09:0','251,538,1328,125','이 칸에 이번 달부터 채워 갑니다','주간 브리핑')+'</div>',
-   c15:()=>'<div class="vis vcol">'+STEP([['1','영업기준 정리','영업정책 · 회의에서 정한 기준 → 상황별 행동 · 기록 위치'],['2','담당자 사용','신규 영업사원 교육 포함'],['3','실무 피드백','불편하거나 흐름이 끊기는 곳 취합'],['4','보완 · 안내','바뀐 기준은 같은 날 CRM에도']])+'<p class="vnote">확인된 보완 과제 · 관리소장이 예전에 맡았던 현장까지 이어 보기</p></div>'});
-  const VM2={p02:'p02',p03:'p03',p04:'p04',p05:'p05',c12:'c12',c13:'c13',c14:'c14',c15:'c15'};E_.forEach(s=>{if(VM2[s.id])s.vis=VM2[s.id]})}
+   c15:()=>'<div class="vis vcol">'+STEP([['1','기록 위치 안내','무엇을 어디에 남길지'],['2','실제 사용 확인','기록이 다음 업무로 이어지는지'],['3','반복 문제 확인','같은 문제가 되풀이되는지'],['4','기준 · 교육 · 화면 보완','신규 영업사원 교육 포함']])+'<p class="vnote">확인된 보완 과제 · 관리소장이 예전에 맡았던 현장까지 이어 보기</p></div>',
+   r01:()=>'<div class="vis vme"><div class="me st1"><span class="tag">살릴 강점</span><b>불편을 발견하면<br>개선 방법을 찾아 실행</b><p>그대로 넘기지 않고 실제 업무에 적용</p></div><div class="me st2"><span class="tag">보완할 점</span><b>개별 확인에서<br>전체 진행 · 후속관리로</b><p>확인한 내용이 남고, 다음 조치까지 이어지게</p></div></div>',
+   r02:()=>'<div class="vis vchg"><div class="cg old"><span class="tag">지금까지</span><b>제가 하나씩<br>확인하고 챙기는 관리</b></div>'+ARW+'<div class="cg new"><span class="tag">앞으로</span><b>담당자와 함께<br>진행을 보고 조치하는 관리</b><ul><li>누가 어떤 일을 했는지</li><li>지금 어디까지 왔는지</li><li>다음에 무엇을 할지</li></ul></div></div>',
+   p34:()=>'<div class="vis vmrg"><div class="src">'+['영업활동 기록','견적문의','실적'].map(t=>'<p><b>'+t+'</b><i></i><i></i></p>').join('')+'</div>'+ARW+'<div class="r2"><div class="nd"><h4>진척을 보려면</h4><p>기록을 다시 읽고 연결</p></div><div class="dst"><b>보고하려면</b><span>자료를 다시 취합</span></div></div></div>'});
+  const VM2={r01:'r01',r02:'r02',p34:'p34',p02:'p02',p03:'p03',p04:'p04',p05:'p05',c12:'c12',c13:'c13',c14:'c14',c15:'c15'};E_.forEach(s=>{if(VM2[s.id])s.vis=VM2[s.id]})}
  E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
@@ -2409,7 +2463,8 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
     if(one)one.textContent=s.keyMessage||'';if(bD)bD.hidden=!(s.details&&s.details.length);closeDv()};
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
-  c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c))}
+  c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
+  c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
   c.classList.toggle('shotc',!!s.shot);if(s.shot){const ti=cur().ti,m=(window.EXEC_SHOTS||{})[s.id+':'+ti];if(m){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});
    const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);
    const lay=()=>{const cw=sv.clientWidth,ch=sv.clientHeight;if(!cw||!ch)return;const k=Math.min(cw/m.W,ch/m.H),w0=m.W*k,h0=m.H*k;cam.style.width=w0+'px';cam.style.height=h0+'px';const ox=(cw-w0)/2,oy=(ch-h0)/2;
