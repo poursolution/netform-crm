@@ -386,6 +386,33 @@ body.exec #card{overflow-x:hidden}
 body.exec .sv .lens{position:absolute;z-index:2;border-radius:10px;background-repeat:no-repeat;box-shadow:0 0 0 3px var(--tk-blue);transform:scale(1);transition:transform .9s cubic-bezier(.2,.8,.2,1),box-shadow .9s}
 body.exec .sv.go .lens{transform:scale(var(--sc,1.06));box-shadow:0 0 0 3px var(--tk-blue),0 24px 60px rgba(25,31,40,.30)}
 body.exec .sv .box{border-color:transparent;box-shadow:0 0 0 9999px rgba(25,31,40,.30)}
+/* 마이크로인터랙션 */
+body.exec .fx{position:relative;overflow:hidden;cursor:pointer;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s,opacity .3s,filter .3s,background .3s}
+body.exec .trk li.fx{overflow:visible}
+body.exec .fx.done{animation:none!important;opacity:1}
+body.exec #card[data-mo=fly] .src p.fx.done{transform:rotate(var(--r))}
+body.exec .fx.done:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(25,31,40,.12)}
+body.exec .fx:active{transform:scale(.98)}
+@keyframes vrip{from{transform:scale(0);opacity:.28}to{transform:scale(5);opacity:0}}
+body.exec .rip{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--tk-blue);pointer-events:none;animation:vrip .65s ease-out forwards;z-index:3}
+/* 눌러서 강조 */
+body.exec .vis.focus .fx:not(.on){opacity:.38;filter:grayscale(.4)}
+body.exec .vis.focus .fx.on{transform:translateY(-6px) scale(1.04);box-shadow:0 0 0 3px var(--tk-blue),0 20px 44px rgba(25,31,40,.16);z-index:2}
+body.exec .vis.focus .trk li.fx.on{box-shadow:none}
+body.exec .vis.focus .trk li.fx.on span{color:var(--tk-blue)}
+/* 말풍선 뒤집기 */
+@keyframes vflipin{from{transform:perspective(700px) rotateX(-90deg);opacity:0}to{transform:none;opacity:1}}
+body.exec .qb[data-ans]::before{content:'↻';position:absolute;right:10px;top:6px;font-size:12px;color:var(--tk-mut);opacity:.6}
+body.exec .qb.flip::after{content:attr(data-ans);position:absolute;inset:0;display:flex;align-items:center;padding:0 1.8vw;background:var(--tk-blue);color:#fff;border-radius:22px;font-size:.82em;font-weight:700;animation:vflipin .45s cubic-bezier(.2,.8,.2,1) both}
+/* 허브 */
+@keyframes vping{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+body.exec .core.ping{animation:vping .5s cubic-bezier(.2,.8,.2,1),vpulse 2.4s ease-in-out .5s infinite}
+/* 화면 장 */
+body.exec .sv{cursor:pointer}
+body.exec .sv.go .lens:hover{transform:scale(calc(var(--sc,1.06) + .03))}
+body.exec .sv.off .lens{transform:scale(1);box-shadow:none;opacity:0}
+body.exec .sv.off .box{opacity:0!important}
+body.exec .sv .lens{transition:transform .9s cubic-bezier(.2,.8,.2,1),box-shadow .9s,opacity .4s}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2169,7 +2196,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   const STEP=a=>'<div class="vstep">'+a.map(x=>'<div class="sp"><span class="n">'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>').join(ARW)+'</div>';
   const crop=(k,r,cap,b)=>'<figure class="vf"><div class="vimg" data-k="'+k+'" data-r="'+r+'"></div><figcaption><b>'+b+'</b><span>'+cap+'</span></figcaption></figure>';
   Object.assign(window.EXEC_VIS,{
-   p02:()=>'<div class="vis vask"><div class="vav"><span>관리자</span></div><div class="qs">'+[['누가 맡았어요?','담당자 확인'],['고객이랑 연락했어요?','진행내용 확인'],['견적은 왜 아직이에요?','미진행 사유 확인']].map(x=>'<p class="qb">'+x[0]+'<small>'+x[1]+'</small></p>').join('')+'</div><div class="vav g"><span>영업담당자</span></div><p class="vfoot">확인한 답이 그 문의에 남는 곳이 없었습니다</p></div>',
+   p02:()=>'<div class="vis vask"><div class="vav"><span>관리자</span></div><div class="qs">'+[['누가 맡았어요?','담당자 확인'],['고객이랑 연락했어요?','진행내용 확인'],['견적은 왜 아직이에요?','미진행 사유 확인']].map(x=>'<p class="qb" data-ans="'+({'누가 맡았어요?':'이제는 · 문의 목록에서 담당자가 바로 보임','고객이랑 연락했어요?':'이제는 · 응대 기록에 연락 결과가 남음','견적은 왜 아직이에요?':'이제는 · 응대 기록과 지금 할 일에서 확인'}[x[0]]||'')+'">'+x[0]+'<small>'+x[1]+'</small></p>').join('')+'</div><div class="vav g"><span>영업담당자</span></div><p class="vfoot">확인한 답이 그 문의에 남는 곳이 없었습니다</p></div>',
    p03:()=>'<div class="vis vlog"><section class="lg"><h4>남아 있던 활동 기록</h4>'+['통화','방문','메모'].map(t=>'<div class="row"><b>'+t+'</b><i></i></div>').join('')+'</section>'+ARW+'<section class="nd"><h4>판단에 필요한 것</h4><p>지금 어느 단계인가</p><p>다음에 할 일은 무엇인가</p><p>언제까지인가</p></section><p class="vfoot">기록을 다시 읽고 연결해야 알 수 있었습니다</p></div>',
    p04:()=>'<div class="vis vmrg"><div class="src">'+['영업 현황','견적문의','실적'].map(t=>'<p><b>'+t+'</b><i></i><i></i></p>').join('')+'</div>'+ARW+'<div class="dst"><b>회의 · 보고 자료</b><span>보고할 때마다 다시 취합</span><span>지난주에 막힌 일은 따로 정리</span></div></div>',
    p05:()=>'<div class="vis vrole"><p class="hub">문의 한 건에 남은 같은 기록</p><div class="rc3">'+[['관','관리자','전체 진행과 지원할 일을 확인'],['영','영업담당자','내 현장과 다음 업무를 확인'],['대','대표 · 상무','진행이 결과로 이어지는 과정을 확인']].map(RC).join('')+'</div></div>',
@@ -2609,9 +2636,16 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
   c.classList.toggle('bm',!!s.bm);c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.spk,.core,.chk p,.ln,.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
-  c.dataset.mo=s.mo||'';c.dataset.ty=s.ty||'';if(s.ty==='words'){const hh=c.querySelector('h2');if(hh&&!hh.querySelector('.w')){let k=0;const walk=n=>{[...n.childNodes].forEach(x=>{if(x.nodeType===3){const fr=document.createDocumentFragment();x.nodeValue.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p))fr.appendChild(document.createTextNode(p));else{const sp=document.createElement('span');sp.className='w';sp.style.setProperty('--w',k++);sp.textContent=p;fr.appendChild(sp)}});x.replaceWith(fr)}else if(x.nodeType===1&&x.tagName!=='BR')walk(x)})};walk(hh)}}c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
+  c.dataset.mo=s.mo||'';{const vv=c.querySelector('.vis');if(vv){const FX='.me,.cg,.rc,.sp,.spk,.qb,.src p,.r2>*,.dst,.trk li,.chk p,.vf,.st,.lg,.nd';vv.querySelectorAll(FX).forEach(x=>x.classList.add('fx'));
+  vv.addEventListener('animationend',e=>{const x=e.target;if(!x.classList||!x.classList.contains('mv'))return;if(x.getAnimations().every(a=>a.playState==='finished'||(a.effect&&a.effect.getTiming().iterations===Infinity)))if(!x.classList.contains('core'))x.classList.add('done')});
+  vv.addEventListener('click',e=>{const x=e.target.closest('.fx');if(!x||!vv.contains(x))return;e.stopPropagation();
+   const r=x.getBoundingClientRect(),rp=document.createElement('span');rp.className='rip';rp.style.left=(e.clientX-r.left)+'px';rp.style.top=(e.clientY-r.top)+'px';x.appendChild(rp);setTimeout(()=>rp.remove(),700);
+   if(x.matches('.qb[data-ans]')){x.classList.toggle('flip');return}
+   if(x.matches('.spk')){const sp=vv.querySelector('.core span');if(sp){sp.textContent=x.textContent+'도 직접';sp.parentElement.classList.remove('ping');void sp.offsetWidth;sp.parentElement.classList.add('ping')}}
+   const was=x.classList.contains('on');vv.querySelectorAll('.fx.on').forEach(y=>y.classList.remove('on'));if(!was){x.classList.add('on');vv.classList.add('focus')}else vv.classList.remove('focus')})}
+}c.dataset.ty=s.ty||'';if(s.ty==='words'){const hh=c.querySelector('h2');if(hh&&!hh.querySelector('.w')){let k=0;const walk=n=>{[...n.childNodes].forEach(x=>{if(x.nodeType===3){const fr=document.createDocumentFragment();x.nodeValue.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p))fr.appendChild(document.createTextNode(p));else{const sp=document.createElement('span');sp.className='w';sp.style.setProperty('--w',k++);sp.textContent=p;fr.appendChild(sp)}});x.replaceWith(fr)}else if(x.nodeType===1&&x.tagName!=='BR')walk(x)})};walk(hh)}}c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
   c.classList.toggle('shotc',!!s.shot);if(s.shot){const ti=cur().ti,m=(window.EXEC_SHOTS||{})[s.id+':'+ti];if(m){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});
-   const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);
+   const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);sv.addEventListener('click',e=>{e.stopPropagation();sv.classList.toggle('off')});
    const lay=()=>{const cw=sv.clientWidth,ch=sv.clientHeight;if(!cw||!ch)return;const k=Math.min(cw/m.W,ch/m.H),w0=m.W*k,h0=m.H*k;cam.style.width=w0+'px';cam.style.height=h0+'px';const ox=(cw-w0)/2,oy=(ch-h0)/2;
     cam.style.transition='none';cam.style.transform='translate('+ox+'px,'+oy+'px) scale(1)';const r=m.r;
     if(r){bx.style.left=(r.x*k-6)+'px';bx.style.top=(r.y*k-6)+'px';bx.style.width=(r.w*k+12)+'px';bx.style.height=(r.h*k+12)+'px'}else bx.style.display='none';
