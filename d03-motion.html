@@ -424,11 +424,11 @@ html.emb .ctl{display:none}
  const $=s=>document.querySelector(s),st=$('#st'),slide=$('#d03'),wrap=$('#wrap'),EMB=/[?&]embed=1/.test(location.search);
  if(EMB)document.documentElement.classList.add('emb');
  const SC=[
-  {dur:19800,cues:[[300,'c1a'],[8300,'c1b'],[14633,'c1c']],role:'현재 → 향후 자동화',title:'끝난 현장 자료를 다시 옮겨 적지 않도록, 현장별로 연결합니다.',msg:'지금은 사람이 찾아 엑셀에 옮깁니다. 앞으로는 <strong>원본을 연결해 현장별로 자동 취합</strong>합니다.'},
-  {dur:20633,cues:[[300,'c2a'],[6967,'c2b'],[11300,'c2c'],[13633,'c2e'],[16133,'c2d']],role:'향후 자동화',title:'노임과 시트에서 확인할 차이를 먼저 찾습니다.',msg:'반복 계산과 비교는 자동으로, <strong>확인할 차이를 먼저 발견</strong>합니다.'},
-  {dur:19300,cues:[[300,'c3a'],[3800,'c3b'],[7967,'c3c'],[10467,'c3d'],[14633,'c3e']],role:'제가 할 일',title:'차이가 난 이유는 원본과 담당자에게 확인합니다.',msg:'<strong>숫자의 차이와 손실 원인을 구분</strong>해서 확인합니다.'},
-  {dur:16800,cues:[[300,'c4a'],[4133,'c4b'],[6133,'c4c'],[9300,'c4d'],[12633,'c4e']],role:'제가 할 일',title:'확인한 근거만 다음 견적 · 투입 기준에 반영합니다.',msg:'확인된 근거를 <strong>다음 견적과 현장 준비의 기준</strong>으로 남깁니다.'},
-  {dur:18633,cues:[[300,'c5a'],[2800,'c5b'],[4133,'c5c'],[8633,'c5d']],role:'다음 준공 후',title:'다음 현장이 끝나면 같은 기준으로 다시 비교합니다.',msg:'<strong>끝난 현장의 기록이, 다음 현장의 기준이 되도록.</strong>'}
+  {dur:9650,cues:[[150,'c1a'],[2650,'c1b'],[5150,'c1c']],role:'현재 → 향후 자동화',title:'끝난 현장 자료를 다시 옮겨 적지 않도록, 현장별로 연결합니다.',msg:'지금은 사람이 찾아 엑셀에 옮깁니다. 앞으로는 <strong>원본을 연결해 현장별로 자동 취합</strong>합니다.'},
+  {dur:14483,cues:[[150,'c2a'],[2650,'c2b'],[5150,'c2c'],[7483,'c2e'],[9983,'c2d']],role:'향후 자동화',title:'노임과 시트에서 확인할 차이를 먼저 찾습니다.',msg:'반복 계산과 비교는 자동으로, <strong>확인할 차이를 먼저 발견</strong>합니다.'},
+  {dur:14650,cues:[[150,'c3a'],[2650,'c3b'],[5150,'c3c'],[7650,'c3d'],[10150,'c3e']],role:'제가 할 일',title:'차이가 난 이유는 원본과 담당자에게 확인합니다.',msg:'<strong>숫자의 차이와 손실 원인을 구분</strong>해서 확인합니다.'},
+  {dur:14150,cues:[[150,'c4a'],[2650,'c4b'],[4650,'c4c'],[7150,'c4d'],[9650,'c4e']],role:'제가 할 일',title:'확인한 근거만 다음 견적 · 투입 기준에 반영합니다.',msg:'확인된 근거를 <strong>다음 견적과 현장 준비의 기준</strong>으로 남깁니다.'},
+  {dur:10983,cues:[[150,'c5a'],[2650,'c5b'],[3983,'c5c'],[6483,'c5d']],role:'다음 준공 후',title:'다음 현장이 끝나면 같은 기준으로 다시 비교합니다.',msg:'<strong>끝난 현장의 기록이, 다음 현장의 기준이 되도록.</strong>'}
  ];
  const TOTAL=SC.reduce((a,s)=>a+s.dur,0);
  const btns=[...document.querySelectorAll('.rail button')],pbs=btns.map(b=>b.querySelector('.pb i'));
@@ -474,7 +474,7 @@ html.emb .ctl{display:none}
  const fit=()=>{const k=EMB?Math.min(innerWidth/1600,innerHeight/900):Math.min((innerWidth-28)/1600,(innerHeight-86)/900);slide.style.transform='scale('+k+')';wrap.style.width=1600*k+'px';wrap.style.height=900*k+'px';if(EMB)wrap.style.marginTop=Math.max(0,(innerHeight-900*k)/2)+'px'};
  const onVis=()=>{if(document.hidden)pause()};
  addEventListener('keydown',onKey);addEventListener('resize',fit);document.addEventListener('visibilitychange',onVis);
- fit();{const q=new URLSearchParams(location.search);if(q.has('step')){const i=Math.max(0,Math.min(4,+q.get('step')||0));all=false;jump(i,false);setTimeout(()=>{if(!run&&t===0){all=false;jump(i,true)}},EMB?250:500)}else{all=true;jump(0,false);setTimeout(()=>{if(!run&&t===0)jump(0,true)},EMB?500:700)}}
+ fit();{const q=new URLSearchParams(location.search);if(q.has('step')){const i=Math.max(0,Math.min(4,+q.get('step')||0));all=false;jump(i,false);setTimeout(()=>{if(!run&&t===0){all=false;jump(i,true)}},EMB?60:500)}else{all=true;jump(0,false);setTimeout(()=>{if(!run&&t===0)jump(0,true)},EMB?500:700)}}
  // 발표 파일에 넣을 때: 이 장면을 벗어나면 정리
  window.D03Motion={jump:(i)=>{all=false;jump(i,true)},playAll:()=>{all=true;jump(0,true)},pause,destroy(){cancelAnimationFrame(raf);run=false;removeEventListener('keydown',onKey);removeEventListener('resize',fit);document.removeEventListener('visibilitychange',onVis)}};
 })();
