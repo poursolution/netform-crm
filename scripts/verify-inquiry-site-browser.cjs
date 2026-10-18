@@ -30,7 +30,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     inquiries:[
      {id:A,site:SITE,site_id:'site-1',address:ADDR,status:'현장방문예정',at:'2026-01-13T15:18:00+09:00',created_at:'2026-01-13T15:18:00+09:00',brand:'석민이앤씨',phone:'031-378-5034',contact_name:'',work_type:'도로 보수',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-01-13T15:30:00+09:00',responded_at:'2026-01-13T19:01:00+09:00',raw:{'문의내용':'보도블럭 교체, 잔디블럭 교체, 계단보수공사','상담채널':'전화','공사유형':'도로 보수','건물주소':ADDR,'응대내용':'내일 연락 예정'}},
      {id:N,site:'[경기 용인] 새로운마을',address:'경기도 용인시 기흥구 새로 1',status:'배정완료',at:'2026-10-04T10:00:00+09:00',created_at:'2026-10-04T10:00:00+09:00',brand:'POUR솔루션',phone:'010-1111-2222',work_type:'옥상 방수',assignee:'이필선',assigned_to:'이필선',assigned_at:'2026-10-04T10:10:00+09:00',raw:{'문의내용':'옥상 방수 견적 문의','건물주소':'경기도 용인시 기흥구 새로 1'}}],activities:[],inquiryTrash:[],inquiryCleanupArchived:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.inqTossDetailOff=true;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    SB={rpc:async()=>({error:{message:'CONTRACT_UNAVAILABLE'}})};window.A=A;window.N=N;goPage('inq');
   });

@@ -1,0 +1,74 @@
+/* 견적문의 상세 창 · 토스 방식 (2026-10-18 대표 "상세 창도 토스 방식"). 모양만 바꾼다 — 칸 · 저장 · 버튼 동작은 그대로.
+   회색 바탕 위 흰 상자 3개(선 대신 여백) · 큰 제목 · 단계 = 둥근 칸 4개 · 파란 버튼 하나(전화) · 칩/입력칸 = 테두리 없는 회색.
+   켜짐 = html.tq-on (inquiry-toss.js 가 붙인다). 끄기: G.inqTossOff 또는 G.inqTossDetailOff */
+html.tq-on #inq-inbox-dialog.idv3 .inq-dialog{background:#f2f4f6;border-radius:24px;border:0}
+/* 머리 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-top{background:transparent;border-bottom:0;padding:22px 28px 14px;gap:12px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-top .r2 h2{font-size:26px;letter-spacing:-.02em;color:#0f172a}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-top .r2>span{font-size:14px;color:#5b6b85}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-top .r1>b,html.tq-on #inq-inbox-dialog.idv3 .idv3-top .r1>span{font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-pill{padding:5px 12px;font-size:12.5px}
+/* 단계 = 둥근 칸 4개 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini{gap:8px;height:auto}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini>div{clip-path:none!important;margin-left:0!important;padding:10px 14px!important;border-radius:14px;background:#fff;color:#94a3b8;gap:2px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini>div.done{background:#fff;color:#0f172a}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini>div.done span{color:#5b6b85}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini>div.cur{background:#3B6CE4;color:#fff}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini b{font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-steps.i5-mini span{font-size:12px}
+/* 3열 = 흰 상자 3개 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-body{gap:14px;padding:0 18px 18px;background:transparent;box-sizing:border-box}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-c1,html.tq-on #inq-inbox-dialog.idv3 .idv3-c2,html.tq-on #inq-inbox-dialog.idv3 .idv3-c3{background:#fff;border:0;border-radius:20px;overflow:hidden auto}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-c1,html.tq-on #inq-inbox-dialog.idv3 .idv3-c3{padding:20px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-c2{display:flex;flex-direction:column;overflow:hidden}
+/* 왼쪽 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-sec .lb{font-size:13px;color:#5b6b85}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-quote{background:#f7f8fa;border-radius:14px;padding:12px 14px;font-size:14px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-fs{border-top:0;padding-top:4px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-fs.idv3-need{border-top:0;padding-top:4px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-fs>header b{font-size:15px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-row{padding:8px 0;border-bottom:1px solid #f2f4f6}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-row>.k{font-size:13px;color:#5b6b85}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-row>b,html.tq-on #inq-inbox-dialog.idv3 .idv3-val{font-size:14px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-chip{border:0;background:#fdecec;color:#dc2626;padding:6px 12px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-chip.on{background:#0f172a;color:#fff}
+html.tq-on #inq-inbox-dialog.idv3 .idv-editin,html.tq-on #inq-inbox-dialog.idv3 .idv3-in{border:0!important;background:#f2f4f6!important;border-radius:12px!important;padding:10px 12px!important;font-size:14px!important}
+html.tq-on #inq-inbox-dialog.idv3 .idv-editin:focus,html.tq-on #inq-inbox-dialog.idv3 .idv3-in:focus{outline:2px solid #3B6CE4;outline-offset:0;background:#fff!important}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-fill button{background:#3B6CE4;border-radius:10px;padding:8px 14px}
+/* 가운데 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-chead{border-bottom:0;padding:20px 22px 8px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-chead b{font-size:16px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-thread{padding:8px 22px 16px;gap:16px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-ev>div{font-size:14px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-ev .m{font-size:12px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-ev .t.box{background:#f7f8fa;border-radius:12px;padding:10px 12px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-composer{background:#fff;border-top:1px solid #f2f4f6;padding:14px 22px 18px;gap:10px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-tabs button{border:0;background:#f2f4f6;color:#5b6b85;border-radius:999px;padding:7px 14px;font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-tabs button[aria-selected="true"]{background:#0f172a;color:#fff}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-rc{border:0;background:#f2f4f6;color:#334155;padding:7px 13px;font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-rc.on{background:#0f172a;color:#fff}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-foot .idv-save{border-radius:12px;padding:11px 20px;font-size:14px;background:#e2e8f1;color:#94a3b8}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-foot .idv-save.on{background:#3B6CE4;color:#fff}
+/* 오른쪽 */
+html.tq-on #inq-inbox-dialog.idv3 .idv3-now{gap:10px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-now .lb{font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-now .tt{font-size:20px;font-weight:700;letter-spacing:-.01em}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-opener{border:0;border-left:0;background:#f5f8ff;border-radius:14px;padding:12px 14px;font-size:14px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-callrow{gap:8px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-call,html.tq-on #inq-inbox-dialog.idv3 .idv3-callrow .idv3-call{background:#3B6CE4;border-radius:14px;padding:14px 0;font-size:15px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-call:disabled{background:#e2e8f1;color:#94a3b8}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-smsbtn{border:0;background:#f2f4f6;border-radius:14px;padding:14px 0;font-size:15px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-smsbtn[aria-pressed="true"]{border:0;background:#eaf0fd;color:#3B6CE4}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-next{border-top:0;padding-top:6px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-next .lb{font-size:13px;color:#3B6CE4}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-next .two button{border:0;background:#eaf0fd;color:#3B6CE4;border-radius:12px;padding:11px 0;font-size:14px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-next .two button[aria-pressed="true"]{background:#3B6CE4;color:#fff}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-next p{font-size:13px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-bottom{border-top:1px solid #f2f4f6}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-sent{border-radius:12px}
+/* 이 단지 영업 이력 · 근처 현장 = 선 대신 회색 상자 */
+html.tq-on #inq-inbox-dialog.idv3 .isd-hist,html.tq-on #inq-inbox-dialog.idv3 .isd-near{border-top:0}
+html.tq-on #inq-inbox-dialog.idv3 .isd-card{border:0;background:#f7f8fa;border-radius:14px}
+html.tq-on #inq-inbox-dialog.idv3 .isd-map{border:0;background:#f7f8fa;border-radius:14px}
+html.tq-on #inq-inbox-dialog.idv3 .isd-near .seg{border:0;background:#f2f4f6;border-radius:999px}
+@media(max-width:1000px){html.tq-on #inq-inbox-dialog.idv3 .idv3-body{padding:0 10px 10px;gap:10px}html.tq-on #inq-inbox-dialog.idv3 .idv3-c1,html.tq-on #inq-inbox-dialog.idv3 .idv3-c2,html.tq-on #inq-inbox-dialog.idv3 .idv3-c3{overflow:visible}}
