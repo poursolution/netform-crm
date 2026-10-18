@@ -308,6 +308,43 @@ body.exec .cg ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:
 body.exec .cg li{background:#fff;border-radius:14px;padding:1.5vh 1.1vw;font-size:clamp(15px,1.3vw,24px);font-weight:600;color:var(--tk-ink)}
 body.exec .r2{display:flex;flex-direction:column;gap:1.6vh}
 body.exec .r2 .dst{padding:3.4vh 2.2vw}
+:root{--fm-main:#2AC1BC;--fm-bg:#E4F7F6;--fm-warm:#FF6B4A}
+body.exec #card.bm{--tk-blue:var(--fm-main);--tk-blue-bg:var(--fm-bg);background:linear-gradient(180deg,#fff 0%,#fff 72%,#F1FAF9 100%)}
+body.exec #card.bm h2{font-family:'Do Hyeon','Pretendard Variable','Pretendard',sans-serif;font-weight:400;letter-spacing:-.01em}
+body.exec #card.bm.visc h2,body.exec #card.bm.shotc h2{font-size:clamp(32px,3.1vw,58px)}
+body.exec #card.bm .eb{display:inline-flex;align-self:flex-start;background:var(--fm-main);color:#fff;border-radius:999px;padding:.6vh 1.1vw;font-family:'Jua','Pretendard',sans-serif;font-weight:400}
+body.exec #card.bm .vis b,body.exec #card.bm .tag,body.exec #card.bm .spk,body.exec #card.bm .ln h4,body.exec #card.bm .who b{font-family:'Jua','Pretendard',sans-serif;font-weight:400}
+body.exec .vhub{grid-template-columns:1fr 1.15fr 1fr;grid-template-rows:auto auto auto auto;gap:2vh 2vw;align-items:center}
+body.exec .spk{margin:0;background:#fff;border:2px solid var(--tk-line);border-radius:18px;padding:2.2vh 1.2vw;font-size:clamp(17px,1.45vw,27px);text-align:center;color:var(--tk-ink)}
+body.exec .spk.s0,body.exec .spk.s1,body.exec .spk.s2{grid-column:1}
+body.exec .spk.s3,body.exec .spk.s4,body.exec .spk.s5{grid-column:3}
+body.exec .spk.s0,body.exec .spk.s3{grid-row:1}body.exec .spk.s1,body.exec .spk.s4{grid-row:2}body.exec .spk.s2,body.exec .spk.s5{grid-row:3}
+body.exec .core{grid-column:2;grid-row:1/4;justify-self:center;width:clamp(170px,15vw,290px);aspect-ratio:1;border-radius:50%;background:var(--tk-blue);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1vh;box-shadow:0 0 0 16px var(--tk-blue-bg)}
+body.exec .core b{font-size:clamp(22px,2vw,38px);color:#fff}
+body.exec .core span{font-size:clamp(14px,1.1vw,20px);font-weight:600}
+@keyframes vpulse{0%,100%{box-shadow:0 0 0 12px var(--tk-blue-bg)}50%{box-shadow:0 0 0 28px var(--tk-blue-bg)}}
+body.exec .core.mv{animation:vpop .6s cubic-bezier(.2,.8,.2,1) var(--d) both,vpulse 2.4s ease-in-out calc(var(--d) + .6s) infinite}
+body.exec .vhub .vfoot{grid-row:4}
+body.exec .vlane{grid-template-columns:1fr;gap:2vh;align-content:center}
+body.exec .ln{background:var(--tk-gray);border-radius:22px;padding:2.4vh 1.6vw 2.8vh}
+body.exec .ln h4{margin:0 0 2.2vh;font-size:clamp(17px,1.35vw,25px);color:var(--tk-ink)}
+body.exec .trk2 li{text-align:center;gap:.8vh}
+body.exec .trk2 span{font-size:clamp(13px,1.08vw,20px)}
+body.exec .trk2 small{font-size:clamp(11px,.85vw,15px);color:var(--tk-mut);font-weight:600;line-height:1.35}
+body.exec .trk2 li.re small{color:var(--fm-warm)}
+body.exec .trk2 li.re span::after,body.exec .vnote .dot{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--fm-warm);margin:0 4px;vertical-align:middle}
+body.exec .src .dl{display:inline-block;margin-left:.8vw;background:var(--tk-blue-bg);color:var(--tk-blue);border-radius:999px;padding:.3vh .8vw;font-size:.8em;font-weight:700;vertical-align:middle}
+body.exec .chk{display:grid;grid-template-columns:repeat(3,1fr);gap:1vw}
+body.exec .chk p{margin:0;background:var(--tk-blue-bg);border-radius:16px;padding:2.2vh 1.2vw;font-weight:700;font-size:clamp(15px,1.25vw,23px);color:var(--tk-ink)}
+body.exec .chk p::before{content:'✓';color:var(--tk-blue);font-weight:800;margin-right:.6vw}
+body.exec .vme3{grid-template-columns:repeat(3,1fr);gap:1.6vw;align-items:stretch}
+body.exec .me.st3{background:#FFF1EC}
+body.exec .st3 .tag{color:var(--fm-warm)}
+body.exec .vstep.v5{grid-template-columns:1fr 40px 1fr 40px 1fr 40px 1fr 40px 1fr;gap:.8vw}
+body.exec .v5 .arw{width:40px;height:40px}
+body.exec .v5 .sp{min-height:32vh;padding:3vh 1vw}
+body.exec .v5 .sp b{font-size:clamp(17px,1.45vw,27px)}
+body.exec .v5 .sp p{font-size:clamp(13px,1.05vw,19px)}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -1889,16 +1926,18 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
  const Z=o=>Object.assign({motion:'spotlight'},o||{});
  const E_=[
  /* ───── PART 1 문제인식 ───── */
- EX('r01','01 · 나의 업무방식','강점은 살리고, 관리하는 방식은 바꿉니다.','영업 CRM 구축 및 향후 운영계획 | 서비스운영팀 송보람 | 2026.10','업무를 개선하려는 태도는 살리고,<br><em>관리하는 방식은 바꾸고자 했습니다.</em>',{},
-  `이번 CRM을 설명드리기 전에, 먼저 제가 업무를 대하던 방식부터 말씀드리겠습니다.
-제 강점은 반복되거나 불편한 업무가 있으면, 그대로 처리하기보다 더 나은 방법을 찾아 실제 업무에 적용하려는 점이라고 생각합니다.
-다만 영업관리에서는 견적이 왜 아직 안 나왔는지 확인하고, 담당자에게 진행을 요청하는 데 업무가 집중돼 있었습니다. 확인한 내용을 한곳에 남기고, 전체 진행과 다음 조치까지 이어서 관리하는 부분은 보완이 필요했습니다.`,
-  '그래서 앞으로 일을 대하는 방식을 이렇게 정했습니다.'),
- EX('r02','02 · 앞으로의 업무 태도','처리 여부뿐 아니라, 일이 이어지는 방식까지.','PART 1 문제인식 · 업무 태도','앞으로는 처리 여부뿐 아니라,<br><em>일이 이어지는 방식까지 보겠습니다.</em>',{},
-  `그래서 앞으로는 제가 더 자주 확인해야겠다는 방식만으로 접근하지 않으려고 합니다.
-누가 어떤 일을 했는지, 현재 어디까지 진행됐는지, 다음에 무엇을 해야 하는지를 담당자와 함께 볼 수 있어야 한다고 생각했습니다.
-업무를 개선하려는 제 강점은 살리되, 그 개선이 저 혼자 사용하는 방식이 아니라 다른 담당자도 이어서 사용할 수 있는 방식이 되도록 만들고자 했습니다.`,
-  '그 변화가 가장 필요했던 업무가 견적문의 관리였습니다.'),
+ EX('r01','01 · 나의 업무방식','개선하려는 생각을, 기한 안의 실행으로.','영업 CRM · 현장관리 구축 및 향후 운영계획 | 서비스운영팀 송보람 | 2026.10','개선하려는 생각을,<br><em>기한 안의 실행으로 이어가겠습니다.</em>',{},
+  `업무를 개선할 방법을 찾고, 기존 방식에서 불편한 점을 바꿔 보려는 태도는 제 장점이라고 생각합니다.
+하지만 계획을 세운 뒤 실제 실행과 마감까지 이어가는 데는 부족함이 있었습니다.
+마감이 다가오는 상황에서도 무엇을 먼저 끝내야 하는지, 빠진 업무는 없는지, 반복되는 일을 더 효율적으로 처리할 방법은 없는지를 충분히 챙기지 못했습니다.
+이 부분은 제가 바꿔야 할 업무 태도라고 생각합니다.`,
+  '그래서 앞으로 계획을 세우는 방식부터 바꾸겠습니다.'),
+ EX('r02','02 · 앞으로의 업무 태도','계획에 날짜만 적지 않고, 실행과 완료까지.','PART 1 문제인식 · 업무 태도','계획에 날짜만 적지 않고,<br><em>실행과 완료까지 확인하겠습니다.</em>',{},
+  `앞으로는 마감일을 정했다는 것으로 계획이 끝났다고 생각하지 않겠습니다.
+기한 안에 끝내려면 무엇을 먼저 해야 하는지, 어느 시점에 진행을 확인해야 하는지, 무엇을 확인해야 완료라고 볼 수 있는지까지 정하겠습니다.
+진행이 막히면 기한이 지나도록 기다리지 않고, 원인과 필요한 도움을 먼저 공유하겠습니다.
+이번 영업관리와 현장관리 개선도 화면을 만드는 데서 끝내지 않고, 실제 업무에서 이 방식이 지켜지도록 운영하겠습니다.`,
+  '먼저 영업관리입니다. 가장 먼저 바꿔야 했던 업무는 견적문의 관리였습니다.'),
  EX('p02','03 · 문제 1 · 견적문의','견적문의 처리 과정이 문의별로 모이지 않았습니다.','PART 1 문제인식 · 문제 1','견적 진행은 챙기고 있었지만,<br><em>문의별 진행 과정은 모이지 않았습니다.</em>',{},
   `기존에도 견적 진행은 계속 챙기고 있었습니다. 견적서가 작성되지 않으면 이유를 확인하고, 늦어지면 담당자에게 다시 요청했습니다.
 하지만 누가 맡았는지, 고객과 연락했는지, 견적이 왜 아직인지를 그때그때 물어서 확인했고, 그 답이 문의별로 남지 않았습니다.
@@ -1982,12 +2021,54 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 상무님이 작성하신 영업정책과 회의에서 확정된 기준을 바탕으로, 무엇을 어디에 남겨야 하는지 담당자에게 분명하게 안내하겠습니다. 신규 영업사원 교육에도 같은 기준을 쓰겠습니다.
 담당자들이 실제로 기록하고 있는지, 그 기록이 다음 업무로 이어지는지 확인하고, 같은 문제가 반복되면 기준과 교육, 화면 보완으로 연결하겠습니다.
 지금 확인된 보완 과제는 관리소장이 예전에 맡았던 현장까지 이어 보는 것입니다.`,
-  '마지막으로, 처음에 말씀드린 제 업무방식으로 돌아가겠습니다.'),
- EX('q16','16 · 마무리','','마무리','제가 하나씩 확인하고 챙기는 방식에서,<br><em>함께 진행을 보고 끝까지 조치하는 방식으로 바꾸겠습니다.</em>',{},
-  `불편한 업무를 발견하고 개선하려는 강점은 계속 살리겠습니다.
-다만 앞으로는 만드는 데서 끝내지 않고, 담당자들이 실제로 사용할 수 있는지, 기록이 다음 업무로 이어지는지, 같은 문제가 반복되는지까지 확인하겠습니다.
-영업담당자는 자신이 진행한 내용과 다음 업무를 남기고, 저는 전체 흐름에서 멈춘 이유와 필요한 조치를 확인하겠습니다.
-제가 하나씩 확인하고 챙기는 방식에서, 함께 진행을 보고 끝까지 조치하는 방식으로 업무를 바꾸겠습니다. 감사합니다.`),
+  '영업관리 다음은 현장관리입니다.'),
+ /* ───── PART 4 현장관리 (배민풍) ───── */
+ EX('g01','16 · 현장관리 · 문제','현장관리도 사람이 하나씩 챙겨야 이어졌습니다.','PART 4 현장관리','현장관리에서도,<br><em>사람이 하나씩 챙겨야 일이 이어지고 있었습니다.</em>',{},
+  `영업관리에서는 문의별 진행과 다음 업무를 함께 확인하는 구조를 만들었습니다.
+현장관리에서도 비슷한 문제가 있었습니다. 자료를 받고, 취합하고, 문서를 작성하고, 빠진 것은 담당자에게 다시 확인해야 했습니다.
+각 업무를 처리하는 것뿐 아니라, 전체 현장 중 무엇이 빠졌는지 확인하는 과정도 사람의 개별 확인에 의존하고 있었습니다. 어떤 현장이 빠졌는지 맨투맨으로 확인할 수밖에 없는 구조라 위험이 크다고 봤습니다.`,
+  '실제 업무를 보면 이렇습니다.'),
+ EX('g02','17 · 현장관리 · 실제 업무','찾고, 확인하고, 옮겨 적는 일이 반복됐습니다.','PART 4 현장관리 · 실제 업무','찾고, 확인하고, 옮겨 적는 일이<br><em>업무 사이마다 반복됐습니다.</em>',{},
+  `매뉴얼을 보면 해야 할 업무 자체는 정리돼 있습니다. 실행 · 컨설팅 현장은 현장정보 확인부터 소장님 공유, 소통방 개설, 착공서류, 작업사진과 일지 확인, 현장 보고, 준공사진첩, 현장데이터 취합까지 이어집니다. 직영공사는 현장 파악부터 물량 · 색상 · 일정 확인, 자재견적서와 자료 발송, 물품공급계약서, 구매이력 조회, 구매물량 기입까지입니다. 직영공사의 세부 절차는 공종마다 다릅니다.
+하지만 필요한 정보를 여러 자료에서 찾고, 확인한 내용을 다른 문서와 관리표에 다시 옮기는 과정이 있습니다. 준공 때 현장데이터 하나를 정리하려고 컨설팅 내역서, 계약서, 현장관리 토픽, 카톡방, 현장운영파일, 이카운트를 다시 찾아봅니다.
+줄이려는 것은 필요한 검토가 아니라, 같은 정보를 반복해서 취합하고 작성하는 시간입니다.`,
+  '여기서 제 보완점과도 만납니다.'),
+ EX('g03','18 · 현장관리 · 나의 보완점','기준을 아는 것과 기한 안에 실행하는 것은 달랐습니다.','PART 4 현장관리 · 나의 보완점','업무 기준을 아는 것과,<br><em>기한 안에 실행하는 것은 달랐습니다.</em>',{},
+  `현장관리에는 이미 매뉴얼과 기한이 있습니다. 그런데 기준이 있다는 것만으로 누락 없이 실행됐는지까지 확인되는 것은 아닙니다.
+저 역시 계획을 세운 뒤 실행과 마감까지 충분히 챙기지 못한 부분이 있었습니다.
+이런 업무 구조에서 제가 해야 할 일은 더 많은 계획을 만드는 것보다, 이미 정한 업무가 기한 전에 진행되는지 확인하고 막힌 부분을 조정하는 것이라고 생각합니다.`,
+  '그래서 우선 흩어진 업무를 한곳에 모았습니다.'),
+ ES('g04','19 · 현장관리 · 지금까지 한 것','pipe','흩어진 현장업무를, 한곳에서 관리하기 위한 출발점을 만들었습니다.',[
+  T('대시보드',`우선 각자 처리하던 현장업무를 현장 단위로 모아 볼 수 있도록 대시보드로 구성했습니다. 맨 위에 지금 급한 현장이 한 문장으로 나오고, 처리할 일이 착공 임박, 자재출고일 없음, 준공사진첩 기한 지남처럼 이유와 함께 올라옵니다.`,'#pg-today',Z()),
+  T('컨설팅 흐름',`컨설팅 현장은 계약서 · 내역서, 현장정보 확정, 소장 · 착공일, 공유 · 소통방, 착공서류, 착공 확인, 공사진행, 사진첩 단계로 나눠, 어느 현장이 어느 단계에서 멈춰 있는지 봅니다.`,'#pg-today',Z()),
+  T('직영현장',`직영현장은 정보 미확인, 착공 임박, 출고 확인, 계약 발송 · 회수, 견적 · 구매 차이, 준공 임박을 따로 세고, 줄마다 지금 할 일이 하나씩 붙어 있습니다.`,'#pg-today',Z()),
+  T('현황판',`현황판은 매뉴얼 20쪽 현장보고 양식 그대로, 1,000㎡ 이상과 미만으로 나눠 현장투입, 미보고, 준공, 착공예정 현장을 봅니다.
+다만 대시보드화가 정답이라고 생각하지는 않습니다. 화면이 생겨도 제가 계속 자료를 대신 취합하고, 누락을 같은 방식으로 확인한다면 업무방식은 크게 달라지지 않습니다. 이 화면을 바탕으로 실제 처리내용과 남은 업무를 확인하고, 다음 조치까지 이어가도록 운영하는 것이 앞으로의 과제입니다.`,'#pg-today',Z())],
+  '그래서 앞으로는 이렇게 행동하겠습니다.'),
+ EX('g05','20 · 현장관리 · 마감 전에','마감 전에 확인할 시점을 정해 둡니다.','PART 4 현장관리 · 마감 전에','마감이 다가왔을 때가 아니라,<br><em>마감을 지킬 수 있을 때 확인하겠습니다.</em>',{},
+  `예를 들어 착공 준비는 착공일만 확인하는 것이 아니라, 그전에 소통방과 서류 준비가 끝났는지 확인하겠습니다. 매뉴얼에는 소통방은 착공 3일 전까지, 착공서류는 최소 착공 2일 전까지 보내도록 되어 있습니다.
+준공사진첩도 완료된 뒤부터 모으는 것이 아니라, 공사 중부터 필요한 사진이 모이고 있는지 보겠습니다. 작업 완료 3일 이내에 보내야 하기 때문입니다.
+정보가 없거나 협조가 필요한 일은 기한이 지나고 나서 설명하는 것이 아니라, 미리 요청하고 진행이 막혔다는 사실을 공유하겠습니다. 이것은 기한을 지키기 위한 행동계획이고, 지금 모든 현장이 이 기준을 지키고 있다는 보고는 아닙니다.`,
+  '누락과 반복 업무는 이렇게 관리하겠습니다.'),
+ EX('g06','21 · 현장관리 · 누락과 반복','빠진 현장과 남은 업무를 나누고, 다시 쓰는 일을 줄입니다.','PART 4 현장관리 · 누락과 반복','빠진 현장과 남은 업무를 구분하고,<br><em>같은 내용을 다시 쓰는 일을 줄이겠습니다.</em>',{},
+  `누락도 두 가지로 나누어 확인하겠습니다. 관리해야 하는 현장이 목록에서 빠진 경우와, 현장은 등록됐지만 필요한 자료나 후속업무가 빠진 경우입니다.
+대시보드에 등록된 현장만 보고 전체가 빠짐없이 관리된다고 보지 않고, 관리대상 현장과 대조하겠습니다.
+현장별로 담당자와 처리기한, 남은 업무를 확인하고, 요청을 보냈다는 사실이 아니라 실제 결과까지 남기겠습니다.
+또 준공 때 여러 자료에서 다시 모으는 정보는, 앞 단계에서 기록한 내용을 이어서 쓸 수 있도록 반복 입력부터 줄여 나가겠습니다.`,
+  '영업관리와 현장관리 모두, 앞으로 이렇게 실행하겠습니다.'),
+ /* ───── PART 5 실행 약속 ───── */
+ EX('g07','22 · 실행 약속','계획부터 점검까지 다섯 가지를 지킵니다.','PART 5 실행 약속','계획할 때부터 끝날 때까지,<br><em>다섯 가지를 지키겠습니다.</em>',{},
+  `계획을 정할 때는 업무명과 마감일만 적지 않고, 완료할 결과물과 먼저 필요한 자료, 중간 점검 시점을 함께 정하겠습니다.
+업무를 시작할 때는 기한이 가까운 일과, 다른 업무를 하려면 먼저 끝내야 하는 일을 확인하겠습니다.
+진행이 막히면 날짜만 미루지 않고, 막힌 이유와 요청할 사람, 다음 조치를 남기고 기한에 영향이 있으면 미리 공유하겠습니다.
+업무를 마칠 때는 발송 요청과 실제 발송, 서명 요청과 서명 완료처럼 요청과 완료를 구분해 실제 결과를 확인하겠습니다.
+그리고 화면을 몇 개 만들었는지가 아니라, 계획한 일이 실제로 끝났는지, 기한이 지난 일과 빠진 일이 무엇인지, 같은 취합과 입력이 반복되는지를 기존 업무기록으로 점검하겠습니다.`,
+  '마지막으로 처음에 말씀드린 제 보완점으로 돌아가겠습니다.'),
+ EX('q16','23 · 마무리','','마무리','계획을 말하는 데서 끝내지 않고,<br><em>실행과 완료로 보여드리겠습니다.</em>',{},
+  `업무를 개선할 방법을 찾으려는 태도는 계속 살리겠습니다. 하지만 계획을 세우고 화면을 만드는 것만으로 개선이 끝났다고 생각하지 않겠습니다.
+제가 보완해야 할 것은 그 계획을 기한 안에 실행하고, 빠진 업무와 반복되는 비효율을 끝까지 확인하는 것입니다.
+영업관리에서는 문의의 진행과 다음 행동을, 현장관리에서는 준비해야 할 일과 남은 업무를 확인하겠습니다.
+그리고 실제로 처리됐는지, 같은 문제가 반복되고 있지는 않은지까지 확인하면서 제 업무방식을 바꾸겠습니다. 감사합니다.`),
 
  /* ───── 부록(질문이 나오면) ───── */
  ES('x01','부록 · Pipeline 단계 기준','pipe','단계는 고객이 한 행동으로 바뀝니다.',[
@@ -2059,6 +2140,27 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    r02:()=>'<div class="vis vchg"><div class="cg old"><span class="tag">지금까지</span><b>제가 하나씩<br>확인하고 챙기는 관리</b></div>'+ARW+'<div class="cg new"><span class="tag">앞으로</span><b>담당자와 함께<br>진행을 보고 조치하는 관리</b><ul><li>누가 어떤 일을 했는지</li><li>지금 어디까지 왔는지</li><li>다음에 무엇을 할지</li></ul></div></div>',
    p34:()=>'<div class="vis vmrg"><div class="src">'+['영업활동 기록','견적문의','실적'].map(t=>'<p><b>'+t+'</b><i></i><i></i></p>').join('')+'</div>'+ARW+'<div class="r2"><div class="nd"><h4>진척을 보려면</h4><p>기록을 다시 읽고 연결</p></div><div class="dst"><b>보고하려면</b><span>자료를 다시 취합</span></div></div></div>'});
   const VM2={r01:'r01',r02:'r02',p34:'p34',p02:'p02',p03:'p03',p04:'p04',p05:'p05',c12:'c12',c13:'c13',c14:'c14',c15:'c15'};E_.forEach(s=>{if(VM2[s.id])s.vis=VM2[s.id]})}
+
+ /* 현장관리 파트(배민풍: 민트 · 도현체) · 자기성찰 수정 · 실행 약속 (2026-10-18) */
+ {if(!document.getElementById('bmFont')){const l=document.createElement('link');l.id='bmFont';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap';document.head.appendChild(l)}
+  Object.assign(window.EXEC_SHOTS,{
+   'g04:0':{img:'demo-media/shot-f01-0.jpg',W:1920,H:1080,r:{x:251,y:100,w:814,h:826}},
+   'g04:1':{img:'demo-media/shot-f02-0.jpg',W:1920,H:1080,r:{x:251,y:100,w:1640,h:780}},
+   'g04:2':{img:'demo-media/shot-f03-0.jpg',W:1920,H:1080,r:{x:251,y:236,w:1640,h:600}},
+   'g04:3':{img:'demo-media/shot-f04-0.jpg',W:1920,H:1080,r:{x:251,y:270,w:1640,h:560}}});
+  const ARW='<div class="arw"></div>';
+  const TRK=a=>'<ol class="trk trk2">'+a.map(x=>'<li'+(x[2]?' class="re"':'')+'><i></i><span>'+x[0]+'</span>'+(x[1]?'<small>'+x[1]+'</small>':'')+'</li>').join('')+'</ol>';
+  Object.assign(window.EXEC_VIS,{
+   r01:()=>'<div class="vis vme"><div class="me st1"><span class="tag">살릴 장점</span><b>불편을 발견하고<br>개선 방법을 찾는 태도</b><p>기존 방식에서 불편한 점을 바꿔 보려는 것</p></div><div class="me st2"><span class="tag">보완할 점</span><b>계획을 실행과<br>마감까지 이어가는 관리</b><p>먼저 끝낼 일 · 빠진 일 · 반복되는 비효율</p></div></div>',
+   r02:()=>'<div class="vis vchg"><div class="cg old"><span class="tag">지금까지</span><b>마감일만<br>정해 둔 계획</b></div>'+ARW+'<div class="cg new"><span class="tag">앞으로</span><b>실행 · 점검 · 완료까지<br>정해 둔 계획</b><ul><li>먼저 해야 할 일</li><li>중간에 확인할 시점</li><li>완료라고 볼 기준</li><li>막히면 먼저 공유</li></ul></div></div>',
+   g01:()=>'<div class="vis vhub">'+['현장정보 공유','소통방 개설','착공서류 발송','작업사진 · 일지 확인','준공사진첩','현장데이터 취합'].map((t,k)=>'<p class="spk s'+k+'">'+t+'</p>').join('')+'<div class="core"><b>담당자 한 명</b><span>하나씩 확인 · 연락</span></div><p class="vfoot">어떤 현장이 빠졌는지도 사람이 하나씩 대조</p></div>',
+   g02:()=>'<div class="vis vlane"><section class="ln"><h4>실행 · 컨설팅 현장</h4>'+TRK([['정보 확인','현장정보 · 물량 · 사진'],['소장 공유',''],['소통방 개설',''],['착공서류','같은 정보 다시 작성',1],['사진 · 일지',''],['현장 보고','현황판에 기입',1],['준공사진첩',''],['데이터 취합','6곳에서 다시 모음',1]])+'</section><section class="ln"><h4>직영공사</h4>'+TRK([['현장 파악',''],['물량 · 색상 · 일정',''],['대시보드 기입','',1],['견적 · 자료 발송',''],['물품공급계약서','서명 · 보관 확인'],['구매이력 조회',''],['구매물량 기입','',1]])+'</section><p class="vnote"><b class="dot"></b>표시 = 찾고 옮겨 적는 일 · 직영공사 세부 절차는 공종마다 다름</p></div>',
+   g03:()=>'<div class="vis vmrg"><div class="src"><p><b>소통방 개설</b><span class="dl">착공 3일 전</span></p><p><b>착공서류 발송</b><span class="dl">착공 2일 전</span></p><p><b>준공사진첩 발송</b><span class="dl">완료 3일 이내</span></p></div>'+ARW+'<div class="dst"><b>제가 보완할 점</b><span>정한 업무가 기한 전에 진행되는지 확인하고, 막힌 곳을 조정하는 것</span></div></div>',
+   g05:()=>'<div class="vis vcol">'+TRK([['D-3','소통방 개설'],['D-2','착공서류 발송'],['착공일','자재 · 사진 확인'],['공사 중','사진 미리 분류'],['완료 +3일','준공사진첩 발송']])+'<div class="chk">'+['기한 전에 확인할 시점을 먼저 정함','정보가 없으면 지나기 전에 요청','막히면 그 사실을 먼저 공유'].map(t=>'<p>'+t+'</p>').join('')+'</div><p class="vnote">기한은 현장관리 매뉴얼의 내부 업무기준 · 행동계획이며 실적 보고가 아님</p></div>',
+   g06:()=>'<div class="vis vme3"><div class="me st1"><span class="tag">빠진 경우 ①</span><b>현장이<br>목록에 없음</b><p>관리대상 현장과 대조</p></div><div class="me st2"><span class="tag">빠진 경우 ②</span><b>현장은 있는데<br>업무가 빠짐</b><p>담당 · 기한 · 남은 업무 · 실제 결과</p></div><div class="me st3"><span class="tag">반복 줄이기</span><b>앞 단계 기록을<br>다음 단계에서</b><p>준공 때 다시 모으는 정보부터</p></div></div>',
+   g07:()=>'<div class="vis vcol"><div class="vstep v5">'+[['1','계획할 때','결과물 · 필요한 자료 · 중간 점검일'],['2','시작할 때','기한이 가까운 일 · 먼저 끝낼 일'],['3','막혔을 때','이유 · 요청할 사람 · 다음 조치, 미리 공유'],['4','마칠 때','요청과 완료를 구분해 실제 결과 확인'],['5','점검할 때','끝났는지 · 지난 일 · 반복되는 취합']].map(x=>'<div class="sp"><span class="n">'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>').join(ARW)+'</div></div>'});
+  const VM3={g01:1,g02:1,g03:1,g05:1,g06:1,g07:1};E_.forEach(s=>{if(VM3[s.id])s.vis=s.id;if(/^g0[1-6]$/.test(s.id))s.bm=true});
+  {const g=E_.find(s=>s.id==='g04');if(g)g.who='<b>현재 범위</b> 현장 단위로 모아 보기까지 → <em>반복 입력 줄이기 · 누락 대조는 앞으로</em>'}}
  E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
@@ -2463,7 +2565,7 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
     if(one)one.textContent=s.keyMessage||'';if(bD)bD.hidden=!(s.details&&s.details.length);closeDv()};
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
-  c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
+  c.classList.toggle('bm',!!s.bm);c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis]();c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.spk,.core,.chk p,.ln,.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
   c.classList.remove('play');void c.offsetWidth;c.classList.add('play');
   c.classList.toggle('shotc',!!s.shot);if(s.shot){const ti=cur().ti,m=(window.EXEC_SHOTS||{})[s.id+':'+ti];if(m){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});
    const sv=document.createElement('div');sv.className='sv';const cam=document.createElement('div');cam.className='cam';const im=document.createElement('img');im.src=BASE+m.img;im.alt='';const bx=document.createElement('div');bx.className='box';cam.append(im,bx);sv.appendChild(cam);if(s.who){const wl=document.createElement('p');wl.className='who';wl.innerHTML=s.who;c.appendChild(wl)}c.appendChild(sv);
