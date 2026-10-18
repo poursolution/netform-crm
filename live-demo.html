@@ -447,6 +447,83 @@ body.exec .vrole4 .rc:nth-child(2),body.exec .vrole4 .rc:nth-child(3){background
 body.exec .vrole4 ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.8vh}
 body.exec .vrole4 li{font-size:clamp(13px,1.05vw,19px);color:var(--tk-sub);font-weight:600;line-height:1.45}
 body.exec .vrole4 li::before{content:'· ';color:var(--tk-blue)}
+/* 현장 데이터분석 */
+body.exec .vd1{grid-template-columns:1fr 64px 1fr;gap:2vw;align-items:stretch}
+body.exec .vd1 .arw{align-self:center}
+body.exec .vd1 .rc{min-height:0;padding:3vh 1.6vw;gap:1.1vh}
+body.exec .vd1 .rc:nth-child(3){background:var(--tk-blue-bg)}
+body.exec .vd1 ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.9vh;width:100%}
+body.exec .vd1 li{background:#fff;border-radius:12px;padding:1.2vh 1vw;font-size:clamp(14px,1.15vw,21px);font-weight:600;color:var(--tk-ink)}
+body.exec .vd1 small{color:var(--tk-mut);font-size:clamp(12px,.95vw,17px);font-weight:600;line-height:1.45}
+body.exec .vd1 .vnote{grid-column:1/-1;justify-self:center}
+body.exec .v7{grid-template-columns:repeat(4,1fr);gap:1vw;align-content:center}
+body.exec .v7 .rc{min-height:0;padding:2.2vh 1.1vw;gap:.7vh}
+body.exec .v7 .rc b{font-size:clamp(16px,1.3vw,24px)}
+body.exec .v7 .rc p{font-size:clamp(13px,1vw,18px)}
+body.exec .v7 .rc em{font-style:normal;font-size:clamp(12px,.95vw,17px);color:var(--tk-blue);font-weight:700;line-height:1.4}
+body.exec .v7 .ini{width:38px;height:38px;font-size:16px}
+body.exec .v7 .vnote{align-self:center;border-radius:20px;line-height:1.5}
+/* 숫자 훅 장 — 스위스풍 */
+body.exec #card:has(.vsw)>h2{display:none}
+body.exec .vsw{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-areas:"n n" "h c" "p p" "f f";gap:3vh 4vw;align-content:start}
+body.exec .swn{grid-area:n;border-top:7px solid var(--tk-ink);padding-top:2.2vh;display:flex;align-items:flex-end;gap:1vw}
+body.exec .swn b{font-size:clamp(56px,6.2vw,124px);font-weight:900;line-height:.85;letter-spacing:-.05em;color:var(--tk-ink);animation:vin .6s .05s both}
+body.exec .swn span{font-size:clamp(14px,1vw,20px);font-weight:800;color:var(--tk-sub);padding-bottom:.4vh}
+body.exec .swh{grid-area:h;margin:0;font-size:clamp(40px,4.7vw,94px);font-weight:900;line-height:1.14;letter-spacing:-.04em;color:var(--tk-ink)}
+body.exec .swh>span{display:block;overflow:hidden;padding-bottom:.06em}
+body.exec .swh>span>i{display:block;font-style:normal;animation:swup .75s calc(.2s + var(--k)*.13s) cubic-bezier(.2,.8,.2,1) both}
+body.exec .swh em{font-style:normal;color:var(--tk-blue)}
+@keyframes swup{from{transform:translateY(108%)}to{transform:none}}
+body.exec .swc{grid-area:c;margin:0;align-self:end;padding-bottom:1vh}
+body.exec .swl{display:flex;justify-content:space-between;font-weight:800;font-size:clamp(13px,.95vw,18px);color:var(--tk-ink);margin-bottom:1.2vh}
+body.exec .swg{display:grid;grid-template-columns:repeat(var(--c),1fr);gap:clamp(3px,.35vw,7px)}
+body.exec .swg i{aspect-ratio:1;border:2px solid var(--tk-ink);box-sizing:border-box;animation:swsq .3s calc(.5s + var(--i)*14ms) both}
+body.exec .swg i.f{background:var(--tk-blue);border-color:var(--tk-blue);animation:swsq .3s calc(.5s + var(--i)*14ms) both,swfill .5s calc(1.2s + var(--i)*14ms) both}
+body.exec .swg i.w{border-color:#F04452}
+@keyframes swsq{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes swfill{from{background:transparent;border-color:var(--tk-ink)}to{background:var(--tk-blue);border-color:var(--tk-blue)}}
+body.exec .swk{display:flex;flex-wrap:wrap;gap:.6vh 1.4vw;margin-top:1.2vh;font-size:clamp(12px,.85vw,16px);color:var(--tk-sub);font-weight:700}
+body.exec .swk i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px;border:2px solid var(--tk-ink);box-sizing:border-box}
+body.exec .swk i.f{background:var(--tk-blue);border-color:var(--tk-blue)}
+body.exec .swk i.w{border-color:#F04452}
+body.exec .sw3{grid-area:p;display:grid;grid-template-columns:repeat(3,1fr);gap:2.6vw}
+body.exec .sw3>div{border-top:2px solid var(--tk-ink);padding-top:1.6vh;animation:vin .6s calc(1s + var(--d,0s)) both}
+body.exec .sw3>div:nth-child(2){--d:.12s}body.exec .sw3>div:nth-child(3){--d:.24s}
+body.exec .sw3 small{color:var(--tk-blue);font-weight:800;font-size:clamp(12px,.85vw,16px)}
+body.exec .sw3 b{display:block;font-size:clamp(17px,1.45vw,28px);margin:.6vh 0 .4vh;color:var(--tk-ink)}
+body.exec .sw3 p{margin:0;color:var(--tk-sub);font-size:clamp(13px,1vw,19px);font-weight:600}
+body.exec .swf{grid-area:f;margin:0;font-size:clamp(11px,.8vw,15px);color:var(--tk-mut);font-weight:600}
+/* 3D */
+body.exec .v3d{position:relative;width:100%;height:42vh}
+body.exec .v3d[data-k=d03]{height:46vh}
+body.exec .v3d .fb{position:absolute;inset:0;display:flex;align-items:center}
+body.exec .v3d .fb>*{width:100%}
+body.exec .v3d.on .fb{display:none}
+body.exec .v3d .v3c{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+body.exec .v3l{position:absolute;left:0;top:0;text-align:center;pointer-events:none;white-space:nowrap;will-change:transform,opacity;opacity:0}
+body.exec .v3l b{display:block;font-size:clamp(14px,1.12vw,22px);color:var(--tk-ink);font-weight:800}
+body.exec .v3l small{display:block;font-size:clamp(12px,.85vw,16px);color:var(--tk-sub);font-weight:600;margin-top:.3vh}
+body.exec .v3l.gap span{display:inline-block;background:var(--tk-ink);color:#fff;border-radius:999px;padding:.6vh 1vw;font-weight:800;font-size:clamp(12px,.9vw,17px)}
+body.exec .v3l.ring em{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--tk-gray);color:var(--tk-sub);align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:13px;margin-bottom:.4vh;transition:background .3s,color .3s}
+body.exec .v3l.ring.hi em{background:var(--tk-blue);color:#fff}
+body.exec .v3l.ring.hi b{color:var(--tk-blue)}
+body.exec #card:has(.bgfx){overflow:hidden}
+body.exec #card:has(.bgfx)>:not(.vis){position:relative;z-index:1}
+body.exec .v3d.bgfx{position:absolute;inset:0;height:auto;width:auto;margin:0;z-index:0}
+body.exec .v3l.zone span{display:inline-block;color:#fff;border-radius:999px;padding:.6vh 1.1vw;font-weight:900;font-size:clamp(14px,1.1vw,21px);letter-spacing:-.01em}
+body.exec .v3l.zone.b span{background:#2F6FED}
+body.exec .v3l.zone.o span{background:#FF6F0F}
+body.exec .v3l.card{width:10.2vw;white-space:normal;line-height:1.3}
+body.exec .v3l.card em{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:12px;color:#fff;margin-bottom:.6vh}
+body.exec .v3l.card.b em{background:#2F6FED}body.exec .v3l.card.o em{background:#FF6F0F}
+body.exec .v3l.card b{font-size:clamp(13px,1vw,19px);letter-spacing:-.02em}
+body.exec .v3l.card small{font-size:clamp(11px,.78vw,15px)}
+body.exec .v3l.card.ring em{background:var(--tk-gray);color:var(--tk-sub)}
+body.exec .v3l.card.ring.hi em{background:var(--tk-blue);color:#fff}
+body.exec .vstp .sf{display:flex;flex-direction:column;align-items:center}
+body.exec .vstp .sf .vimg{margin:0 auto;max-width:100%;border-radius:14px;box-shadow:0 0 0 1px var(--tk-line),0 18px 40px rgba(25,31,40,.10)}
+body.exec .vstp .sf figcaption{align-self:stretch}
+body.exec .vstp .sf .vimg{height:60vh}
 body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
@@ -2166,7 +2243,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 업무를 마칠 때는 발송 요청과 실제 발송, 서명 요청과 서명 완료처럼 요청과 완료를 구분해 실제 결과를 확인하겠습니다.
 그리고 화면을 몇 개 만들었는지가 아니라, 계획한 일이 실제로 끝났는지, 기한이 지난 일과 빠진 일이 무엇인지, 같은 취합과 입력이 반복되는지를 기존 업무기록으로 점검하겠습니다.`,
   '마지막으로 처음에 말씀드린 제 보완점으로 돌아가겠습니다.'),
- EX('q16','23 · 마무리','','마무리','넘길 업무는 기준으로 넘기고,<br><em>영업과 현장 사이에서 끊긴 일은 끝까지 확인하겠습니다.</em>',{},
+ EX('q16','23 · 마무리','','마무리','영업에서 시작한 일이,<br><em>현장에서 끝날 때까지 확인하겠습니다.</em>',{},
   `제 보완점은 계획을 세운 뒤 실행과 마감까지 충분히 이어가지 못했던 점입니다.
 그래서 앞으로는 계획한 일을 언제 점검하고, 무엇을 확인해야 완료로 볼 수 있는지까지 정하겠습니다.
 영업의 일상운영은 희선님이 실제로 이어갈 수 있도록 업무 기준과 진행 중인 건을 함께 인계하겠습니다.
@@ -2178,13 +2255,13 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   T('단계',`Pipeline 단계는 담당자의 감이 아니라 고객이 한 행동으로 바뀝니다. 자료 발송완료는 실제 발송일과 자료가 있을 때, 경쟁 · 입찰은 경쟁사나 결정 일정이 확인됐을 때, 계약 · 시공은 계약일이나 착공정보가 있을 때입니다.`,'#pipeline-stage-root .ps-kanban',Z({part:[0,1,0,.1],click:'body:has(#pipeline-list-v2) .mi[data-p="pipe"]'}))]),
  EX('x02','부록 · 수주 이후','수주는 운영의 시작입니다.','부록','수주 이후 연결',{},
   `수주 뒤에는 계약일과 금액을 남기고 착공, 준공, 사후관리, 추가 영업으로 이어집니다. 기술자문은 낙찰금액 기준으로 따로 집계합니다.`)];
- window.EXEC_SHOTS={"a05:0":{"img":"demo-media/shot-a05-0.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":235,"w":1241,"h":190}},"a05:1":{"img":"demo-media/shot-a05-1.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":480,"w":1250,"h":598}},"a06:0":{"img":"demo-media/shot-a06-0.jpg","W":1920,"H":1302,"r":{"x":240,"y":140,"w":1650,"h":640}},"a07:0":{"img":"demo-media/shot-a07-0.jpg","W":1920,"H":1302,"r":{"x":1440,"y":192,"w":322,"h":250}},"a08:0":{"img":"demo-media/shot-a08-0.jpg","W":1920,"H":1302,"r":{"x":442,"y":192,"w":994,"h":826}},"a09:0":{"img":"demo-media/shot-a09-0.jpg","W":1920,"H":1302,"r":{"x":252,"y":140,"w":1640,"h":620}},"x01:0":{"img":"demo-media/shot-x01-0.jpg","W":1920,"H":1302,"r":{"x":280,"y":157.6875,"w":1588,"h":82.4734375}}};
+ window.EXEC_SHOTS={"a05:0":{"img":"demo-media/shot-a05-0.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":235,"w":1241,"h":190}},"a05:1":{"img":"demo-media/shot-a05-1.jpg?v=toss","W":1920,"H":1078,"r":{"x":276,"y":480,"w":1250,"h":598}},"a06:0":{"img":"demo-media/shot-a06-0.jpg?v=m","W":1920,"H":1302,"r":{"x":240,"y":140,"w":1650,"h":640}},"a07:0":{"img":"demo-media/shot-a07-0.jpg?v=m","W":1920,"H":1302,"r":{"x":1440,"y":192,"w":322,"h":250}},"a08:0":{"img":"demo-media/shot-a08-0.jpg?v=m","W":1920,"H":1302,"r":{"x":442,"y":192,"w":994,"h":826}},"a09:0":{"img":"demo-media/shot-a09-0.jpg","W":1920,"H":1302,"r":{"x":252,"y":140,"w":1640,"h":620}},"x01:0":{"img":"demo-media/shot-x01-0.jpg","W":1920,"H":1302,"r":{"x":280,"y":157.6875,"w":1588,"h":82.4734375}}};
  {let n=0;E_.forEach(s=>{if(!/^x/.test(s.id))s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}
  const WHO_LINE={"a05":"<b>바뀌는 일</b> 담당자 — 접수 뒤 바로 이어서 응대 · 관리자 — 빠진 곳만 확인","a06":"<b>바뀌는 일</b> 관리자 — 담당자마다 진행을 묻던 일 → 끊긴 건만 보고 필요한 지원을 정함","a07":"<b>바뀌는 일</b> 영업담당자 — 지난 기록 · 약속 · 이번에 확인할 것을 한 화면에서","a08":"<b>바뀌는 일</b> 인계받는 사람 — 선배에게 다시 묻기 전에 이전 약속 · 판단 근거부터 확인","a09":"<b>바뀌는 일</b> 주간 회의 — 지난주 미처리 → 이번 주 조치 → 결과 순서로 봄"};E_.forEach(s=>{if(WHO_LINE[s.id])s.who=WHO_LINE[s.id]});
 
  Object.assign(window.EXEC_SHOTS,{'k01:0':{img:'demo-media/shot-k01-0.jpg',W:1920,H:1080},'k02:0':{img:'demo-media/shot-k02-0.jpg',W:1920,H:1080},'k03:0':{img:'demo-media/shot-k03-0.jpg',W:1920,H:1080}});
  {const VI=(k,r)=>'<div class="vimg" data-k="'+k+'" data-r="'+[r.x,r.y,r.w,r.h].join(',')+'"></div>';
-  window.EXEC_VFIT=root=>(root||document).querySelectorAll('#card .vimg[data-k]').forEach(el=>{const m=window.EXEC_SHOTS[el.dataset.k];const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
+  window.EXEC_VFIT=root=>(root||document).querySelectorAll('#card .vimg[data-k]').forEach(el=>{const m=window.EXEC_SHOTS[el.dataset.k];if(el.closest('.sf')&&m){const q=el.dataset.r.split(',').map(Number),ra=q[2]/q[3],mw=el.parentElement.clientWidth,mh=el.clientHeight;if(mw&&mh){if(ra<mw/mh)el.style.width=Math.round(mh*ra)+'px';else el.style.height=Math.round(mw/ra)+'px'}}const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
    let [x,y,w,hh]=el.dataset.r.split(',').map(Number);if(w/hh<asp){const nw=hh*asp;x-=(nw-w)/2;w=nw}else{const nh=w/asp;y-=(nh-hh)/2;hh=nh}
    if(w>m.W){w=m.W;hh=w/asp}if(hh>m.H){hh=m.H;w=hh*asp}x=Math.max(0,Math.min(m.W-w,x));y=Math.max(0,Math.min(m.H-hh,y));
    const s=W0/w;el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=(m.W*s).toFixed(1)+'px '+(m.H*s).toFixed(1)+'px';el.style.backgroundPosition=(-x*s).toFixed(1)+'px '+(-y*s).toFixed(1)+'px'});
@@ -2212,15 +2289,15 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   'b06:0':{img:'demo-media/shot-a05-1.jpg?v=toss',W:1920,H:1078,r:{x:276,y:485,w:1255,h:593}},
   'b06:1':{img:'demo-media/shot-a05-1.jpg?v=toss',W:1920,H:1078,r:{x:1552,y:235,w:320,h:560}},
   'b07:0':{img:'demo-media/shot-x01-0.jpg',W:1920,H:1302,r:{x:278,y:158,w:1584,h:475}},
-  'b07:1':{img:'demo-media/shot-a07-0.jpg',W:1920,H:1302,r:{x:163,y:139,w:1598,h:533}},
-  'b08:0':{img:'demo-media/shot-a06-0.jpg',W:1920,H:1302,r:{x:251,y:158,w:1645,h:168}},
-  'b08:1':{img:'demo-media/shot-a06-0.jpg',W:1920,H:1302,r:{x:251,y:355,w:1342,h:403}},
-  'b08:2':{img:'demo-media/shot-a06-0.jpg',W:1920,H:1302,r:{x:1618,y:355,w:278,h:500}},
-  'b09:0':{img:'demo-media/shot-a07-0.jpg',W:1920,H:1302,r:{x:461,y:1118,w:958,h:160}},
-  'b09:1':{img:'demo-media/shot-a07-0.jpg',W:1920,H:1302,r:{x:1440,y:192,w:336,h:259}},
-  'b09:2':{img:'demo-media/shot-a06-0.jpg',W:1920,H:1302,r:{x:251,y:778,w:1328,h:509}},
-  'b10:0':{img:'demo-media/shot-a07-0.jpg',W:1920,H:1302,r:{x:154,y:197,w:269,h:490}},
-  'b10:1':{img:'demo-media/shot-a07-0.jpg',W:1920,H:1302,r:{x:461,y:202,w:958,h:816}},
+  'b07:1':{img:'demo-media/shot-a07-0.jpg?v=m',W:1920,H:1302,r:{x:163,y:139,w:1598,h:533}},
+  'b08:0':{img:'demo-media/shot-a06-0.jpg?v=m',W:1920,H:1302,r:{x:251,y:158,w:1645,h:168}},
+  'b08:1':{img:'demo-media/shot-a06-0.jpg?v=m',W:1920,H:1302,r:{x:251,y:355,w:1342,h:403}},
+  'b08:2':{img:'demo-media/shot-a06-0.jpg?v=m',W:1920,H:1302,r:{x:1618,y:355,w:278,h:500}},
+  'b09:0':{img:'demo-media/shot-a07-0.jpg?v=m',W:1920,H:1302,r:{x:461,y:1118,w:958,h:160}},
+  'b09:1':{img:'demo-media/shot-a07-0.jpg?v=m',W:1920,H:1302,r:{x:1440,y:192,w:336,h:259}},
+  'b09:2':{img:'demo-media/shot-a06-0.jpg?v=m',W:1920,H:1302,r:{x:251,y:778,w:1328,h:509}},
+  'b10:0':{img:'demo-media/shot-a07-0.jpg?v=m',W:1920,H:1302,r:{x:154,y:197,w:269,h:490}},
+  'b10:1':{img:'demo-media/shot-a07-0.jpg?v=m',W:1920,H:1302,r:{x:461,y:202,w:958,h:816}},
   'b11:0':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:182,w:1328,h:341}},
   'b11:1':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:677,w:1328,h:312}},
   'b11:2':{img:'demo-media/shot-a09-0.jpg',W:1920,H:1302,r:{x:251,y:1006,w:1328,h:296}}});
@@ -2355,7 +2432,262 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   window.__STPIDS=Object.keys(STP);
   const TR={r02:'그래서 이번 발표를 한 문장으로 정리하면 이렇습니다.',b10:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',g06:'이제 업무를 어떻게 나눠 이어갈지 말씀드리겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});}
 
- E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});
+ /* ───── 2026-10-18 보강 2: 성과분석 · 컨트롤타워 · 고객자산 독립 장면 + 현장 데이터분석 향후계획 ───── */
+ {const SH={};['e1','e2','e3','e3b','e4','e5'].forEach(k=>{SH[k+':0']={img:'demo-media/shot-'+k+'-0.jpg',W:1920,H:1302}});Object.assign(window.EXEC_SHOTS,SH);
+  const STP=window.EXEC_STP;
+  const NEW={
+   b21:{eb:'PART 2 개선 4 · 성과분석 — 결과에서 다음 행동으로',items:[
+    {t:'결과를 둘로 나눠 봄',hook:'얼마를 수주했는지만 보면,<br><em>다음에 무엇을 바꿔야 할지는 보이지 않습니다.</em>',why:'수주실적(낙찰금액)과 회사에 실제로 들어오는 매출을 나눠 봅니다. 직접 수주와 협약 · 기술자문 건은 들어오는 돈의 구조가 다르기 때문입니다.',k:'e2:0',r:'257,350,1000,392',
+     say:'성과분석은 매출 그래프나 담당자 순위를 보여 주려고 만든 화면이 아닙니다. 올해 수주실적은 30.2억이지만 그중 회사에 들어오는 돈은 23.4억입니다. 협약 · 기술자문 건은 시공사가 낙찰받고 우리는 기술자문료를 받는 구조라, 이 둘을 섞으면 실적을 잘못 읽게 됩니다.'},
+    {t:'사람보다 멈춘 구간',hook:'실적이 낮은 사람을 찾는 화면이 아니라,<br><em>어디서 멈췄는지 찾는 화면입니다.</em>',why:'담당자마다 수주 · 메이드율 옆에 진행 건 · 손볼 건과 멈춘 이유가 한 줄로 붙습니다. 평가 칸과 참고 칸을 나누고, 결과 확정 5건 미만은 판단하지 않습니다.',k:'e1:0',r:'257,700,1300,500',
+     say:'오늘 발표에서는 이름을 가렸습니다. 이 표에서 보려는 것은 누가 낮은지가 아니라, 기한 지난 건이 어느 단계에 몰렸는지, 연락이 언제부터 끊겼는지, 어느 단계에서 정체됐는지입니다. 실적이 낮다는 이유만으로 노력 부족이라고 보지 않고, 활동이 많다는 이유만으로 잘되고 있다고 보지도 않습니다.'},
+    {t:'왜 졌는지',hook:'결과는 있는데,<br><em>이유가 없습니다.</em>',why:'실주 사유가 남지 않으면 다음 제안에서 무엇을 바꿀지 정할 수 없습니다. 그래서 실주 사유 기록률을 따로 보고, 실주 처리 때 사유를 남기는 기준을 정착시키겠습니다.',k:'e1:0',r:'1018,219,737,390',
+     say:'화면 위쪽에 아직 모르는 것으로 왜 졌는지가 올라와 있습니다. 결과는 있는데 이유가 없는 상태입니다. 이 숫자는 누구를 탓하려는 것이 아니라, 다음 영업에서 무엇을 바꿀지 정하려면 무엇부터 남겨야 하는지 보여 주는 숫자입니다.'},
+    {t:'아직 판단하지 않는 것',hook:'기록이 쌓이기 전에는,<br><em>원인을 단정하지 않습니다.</em>',why:'견적 후 첫 후속 → 수주, 현장 방문 → 견적처럼 행동과 결과를 잇는 분석은 기록이 10건 쌓여야 보이게 했습니다. 수주 · 실주 현장의 행동 비교도 지금은 대부분 기록 부족입니다.',k:'e2:0',r:'286,869,711,322',
+     say:'기록이 부족한 칸은 기록 부족이라고 그대로 보여 줍니다. 몇 건 안 되는 자료로 원인을 단정하면 잘못된 영업방식을 기준으로 삼게 되기 때문입니다.'},
+    {t:'숫자 → 건 → 기록 → 행동',hook:'숫자를 보고하는 데서 끝내지 않고,<br><em>필요한 지원과 개선으로 연결하겠습니다.</em>',why:'카드마다 해당 영업건 목록으로 들어가고, 영업건을 열면 실제 응대 기록이 나옵니다. 인계 뒤 희선님은 매주 멈춘 구간을 주간 보고에 올리고, 저는 반복되는 구간의 영업방식 보완을 맡겠습니다.',k:'e1:0',r:'257,219,1497,415',
+     say:'앞으로는 숫자를 보고하는 데서 끝내지 않고, 어떤 구간에서 진행이 막히는지 확인하고 필요한 지원과 개선사항으로 연결하겠습니다.'}]},
+   b22:{eb:'PART 2 개선 5 · 컨트롤타워 — 요청 뒤 결과까지',items:[
+    {t:'지금 막힌 곳',hook:'독촉을 보냈습니다.<br><em>그래서 일이 끝났습니까?</em>',why:'오늘 업무가 담당자가 실행할 일을 보는 화면이라면, 컨트롤타워는 관리자가 개입하고 결과를 점검하는 화면입니다. 기한 지남 · 담당 미지정 · 다음 행동 없음을 먼저 모읍니다.',k:'e5:0',r:'257,216,532,280',
+     say:'이 화면은 제 보완점과 가장 직접 연결됩니다. 저는 요청을 보내고 나면 일이 넘어갔다고 생각한 적이 있었습니다. 그런데 요청을 보낸 것과 일이 끝난 것은 다릅니다.'},
+    {t:'어디서 끊겼나',hook:'누가 늦었는지가 아니라,<br><em>어디서 끊겼는지를 봅니다.</em>',why:'담당자 × 문제 표에서 미배정 · 첫 연락 지연 · 기한 지남 · 연락 7일+ · 다음 할 일 없음 · 장기 정체를 칸으로 나눕니다. 연락 기록이 없다는 것만으로 연락하지 않았다고 보지 않고, 이관 기록 확인 건은 따로 둡니다.',k:'e5:0',r:'614,645,957,507'},
+    {t:'열어서 확인 · 할 일 지정',hook:'칸을 누르면 그 건들이 나오고,<br><em>열어서 기록부터 확인합니다.</em>',why:'칸을 누르면 해당 건 목록이 옆에 나옵니다. 기록을 확인한 뒤 [할 일 지정]을 하면 그 현장의 다음 업무로 등록돼 담당자 오늘 업무에 올라갑니다. 지정은 시작이지 완료가 아닙니다.',k:'e5:0',r:'1594,645,296,497'},
+    {t:'요청 단계 추적',hook:'요청은 보냈습니다.<br><em>담당자는 확인했습니까?</em>',why:'보낸 요청은 요청 → 담당 확인 → 실행 → 결과 기록 → 완료로 따라갑니다. 상세 창을 열어 본 것, 요청을 보낸 것, 실제로 처리된 것을 나눠 봅니다.',k:'a06:0',r:'1300,370,600,290'},
+    {t:'처리 기록 확인',hook:'담당자가 남긴 기록으로,<br><em>실제 처리를 확인합니다.</em>',why:'지정한 건은 영업건 상세의 응대 이력과 지금 처리 카드에서 확인합니다. 통화 시도와 실제 연결, 다음 일정이 남았는지 봅니다.',k:'a07:0',r:'461,192,1315,650'},
+    {t:'안 됐으면 다음 조치',hook:'제가 요청했다는 사실로 끝내지 않고,<br><em>언제 무엇을 확인해야 마무리인지까지 관리하겠습니다.</em>',why:'답 기다리는 요청에서 담당 확인 전 · 실행 중 · 기한 지남을 나눠 보고, 기한이 지나면 재확인 · 담당 변경 같은 다음 조치를 정합니다. 인계 뒤 일상 미처리 확인은 희선님이, 판단이 필요한 예외와 반복 문제는 제가 봅니다.',k:'e5:0',r:'1357,216,532,280',
+     say:'세부 권한과 전환일은 아직 확정 전이라 운영 방향으로 말씀드립니다. 독촉 버튼을 만든 것이 아니라, 관리자가 개입한 뒤에도 일이 이어지는 구조를 만들려고 했습니다.'}]},
+   b23:{eb:'PART 2 개선 8 · 고객자산 — 이번 건이 아니라 이어온 관계',items:[
+    {t:'파이프라인과 다른 질문',hook:'담당자는 바뀔 수 있습니다.<br><em>고객과 나눈 이야기까지 사라지면 안 됩니다.</em>',why:'파이프라인은 이번 영업건의 진행을 봅니다. 고객자산은 같은 단지와 이어온 관계를 봅니다 — 누적 수주, 지금 진행 중인 금액, 관계 상태, 마지막 연락.',k:'e3:0',r:'252,150,1640,650',
+     say:'고객자산은 연락처 목록으로 소개하기에는 역할이 큽니다. 한 영업건의 현재 단계가 아니라, 같은 단지와 이어온 관계를 보는 화면입니다.'},
+    {t:'확인할 이유',hook:'연락할 단지를 고를 때,<br><em>왜 지금인지가 먼저 보여야 합니다.</em>',why:'재접촉 필요 · 반복 실주 · 핵심 인물 미확인 · 주소 미입력처럼 확인할 이유로 묶습니다. 관계 분류는 기록을 검토할 출발점이지, 고객의 실제 의사를 확정한 것이 아닙니다.',k:'e3b:0',r:'252,690,900,440'},
+    {t:'단지를 열면',hook:'같은 단지에서,<br><em>이전에 어떤 이야기가 오갔습니까?</em>',why:'첫 관계부터 영업기회 · 실주 · 진행이 한 줄로 이어지고, 관계 타임라인에 문의 · 영업 · 메모가 시간순으로 쌓입니다. 다른 해 · 다른 공종의 영업은 같은 단지라도 별개 공사로 나눠 둡니다.',k:'e4:0',r:'158,38,1240,620',
+     say:'오늘 화면에서는 메모 원문을 가렸습니다. 실제로는 이 자리에 이전 담당자가 남긴 상담 내용이 그대로 남아 있습니다.'},
+    {t:'다음 상담에 쓰기',hook:'다음 상담 전에,<br><em>지난번에 무엇이 남았는지부터 봅니다.</em>',why:'누적 거래 · 지금 진행 중인 영업 · 공종 이력 · 이 단지에서 배울 것이 함께 붙습니다. 실주 사유가 없으면, 다음 제안 전에 그 이유부터 확인하라고 알려 줍니다.',k:'e4:0',r:'830,380,940,470'},
+    {t:'인계할 때',hook:'연락처만 넘기지 않고,<br><em>남은 약속과 다음 확인일까지 넘기겠습니다.</em>',why:'희선님께 인계할 때 단지마다 현재 관계, 최근 대화, 남은 약속, 다음 확인일, 관련 자료를 같이 넘기겠습니다. 재접촉이 필요하다고 바로 일괄 홍보로 연결하지 않고, 기록을 보고 판단합니다.',k:'e4:0',r:'158,150,900,450',
+     say:'영업담당자, 현장소장, 관리소장은 역할이 다르므로 섞지 않고, 이번 공사가 끝나거나 담당자가 바뀌어도 이전 요구사항과 관계를 처음부터 다시 확인하지 않게 하려는 것입니다.'}]}};
+  Object.assign(STP,NEW);
+  STP.b08.items=STP.b08.items.filter(x=>x.t!=='컨트롤타워');
+  Object.keys(NEW).forEach(id=>{window.EXEC_VIS['stp:'+id]=ti=>{const S=STP[id],it=S.items[ti]||S.items[0],hh=document.querySelector('#card h2');if(hh)hh.innerHTML=it.hook;
+   return '<div class="vis vstp'+(S.many?' many':'')+'"><ol class="sl">'+S.items.map((x,k)=>'<li class="'+(k===ti?'on':k<ti?'past':'')+'" data-stp="'+id+':'+k+'"><span class="n">'+(k+1)+'</span><div><b>'+x.t+'</b>'+(k===ti?'<p>'+x.why+'</p>':'')+'</div></li>').join('')+'</ol><figure class="vf sf"><div class="vimg" data-k="'+it.k+'" data-r="'+it.r+'"></div><figcaption><b>'+(ti+1)+' / '+S.items.length+'</b><span>'+it.t+'</span></figcaption></figure></div>'}});
+  const strip=s=>s.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const mk=(id,title,km)=>ES(id,title,'pipe',km,STP[id].items.map(x=>T(x.t,strip(x.hook)+' '+x.why+(x.say?'\n'+x.say:''),'#card',Z())));
+  const rep=(id,obj)=>{const i=E_.findIndex(s=>s.id===id);if(i>=0)E_.splice(i,1,obj);else E_.push(obj)};
+  {const o=E_.find(s=>s.id==='b08');const nb=mk('b08',o.title,o.keyMessage);rep('b08',nb)}
+  E_.push(mk('b21','00 · 개선 4 · 성과분석','얼마를 수주했는지만 보면, 다음에 무엇을 바꿔야 할지는 보이지 않습니다.'));
+  E_.push(mk('b22','00 · 개선 5 · 컨트롤타워','독촉을 보냈습니다. 그래서 일이 끝났습니까?'));
+  E_.push(mk('b23','00 · 개선 8 · 고객자산','담당자는 바뀔 수 있습니다. 고객과 나눈 이야기까지 사라지면 안 됩니다.'));
+  window.__STPIDS.push('b21','b22','b23');
+  /* 현장 데이터분석 — 향후계획(구현된 분석 기능 아님) */
+  E_.push(EX('d01','00 · 현장 데이터분석 · 문제','끝난 현장의 기록을 다음 업무의 기준으로 남깁니다.','PART 4 현장관리 · 향후 데이터분석','공사는 끝났는데,<br><em>다음 견적은 또 처음부터 시작해야 할까요?</em>',{},
+   `지금까지는 현장마다 필요한 자료를 모으고 업무를 마무리하는 데 많은 시간이 들어갔습니다.
+매뉴얼에는 이미 준공 때 공종, 면적, 실행가액, 노임, 공사일수, 품수, 장비대, 폐기물 비용, 자재 사용량을 여러 자료에서 취합하는 업무가 있습니다. 그런데 이 자료가 다음 견적이나 다음 현장 준비에 다시 쓰이는 구조는 아직 없습니다.
+그래서 새 데이터를 더 모으겠다는 것이 아니라, 이미 취합하는 자료를 어떤 판단에 쓰고, 취합하는 방식은 어떻게 줄일지를 말씀드리겠습니다.
+앞으로는 그 기록을 보관하는 데서 끝내지 않겠습니다. 어느 단계에서 준비가 늦어졌는지, 예상한 물량과 비용이 실제와 왜 달랐는지, 어떤 자료가 반복해서 빠지는지를 확인하겠습니다.
+확인한 내용은 다음 견적과 예정공정표, 소장님께 전달할 자료, 자재 발주, 준공 준비 기준을 보완하는 데 쓰겠습니다. 이 부분은 지금 구현된 기능이 아니라 앞으로의 운영계획입니다.`,
+   '구체적으로는 일곱 가지를 보겠습니다.'));
+  E_.push(EX('d02','00 · 현장 데이터분석 · 일곱 가지','분석 결과마다 바꿀 업무가 정해져 있어야 합니다.','PART 4 현장관리 · 향후 데이터분석','끝난 현장의 기록을,<br><em>다음 견적과 현장운영의 기준으로 남기겠습니다.</em>',{},
+   `첫째, 누락과 회신입니다. 요청일, 회신일, 검토완료일, 재요청 사유를 나눠, 어느 자료와 단계에서 다시 묻게 되는지 보고 요청 시점과 준비자료 목록을 바꾸겠습니다.
+둘째, 공사범위와 도면 전달입니다. 최초 범위와 변경 범위, 소장님께 보낸 자료의 버전과 전달일을 나눕니다. 브이월드 자료는 본사와 소장님이 같은 동과 부위를 보기 위한 확인자료이고, 확정 도면 · 내역서와는 구분합니다.
+셋째, 착공 준비와 일정입니다. 최초 예정일, 변경 예정일, 실제 착공 · 완료일을 나누고, 자료 부족 · 자재 일정 · 기상 · 고객 요청 · 범위 변경을 같은 지연 사유로 묶지 않겠습니다.
+넷째, 자재와 물량입니다. 예상 필요량, 구매량, 반품량, 현장 잔여량을 나눕니다. 구매량이 많다는 것만으로 과다 사용이라고 보지 않고, 규격 · 단위 · 할증 · 도포횟수 · 추가공사를 확인한 뒤 산출 가정과 발주 점검을 보완하겠습니다.
+다섯째, 작업일수와 인력입니다. 같은 공종과 규모에서 왜 달라지는지를 보되, 소장님이나 업체를 순위로 매기지 않겠습니다.
+여섯째, 계획 대비 실제 비용입니다. 범위가 바뀐 비용과, 같은 범위에서 생긴 수량 · 단가 차이를 나눕니다. 낙찰금액, 컨설팅 계약금액, 자재판매금액, 회사 수익은 섞지 않고, 자료가 부족한 상태에서 이익률을 만들지 않겠습니다.
+일곱째, 준공자료와 후속 문제입니다. 어떤 동과 공정의 사진이 자주 빠지는지, 사진첩 발송이 어디서 늦어지는지 보고 촬영 · 검토 · 점검 기준에 반영하겠습니다. 하자 접수만으로 특정 공법이나 담당자의 책임을 단정하지 않겠습니다.`,
+   '이 분석은 이 순서로 진행하겠습니다.'));
+  E_.push(EX('d03','00 · 현장 데이터분석 · 실행 순서','기록 → 비교 → 이유 확인 → 기준 보완 → 다음 현장에서 재확인','PART 4 현장관리 · 향후 데이터분석','그래프를 하나 더 만드는 일이 아니라,<br><em>다음 현장의 기준을 바꾸는 일입니다.</em>',{},
+   `먼저 기록을 남기는 시점을 앞당기겠습니다. 준공 후에 모든 자료를 다시 찾는 것이 아니라, 자료 전달 · 작업 · 변경 · 완료 시점에 확인한 내용을 남기고, 최초 계획과 변경된 계획을 구분하겠습니다.
+그다음 비슷한 현장끼리 비교하겠습니다. 직영 · 컨설팅 같은 업무유형, 공종, 규모, 현장조건이 다른 건을 한꺼번에 비교하지 않고, 차이가 크면 먼저 자료와 담당자 확인으로 이유를 보겠습니다.
+확인된 내용은 견적 확인항목, 예정공정표, 소장 전달자료, 발주 점검, 사진 · 준공 준비 기준에 반영하겠습니다.
+마지막으로 보완한 기준을 적용한 다음 현장에서 같은 확인과 지연, 자료 보완이 줄었는지 다시 보겠습니다.
+단순한 확인 기준부터 적용하고, 검증되지 않은 예측을 지금 있는 기능처럼 넣지 않겠습니다. 임의의 목표 수치도 만들지 않고, 기준자료와 기록이 확보된 범위부터 적용하겠습니다.`,
+   '그리고 이 결과는 다시 영업으로 돌아가야 합니다.'));
+  E_.push(EX('d04','00 · 현장 → 영업','현장에서 확인한 내용을 다음 영업에서 다시 씁니다.','PART 4 현장관리 · 향후 데이터분석','현장에서 확인한 내용을,<br><em>다음 영업에서 다시 활용하겠습니다.</em>',{},
+   `준공한 현장의 실제 범위, 기간, 자재, 비용, 특이사항은 비슷한 현장의 견적과 준비 때 참고자료가 됩니다.
+영업 중에 고객에게 미리 확인해야 할 질문도 현장에서 반복된 문제를 보고 보완할 수 있습니다.
+소장님께 전달하는 자료와 공정 · 준공 기준도 같은 방식으로 다듬고, 확인된 후속사항은 고객자산의 관계 이력에 이어 두겠습니다.
+지금 영업 CRM과 현장관리 보드는 자동으로 이어져 있지 않습니다. 그래서 이것은 완료된 기능이 아니라, 단계적으로 연결할 운영계획입니다.`,
+   '이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.'));
+  const V={
+   d01:()=>'<div class="vis vd1"><div class="rc"><span class="ini">준</span><b>준공 때 다시 모으는 것</b><ul>'+['공종 · 면적 · 실행가액','노임 · 공사일수 · 품수','장비대 · 폐기물 비용','자재 사용량'].map(t=>'<li>'+t+'</li>').join('')+'</ul><small>내역서 · 계약서 · 토픽 · 카톡방 · 운영파일 · 이카운트에서 다시 찾음</small></div><div class="arw"></div><div class="rc"><span class="ini">다</span><b>다음 업무의 기준으로</b><ul>'+['다음 견적 확인항목','예정공정표','소장 전달자료','자재 발주 점검','준공 준비 기준'].map(t=>'<li>'+t+'</li>').join('')+'</ul><small>지금은 다음 현장에 다시 쓰이는 구조가 없음</small></div><p class="vnote">향후계획 · 지금 구현된 분석 기능 아님</p></div>',
+   d02:()=>'<div class="vis v7">'+[['누락 · 회신','어느 자료 · 단계에서 다시 묻나','요청 시점 · 준비자료 목록'],['범위 · 도면 전달','최초 · 변경 범위, 어떤 버전을 보냈나','브이월드 확인자료 · 전달 묶음'],['착공 준비 · 일정','예정과 실제가 왜 달랐나','준비 시점 · 예정기간'],['자재 · 물량','예상 · 구매 · 반품 · 잔여를 나눠','산출 가정 · 발주 점검'],['작업일수 · 인력','같은 공종 · 규모에서 왜 다른가','공정 준비 · 인력계획'],['계획 대비 비용','범위 변경인가, 수량 · 단가 차이인가','실행견적 확인항목'],['준공자료 · 후속','자주 빠지는 사진 · 늦는 사진첩','촬영 · 검토 · 점검 기준']].map((x,i)=>'<div class="rc"><span class="ini">'+(i+1)+'</span><b>'+x[0]+'</b><p>'+x[1]+'</p><em>→ '+x[2]+'</em></div>').join('')+'<p class="vnote">구매량 ≠ 실사용량 · 비슷한 현장끼리만 비교 · 순위 평가 없음</p></div>',
+   d03:()=>'<div class="vis vcol"><div class="vstep v5">'+[['1','기록','전달 · 작업 · 변경 · 완료 시점에 남김'],['2','비교','업무유형 · 공종 · 규모 · 조건이 비슷한 현장끼리'],['3','이유 확인','자료와 담당자 확인으로'],['4','기준 보완','견적 · 공정표 · 소장 자료 · 발주 · 사진'],['5','다시 확인','다음 현장에서 반복이 줄었나']].map(x=>'<div class="sp"><span class="n">'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>').join('<div class="arw"></div>')+'</div><div class="chk"><p>단순 확인 기준부터</p><p>검증 안 된 예측은 넣지 않음</p><p>임의 목표 수치 만들지 않음</p></div></div>',
+   d04:()=>'<div class="vis vcol"><ol class="trk trk2">'+[['준공 현장 기록','범위 · 기간 · 자재 · 비용 · 특이사항'],['유사 현장 견적 · 준비','참고자료로'],['영업 중 확인 질문','고객에게 먼저 물을 것'],['소장 전달자료 · 공정','준공 기준까지'],['고객자산 관계 이력','확인된 후속사항']].map(x=>'<li><i></i><span>'+x[0]+'</span><small>'+x[1]+'</small></li>').join('')+'</ol><div class="chk"><p>현장 → 영업</p><p>영업 → 현장</p><p>다음 현장에서 다시 확인</p></div><p class="vnote">자동 연동 아님 · 단계적으로 연결할 운영계획</p></div>'};
+  Object.assign(window.EXEC_VIS,V);
+  {const o=window.EXEC_VIS.h03;window.EXEC_VIS.h03=()=>o().replace(/<\/div>$/,'<div class="chk"><p>반복되는 차이 · 문제 분석</p><p>다음 견적 기준 보완</p><p>현장운영 기준 보완</p></div></div>')}
+  const MO3={b21:['','sweep'],b22:['','shake'],b23:['','words'],d01:['lr','shake'],d02:['drop','words'],d03:['relay','mask'],d04:['check','sweep']};
+  E_.forEach(s=>{if(V[s.id])s.vis=s.id;if(MO3[s.id]){s.mo=MO3[s.id][0];s.ty=MO3[s.id][1]}if(/^d0/.test(s.id))s.bm=true});
+  const TR={b08:'대시보드 가운데 두 화면은 따로 보겠습니다. 먼저 성과분석입니다.',b21:'어디서 막혔는지 보였다면, 그다음은 실제 조치입니다.',b22:'지정한 일은 담당자가 그 현장에서 처리하고 기록합니다.',b10:'한 영업건을 넘어, 같은 단지와 이어온 관계는 고객자산에서 봅니다.',b23:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',g06:'현장 기록은 정리해서 보관하는 데서 끝나면 안 됩니다.'};
+  E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+  {const s=E_.find(x=>x.id==='h03');if(s)s.steps[0].script+=`
+희선님께 일상 영업관리를 인계한 뒤에도 영업과 현장을 따로 보지 않겠습니다. 영업에서 정리한 요구와 범위가 현장 준비와 실제 시공, 준공자료까지 이어지는지 확인하고, 현장에서 반복되는 차이와 문제를 분석해 다음 견적과 현장운영 기준을 보완하겠습니다.
+제 역할을 자료를 대신 취합하는 데서 끝내지 않고, 업무가 끊기는 지점을 확인하고 기준을 바꾸는 데까지 넓히겠습니다. 고객 응대와 현장작업은 각 담당자의 역할 그대로이고, 제가 모든 일을 다시 확인 · 처리하는 구조로 가지 않겠습니다.`}
+  {const s=E_.find(x=>x.id==='m00');if(s)s.steps[0].script=s.steps[0].script.replace('앞부분은','조금 더 풀면, 들어온 문의를 놓치지 않고, 진행 중인 일을 끝까지 확인하고, 끝난 현장의 경험은 다음 업무의 기준으로 남기겠다는 것입니다.\n앞부분은')}
+  {const s=E_.find(x=>x.id==='q16');if(s)s.steps[0].script=s.steps[0].script.replace(' 감사합니다.','\n들어온 문의를 놓치지 않고, 진행 중인 일을 끝까지 확인하고, 끝난 현장의 경험은 다음 업무의 기준으로 남기겠습니다. 감사합니다.')}
+  const ORD=['r01','r02','m00','p02','p34','p05','b06','b07','b08','b21','b22','b09','b10','b23','s01','g01','g02','g03','g04','g05','g06','d01','d02','d03','d04','h01','h02','h03','c13','c14','g07','q16'];
+  const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ /* ───── 2026-10-18 보강 3: 확장관리 + 현장관리 보드(매일 여는 화면 · 반복 작성 줄이는 도구) ───── */
+ {const SH={};SH['e8:0']={img:'demo-media/shot-e8-0.jpg',W:1920,H:1302};['q0','q1','q2','q3','q5','q6','q7','q8','q10','q11'].forEach(k=>{SH[k+':0']={img:'demo-media/shot-'+k+'-0.jpg',W:1920,H:1080}});Object.assign(window.EXEC_SHOTS,SH);
+  const STP=window.EXEC_STP;
+  const NEW={
+   b24:{eb:'PART 2 개선 9 · 확장관리 — 준공 고객의 다음 공사',items:[
+    {t:'준공 뒤에도 이어지는 일',hook:'수주하고 준공하면,<br><em>그 고객은 잊어도 될까요?</em>',why:'확장관리는 준공 고객의 다음 매출을 봅니다. 준공 → D+30 사후 연락 → 니즈 확인 → 견적 확인 후 새 영업건 전환, 관계 연락은 2개월에 한 번입니다.',k:'e8:0',r:'252,150,1641,700',
+     say:'고객자산이 단지와 이어온 관계 전체를 본다면, 확장관리는 그중 공사를 끝낸 고객을 따로 봅니다. 준공은 끝이 아니라 사후관리와 재영업의 시작이라는 기준입니다.'},
+    {t:'사후 연락에서 물을 것',hook:'사후 연락은 안부 전화가 아니라,<br><em>다음 공사를 확인하는 통화입니다.</em>',why:'만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인합니다. 화면 왼쪽 아래에 지금 무엇을 해야 하는지가 건수와 함께 나옵니다.',k:'e8:0',r:'252,940,1300,350'},
+    {t:'기록 없음 ≠ 미실행',hook:'기록이 없는 것과,<br><em>연락하지 않은 것은 다릅니다.</em>',why:'사후관리 진단에서 실제 기한 초과와 기록 확인 필요를 나눕니다. 준공일 · 공종 · 연락 기록이 없는 건은 미실행으로 세지 않고 기록 보완으로 둡니다.',k:'e8:0',r:'252,363,1100,560'},
+    {t:'현장별 다음 접촉일',hook:'어느 현장에,<br><em>언제 다시 연락해야 합니까?</em>',why:'준공일 · 마지막 접촉 · 다음 접촉일 · 준공 후 경과일이 한 줄에 붙습니다. 한 단지에 계약이 둘이면 한 번에 기록하도록 묶었습니다.',k:'e8:0',r:'569,365,1324,643'},
+    {t:'니즈 → 새 영업건',hook:'니즈가 확인되면,<br><em>새 영업건으로 이어집니다.</em>',why:'견적을 확인하면 새 영업건으로 전환해 파이프라인에서 이어 갑니다. 보류는 연도를 지정합니다. 지금 니즈 확인은 0건이라, 사후 연락 기록을 채우는 것부터 하겠습니다.',k:'e8:0',r:'700,240,1190,580',
+     say:'인계 뒤에는 희선님이 다음 접촉일이 지난 고객과 사후 연락 기록을 점검하고, 저는 추가 공종이나 주변 단지처럼 영업 판단이 필요한 건을 담당자와 함께 보겠습니다.'}]},
+   g08:{eb:'PART 4 현장관리 — 보드에서 매일 여는 화면',items:[
+    {t:'대시보드',hook:'아침에 보드를 열면,<br><em>오늘 먼저 볼 현장이 한 문장으로 나옵니다.</em>',why:'급한 현장 수와 이유가 맨 위에 나오고, 처리할 일 · 오늘 보고율 · 진행 중 · 평균 공정률이 이어집니다. 줄마다 착공 임박 · 자재출고일 없음 · 사진첩 기한 지남처럼 왜 올라왔는지가 붙습니다.',k:'q0:0',r:'252,96,1641,830'},
+    {t:'컨설팅 흐름',hook:'현장이 어느 단계에서,<br><em>멈춰 있는지 한눈에 봅니다.</em>',why:'계약서 · 내역서 → 현장정보 확정 → 소장 · 착공일 → 공유 · 소통방 → 착공서류 → 착공 확인 → 공사진행 → 사진첩 칸에 현장 카드가 쌓입니다. 빨강은 착공 · 안전 차단, 주황은 기한 지남 · 임박입니다.',k:'q11:0',r:'252,96,1641,830'},
+    {t:'현황판 · 운영',hook:'착공 전부터 준공 후까지,<br><em>다섯 단계로 나눠 봅니다.</em>',why:'착공전 · 착공 · 진행중 · 완공 · 준공후로 나누고, 기한 초과 · 소장 미배정 · 오늘 미보고를 위에 띄웁니다. 아래에는 현장마다 지금 확인할 것과 준공 기한이 붙습니다.',k:'q7:0',r:'252,216,1641,860'},
+    {t:'현황판 · 타임라인',hook:'착공일이 다가오는 현장을,<br><em>날짜 위에서 봅니다.</em>',why:'빨간 점선이 오늘이고, 막대는 착공에서 준공 예정까지입니다. 오늘 선이 막대 끝을 지나면 지연입니다.',k:'q8:0',r:'252,216,1641,340'}]},
+   g09:{eb:'PART 4 현장관리 — 반복 작성을 줄이는 도구',items:[
+    {t:'메일 발송',hook:'같은 메일을,<br><em>현장마다 처음부터 쓰고 있었습니다.</em>',why:'보드가 받는사람 · 제목 · 본문 · 첨부 zip을 준비하고, 담당자가 하이웍스에서 보낸 뒤 발송 완료를 기록합니다. 제목의 현장명이 지금 현장명과 다르면 다시 만들라고 알려 줍니다. 하이웍스 직접 발송은 권한 확인 뒤에 연결합니다.',k:'q1:0',r:'252,96,1641,220'},
+    {t:'안내문자(카톡)',hook:'소장님께 보내는 안내도,<br><em>상황만 고르면 현장정보가 채워집니다.</em>',why:'착공 전 · 착공 · 공사 진행 · 요청 · 우천 · 폭염처럼 상황별 멘트에 현장명 · 소장 · 시공사 · 착공일이 자동으로 들어갑니다. 복사해서 현장 카톡방에 붙여 넣습니다.',k:'q2:0',r:'252,96,1641,890'},
+    {t:'서식 라이브러리',hook:'착공서류를 묶을 때마다,<br><em>파일을 찾아 헤매지 않게.</em>',why:'MSDS · 시방서 · 예정공정표 · 현장안내사항 · 물품공급계약서 원본을 한곳에 두고, 엑셀 서식의 현장명 같은 칸은 현장정보로 채웁니다. 아직 원본을 올리기 전이라 지금은 비어 있습니다.',k:'q3:0',r:'252,96,1641,820'},
+    {t:'기준 설정',hook:'기한은 사람이 외우는 것이 아니라,<br><em>보드가 매뉴얼대로 계산합니다.</em>',why:'소통방 개설 · 서류 확정 · 메일 · 우편 · 사진첩 발송 기한을 착공일 · 완료일 기준 영업일로 계산합니다. 기준을 바꾸면 모든 현장의 기한이 다시 계산되고, 이미 완료한 기록은 그대로 남습니다.',k:'q6:0',r:'252,100,1641,700'},
+    {t:'분석 (시작점)',hook:'분석 화면은 열어 두었습니다.<br><em>아직 채울 기록이 부족합니다.</em>',why:'등록 → 자료 발송 소요 · 공사기간 vs 예정공정표 · 품당 노임 · 현장별 비용 칸은 있지만, 준공 현장 기록이 아직 없어 비교할 수 없습니다. 이 화면을 채우는 것이 뒤에서 말씀드릴 데이터분석 계획의 출발점입니다.',k:'q5:0',r:'252,96,1641,560'}]}};
+  Object.assign(STP,NEW);
+  {const it=(STP.g04.items||[]).find(x=>x.t==='직영현장');if(it){it.k='q10:0';it.r='252,96,1641,850'}}
+  Object.keys(NEW).forEach(id=>{window.EXEC_VIS['stp:'+id]=ti=>{const S=STP[id],it=S.items[ti]||S.items[0],hh=document.querySelector('#card h2');if(hh)hh.innerHTML=it.hook;
+   return '<div class="vis vstp'+(S.many?' many':'')+'"><ol class="sl">'+S.items.map((x,k)=>'<li class="'+(k===ti?'on':k<ti?'past':'')+'" data-stp="'+id+':'+k+'"><span class="n">'+(k+1)+'</span><div><b>'+x.t+'</b>'+(k===ti?'<p>'+x.why+'</p>':'')+'</div></li>').join('')+'</ol><figure class="vf sf"><div class="vimg" data-k="'+it.k+'" data-r="'+it.r+'"></div><figcaption><b>'+(ti+1)+' / '+S.items.length+'</b><span>'+it.t+'</span></figcaption></figure></div>'}});
+  const strip=s=>s.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const mk=(id,title,km)=>ES(id,title,'pipe',km,STP[id].items.map(x=>T(x.t,strip(x.hook)+' '+x.why+(x.say?'\n'+x.say:''),'#card',Z())));
+  E_.push(mk('b24','00 · 개선 9 · 확장관리','수주하고 준공하면, 그 고객은 잊어도 될까요?'));
+  E_.push(mk('g08','00 · 현장관리 · 매일 여는 화면','아침에 보드를 열면, 오늘 먼저 볼 현장이 한 문장으로 나옵니다.'));
+  E_.push(mk('g09','00 · 현장관리 · 반복 작성 줄이기','같은 메일을, 현장마다 처음부터 쓰고 있었습니다.'));
+  window.__STPIDS.push('b24','g08','g09');
+  const MO4={b24:['','mask'],g08:['','sweep'],g09:['','words']};
+  E_.forEach(s=>{if(MO4[s.id]){s.mo=MO4[s.id][0];s.ty=MO4[s.id][1]}if(s.id==='g08'||s.id==='g09')s.bm=true});
+  const TR={b23:'고객자산 가운데 공사를 끝낸 고객은 확장관리에서 따로 봅니다.',b24:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',g03:'그래서 우선 흩어진 현장업무를 한 보드에 모았습니다.',g08:'현장 하나를 열면 이렇게 이어집니다.',g04:'현장마다 반복되던 작성은 도구로 줄였습니다.',g09:'그래서 앞으로는 이렇게 행동하겠습니다.'};
+  E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+  const ORD=['r01','r02','m00','p02','p34','p05','b06','b07','b08','b21','b22','b09','b10','b23','b24','s01','g01','g02','g03','g08','g04','g09','g05','g06','d01','d02','d03','d04','h01','h02','h03','c13','c14','g07','q16'];
+  const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ /* ───── 2026-10-18 보강 4: 숫자 훅 장(스위스풍 · 실제 수치) + 3D 연출(three.js r128, 안 되면 2D 그대로) ───── */
+ {const SWD={
+   k1:{eb:'PART 2 개선 4 · 성과분석',no:'03',lab:'문제',hl:['실주 <em>31건</em> 중','이유가 남은 건','단 <em>1건</em>.'],l:'2026년 실주 31건',r:'사유 기록 1',total:31,cols:16,cell:i=>i<1?'f':'',keys:[['f','사유 기록'],['','사유 없음']],
+    pts:[['결과는 남는다','수주 · 실주는 날짜와 금액으로 남음'],['이유는 빠진다','실주 31건 중 30건 사유 미기록'],['다음 제안을 못 바꾼다','무엇을 고칠지 근거가 없음']],foot:'* 2026년 10월 18일 CRM 성과 분석 화면 · 2026년 연간 실제 수치',
+    say:`성과분석 이야기를 하기 전에 숫자 하나를 보겠습니다. 올해 CRM에 실주로 정리된 건이 31건인데, 왜 졌는지 사유가 남아 있는 건은 1건입니다.
+수주와 실주라는 결과는 남았지만, 그 결과의 이유는 남지 않았습니다. 이유가 없으면 다음 제안에서 무엇을 바꿔야 할지 정할 수 없습니다.
+이 숫자는 누구를 탓하려는 것이 아니라, 기록이 이유까지 이어지지 않는 구조를 보여 주는 숫자입니다.`,next:'그래서 성과분석은 결과에서 다음 행동까지 이어 보도록 만들었습니다.'},
+   k2:{eb:'PART 2 개선 5 · 컨트롤타워',no:'04',lab:'문제',hl:['진행 중 영업 <em>156건</em>,','다음 할 일이 적힌 건','<em>26건</em>뿐입니다.'],l:'진행 중 영업 156건',r:'다음 할 일 등록 26',total:156,cols:26,cell:i=>i<26?'f':'',keys:[['f','다음 할 일 있음'],['','비어 있음']],
+    pts:[['진행 중이라는 말만 남는다','다음 행동 없음 130건'],['날짜가 없으면 기한도 없다','언제 다시 확인할지 정해지지 않음'],['그래서 확인하고 지정한다','막힌 곳 → 할 일 지정 → 결과 확인']],foot:'* 2026년 10월 18일 CRM 컨트롤타워 · 오늘 업무 실제 수치 (다음 할 일 등록률 16.7%)',
+    say:`진행 중인 영업이 156건입니다. 그런데 그중 다음 할 일이 적혀 있는 건은 26건, 16.7%입니다.
+나머지는 진행 중이라는 상태만 있고, 다음에 무엇을 언제 할지가 비어 있습니다. 다음 일이 비어 있으면 언제 다시 확인해야 하는지도 정해지지 않습니다.
+그래서 컨트롤타워는 막힌 곳을 찾는 데서 끝나지 않고, 할 일을 지정하고 결과까지 확인하도록 만들었습니다.`,next:'컨트롤타워에서 이 흐름을 보겠습니다.'},
+   k3:{eb:'PART 2 개선 9 · 확장관리',no:'05',lab:'문제',hl:['올해 준공 <em>16곳</em>,','준공 뒤 연락 기록은','<em>0건</em>입니다.'],l:'2026년 준공 16곳',r:'사후 연락 기록 0',total:16,cols:8,cell:i=>i<15?'w':'',keys:[['f','연락 기록 있음'],['w','다음 접촉일 지남'],['','기록 없음']],
+    pts:[['연락했어도 남지 않았다','기록이 없으면 다음 사람이 이어받지 못함'],['다음 접촉일이 지났다','16곳 중 15곳'],['다음 기회도 아직 0건','추가 공사 · 주변 단지 확인된 것 없음']],foot:'* 2026년 10월 18일 CRM 확장관리 실제 수치 · 기록이 없다고 연락하지 않았다는 뜻은 아님',
+    say:`올해 준공한 현장이 16곳입니다. 그런데 준공 뒤 고객과 연락한 기록은 아직 한 건도 없습니다.
+실제로 연락을 했을 수도 있습니다. 다만 기록이 없으면 다음 담당자는 그 고객과 무슨 이야기를 나눴는지 알 수 없고, 16곳 중 15곳은 이미 다음 접촉일이 지났습니다.
+추가 공사나 주변 단지 소개처럼 확인된 다음 기회도 아직 0건입니다.`,next:'그래서 확장관리는 준공 뒤 다음 접촉일과 물어볼 것을 붙였습니다.'},
+   k4:{eb:'PART 4 현장관리',no:'06',lab:'문제',hl:['컨설팅 현장 <em>32곳</em> 중','소장님이 정해지지 않은 곳','<em>12곳</em>.'],l:'컨설팅 현장 32곳',r:'소장 미배정 12',total:32,cols:16,cell:i=>i>=20?'f':'',keys:[['f','소장 미배정'],['','배정']],
+    pts:[['소장이 정해져야 시작된다','그다음에 공유 · 소통방 · 착공서류'],['기한 지난 현장 5곳','현황판 운영 대시보드 기준'],['사람이 하나씩 묻고 있었다','어느 현장이 비었는지 먼저 보이게']],foot:'* 2026년 10월 18일 현장관리 보드 현황판 실제 수치',
+    say:`현장관리도 숫자로 보면 비슷합니다. 현장관리 보드의 컨설팅 현장 32곳 가운데 12곳은 아직 소장님이 정해지지 않았습니다.
+소장님과 착공일이 정해져야 공유 · 소통방 · 착공서류로 넘어갈 수 있습니다. 기한이 지난 현장도 5곳입니다.
+지금까지는 어느 현장이 비어 있는지를 사람이 하나씩 물어서 확인했습니다.`,next:'실제 업무를 보면 이렇습니다.'}};
+  Object.keys(SWD).forEach(id=>{const o=SWD[id];
+   window.EXEC_VIS['sw:'+id]=()=>{let s='';for(let i=0;i<o.total;i++)s+='<i class="'+o.cell(i)+'" style="--i:'+i+'"></i>';
+    return '<div class="vis vsw"><div class="swn"><b>'+o.no+'</b><span>'+o.lab+'</span></div><h3 class="swh">'+o.hl.map((x,k)=>'<span><i style="--k:'+k+'">'+x+'</i></span>').join('')+'</h3><figure class="swc"><div class="swl"><span>'+o.l+'</span><span>'+o.r+'</span></div><div class="swg" style="--c:'+o.cols+'">'+s+'</div><div class="swk">'+o.keys.map(k=>'<span><i class="'+k[0]+'"></i>'+k[1]+'</span>').join('')+'</div></figure><div class="sw3">'+o.pts.map((p,i)=>'<div><small>0'+(i+1)+'</small><b>'+p[0]+'</b><p>'+p[1]+'</p></div>').join('')+'</div><p class="swf">'+o.foot+'</p></div>'};
+   const e=EX(id,'00 · '+o.eb.replace(/^PART \d (개선 \d · )?/,'')+' · 숫자',o.hl.join(' ').replace(/<[^>]+>/g,''),o.eb,o.hl.join('<br>'),{},o.say,o.next);e.vis='sw:'+id;e.mo='';e.ty='';if(id==='k4')e.bm=true;E_.push(e)});
+  /* 3D: 가운데 도식을 3D로(사슬 · 고리 · 입자). three.js 를 못 불러오거나 WebGL 이 없으면 원래 2D 도식이 그대로 보임 */
+  window.EXEC_3D_CFG={
+   m00:{type:'chain',split:3,ab:['b','o'],gap:'영업 → 현장 인계',nodes:[['고객이 요청한 것','문의'],['영업이 확인 · 제안한 것','견적 · 상담'],['최종 확정된 공사내용','계약'],['소장님이 받은 범위 · 자료','현장 준비'],['실제 진행한 작업','시공'],['준공 때 남긴 결과','준공']]},
+   d04:{type:'chain',split:1,ab:['o','b'],gap:'현장 → 영업',nodes:[['준공 현장 기록','범위 · 기간 · 자재 · 비용'],['유사 현장 견적 · 준비','참고자료로'],['영업 중 확인 질문','고객에게 먼저 물을 것'],['소장 전달자료 · 공정','준공 기준까지'],['고객자산 관계 이력','확인된 후속사항']]},
+   d03:{type:'ring',nodes:[['기록','전달 · 작업 · 변경 · 완료 시점'],['비교','비슷한 현장끼리'],['이유 확인','자료와 담당자 확인'],['기준 보완','견적 · 공정표 · 소장 자료'],['다시 확인','다음 현장에서 줄었나']]},
+   q16:{type:'flow'}};
+  ['m00','d03','d04'].forEach(id=>{const o=window.EXEC_VIS[id];if(!o)return;window.EXEC_VIS[id]=(...a)=>{const h=o(...a),head='<div class="vis vcol">',i=h.indexOf('<div class="chk">');if(h.indexOf(head)!==0||i<0)return h;
+   return head+'<div class="v3d" data-k="'+id+'"><div class="fb">'+h.slice(head.length,i)+'</div></div>'+h.slice(i)}});
+  window.EXEC_VIS.q16=()=>'<div class="vis v3d bgfx" data-k="q16"></div>';
+  E_.forEach(s=>{if(s.id==='q16')s.vis='q16'});
+  const BL=0x2F6FED,OR=0xFF6F0F,eo=x=>{x=Math.min(1,Math.max(0,x));return 1-Math.pow(1-x,3)};
+  const SCN={};
+  const BASE=(el,o)=>{const T=THREE,r=new T.WebGLRenderer({antialias:true,alpha:true});r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.shadowMap.enabled=true;r.shadowMap.type=T.PCFSoftShadowMap;
+   const cv=r.domElement;cv.className='v3c';el.prepend(cv);const sc=new T.Scene(),cam=new T.PerspectiveCamera(o.fov||32,1,.1,200);
+   const size=()=>{const w=el.clientWidth||1,h=el.clientHeight||1;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()};size();const ro=new ResizeObserver(size);ro.observe(el);
+   const m={x:0,y:0},tm={x:0,y:0},mv=e=>{const b=el.getBoundingClientRect();tm.x=((e.clientX-b.left)/b.width-.5)*2;tm.y=((e.clientY-b.top)/b.height-.5)*2};(o.ptr||el).addEventListener('pointermove',mv);
+   let raf=0,dead=false;const t0=performance.now(),labs=[],v=new T.Vector3();
+   const lab=(html,cls)=>{const d=document.createElement('div');d.className='v3l '+(cls||'');d.innerHTML=html;el.appendChild(d);labs.push(d);return d};
+   const place=(d,p)=>{v.copy(p).project(cam);d.style.transform='translate(-50%,-50%) translate('+((v.x*.5+.5)*el.clientWidth).toFixed(1)+'px,'+((-v.y*.5+.5)*el.clientHeight).toFixed(1)+'px)'};
+   const kill=()=>{if(dead)return;dead=true;cancelAnimationFrame(raf);ro.disconnect();(o.ptr||el).removeEventListener('pointermove',mv);
+    sc.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material)[].concat(x.material).forEach(mm=>{if(mm.map)mm.map.dispose();mm.dispose()})});r.dispose();cv.remove();labs.forEach(d=>d.remove());el.classList.remove('on')};
+   const run=fn=>{const loop=now=>{if(dead)return;if(!el.isConnected){kill();return}raf=requestAnimationFrame(loop);if(document.hidden)return;m.x+=(tm.x-m.x)*.06;m.y+=(tm.y-m.y)*.06;fn((now-t0)/1000,m);r.render(sc,cam)};raf=requestAnimationFrame(loop)};
+   return {T,r,sc,cam,lab,place,kill,run}};
+  const LIGHT=B=>{const T=B.T;B.sc.add(new T.HemisphereLight(0xffffff,0xe4e9f0,1.05));const d=new T.DirectionalLight(0xffffff,.45);d.position.set(5,10,8);d.castShadow=true;d.shadow.mapSize.set(1024,1024);
+   Object.assign(d.shadow.camera,{left:-14,right:14,top:10,bottom:-10});d.shadow.radius=6;B.sc.add(d);const g=new T.Mesh(new T.PlaneGeometry(80,80),new T.ShadowMaterial({opacity:.055}));g.rotation.x=-Math.PI/2;g.position.y=-1.15;g.receiveShadow=true;B.sc.add(g)};
+  const TILE=(T,w,h,d,rd)=>{const s=new T.Shape(),x=-w/2,y=-h/2;s.moveTo(x+rd,y);s.lineTo(x+w-rd,y);s.quadraticCurveTo(x+w,y,x+w,y+rd);s.lineTo(x+w,y+h-rd);s.quadraticCurveTo(x+w,y+h,x+w-rd,y+h);s.lineTo(x+rd,y+h);s.quadraticCurveTo(x,y+h,x,y+h-rd);s.lineTo(x,y+rd);s.quadraticCurveTo(x,y,x+rd,y);
+   const g=new T.ExtrudeGeometry(s,{depth:d,bevelEnabled:true,bevelThickness:.04,bevelSize:.04,bevelSegments:3,curveSegments:10});g.center();return g};
+  const DOT=T=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.4,'rgba(255,255,255,.6)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new T.CanvasTexture(c)};
+  const NODE=(B,c)=>{const T=B.T,g=new T.Group();const core=new T.Mesh(new T.SphereGeometry(.11,24,16),new T.MeshBasicMaterial({color:c,transparent:true,opacity:0}));g.add(core);
+   const ring=new T.Mesh(new T.RingGeometry(.26,.29,48),new T.MeshBasicMaterial({color:c,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false}));g.add(ring);B.sc.add(g);return {g,core,ring}};
+  /* 사슬: 상자 없이 선 · 흐르는 입자 · 빛나는 점 · 글자 */
+  SCN.chain=(el,cfg)=>{const B=BASE(el,{fov:26}),T=B.T,N=cfg.nodes.length,C=k=>new T.Color(k==='o'?OR:BL),cA=C(cfg.ab[0]),cB=C(cfg.ab[1]);
+   const xs=[];let x=0;for(let i=0;i<N;i++){xs.push(x);x+=3+(i===cfg.split-1?1.1:0)}const off=xs[N-1]/2;
+   const P=xs.map((x,i)=>new T.Vector3(x-off,Math.sin(i*1.25)*.32,0));
+   const curve=new T.CatmullRomCurve3([P[0].clone().add(new T.Vector3(-1.6,0,0)),...P,P[N-1].clone().add(new T.Vector3(1.6,0,0))]);
+   const pts=curve.getSpacedPoints(400);const lg=new T.BufferGeometry().setFromPoints(pts);const line=new T.Line(lg,new T.LineBasicMaterial({color:0xD3DAE3,transparent:true,opacity:0}));B.sc.add(line);
+   const bx=(P[cfg.split-1].x+P[cfg.split].x)/2,x0=pts[0].x,x1=pts[pts.length-1].x,uB=(bx-x0)/(x1-x0);
+   const M=900,g=new T.BufferGeometry(),pos=new Float32Array(M*3),col=new Float32Array(M*3),u=new Float32Array(M),o=new Float32Array(M*3),sp=new Float32Array(M);
+   for(let i=0;i<M;i++){u[i]=Math.random();o[i*3]=Math.random()-.5;o[i*3+1]=Math.random()-.5;o[i*3+2]=Math.random()-.5;sp[i]=.035+Math.random()*.03}
+   g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));
+   const mat=new T.PointsMaterial({size:.1,vertexColors:true,map:DOT(T),transparent:true,depthWrite:false,opacity:0});B.sc.add(new T.Points(g,mat));
+   const nodes=P.map((p,i)=>{const n=NODE(B,i<cfg.split?cA:cB);n.g.position.copy(p);return n});
+   const ZN={b:'영업관리',o:'현장관리'},ab=i=>i<cfg.split?cfg.ab[0]:cfg.ab[1],zA=B.lab('<span>'+ZN[cfg.ab[0]]+'</span>','zone '+cfg.ab[0]),zB=B.lab('<span>'+ZN[cfg.ab[1]]+'</span>','zone '+cfg.ab[1]),mx=(a,b)=>P.slice(a,b).reduce((s,p)=>s+p.x,0)/(b-a);
+   const wl=B.lab('<span>'+cfg.gap+'</span>','gap'),labs=cfg.nodes.map((n,i)=>B.lab('<em>'+(i+1)+'</em><b>'+n[0]+'</b><small>'+n[1]+'</small>','card '+ab(i)));
+   const tmp=new T.Vector3(),c=new T.Color(),W=new T.Color(0xffffff),T0=.3,ST=.26,tan=Math.tan(B.cam.fov*Math.PI/360),v=new T.Vector3();let last=0;
+   B.run((t,m)=>{const dt=Math.min(.05,t-last);last=t;const show=eo((t-T0)/1.2);line.material.opacity=.9*show;mat.opacity=.85*show;
+    for(let i=0;i<M;i++){u[i]+=sp[i]*dt;if(u[i]>1)u[i]-=1;curve.getPointAt(u[i],tmp);const k=u[i],nearB=Math.abs(k-uB)<.04?1.8:1,s=.16+.1*Math.sin(k*40+i);
+     pos[i*3]=tmp.x+o[i*3]*.25;pos[i*3+1]=tmp.y+o[i*3+1]*s*2*nearB;pos[i*3+2]=tmp.z+o[i*3+2]*s*2;const bl=Math.min(1,Math.max(0,(k-uB+.03)/.06));c.copy(cA).lerp(cB,bl);
+     const f=Math.min(1,k*8,(1-k)*8);c.lerp(W,1-f);col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}
+    g.attributes.position.needsUpdate=true;g.attributes.color.needsUpdate=true;
+    nodes.forEach((n,i)=>{const a=eo((t-T0-i*ST)/.6);n.core.material.opacity=a;n.ring.material.opacity=.5*a;const pu=1+.18*Math.sin(t*2.2-i*.7);n.ring.scale.setScalar(pu);n.ring.lookAt(B.cam.position);
+     labs[i].style.opacity=a;B.place(labs[i],v.set(P[i].x,P[i].y-.95,P[i].z))});
+    const wa=eo((t-T0-cfg.split*ST)/.6);wl.style.opacity=wa;B.place(wl,v.set(bx,1.25,0));zA.style.opacity=eo((t-T0)/.6);zB.style.opacity=wa;B.place(zA,v.set(mx(0,cfg.split),1.25,0));B.place(zB,v.set(mx(cfg.split,N),1.25,0));
+    const dist=Math.max(9,(off+2.6)/(tan*B.cam.aspect)+1);B.cam.position.set(Math.sin(t*.16)*.7+m.x*.8,.9-m.y*.4,dist);B.cam.lookAt(0,-.15,0)});
+   return B.kill};
+  /* 고리: 입자가 고리를 따라 돌고, 단계는 점 · 글자 */
+  SCN.ring=(el,cfg)=>{const B=BASE(el,{fov:30}),T=B.T,N=cfg.nodes.length,R=4,acc=new T.Color((getComputedStyle(el).getPropertyValue('--tk-blue')||'#FF6F0F').trim());
+   const grp=new T.Group();B.sc.add(grp);const cp=[];for(let i=0;i<=240;i++){const a=i/240*Math.PI*2;cp.push(new T.Vector3(Math.sin(a)*R,0,Math.cos(a)*R))}
+   const line=new T.Line(new T.BufferGeometry().setFromPoints(cp),new T.LineBasicMaterial({color:0xD3DAE3,transparent:true,opacity:0}));grp.add(line);
+   const M=700,g=new T.BufferGeometry(),pos=new Float32Array(M*3),u=new Float32Array(M),o=new Float32Array(M*2),sp=new Float32Array(M);
+   for(let i=0;i<M;i++){u[i]=Math.random();o[i*2]=Math.random()-.5;o[i*2+1]=Math.random()-.5;sp[i]=.05+Math.random()*.04}
+   g.setAttribute('position',new T.BufferAttribute(pos,3));const mat=new T.PointsMaterial({size:.11,color:acc,map:DOT(T),transparent:true,depthWrite:false,opacity:0});grp.add(new T.Points(g,mat));
+   const nodes=cfg.nodes.map((n,i)=>{const a=-i/N*Math.PI*2,nd=NODE(B,acc);B.sc.remove(nd.g);grp.add(nd.g);nd.g.position.set(Math.sin(a)*R,0,Math.cos(a)*R);return nd});
+   const labs=cfg.nodes.map((n,i)=>B.lab('<em>'+(i+1)+'</em><b>'+n[0]+'</b><small>'+n[1]+'</small>','card ring o')),ctr=B.lab('<span>↻ 다음 현장에서 다시 1로</span>','gap'),wp=new T.Vector3();let last=0;
+   B.run((t,m)=>{const dt=Math.min(.05,t-last);last=t;const a0=eo(t/1.2);grp.rotation.y=t*.18;line.material.opacity=a0;mat.opacity=.8*a0;
+    for(let i=0;i<M;i++){u[i]-=sp[i]*dt;if(u[i]<0)u[i]+=1;const a=u[i]*Math.PI*2,r=R+o[i*2]*.35;pos[i*3]=Math.sin(a)*r;pos[i*3+1]=o[i*2+1]*.3;pos[i*3+2]=Math.cos(a)*r}g.attributes.position.needsUpdate=true;
+    nodes.forEach((nd,i)=>{nd.g.getWorldPosition(wp);const f=(wp.z/R+1)/2,hi=Math.max(0,(f-.78)/.22);nd.core.material.opacity=a0*(.35+.65*f);nd.ring.material.opacity=a0*(.15+.6*hi);nd.ring.scale.setScalar(1+.5*hi);nd.ring.lookAt(B.cam.position);
+     const lb=labs[i];lb.style.opacity=((.18+.82*f)*a0).toFixed(2);lb.style.zIndex=String(Math.round(f*10)+1);lb.classList.toggle('hi',hi>.45);B.place(lb,wp.set(wp.x,wp.y-.85,wp.z))});
+    ctr.style.opacity=a0;B.place(ctr,wp.set(0,.2,0));B.cam.position.set(m.x*1.1,4.2-m.y*.6,11.5);B.cam.lookAt(0,-.3,0)});
+   return B.kill};
+  SCN.flow=(el,cfg)=>{const B=BASE(el,{fov:40,ptr:el.closest('#card')}),T=B.T,N=1600,g=new T.BufferGeometry(),pos=new Float32Array(N*3),col=new Float32Array(N*3),u=new Float32Array(N),o=new Float32Array(N*2),sp=new Float32Array(N);
+   for(let i=0;i<N;i++){u[i]=Math.random();o[i*2]=Math.random()-.5;o[i*2+1]=Math.random()-.5;sp[i]=.045+Math.random()*.05}
+   g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('color',new T.BufferAttribute(col,3));
+   const cv=document.createElement('canvas');cv.width=cv.height=64;const x=cv.getContext('2d'),rg=x.createRadialGradient(32,32,0,32,32,32);rg.addColorStop(0,'rgba(255,255,255,1)');rg.addColorStop(.35,'rgba(255,255,255,.55)');rg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=rg;x.fillRect(0,0,64,64);
+   const dk=(getComputedStyle(el.closest('#card')).backgroundColor.match(/\d+/g)||[255]).slice(0,3).reduce((a,b)=>a+ +b,0)<200;const zA=B.lab('<span>영업관리</span>','zone b'),zB=B.lab('<span>현장관리</span>','zone o'),zM=B.lab('<span>끝까지 이어서 확인</span>','gap');const mat=new T.PointsMaterial({size:dk?.16:.15,vertexColors:true,map:new T.CanvasTexture(cv),transparent:true,depthWrite:false,blending:dk?T.AdditiveBlending:T.NormalBlending,opacity:0});B.sc.add(new T.Points(g,mat));
+   const A=new T.Color(dk?0x4C8DFF:0x2F6FED),Bo=new T.Color(dk?0xFF8A3D:0xFF6F0F),W=new T.Color(dk?0xffffff:0x191F28),c=new T.Color();let last=0;
+   B.run((t,m)=>{const dt=Math.min(.05,t-last);last=t;for(let i=0;i<N;i++){u[i]+=sp[i]*dt*1.6;if(u[i]>1)u[i]-=1;const k=u[i],side=i%2?1:-1,mg=Math.min(1,Math.max(0,(k-.12)/.48)),e=mg*mg*(3-2*mg),spr=(1-e)*1.0+.16;
+     pos[i*3]=-12+k*24;pos[i*3+1]=-2.1+side*2.6*(1-e)+o[i*2]*spr+Math.sin(k*10+i)*.08*(1-e);pos[i*3+2]=o[i*2+1]*spr*1.8;
+     c.copy(i%2?A:Bo).lerp(W,Math.max(0,(k-.55)/.45)*.8);const f=dk?Math.min(1,k*6,(1-k)*5):1;col[i*3]=c.r*f;col[i*3+1]=c.g*f;col[i*3+2]=c.b*f}
+    g.attributes.position.needsUpdate=true;g.attributes.color.needsUpdate=true;mat.opacity=eo(t/1.6)*(dk?1:.92);const zo=eo((t-.6)/1);[zA,zB,zM].forEach(z=>z.style.opacity=zo);B.place(zA,new T.Vector3(-6.3,.8,0));B.place(zB,new T.Vector3(-6.3,-5,0));B.place(zM,new T.Vector3(5.6,-1.3,0));B.cam.position.set(m.x*1.6,-.6-m.y*.7,12);B.cam.lookAt(0,-1,0)});
+   return B.kill};
+  window.EXEC_3D=(function(){let cur=null,lib=null;
+   const load=()=>lib||(lib=new Promise((res,rej)=>{if(window.THREE)return res();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';s.onload=()=>res();s.onerror=()=>{lib=null;rej()};document.head.appendChild(s)}));
+   const gl=()=>{try{const x=document.createElement('canvas');return !!(x.getContext('webgl')||x.getContext('experimental-webgl'))}catch(e){return false}};
+   return c=>{if(cur){cur();cur=null}const el=c.querySelector('.v3d[data-k]');if(!el||!gl())return;const cfg=window.EXEC_3D_CFG[el.dataset.k];if(!cfg||!SCN[cfg.type])return;
+    load().then(()=>{if(!el.isConnected)return;try{cur=SCN[cfg.type](el,cfg);el.classList.add('on')}catch(e){console.warn('3D',e)}}).catch(()=>{})}})();
+  {const s=E_.find(x=>x.id==='g01');if(s)s.transition='숫자로 먼저 보겠습니다.'}
+  {const s=E_.find(x=>x.id==='b21');if(s)s.transition='그다음은 실제 조치입니다. 먼저 숫자 하나를 보겠습니다.'}
+  {const s=E_.find(x=>x.id==='b23');if(s)s.transition='고객자산 가운데 공사를 끝낸 고객은 따로 봅니다. 먼저 숫자입니다.'}
+  const ORD=['r01','r02','m00','p02','p34','p05','b06','b07','b08','k1','b21','k2','b22','b09','b10','b23','k3','b24','s01','g01','k4','g02','g03','g08','g04','g09','g05','g06','d01','d02','d03','d04','h01','h02','h03','c13','c14','g07','q16'];
+  const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});{const EN={b09:6,b10:7};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
  const SAY={"rintro:0":"오늘 처음 보시는 화면이라, 하나씩 천천히 보여드리겠습니다.\nCRM은 고객 문의와 영업 진행을 한곳에 적어 두는 프로그램입니다. 지금까지는 각자 수첩이나 엑셀, 머릿속에 있던 것을 여기에 모읍니다.\n이유는 하나입니다. 연락해야 할 고객을 놓치지 않기 위해서입니다. 누구에게 언제 연락할지를 CRM이 매일 알려 줍니다.","bmap:0":"로그인하면 왼쪽에 메뉴가 다섯 개 보입니다. 오늘 업무, 견적문의, 파이프라인, 확장관리, 고객 자산입니다.\n다 외우실 필요 없습니다. 매일 여는 화면은 맨 위 '오늘 업무' 하나입니다. 나머지는 오늘 업무에서 눌러 들어가게 되는 화면입니다.\n그리고 본인이 담당하는 건만 보입니다. 다른 사람 건은 나오지 않습니다.","r_today:0":"로그인하면 바로 이 화면이 뜹니다. '오늘 업무'입니다. 오늘 내가 연락해야 할 곳을 CRM이 모아서 보여 주는 화면입니다.\n제목 옆을 보시면 오늘 몇 곳이고, 그중 급한 곳이 몇 곳인지 적혀 있습니다.","r_today:1":"'급한 곳'은 색으로 구분됩니다. 빨강은 이미 늦은 곳, 파랑은 오늘 고객과 약속한 곳, 주황은 입찰 같은 마감이 가까운 곳입니다.\n빨강부터 없애는 것이 목표입니다.","r_today:2":"급한 곳은 이렇게 카드로 나옵니다. 왼쪽 위 숫자가 순서입니다. 무엇부터 할지 고민하지 말고 1번부터 하시면 됩니다.","r_today:3":"카드 한 장을 보겠습니다. 한 장이 고객 한 곳입니다.\n맨 위 빨간 글자가 왜 급한지입니다. 그 아래 현장 이름과 고객 연락처가 있고, '원한 것'은 고객이 문의한 내용, '지난 기록'은 지난번에 남긴 내용, '목표'는 이번 통화에서 할 일입니다. 노란 칸은 전화 첫마디 예시입니다.\n아래 버튼 세 개만 기억하시면 됩니다. '전화'로 걸고, 통화가 끝나면 '결과'를 눌러 어떻게 됐는지 고릅니다. 그러면 창이 하나 열리는데, 거기서 '저장'까지 눌러야 기록이 남습니다.","r_today:4":"카드 아래 표는 그다음으로 할 곳들입니다. 늦은 것이 위에 있습니다. 줄을 누르면 그 고객 창이 열립니다.\n연락하고 결과를 저장하면 이 목록에서 빠집니다. 목록을 비우는 것이 하루 일입니다.","r_inq:0":"두 번째 메뉴 '견적문의'입니다. 홈페이지나 전화로 들어온 문의 중에서 나에게 배정된 것이 여기에 나옵니다.\n문의가 들어오면 관리자가 담당자를 정하고, 그러면 내 화면에 나타납니다.","r_inq:1":"문의는 급한 순서로 묶여 있습니다. 맨 위 '첫 연락이 필요해요'부터 연락합니다. 한 줄에 현장, 고객 연락처, 공종, 마지막 연락일이 나옵니다.","r_inq:2":"문의 한 줄을 누르면 이렇게 창이 열립니다. 위쪽 막대는 이 문의가 어디까지 진행됐는지입니다.\n접수, 담당 배정, 접촉 · 상담, 현장방문 · 견적 순서이고, 지금 위치에 색이 들어옵니다.","r_inq:3":"왼쪽은 고객이 실제로 쓴 문의 내용입니다. 그 아래 연락처와 현장 주소, 공종이 있습니다.\n전화하기 전에 이 내용부터 읽습니다.","r_inq:4":"가운데는 이 고객과 주고받은 기록입니다. 메신저처럼 시간 순서로 쌓입니다.\n통화했으면 아래 칸에 무슨 얘기를 했는지 적고 '저장'을 누릅니다. 전화를 했어도 여기에 적지 않으면 CRM에는 연락을 안 한 것으로 남습니다. 이게 제일 중요합니다.","r_inq:5":"오른쪽은 다음에 할 일입니다. 현장방문 날짜가 잡혔으면 '현장방문 일정', 견적서를 보냈으면 '견적서 발송'을 눌러 저장합니다.\n둘 중 하나를 저장하면 이 문의는 '영업건'이 되어 다음 메뉴인 파이프라인으로 자동으로 넘어갑니다. 따로 옮겨 적을 필요가 없습니다.","r_pipe:0":"세 번째 메뉴 '파이프라인'입니다. 말이 낯선데, 내가 진행 중인 영업 전체를 단계별로 늘어놓은 화면입니다.\n위쪽에 내 영업이 몇 건이고 금액이 얼마인지 나옵니다.","r_pipe:1":"세로 칸 하나가 단계 하나입니다. 왼쪽에서 오른쪽으로 영업이 진행됩니다.\n컨설팅 설계, 자료 발송완료, 관계관리, 경쟁·입찰, 계약·시공, 수주, 실주. 영업 한 건은 이 중 한 칸에 들어 있습니다.","r_pipe:2":"칸 안의 카드 한 장이 영업 한 건입니다. 현장 이름과 금액이 적혀 있습니다. 카드를 눌러 보겠습니다.","r_deal:0":"영업 한 건의 창입니다. 이 현장에 대한 일은 전부 이 창 안에서 합니다.\n맨 위에 현장 이름, 담당자, 예상 금액이 있고, 그 아래 막대가 지금 어느 단계인지 보여 줍니다.","r_deal:1":"왼쪽은 고객 정보입니다. 관리소장 이름과 전화번호가 있고, 여기서 바로 전화나 문자를 누를 수 있습니다.\n소장이 바뀌면 '＋ 추가'로 새 사람을 넣습니다. 예전 소장 기록은 지워지지 않고 남습니다.","r_deal:2":"가운데는 이 고객과 주고받은 기록입니다. 견적문의에서 본 것과 같습니다.\n연락할 때마다 아래 칸에 적고 '저장'합니다. 나중에 이 현장을 다시 열면 어디까지 얘기했는지 여기서 바로 보입니다.","r_deal:3":"오른쪽 위 '지금 할 일'입니다. CRM이 이 현장에서 지금 해야 할 일을 알려 줍니다.\n버튼은 두 개입니다. 통화했으면 '연락하고 결과 남기기', 다음에 언제 다시 연락할지는 '다음 할 일 · 날짜'입니다.\n다음 날짜를 정해 두면 그날 아침 오늘 업무에 이 현장이 다시 올라옵니다. 그래서 날짜를 꼭 정해 주셔야 합니다.","r_deal:4":"그 아래 '이 단계에서 챙길 정보'는 이 단계에서 알아내야 할 것들입니다. 비어 있으면 '입력하기'로 채웁니다.\n맨 아래 '단계 바꾸기'에 아까 본 일곱 단계가 있습니다. 견적을 보냈으면 '자료 발송완료'를 누르는 식으로, 진행이 바뀔 때 눌러 주시면 됩니다.","r_stage:0":"이제 단계를 하나씩 보겠습니다. 왼쪽 메뉴에서 단계 이름을 누르면 그 단계의 내 현장만 나옵니다.\n첫 단계 '컨설팅 설계'입니다. 문의가 영업건이 되면 처음 들어오는 곳입니다. 고객이 원하는 공사가 무엇인지 확인하고 견적을 준비하는 단계입니다.\n여기서 할 일은 고객이 원하는 것을 적고, 견적을 언제 줄지와 예상 금액을 넣는 것입니다. 목록은 급한 묶음이 위에 있으니 위에서부터 하시면 됩니다.","r_stage:1":"'자료 발송완료'입니다. 견적서나 자료를 고객에게 보낸 현장입니다.\n보내고 끝이 아니라, 받았는지 검토했는지 다시 전화해서 확인하는 단계입니다. 언제 다시 확인할지 날짜를 정해 둡니다.","r_stage:2":"'관계관리'입니다. 지금 당장 공사 계획은 없지만 계속 연락을 이어 가야 하는 고객입니다.\n연락하고 나면 다음 연락 날짜를 정합니다. 날짜가 지난 고객은 맨 위 '연락 초과'에 올라옵니다.","r_stage:3":"'경쟁·입찰'입니다. 다른 업체와 경쟁 중이거나 입찰이 잡힌 현장입니다.\n결정되는 날짜와 경쟁 업체를 넣어 둡니다. 입찰 마감이 일주일 안으로 들어오면 오늘 업무에 주황색 '마감 임박'으로 올라옵니다.","r_stage:4":"'계약·시공'입니다. 계약이 정해진 현장입니다.\n여기서 계약일과 계약 금액을 꼭 넣어 주세요. 이 두 가지가 들어가야 내 실적으로 잡힙니다. 실적은 계약한 날짜를 기준으로 계산합니다.","r_stage:5":"'수주'입니다. 계약해서 따낸 현장이 모입니다. 내 실적 목록이라고 보시면 됩니다.\n계약일이나 금액이 비어 있는 건이 위에 나오니 채워 주시고, 왜 따냈는지도 한 줄 남겨 주세요.","r_stage:6":"'실주'입니다. 놓친 현장입니다.\n왜 놓쳤는지, 어느 업체에 갔는지, 언제쯤 다시 연락해 볼 수 있는지를 남깁니다. 다음에 같은 이유로 놓치지 않기 위해서입니다.","r_exp:0":"네 번째 메뉴 '확장관리'입니다. 내가 공사를 끝낸 고객이 여기로 옵니다.\n한 번 공사한 고객은 다른 공사도 맡길 가능성이 높습니다. 그래서 공사가 끝난 뒤에도 연락을 이어 가는 화면입니다.","r_exp:1":"관리하는 고객이 몇 곳인지, 이번 주에 연락할 곳이 몇 곳인지 나옵니다. 하자 점검이나 다른 공종 확인처럼 어떤 얘기를 꺼내면 좋을지도 추천해 줍니다.","r_exp:2":"목록 맨 위가 이번 주에 연락할 고객입니다. 한 줄을 눌러 보겠습니다.","r_exp:3":"고객 창입니다. 모양은 앞에서 본 것과 같습니다. 왼쪽이 연락처, 가운데가 기록, 오른쪽이 지금 할 일입니다.\n연락한 내용을 적어 저장하고 다음 연락 날짜를 정합니다. 추가 공사 얘기가 나오면 맨 아래 버튼으로 새 견적문의로 넘깁니다.","r_sites:0":"마지막 메뉴 '고객 자산'입니다. 내가 담당하는 현장 전체 목록입니다.\n전화하기 전에 이 현장과 예전에 무슨 일이 있었는지 찾아볼 때 씁니다.","r_sites:1":"맨 위 '관계위험'은 진행 중인 영업이 있는데 연락이 뜸해진 현장입니다. 여기부터 연락합니다.","r_sites:2":"현장을 누르면 그 현장의 사람, 지금까지의 문의와 영업, 수주 이력이 한 화면에 시간 순서로 나옵니다.","rend:0":"정리하겠습니다. 화면은 많이 봤지만 매일 하실 일은 네 가지입니다.\n하나, 아침에 오늘 업무를 엽니다. 둘, 급한 곳 1번부터 전화합니다. 셋, 통화 결과를 적고 저장합니다. 넷, 다음에 언제 연락할지 날짜를 정합니다.\n이것만 하시면 나머지는 CRM이 알아서 다음 날 다시 알려 줍니다. 핸드폰에서도 같은 주소, 같은 계정으로 쓸 수 있고, 순서는 나눠 드린 매뉴얼에 그대로 있습니다.\n처음이라 불편한 점이 있을 겁니다. 쓰시다가 막히는 부분은 바로 알려 주세요.","intro:0":"관리자 화면 전체를 왼쪽 메뉴 순서대로 보여드립니다. 화면마다 무엇을 보는 곳인지와 상세 창까지 봅니다.","t_dash:0":"영업 대시보드입니다. 전체 영업이 지금 어떤 상태인지 한 화면에서 봅니다.","t_dash:1":"맨 위는 이번 달 매출, 연 누적 매출, 파이프라인 금액입니다. 누르면 근거 목록이 열립니다.","t_dash:2":"월별 매출과 문의 유입, 사업유형별 매출입니다. 매출은 계약 체결일 기준입니다.","t_dash:3":"영업 퍼널은 단계별 건수, 담당자 종합은 담당자별 매출입니다. 누르면 해당 화면으로 갑니다.","t_control:0":"컨트롤타워입니다. 확인이 필요한 건을 찾아 바로 조치하는 화면입니다.","t_control:1":"'지금 처리'는 끊긴 건과 막힌 곳, '점검 지표'는 운영 상태 점검입니다.","t_control:2":"'후속이 끊긴 건'은 매일 처리할 줄이고, '데이터 위험'은 CRM이 먼저 알려 주는 확인 항목입니다.","t_control:3":"'지금 막힌 곳'에서 조건을 고르고, '담당자별 문제 · 지시'에서 담당자에게 할 일을 지정합니다.","t_perf:0":"성과 분석입니다. 실적과 진행을 같은 기준으로 봅니다.","t_perf:1":"'전사 판정'은 이번 달 매출 페이스, 아래 카드는 담당자별 매출과 전환율입니다.","t_perf:2":"월별 매출 추이와 담당자 랭킹입니다. 기술자문 낙찰실적은 확정분만, 낙찰확정일 기준입니다.","t_perf:3":"영업 패턴은 10월부터 기록이 쌓이면 의미가 생기는 영역입니다.","t_today:0":"오늘 업무입니다. 맨 위 한 줄이 미배정 문의 알림입니다. 숫자가 있으면 담당자부터 정합니다.","t_today:1":"담당자별 현황입니다. 늦은 건이 많은 담당자가 위에 옵니다. 행을 누르면 아래 목록이 그 담당자로 좁혀집니다.","t_today:2":"견적문의 관리 목록입니다. 미배정, 첫 연락 늦음, 후속 늦음 순으로 봅니다.","t_today:3":"파이프라인 관리 목록입니다. 오늘 확인이 필요한 영업건이 같은 방식으로 나옵니다.","t_inq:0":"견적문의입니다. 맨 위 한 문장이 지금 가장 급한 일과 건수이고, 그 아래 네 칸이 단계별 건수입니다. 칸을 누르면 그 단계만 봅니다.","t_inq:1":"목록은 할 일로 묶여 있고, '담당자를 정해 주세요'가 맨 위입니다. 담당자를 정해야 연락이 시작되므로 가장 먼저 처리합니다.","t_inq:2":"문의 상세입니다. 진행 막대는 접수, 담당 배정, 접촉 · 상담, 현장방문 · 견적 네 칸입니다.","t_inq:3":"왼쪽은 문의 원문, 가운데는 주고받은 기록, 오른쪽은 지금 할 일입니다. '견적서 발송'을 저장하면 파이프라인 '컨설팅 설계'로 자동 등록됩니다.","t_pipe:0":"파이프라인입니다. 위쪽에 전체 진행 건수와 금액이 있고, 연도, 브랜드, 담당자로 좁힙니다.","t_pipe:1":"단계는 일곱 개입니다. 단계마다 건수와 금액이 나와서 어디에 몰려 있는지 봅니다.","t_pipe:2":"카드 한 장이 영업 한 건입니다. 누르면 상세가 열리고, 끌어 놓으면 단계가 바뀝니다.","a4:0":"영업건 상세입니다. 위쪽에 현장명, 담당, 예상 금액, 이 단계 며칠째인지와 진행 막대가 있습니다.","a4:1":"왼쪽은 고객과 현장입니다. 연락처, 관리 정보, 자료, 같은 현장의 다른 영업건입니다.","a4:2":"가운데는 고객과 주고받은 기록입니다. 담당자에게 묻지 않아도 진행 내용을 여기서 확인합니다.","a4:3":"오른쪽 위는 지금 할 일입니다. 다음 할 일이 비어 있으면 여기서 바로 드러납니다.","a4:4":"'이 단계에서 챙길 정보'는 채워야 할 항목, '단계 바꾸기'는 단계 변경과 수주 · 실주 처리, 그 아래가 담당자 변경입니다.","a3s:0":"컨설팅 설계입니다. 문의에서 넘어온 건이 처음 들어오는 단계입니다.\n화면은 모든 단계가 같습니다. 건수와 금액, 담당자별, 단계 진단, 목록 순입니다. 여기서는 고객 요구 미확인과 다음 할 일 없음을 봅니다.","a3s:1":"자료 발송완료입니다. 견적을 보낸 뒤 반응을 확인하는 단계입니다. 후속 기한 초과와 후속일 미지정을 봅니다.","a3s:2":"관계관리입니다. 유대강화, 침묵관리, 대기고객으로 나뉩니다. 연락 초과와 다음 연락 미지정을 봅니다.","a3s:3":"경쟁·입찰입니다. 결정일이 있는 건입니다. 결정일 미등록과 경쟁사 미기록을 봅니다.","a3s:4":"계약·시공입니다. 계약일과 계약 금액이 여기서 들어가야 매출로 잡힙니다. 계약 체결 대기 건부터 봅니다.","a3s:5":"수주입니다. 결과라서 파이프라인 숫자에는 들어가지 않습니다. 계약 정보와 이긴 이유가 비어 있는 건을 봅니다.","a3s:6":"실주입니다. 사유가 기록되지 않은 건이 맨 위에 옵니다. 사유가 있어야 원인을 볼 수 있습니다.","t_expansion:0":"확장관리입니다. 수주해서 준공한 고객을 파이프라인과 따로 이어서 관리합니다.","t_expansion:1":"관리 고객 수와 이번 주 연락할 곳, 다음 매출 추천 유형이 나옵니다.","t_expansion:2":"'이번 주 연락'이 맨 위입니다. 줄을 누르면 상세가 열립니다.","t_expansion:3":"확장관리 상세입니다. 진행 막대는 이번 주 연락, 유지접촉, 니즈 확인, 견적문의 전환 네 칸입니다.","t_expansion:4":"왼쪽은 연락할 고객, 가운데는 접촉 기록, 오른쪽은 지금 할 일과 관리 상태입니다. 니즈가 확인되면 견적문의로 전환합니다.","t_gyeongnam:0":"경남지사입니다. 본사가 넘긴 건을 지사가 처리하는지 본사에서 확인합니다.","t_gyeongnam:1":"넘김, 실담당 지정, 첫 연락, 영업기회, 수주 순으로 어디서 멈췄는지 봅니다.","t_gyeongnam:2":"'지사 미착수'가 맨 위입니다. 넘긴 뒤 며칠이 지났는지 봅니다.","t_gyeongnam:3":"확인 창입니다. 진행 막대는 본사 → 지사, 지사 실담당, 지사 첫 연락, 영업기회, 수주 다섯 칸입니다.","t_gyeongnam:4":"오른쪽 '지사 진행 확인'에서 상태를 보고, 움직임이 없으면 '지사에 확인 요청'을 누릅니다.","t_sites:0":"고객 자산입니다. 현장 기준으로 사람과 영업, 수주 이력을 한곳에서 봅니다.","t_sites:1":"위쪽에서 활성, 기존고객, 재접촉 필요, 관계위험, 휴면으로 나눠 봅니다.","t_sites:2":"자산 수와 누적 수주, 진행 기회입니다. 관계위험 현장부터 연락하라는 과제가 제안됩니다.","t_sites:3":"'관계위험'이 맨 위입니다. 진행 금액은 있는데 연락이 뜸해진 현장입니다.","t_sites:4":"현장 상세입니다. 첫 관계부터 영업기회, 수주, 실주까지 한 줄로 요약됩니다.","t_sites:5":"왼쪽은 핵심 인물, 가운데는 관계 타임라인, 오른쪽은 누적 거래와 진행 중인 영업입니다.","t_repmanage:0":"영업사원 관리입니다. 평가가 아니라, 누구의 어떤 건을 도와야 하는지 보는 화면입니다.","t_repmanage:1":"팀 전체 진행 금액과, 정체 · 다음 할 일 없음 · 첫 연락 전이 몇 건인지 봅니다.","t_repmanage:2":"한 줄이 한 사람입니다. '관리자 확인 필요'가 위에 옵니다.","t_repmanage:3":"담당자 창입니다. 왼쪽은 흐름과 이번 주 약속, 오른쪽은 지금 처리할 현장입니다. 현장을 누르면 상세로 갑니다.","t_mgmt:0":"관리팀 KPI입니다. 영업이 멈추지 않게 관리팀이 지키는 지표입니다.","t_mgmt:1":"당일 배정률, 첫 연락 2시간 내 비율이 목표와 함께 나옵니다.","t_mgmt:2":"이번 주 관리팀 약속 12가지입니다. 아래 할 일을 처리하면 숫자가 바로 올라갑니다.","t_mgmt:3":"담당별 표입니다. 미응대, 할 일 없음, 기한초과, 정체, 기록률을 봅니다.","t_work:0":"공종 분석입니다. 어떤 공종에 기회와 매출이 쌓이는지 봅니다.","t_work:1":"분류 필요, 단일 공종, 복합 공종으로 나눠 봅니다.","t_work:2":"영업기회와 진행 금액, 그리고 공종 미분류가 몇 건인지 나옵니다.","t_work:3":"'분류 필요'는 공종이 없어 분석에서 빠지는 건입니다. 금액 큰 순입니다.","t_work:4":"'분류하기'를 누르면 이 창이 열립니다. 공종을 고르고 '확정 · 다음 건'으로 이어서 처리합니다.","t_brief:0":"주간 브리핑입니다. 주간 영업회의 때 보는 화면입니다.","t_brief:1":"주간과 월간을 바꾸고 주차를 고릅니다.","t_brief:2":"지난주 수주, 신규 유입, 진행 금액과 지난주에 무엇이 움직였는지입니다.","t_brief:3":"'지난주 판정'과 '이번 주 회의 안건'입니다. 안건마다 담당과 기한을 정합니다.","t_brief:4":"담당자 표입니다. 위험 현장이 많은 순으로, 이번 주 챙길 사람을 봅니다.","t_report:0":"리포트입니다. CRM 기록을 모아 보고 장표로 만들어 줍니다.","t_report:1":"월간, 분기, 연간을 고르고 PDF로 저장합니다.","t_report:2":"보고 장표입니다. 현장에서 남긴 기록이 이 보고서의 숫자가 됩니다.","t_dup:0":"데이터 정리 · 검토입니다. 중복으로 보이는 현장과 문의를 CRM이 먼저 찾아 둡니다.","t_dup:1":"'확실 · 같은 건', '애매 · 확인 필요', '다른 건'으로 나눠 봅니다.","t_dup:2":"무엇이 겹치고 왜 생기는지입니다. 표기 차이, 같은 주소 중복 등록, 재접수입니다.","t_dup:3":"승인하기 전에는 데이터가 바뀌지 않습니다. 목록에서 두 건을 비교해 판단합니다.","end:0":"여기까지가 관리자 화면 전체입니다. 관리자는 배정과 첫 연락, 단계별 진행, 담당자별 상태, 계약 체결일 기준 실적을 여기서 확인합니다."};
@@ -2759,7 +3091,7 @@ function unvisited(part){return PRESENTATION_SCRIPT.filter(s=>s.part===part&&(s.
     if(one)one.textContent=s.keyMessage||'';if(bD)bD.hidden=!(s.details&&s.details.length);closeDv()};
   const _render=renderUI;renderUI=function(){_render();upd()};
   if(window.WHO==='exec'){document.body.classList.add('exec');const _stE=stage;stage=function(s,t){_stE(s,t);const c=$('card');c.classList.toggle('dark',s.id==='q01'||s.id==='q16');c.classList.toggle('num',s.id==='x03');c.classList.toggle('q',/^q0[2-9]$/.test(s.id));if(/<br>|<em>/.test(s.card&&s.card.h||'')){const hh=c.querySelector('h2');if(hh)hh.innerHTML=s.card.h}
-  c.classList.toggle('bm',!!s.bm);c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis](cur().ti);c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>window.EXEC_VFIT(c));const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.spk,.core,.chk p,.ln,.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
+  c.classList.toggle('bm',!!s.bm);c.classList.toggle('visc',!!s.vis);if(s.vis&&window.EXEC_VIS&&window.EXEC_VIS[s.vis]){[...c.children].forEach(e=>{if(!/^(eb|H2)$/.test(e.className||e.tagName))e.remove()});const vw=document.createElement('div');vw.innerHTML=window.EXEC_VIS[s.vis](cur().ti);c.appendChild(vw.firstElementChild);requestAnimationFrame(()=>{window.EXEC_VFIT(c);if(window.EXEC_3D)window.EXEC_3D(c)});const vv=c.querySelector('.vis');if(vv){const L=[...vv.querySelectorAll('.spk,.core,.chk p,.ln,.me,.me .tag,.cg,.cg li,.vav,.qb,.lg,.lg .row,.nd,.nd p,.src p,.r2>*,.dst,.hub,.rc,.sp,.vf,.st,.st li,.trk li,.pap,.ask,.arw,.vfoot,.vnote')];L.forEach((x,k)=>{x.classList.add('mv');x.style.setProperty('--d',(0.25+k*0.16).toFixed(2)+'s')});vv.style.setProperty('--n',L.length)}}
   c.dataset.mo=s.mo||'';{const vv=c.querySelector('.vis');if(vv){const FX='.me,.cg,.rc,.sp,.spk,.qb,.src p,.r2>*,.dst,.trk li,.chk p,.vf,.st,.lg,.nd';vv.querySelectorAll(FX).forEach(x=>x.classList.add('fx'));
   vv.addEventListener('animationend',e=>{const x=e.target;if(!x.classList||!x.classList.contains('mv'))return;if(x.getAnimations().every(a=>a.playState==='finished'||(a.effect&&a.effect.getTiming().iterations===Infinity)))if(!x.classList.contains('core'))x.classList.add('done')});
   vv.addEventListener('click',e=>{const x=e.target.closest('.fx');if(!x||!vv.contains(x))return;e.stopPropagation();
