@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>현장 데이터분석 · 실행 순서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+/* 81쪽(d03) 다섯 단계 동작 — 1600×900 발표 화면 기준, 창 크기에 맞춰 축소 */
+:root{--o:#FF6F0F;--o2:#D65A00;--soft:#FFF3EA;--ink:#191F28;--sub:#6B7684;--line:#E5E8EB;--g:#F2F4F6;--e:cubic-bezier(.2,.7,.2,1)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#EEF0F3;font-family:Pretendard,'Malgun Gothic',sans-serif;color:var(--ink);overflow:hidden}
+.wrap{position:relative;margin:14px auto 0;box-shadow:0 18px 50px rgba(25,31,40,.12);border-radius:10px;overflow:hidden;background:#fff}
+#d03{position:absolute;left:0;top:0;width:1600px;height:900px;background:#fff;transform-origin:0 0;overflow:hidden;letter-spacing:-.02em}
+#d03 .eb{position:absolute;left:80px;top:50px;font-size:21px;font-weight:800;color:var(--o)}
+#d03 h2{position:absolute;left:80px;top:86px;margin:0;font-size:46px;line-height:1.32;font-weight:800;letter-spacing:-.045em}
+#d03 h2 em{font-style:normal;color:var(--o)}
+#d03 .ctx{position:absolute;left:900px;top:52px;font-size:16px;color:var(--sub);font-weight:600}
+#d03 .ctx b{color:var(--o2);background:var(--soft);padding:3px 10px;border-radius:999px;margin-right:6px}
+/* 단계 줄 */
+#d03 .rail{position:absolute;left:900px;top:96px;width:620px;display:grid;grid-template-columns:repeat(5,1fr)}
+#d03 .rail:before{content:'';position:absolute;left:10%;right:10%;top:21px;height:2px;background:var(--line)}
+#d03 .rail button{position:relative;border:0;background:none;font:inherit;color:var(--sub);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;padding:0}
+#d03 .rail .n{width:44px;height:44px;border-radius:50%;background:var(--g);border:5px solid #fff;box-sizing:content-box;margin-top:-5px;display:grid;place-items:center;font-size:18px;font-weight:800;transition:background .35s,color .35s}
+#d03 .rail .nm{font-size:19px;font-weight:800;color:var(--ink);opacity:.45;transition:opacity .35s,color .35s}
+#d03 .rail .wh{font-size:14px;font-weight:600}
+#d03 .rail .pb{width:70%;height:4px;border-radius:2px;background:var(--g);overflow:hidden;margin-top:2px}
+#d03 .rail .pb i{display:block;height:100%;width:0;background:var(--o)}
+#d03 .rail button.on .n{background:var(--o);color:#fff}
+#d03 .rail button.on .nm{opacity:1;color:var(--o)}
+#d03 .rail button.past .n{background:var(--soft);color:var(--o2)}
+#d03 .rail button.past .nm{opacity:.8}
+/* 장면 제목 · 메시지 · 원칙 */
+#d03 .sh{position:absolute;left:80px;top:234px;display:flex;align-items:center;gap:14px}
+#d03 .sh .role{font-size:17px;font-weight:800;color:var(--o2);background:var(--soft);padding:5px 12px;border-radius:8px;white-space:nowrap}
+#d03 .sh h3{margin:0;font-size:29px;font-weight:800;letter-spacing:-.04em}
+#d03 .msg{position:absolute;left:80px;right:80px;top:752px;margin:0;text-align:center;font-size:25px;font-weight:700;letter-spacing:-.035em}
+#d03 .msg strong{color:var(--o)}
+#d03 .fade{animation:fadeup .5s var(--e) both}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#d03 .pr{position:absolute;left:80px;right:80px;top:806px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+#d03 .pr div{height:58px;border-radius:14px;background:var(--soft);display:flex;align-items:center;gap:10px;padding:0 22px;font-size:20px;font-weight:700}
+#d03 .pr span{color:var(--o);font-weight:900}
+
+/* 무대: 1440×450 · 모든 물체가 장면 사이에 이어서 움직임 */
+#st{position:absolute;left:80px;top:290px;width:1440px;height:450px}
+#st .o{position:absolute;opacity:0;transition:left .9s var(--e),top .9s var(--e),width .9s var(--e),height .9s var(--e),opacity .55s ease,transform .9s var(--e),background-color .4s,border-color .4s,box-shadow .4s,color .4s}
+#st.instant .o,#st.instant .o *,#st.instant .o *:before,#st.instant .o *:after{transition:none!important;animation:none!important}
+#st.paused *,#st.paused *:before,#st.paused *:after{animation-play-state:paused!important}
+#st .bd{display:inline-flex;align-items:center;gap:7px;font-size:16px;font-weight:700;color:var(--sub)}
+#st .bd:before{content:'';width:8px;height:8px;border-radius:50%;background:var(--o)}
+#st .card{background:#fff;border:1.5px solid var(--line);border-radius:18px;box-shadow:0 16px 36px rgba(25,31,40,.07)}
+#st h4{margin:6px 0 0;font-size:26px;font-weight:800;letter-spacing:-.04em}
+
+/* 1 기록 */
+#st .mode{left:0;top:0;height:40px;padding:0 18px;border-radius:999px;background:var(--g);font-size:18px;font-weight:800;display:grid;align-items:center}
+#st .mode span{grid-area:1/1;transition:opacity .4s}
+#st .mode .fut{opacity:0}
+#st .rep{left:470px;top:9px;font-size:17px;font-weight:700;color:var(--sub)}
+#st .d{left:0;top:var(--y);width:380px;height:80px;display:flex;align-items:center;gap:16px;padding:0 20px;transform:translateX(-24px)}
+#st .d .pp{flex:none;width:30px;height:38px;border-radius:5px;background:repeating-linear-gradient(#C9CED4 0 2px,transparent 2px 8px) 6px 12px/18px 22px no-repeat,var(--g)}
+#st .d b{display:block;font-size:22px;font-weight:800}
+#st .d small{display:inline-block;font-size:18px;font-weight:600;color:var(--sub);margin:3px 0 0 -7px;padding:1px 7px;border-radius:7px;transition:background .4s,color .4s}
+#st .d .org{position:absolute;right:14px;top:12px;font-size:14px;font-weight:800;color:var(--o2);background:var(--soft);padding:3px 10px;border-radius:999px;opacity:0;transition:opacity .4s}
+#st .wires,#st .w2,#st .lp{left:0;top:0;width:1440px;height:450px;overflow:visible;pointer-events:none}
+#st svg path{fill:none;stroke:var(--o);stroke-width:2.5;stroke-dasharray:1;stroke-dashoffset:1;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1) calc(var(--i,0)*.22s)}
+#st svg circle{fill:var(--o);opacity:0;transition:opacity .3s calc(var(--i,0)*.22s)}
+#st .L{left:820px;top:40px;width:620px;height:400px;padding:22px 26px;transform:translateX(24px);transform-origin:0 0}
+#st .L .th{position:absolute;left:26px;right:26px;top:108px;display:grid;grid-template-columns:1fr 290px;font-size:16px;font-weight:700;color:var(--sub);padding-bottom:8px;border-bottom:1.5px solid var(--line)}
+#st .r{position:absolute;left:14px;right:14px;height:58px;padding:0 12px;display:grid;grid-template-columns:1fr 290px;align-items:center;font-size:21px;font-weight:700;border-radius:12px;transition:background .4s,box-shadow .4s}
+#st .r1{top:140px}#st .r2{top:204px}#st .r3{top:268px}#st .r4{top:332px;color:var(--sub)}
+#st .r em{position:relative;height:30px;font-style:normal;font-size:19px}
+#st .r em span{position:absolute;left:0;top:0;white-space:nowrap;transition:opacity .4s}
+#st .r .dash{color:#C9CED4}
+#st .r .man{opacity:0;color:var(--sub);font-weight:600}
+#st .r .lnk{opacity:0;color:var(--o2);font-weight:800;display:flex;align-items:center;gap:8px}
+#st .r .lnk:before{content:'';width:16px;height:9px;border:2.5px solid var(--o);border-radius:6px}
+#st .r .need{padding:0 12px;border:2px dashed var(--o);border-radius:999px;line-height:26px}
+#st .r .need:before{display:none}
+#st .fol{position:absolute;left:-196px;top:186px;font-size:17px;font-weight:800;color:var(--o2);background:#fff;border:2px solid var(--o);border-radius:999px;padding:4px 14px;opacity:0;transition:opacity .4s}
+#st .cur{left:0;top:0;width:34px;height:34px}
+#st .ghost{left:0;top:0;padding:6px 14px;background:#fff;border:2px solid var(--o);border-radius:9px;font-size:17px;font-weight:800;color:var(--o2);box-shadow:0 8px 18px rgba(25,31,40,.12);white-space:nowrap}
+
+#st.sc1 .mode{opacity:1}
+#st.sc1 .d{opacity:1;transform:none;transition-delay:calc(var(--i)*.12s)}
+#st.sc1 .L{opacity:1;transform:none;transition-delay:.3s}
+#st.c1a .rep{opacity:1;transition-delay:2.3s}
+#st.c1a .cur{animation:cur 3.3s cubic-bezier(.55,0,.3,1) both}
+#st.c1a .ghost{animation:gh 3.3s cubic-bezier(.55,0,.3,1) both}
+#st.c1a .d2{border-color:#FFC9A3}
+#st.c1a .r1 .dash{opacity:0;transition-delay:1.8s}
+#st.c1a .r1 .man{opacity:1;transition-delay:1.8s}
+@keyframes cur{0%{opacity:0;transform:translate(300px,196px)}8%,20%{opacity:1;transform:translate(300px,196px)}55%,66%{opacity:1;transform:translate(1180px,216px)}100%{opacity:1;transform:translate(330px,100px)}}
+@keyframes gh{0%,16%{opacity:0;transform:translate(150px,170px)}22%{opacity:1;transform:translate(150px,170px)}55%{opacity:1;transform:translate(1030px,190px)}63%,100%{opacity:0;transform:translate(1030px,190px)}}
+#st.c1b .mode{background:var(--soft);color:var(--o2)}
+#st.c1b .mode .now{opacity:0}
+#st.c1b .mode .fut{opacity:1}
+#st.c1b .rep{opacity:0;transition-delay:0s}
+#st.c1b .cur,#st.c1b .ghost{animation:none;opacity:0}
+#st.c1b .d{border-color:#FFD6B8}
+#st.c1b .wires{opacity:1}
+#st.c1b .wires path{stroke-dashoffset:0}
+#st.c1b .wires circle{opacity:1}
+#st.c1b .r .dash,#st.c1b .r .man{opacity:0;transition-delay:0s}
+#st.c1b .r .lnk{opacity:1;transition-delay:calc(.6s + var(--i)*.4s)}
+#st.c1c .wires{opacity:.3}
+#st.c1c .r1,#st.c1c .r2{background:var(--soft);box-shadow:inset 0 0 0 2px var(--o)}
+#st.c1c .fol{opacity:1}
+
+/* 2 비교 */
+#st .ru{left:360px;top:0;height:48px;display:flex;align-items:center;gap:10px}
+#st .ru b{font-size:19px;font-weight:800;margin-right:4px}
+#st .ru .ch{font-size:17px;font-weight:700;background:var(--g);border-radius:999px;padding:6px 14px;opacity:0;transform:translateY(-8px);transition:opacity .4s calc(var(--i)*.25s),transform .4s calc(var(--i)*.25s),background .4s,color .4s}
+#st .ru .ch:before{content:'✓ ';color:var(--o)}
+#st .ln{left:0;width:310px;height:29px;border-radius:16px;overflow:hidden}
+#st .lnA{top:110px}#st .lnB{top:142px}
+#st .ln .tg{position:absolute;left:26px;top:56px;font-size:27px;font-weight:900;color:var(--o)}
+#st .ln .cd{position:absolute;top:24px;width:230px;height:100px;border-radius:14px;background:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:22px;font-weight:800;line-height:1.3;transition:transform .8s var(--e),background .4s}
+#st .ln .cd small{font-size:16px;font-weight:600;color:var(--sub);margin-top:6px}
+#st .ln .cL{left:100px;transform:translate(-10px,12px) rotate(-2.5deg)}
+#st .ln .cR{left:450px;transform:translate(10px,-12px) rotate(2.5deg)}
+#st .ln .mid{position:absolute;left:336px;top:24px;width:108px;height:100px}
+#st .ln .lk{position:absolute;left:4px;right:4px;top:49px;height:2.5px;background:var(--o);transform:scaleX(0);transition:transform .7s var(--e)}
+#st .ln .lk:before,#st .ln .lk:after{content:'';position:absolute;top:-4px;width:9px;height:9px;border-top:2.5px solid var(--o);border-right:2.5px solid var(--o)}
+#st .ln .lk:after{right:0;transform:rotate(45deg)}
+#st .ln .lk:before{left:0;transform:rotate(-135deg)}
+#st .ln .neq{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;background:#fff;border:2.5px solid var(--o);color:var(--o2);font-weight:900;font-size:18px;padding:3px 13px;border-radius:999px;white-space:nowrap;transition:opacity .4s,transform .45s var(--e)}
+#st .fl{left:1075px;width:140px;height:44px;border-radius:12px;background:var(--soft);border:1.5px solid transparent;color:var(--o2);font-weight:800;font-size:18px;padding:0 14px;display:grid;align-items:center;transform:translateX(-16px) scale(.9);overflow:hidden}
+#st .fA{top:123px}#st .fB{top:293px}
+#st .fl>span{grid-area:1/1;white-space:nowrap;transition:opacity .35s}
+#st .fl .b{opacity:0}
+#st .fl .b small{display:block;font-size:16px;font-weight:600;color:var(--sub);max-height:0;opacity:0;transition:max-height .5s,opacity .5s}
+#st .T{left:1230px;top:70px;width:210px;height:320px;padding:20px;border:2px dashed #FFC9A3;border-radius:18px;background:#fff;display:grid;align-content:start}
+#st .T b{grid-area:1/1;font-size:19px;font-weight:800;transition:opacity .4s}
+#st .T .t2{opacity:0}
+
+#st.sc2 .L{opacity:.5;transform:translate(-820px,0) scale(.5)}
+#st.sc2 .r .dash{opacity:0}
+#st.sc2 .r .lnk{opacity:1}
+#st.sc2 .r1,#st.sc2 .r2{background:var(--soft);box-shadow:inset 0 0 0 2px var(--o)}
+#st.sc2 .ru{opacity:1;transition-delay:.4s}
+#st.c2a .ln{left:360px;width:700px;height:150px;opacity:1}
+#st.c2a .lnA{top:70px}
+#st.c2a .lnB{top:240px;transition-delay:.15s}
+#st.c2b .ru .ch{opacity:1;transform:none}
+#st.c2b .ln .cd{transform:none;transition-delay:.7s}
+#st.c2c .lnA .lk{transform:scaleX(1)}
+#st.c2c .lnA .neq{opacity:1;transform:translate(-50%,-50%) scale(1);transition-delay:.7s}
+#st.c2c .lnA{border-color:#FFC9A3}
+#st.c2c .fA{opacity:1;transform:none;transition-delay:1.1s}
+#st.c2e .lnB .lk{transform:scaleX(1)}
+#st.c2e .lnB .neq{opacity:1;transform:translate(-50%,-50%) scale(1);transition-delay:.7s}
+#st.c2e .lnB{border-color:#FFC9A3}
+#st.c2e .fB{opacity:1;transform:none;transition-delay:1.1s}
+#st.c2d .T{opacity:1}
+#st.c2d .fA{left:1245px;top:128px;width:180px;transition-delay:.25s}
+#st.c2d .fB{left:1245px;top:186px;width:180px;transition-delay:.4s}
+#st.c2d .fl .a{opacity:0}
+#st.c2d .fl .b{opacity:1}
+
+/* 3 이유 확인 */
+#st .fr{left:392px;top:22px;width:416px;height:126px;border:3px solid var(--o);border-radius:20px;box-shadow:0 0 0 7px rgba(255,111,15,.12)}
+#st .P{left:860px;top:20px;width:580px;height:410px;padding:24px 26px;transform:translateX(24px)}
+#st .P h4{display:flex;align-items:center;gap:12px;margin:0 0 6px;font-size:24px}
+#st .P h4 svg{flex:none}
+#st .q{display:grid;grid-template-columns:70px 1fr;align-items:center;min-height:64px;padding:0 14px;margin-top:10px;border-radius:12px;font-size:22px;font-weight:700;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s var(--e),background .4s}
+#st .q b{color:var(--o);font-weight:900}
+#st .nt{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:17px;line-height:1.5;color:var(--sub);font-weight:600;opacity:0;transition:opacity .5s}
+#st .nt strong{color:var(--ink)}
+
+#st.sc3 .T{opacity:1;left:0;top:30px;width:340px;height:390px;border:1.5px solid var(--line)}
+#st.sc3 .T .t1{opacity:0}
+#st.sc3 .T .t2{opacity:1}
+#st.sc3 .fl{opacity:1;transform:none;left:20px;width:300px;height:84px;background:#fff;border-color:var(--line);color:var(--ink)}
+#st.sc3 .fA{top:96px}#st.sc3 .fB{top:196px}
+#st.sc3 .fl .a{opacity:0}
+#st.sc3 .fl .b{opacity:1}
+#st.sc3 .fl .b small{max-height:30px;opacity:1}
+#st.sc3 .d{opacity:1;transform:none;left:400px;width:400px;height:110px;transition-delay:.15s}
+#st.sc3 .d2{top:30px}#st.sc3 .d1{top:160px}#st.sc3 .d3{top:290px}
+#st.sc3 .d4{opacity:0;transform:translateX(-24px)}
+#st.sc3 .d .org{opacity:1}
+#st.sc3 .w2{opacity:1}
+#st.sc3 .P{opacity:1;transform:none;transition-delay:.3s}
+#st.c3a .fA{background:var(--soft);border-color:var(--o);color:var(--o2)}
+#st.c3a .w2 .pa{stroke-dashoffset:0}
+#st.c3a .w2 .pa+circle{opacity:1}
+#st.c3a .fr{opacity:1}
+#st.c3a .d2 small{background:var(--soft);color:var(--o2)}
+#st.c3b .q1{opacity:1;transform:none;background:var(--soft)}
+#st.c3c .fA{background:#fff;border-color:var(--line);color:var(--ink)}
+#st.c3c .fB{background:var(--soft);border-color:var(--o);color:var(--o2)}
+#st.c3c .w2 .pb{stroke-dashoffset:0}
+#st.c3c .fr{top:152px;height:256px}
+#st.c3c .d2 small{background:transparent;color:var(--sub)}
+#st.c3c .d1 small,#st.c3c .d3 small{background:var(--soft);color:var(--o2)}
+#st.c3c .q1{background:transparent}
+#st.c3c .q2{opacity:1;transform:none;background:var(--soft)}
+#st.c3d .fB{background:#fff;border-color:var(--line);color:var(--ink)}
+#st.c3d .fr{top:22px;height:386px}
+#st.c3d .d2 small{background:var(--soft);color:var(--o2)}
+#st.c3d .q2{background:transparent}
+#st.c3d .q3{opacity:1;transform:none;background:var(--soft)}
+#st.c3e .nt{opacity:1}
+
+/* 4 기준 보완 */
+#st .F{left:0;top:20px;width:470px;height:410px;padding:24px 26px;transform:translateX(-24px)}
+#st .F .lb{font-size:17px;font-weight:800;color:var(--o2)}
+#st .k{position:absolute;left:26px;right:26px;height:60px;border-radius:12px;background:var(--g);font-size:21px;font-weight:800;display:flex;align-items:center;gap:10px;padding:0 18px;transition:background .4s,color .4s}
+#st .k i{font-style:normal;color:var(--o);font-weight:900}
+#st .ka{top:122px}#st .kb{top:194px}
+#st .kc{top:272px;background:#fff;border:2px dashed #C9CED4;color:var(--sub)}
+#st .kc i{color:#9AA1A9}
+#st .kc .no{position:absolute;left:4px;top:66px;font-size:16px;font-weight:800;color:var(--o2);opacity:0;transition:opacity .4s;white-space:nowrap}
+#st .S{left:820px;top:20px;width:620px;height:410px;padding:24px 26px;transform:translateX(24px);transform-origin:0 0}
+#st .sl{position:absolute;left:26px;right:26px;height:80px;border-top:1.5px solid var(--line);display:grid;grid-template-columns:120px 1fr;align-items:center;font-size:22px}
+#st .s1{top:126px}#st .s2{top:212px}#st .s3{top:298px}
+#st .sl b{color:var(--o);font-weight:900}
+#st .sl .ph,#st .sl .tx{grid-area:1/2}
+#st .sl .ph{height:14px;width:72%;border-radius:7px;background:var(--g);transition:opacity .3s}
+#st .sl .tx{font-weight:800;opacity:0;clip-path:inset(0 100% 0 0);transition:opacity .3s,clip-path .8s var(--e)}
+#st .stp{position:absolute;right:22px;top:22px;background:var(--o);color:#fff;font-size:17px;font-weight:800;padding:6px 14px;border-radius:8px;opacity:0;transform:scale(1.3) rotate(-4deg);transition:opacity .35s,transform .45s var(--e)}
+#st .tk{width:200px;height:44px;border-radius:999px;background:var(--o);color:#fff;font-size:17px;font-weight:800;display:grid;place-items:center;box-shadow:0 10px 24px rgba(255,111,15,.3);left:40px;--dx:916px}
+#st .tk1{top:150px;--dy:16px}#st .tk2{top:222px;--dy:30px}#st .tk3{top:186px;--dy:152px}
+@keyframes trav{0%{opacity:0;transform:translate(0,0) scale(.9)}15%{opacity:1;transform:translate(0,0) scale(1)}80%{opacity:1;transform:translate(var(--dx),var(--dy))}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.9)}}
+@keyframes nope{0%{transform:none}45%,60%{transform:translateX(150px)}100%{transform:none}}
+
+#st.sc4 .F{opacity:1;transform:none}
+#st.sc4 .S{opacity:1;transform:none;transition-delay:.2s}
+#st.c4a .tk1{animation:trav 1.2s cubic-bezier(.5,0,.2,1) both}
+#st.c4a .ka{background:var(--soft);color:var(--o2)}
+#st.c4a .s1 .ph{opacity:0;transition-delay:.95s}
+#st.c4a .s1 .tx{opacity:1;clip-path:inset(0 0 0 0);transition-delay:.95s}
+#st.c4b .ka{background:var(--g);color:var(--ink)}
+#st.c4b .kb{background:var(--soft);color:var(--o2)}
+#st.c4b .tk2{animation:trav 1.2s cubic-bezier(.5,0,.2,1) both}
+#st.c4b .s2 .ph{opacity:0;transition-delay:.95s}
+#st.c4b .s2 .tx{opacity:1;clip-path:inset(0 0 0 0);transition-delay:.95s}
+#st.c4c .kb{background:var(--g);color:var(--ink)}
+#st.c4c .tk3{animation:trav 1.2s cubic-bezier(.5,0,.2,1) both}
+#st.c4c .s3 .ph{opacity:0;transition-delay:.95s}
+#st.c4c .s3 .tx{opacity:1;clip-path:inset(0 0 0 0);transition-delay:.95s}
+#st.c4d .kc{animation:nope 1.4s cubic-bezier(.4,0,.2,1) both}
+#st.c4d .kc .no{opacity:1;transition-delay:1.1s}
+#st.c4e .stp{opacity:1;transform:rotate(-4deg)}
+#st.c4e .S{border-color:#FFC9A3}
+
+/* 5 다시 확인 */
+#st .ar{height:40px;width:0}
+#st .ar i{position:absolute;left:0;right:10px;top:19px;height:2.5px;background:var(--o);transform:scaleX(0);transform-origin:left;transition:transform .6s var(--e)}
+#st .ar i:after{content:'';position:absolute;right:-8px;top:-4px;width:9px;height:9px;border-top:2.5px solid var(--o);border-right:2.5px solid var(--o);transform:rotate(45deg)}
+#st .a5{left:462px;top:150px;width:80px}
+#st .a6{left:996px;top:150px;width:56px}
+#st .B{left:556px;top:20px;width:436px;height:300px;padding:24px 26px;transform:translateX(24px)}
+#st .B h4{font-size:24px}
+#st .tr{position:absolute;left:26px;right:26px;top:122px;height:6px;border-radius:3px;background:var(--g)}
+#st .tr .bf{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:3px;background:var(--o);transition:width 2.2s linear}
+#st .tr span{position:absolute;top:14px;white-space:nowrap;transform:translateX(-50%);font-size:17px;font-weight:800;color:var(--sub);transition:color .3s}
+#st .tr span:before{content:'';position:absolute;left:50%;top:-20px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#fff;border:3px solid #D1D6DB;box-sizing:border-box;transition:border-color .3s}
+#st .tr .t0{left:0;transform:none}#st .tr .t0:before{left:0;margin:0}
+#st .tr .t1{left:50%}
+#st .tr .t2{left:100%;transform:translateX(-100%)}#st .tr .t2:before{left:auto;right:0;margin:0}
+#st .rs{position:absolute;left:26px;right:26px;top:188px;display:flex;flex-wrap:wrap;gap:8px}
+#st .rs span{font-size:17px;font-weight:800;color:var(--o2);background:var(--soft);padding:7px 13px;border-radius:9px;opacity:0;transform:translateY(8px);transition:opacity .4s calc(var(--i)*.2s),transform .4s calc(var(--i)*.2s)}
+#st .M{left:1060px;top:20px;width:380px;height:300px;padding:24px 24px;transform:translateX(24px)}
+#st .M h4{font-size:22px}
+#st .mr{display:grid;grid-template-columns:52px 1fr;align-items:center;height:46px;margin-top:8px;padding:0 12px;border-radius:10px;background:var(--g);font-size:17px;font-weight:700}
+#st .mr b{color:var(--o);font-weight:900}
+#st .mr:first-of-type{margin-top:14px}
+#st .M p{margin:10px 0 0;font-size:15px;color:var(--sub);font-weight:600;line-height:1.45}
+#st .lpl{left:560px;top:384px;background:#fff;padding:4px 18px;font-size:19px;font-weight:800;color:var(--o2);white-space:nowrap}
+
+#st.sc5 .S{opacity:1;left:0;top:30px;transform:scale(.72);border-color:var(--o)}
+#st.sc5 .sl .ph{opacity:0}
+#st.sc5 .sl .tx{opacity:1;clip-path:inset(0 0 0 0)}
+#st.sc5 .stp{opacity:1;transform:rotate(-4deg)}
+#st.c5a .a5{opacity:1}
+#st.c5a .a5 i{transform:scaleX(1)}
+#st.c5a .B{opacity:1;transform:none;transition-delay:.35s}
+#st.c5b .bf{width:100%}
+#st.c5b .tr .t0{color:var(--o2)}#st.c5b .tr .t0:before{border-color:var(--o)}
+#st.c5c .tr span{color:var(--o2)}#st.c5c .tr span:before{border-color:var(--o)}
+#st.c5c .rs span{opacity:1;transform:none}
+#st.c5c .a6{opacity:1;transition-delay:.7s}
+#st.c5c .a6 i{transform:scaleX(1);transition-delay:.7s}
+#st.c5c .M{opacity:1;transform:none;transition-delay:1s}
+#st.c5d .lp{opacity:1}
+#st.c5d .lp path{stroke-dashoffset:0;transition-duration:1.5s}
+#st.c5d .lp circle{opacity:1;transition-delay:1.4s}
+#st.c5d .lpl{opacity:1;transition-delay:.8s}
+
+/* 조작 */
+.ctl{display:flex;justify-content:center;align-items:center;gap:10px;margin:12px auto 0;font-size:15px;color:#4E5968}
+.ctl button{font:inherit;font-weight:700;border:1px solid #D1D6DB;background:#fff;color:var(--ink);border-radius:10px;padding:9px 16px;cursor:pointer}
+.ctl button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ctl .pos{min-width:150px;text-align:center;font-weight:700}
+.ctl .hint{color:#8B95A1;font-size:13px}
+/* 발표 파일 안(embed=1): 바깥 여백 · 조작 줄 없음 */
+html.emb,html.emb body{background:#fff}
+html.emb .wrap{margin:0 auto;box-shadow:none;border-radius:0}
+html.emb .ctl{display:none}
+@media (prefers-reduced-motion:reduce){#st .o,#st .o *{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+<section id="d03" aria-label="현장 데이터분석 실행 순서 다섯 단계">
+  <div class="eb">PART 4 현장관리 · 향후 데이터분석</div>
+  <h2>그래프를 하나 더 만드는 일이 아니라,<br><em>다음 현장의 기준을 바꾸는 일입니다.</em></h2>
+  <div class="ctx"><b>향후 추진 방향</b>익명 설명 예시 · 실제 금액 · 현장명 없음</div>
+  <nav class="rail" aria-label="다섯 단계">
+    <button data-i="0"><span class="n">1</span><span class="nm">기록</span><span class="wh">현재 → 향후 자동화</span><span class="pb"><i></i></span></button>
+    <button data-i="1"><span class="n">2</span><span class="nm">비교</span><span class="wh">향후 자동화</span><span class="pb"><i></i></span></button>
+    <button data-i="2"><span class="n">3</span><span class="nm">이유 확인</span><span class="wh">제가 할 일</span><span class="pb"><i></i></span></button>
+    <button data-i="3"><span class="n">4</span><span class="nm">기준 보완</span><span class="wh">제가 할 일</span><span class="pb"><i></i></span></button>
+    <button data-i="4"><span class="n">5</span><span class="nm">다시 확인</span><span class="wh">다음 준공 후</span><span class="pb"><i></i></span></button>
+  </nav>
+  <div class="sh"><span class="role" id="role"></span><h3 id="ttl"></h3></div>
+
+  <div id="st" class="stage sc0" role="img">
+    <!-- 1 기록 -->
+    <div class="o mode"><span class="now">현재 · 사람이 자료를 찾아 엑셀에 복사 · 입력</span><span class="fut">향후 · 원본을 연결해 현장별로 자동 취합</span></div>
+    <div class="o rep">↻ 현장마다 · 항목마다 반복</div>
+    <svg class="o wires" viewBox="0 0 1440 450">
+      <path pathLength="1" style="--i:0" d="M380 192 C600 192 600 209 820 209"/><circle style="--i:0" cx="380" cy="192" r="5"/>
+      <path pathLength="1" style="--i:1" d="M380 96 C600 96 600 273 820 273"/><circle style="--i:1" cx="380" cy="96" r="5"/>
+      <path pathLength="1" style="--i:2" d="M380 288 C600 288 600 273 820 273"/><circle style="--i:2" cx="380" cy="288" r="5"/>
+      <path pathLength="1" style="--i:3" d="M380 288 C600 288 600 337 820 337"/>
+      <path pathLength="1" style="--i:4" d="M380 384 C600 384 600 337 820 337"/><circle style="--i:4" cx="380" cy="384" r="5"/>
+    </svg>
+    <div class="o card d d1" style="--i:0;--y:56px"><i class="pp"></i><div><b>계약 · 최종 견적</b><small>기준 금액 · 면적</small></div><span class="org">원본</span></div>
+    <div class="o card d d2" style="--i:1;--y:152px"><i class="pp"></i><div><b>출역표 · 정산서</b><small>품수 · 노임금액</small></div><span class="org">원본</span></div>
+    <div class="o card d d3" style="--i:2;--y:248px"><i class="pp"></i><div><b>ERP 자재 자료</b><small>시트 사용량 · 자재비</small></div><span class="org">원본</span></div>
+    <div class="o card d d4" style="--i:3;--y:344px"><i class="pp"></i><div><b>착공 · 준공 기록</b><small>실제 공사기간</small></div><span class="org">원본</span></div>
+    <div class="o card L">
+      <span class="bd">현장 A · 같은 현장 · 공종으로</span>
+      <h4>준공 현장 취합표</h4>
+      <div class="th"><span>분석할 자료</span><span>원본 연결</span></div>
+      <div class="r r1" style="--i:0"><span>품수 · 노임금액</span><em><span class="dash">—</span><span class="man">손으로 옮겨 적는 중…</span><span class="lnk">출역표 · 정산서</span></em></div>
+      <div class="r r2" style="--i:1"><span>면적 · 시트 사용량</span><em><span class="dash">—</span><span class="lnk">계약 면적 · ERP 시트</span></em></div>
+      <div class="r r3" style="--i:2"><span>자재비 · 공사기간</span><em><span class="dash">—</span><span class="lnk">ERP · 착공 · 준공 기록</span></em></div>
+      <div class="r r4" style="--i:3"><span>자료가 비어 있으면</span><em><span class="dash">—</span><span class="lnk need">확인 필요로 남김</span></em></div>
+      <span class="fol">따라갈 두 항목 →</span>
+    </div>
+    <div class="o ghost">품수 · 노임금액</div>
+    <svg class="o cur" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 14.8 L11.6 21.6 L14.4 20.4 L11.3 13.7 L17.5 13.4 Z" fill="#191F28" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+    <!-- 2 비교 -->
+    <div class="o ru"><b>비교 기준부터 맞춤</b><span class="ch" style="--i:0">같은 현장 A</span><span class="ch" style="--i:1">같은 공종</span><span class="ch" style="--i:2">같은 집계 범위</span></div>
+    <div class="o card ln lnA"><b class="tg">노임</b><div class="cd cL">품수 × 적용 품단가<small>품단가 적용일 확인</small></div><div class="mid"><i class="lk"></i><span class="neq">차이</span></div><div class="cd cR">노임금액<small>정산서 기준</small></div></div>
+    <div class="o card ln lnB"><b class="tg">시트</b><div class="cd cL">컨설팅면적<small>면적 산출 · 할증 기준</small></div><div class="mid"><i class="lk"></i><span class="neq">차이</span></div><div class="cd cR">실제 시트 사용량<small>ERP · 집계 범위</small></div></div>
+    <div class="o T"><b class="t1">확인할 항목</b><b class="t2">확인할 차이</b></div>
+    <div class="o fl fA"><span class="a">차이 확인</span><span class="b">노임 차이<small>출역표 ↔ 계약 · 정산서</small></span></div>
+    <div class="o fl fB"><span class="a">차이 확인</span><span class="b">시트 사용량 차이<small>면적 산출 ↔ ERP</small></span></div>
+
+    <!-- 3 이유 확인 -->
+    <svg class="o w2" viewBox="0 0 1440 450">
+      <path class="pa" pathLength="1" d="M340 138 C372 138 368 85 400 85"/><circle cx="400" cy="85" r="5"/>
+      <path class="pa" pathLength="1" style="--i:1" d="M340 138 C372 138 368 215 400 215"/>
+      <path class="pb" pathLength="1" d="M340 238 C372 238 368 215 400 215"/>
+      <path class="pb" pathLength="1" style="--i:1" d="M340 238 C372 238 368 345 400 345"/>
+    </svg>
+    <div class="o fr"></div>
+    <div class="o card P">
+      <h4><svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="10" r="6" fill="#FF6F0F"/><path d="M3.5 28c1-6.5 5.6-10 11.5-10s10.5 3.5 11.5 10z" fill="#FF6F0F"/></svg>제가 원본과 담당자에게 확인합니다</h4>
+      <div class="q q1"><b>노임</b><span>품수 · 단가 · 정산 범위가 맞나?</span></div>
+      <div class="q q2"><b>시트</b><span>면적 · 할증 · 집계 범위가 맞나?</span></div>
+      <div class="q q3"><b>손익</b><span>장비 · 폐기물 비용은 어디에 포함됐나?</span></div>
+      <p class="nt"><strong>자동 계산의 차이는 조사할 신호입니다.</strong><br>확인하기 전에는 손실 원인으로 정하지 않습니다.</p>
+    </div>
+
+    <!-- 4 기준 보완 -->
+    <div class="o card F">
+      <span class="lb">원본 · 담당자 확인 후</span>
+      <h4>차이가 난 이유와 산정 근거</h4>
+      <div class="k ka"><i>✓</i>품수 · 적용 단가 근거</div>
+      <div class="k kb"><i>✓</i>면적 · 자재 집계 범위</div>
+      <div class="k kc"><i>?</i>이유가 확인되지 않은 차이<span class="no">확인 전에는 기준에 넣지 않음</span></div>
+    </div>
+    <div class="o card S">
+      <span class="bd">다음 현장에 쓸 기준</span>
+      <h4>견적 · 투입 기준</h4>
+      <div class="sl s1"><b>견적</b><span class="ph"></span><span class="tx">노무비 · 자재 산정 근거</span></div>
+      <div class="sl s2"><b>투입</b><span class="ph"></span><span class="tx">공종별 품수 · 자재 소요</span></div>
+      <div class="sl s3"><b>운영자료</b><span class="ph"></span><span class="tx">공정표 · 소장 확인사항</span></div>
+      <span class="stp">확인 후 반영</span>
+    </div>
+    <div class="o tk tk1">품수 · 단가 근거</div>
+    <div class="o tk tk2">면적 · 집계 근거</div>
+    <div class="o tk tk3">확인된 근거</div>
+
+    <!-- 5 다시 확인 -->
+    <div class="o ar a5"><i></i></div>
+    <div class="o card B">
+      <span class="bd">현장 B · 다음 현장</span>
+      <h4>보완한 기준으로 준비 · 시공</h4>
+      <div class="tr"><i class="bf"></i><span class="t0">준비</span><span class="t1">시공</span><span class="t2">준공</span></div>
+      <div class="rs"><span style="--i:0">품수 · 노임금액</span><span style="--i:1">면적 · 시트 사용량</span><span style="--i:2">품질 · 하자</span></div>
+    </div>
+    <div class="o ar a6"><i></i></div>
+    <div class="o card M">
+      <h4>같은 기준으로 다시 비교</h4>
+      <div class="mr"><b>노임</b><span>품수 × 단가 ⟷ 노임금액</span></div>
+      <div class="mr"><b>시트</b><span>면적 ⟷ 실제 사용량</span></div>
+      <div class="mr"><b>품질</b><span>하자 · 품질 함께 확인</span></div>
+      <p>비슷한 공종 · 조건끼리 비교 · 결과는 준공 뒤 확인</p>
+    </div>
+    <svg class="o lp" viewBox="0 0 1440 450"><path pathLength="1" d="M1250 322 V402 H224 V334"/><circle cx="224" cy="330" r="6"/></svg>
+    <div class="o lpl">확인된 내용은 다시 다음 현장의 기준으로</div>
+  </div>
+
+  <p class="msg" id="msg"></p>
+  <footer class="pr"><div><span>✓</span>단순 확인 기준부터</div><div><span>✓</span>검증 안 된 예측은 넣지 않음</div><div><span>✓</span>임의 목표 수치 만들지 않음</div></footer>
+</section>
+</div>
+<div class="ctl" id="ctl">
+  <button class="pri" id="play">▶ 전체 재생 · 40초</button>
+  <button id="replay">↺ 이 장면 다시</button>
+  <span class="pos" id="pos">1 / 5</span>
+  <span class="hint">Space 재생 · 일시정지 &nbsp;·&nbsp; ← → 단계 &nbsp;·&nbsp; R 다시</span>
+</div>
+<script>
+(()=>{
+ const $=s=>document.querySelector(s),st=$('#st'),slide=$('#d03'),wrap=$('#wrap'),EMB=/[?&]embed=1/.test(location.search);
+ if(EMB)document.documentElement.classList.add('emb');
+ const SC=[
+  {dur:8000,cues:[[100,'c1a'],[3700,'c1b'],[6600,'c1c']],role:'현재 → 향후 자동화',title:'끝난 현장 자료를 다시 옮겨 적지 않도록, 현장별로 연결합니다.',msg:'지금은 사람이 찾아 엑셀에 옮깁니다. 앞으로는 <strong>원본을 연결해 현장별로 자동 취합</strong>합니다.'},
+  {dur:8500,cues:[[200,'c2a'],[1500,'c2b'],[3000,'c2c'],[3900,'c2e'],[5700,'c2d']],role:'향후 자동화',title:'노임과 시트에서 확인할 차이를 먼저 찾습니다.',msg:'반복 계산과 비교는 자동으로, <strong>확인할 차이를 먼저 발견</strong>합니다.'},
+  {dur:8500,cues:[[300,'c3a'],[1000,'c3b'],[3000,'c3c'],[4900,'c3d'],[6300,'c3e']],role:'제가 할 일',title:'차이가 난 이유는 원본과 담당자에게 확인합니다.',msg:'<strong>숫자의 차이와 손실 원인을 구분</strong>해서 확인합니다.'},
+  {dur:7500,cues:[[500,'c4a'],[1800,'c4b'],[3100,'c4c'],[4400,'c4d'],[5800,'c4e']],role:'제가 할 일',title:'확인한 근거만 다음 견적 · 투입 기준에 반영합니다.',msg:'확인된 근거를 <strong>다음 견적과 현장 준비의 기준</strong>으로 남깁니다.'},
+  {dur:7000,cues:[[300,'c5a'],[1100,'c5b'],[3400,'c5c'],[4800,'c5d']],role:'다음 준공 후',title:'다음 현장이 끝나면 같은 기준으로 다시 비교합니다.',msg:'<strong>끝난 현장의 기록이, 다음 현장의 기준이 되도록.</strong>'}
+ ];
+ const TOTAL=SC.reduce((a,s)=>a+s.dur,0);
+ const btns=[...document.querySelectorAll('.rail button')],pbs=btns.map(b=>b.querySelector('.pb i'));
+ const play=$('#play'),pos=$('#pos');
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let cur=0,t=0,run=false,all=false,last=0,raf=0,applied=0,done=false;
+ const setCls=(i,n,extra)=>{st.className='stage sc'+(i+1)+' '+SC[i].cues.slice(0,n).map(c=>c[1]).join(' ')+(extra?' '+extra:'')};
+ const fadeIn=el=>{el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade')};
+ function ui(i){
+  btns.forEach((b,k)=>{b.classList.toggle('on',k===i);b.classList.toggle('past',k<i);pbs[k].style.width=k<i?'100%':'0'});
+  $('#role').textContent=SC[i].role;$('#ttl').textContent=SC[i].title;$('#msg').innerHTML=SC[i].msg;
+  fadeIn($('.sh'));fadeIn($('#msg'));pos.textContent=(i+1)+' / 5';
+ }
+ function btn(){play.textContent=run?'❚❚ 일시정지':(t>0&&!done?'▶ 이어서 재생':'▶ 전체 재생 · '+Math.round(TOTAL/1000)+'초');}
+ function jump(i,go){
+  cancelAnimationFrame(raf);run=false;done=false;st.classList.remove('paused');
+  if(i>0)setCls(i-1,99,'instant');else st.className='stage sc0 instant';
+  void st.offsetWidth;
+  cur=i;t=0;applied=0;ui(i);
+  if(reduced){setCls(i,99,'instant');done=true;btn();return}
+  setCls(i,0);
+  if(go){run=true;last=performance.now();raf=requestAnimationFrame(tick)}
+  btn();
+ }
+ function tick(now){
+  if(!run)return;
+  t+=now-last;last=now;const s=SC[cur];
+  while(applied<s.cues.length&&s.cues[applied][0]<=t){st.classList.add(s.cues[applied][1]);applied++}
+  pbs[cur].style.width=Math.min(100,t/s.dur*100)+'%';
+  if(t>=s.dur){
+   if(all&&cur<4){cur++;t=0;applied=0;setCls(cur,0);ui(cur)}
+   else{run=false;done=true;pbs[cur].style.width='100%';pos.textContent=(cur+1)+' / 5'+(cur===4?' · 마지막 화면 유지':'');btn();return}
+  }
+  raf=requestAnimationFrame(tick);
+ }
+ function pause(){if(!run)return;run=false;cancelAnimationFrame(raf);st.classList.add('paused');btn()}
+ function resume(){run=true;last=performance.now();st.classList.remove('paused');raf=requestAnimationFrame(tick);btn()}
+ function toggle(){if(run)pause();else if(t>0&&!done)resume();else{all=true;jump(0,true)}}
+ btns.forEach((b,i)=>b.addEventListener('click',()=>{all=false;jump(i,true)}));
+ play.addEventListener('click',toggle);
+ $('#replay').addEventListener('click',()=>{all=false;jump(cur,true)});
+ const onKey=e=>{if(EMB&&!(e.key==='r'||e.key==='R')){try{parent.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,bubbles:true,cancelable:true}))}catch(_){}e.preventDefault();return}if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key==='ArrowRight'&&cur<4){all=false;jump(cur+1,true)}else if(e.key==='ArrowLeft'&&cur>0){all=false;jump(cur-1,true)}else if(e.key==='r'||e.key==='R'){all=false;jump(cur,true)}};
+ const fit=()=>{const k=EMB?Math.min(innerWidth/1600,innerHeight/900):Math.min((innerWidth-28)/1600,(innerHeight-86)/900);slide.style.transform='scale('+k+')';wrap.style.width=1600*k+'px';wrap.style.height=900*k+'px';if(EMB)wrap.style.marginTop=Math.max(0,(innerHeight-900*k)/2)+'px'};
+ const onVis=()=>{if(document.hidden)pause()};
+ addEventListener('keydown',onKey);addEventListener('resize',fit);document.addEventListener('visibilitychange',onVis);
+ fit();{const q=new URLSearchParams(location.search);if(q.has('step')){const i=Math.max(0,Math.min(4,+q.get('step')||0));all=false;jump(i,false);setTimeout(()=>{if(!run&&t===0){all=false;jump(i,true)}},EMB?250:500)}else{all=true;jump(0,false);setTimeout(()=>{if(!run&&t===0)jump(0,true)},EMB?500:700)}}
+ // 발표 파일에 넣을 때: 이 장면을 벗어나면 정리
+ window.D03Motion={jump:(i)=>{all=false;jump(i,true)},playAll:()=>{all=true;jump(0,true)},pause,destroy(){cancelAnimationFrame(raf);run=false;removeEventListener('keydown',onKey);removeEventListener('resize',fit);document.removeEventListener('visibilitychange',onVis)}};
+})();
+</script>
+</body>
+</html>

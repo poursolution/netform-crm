@@ -429,7 +429,7 @@ body.exec .vstp.many .sl li{padding:.55vh .8vw}
 body.exec .vstp.many .sl b{font-size:clamp(13px,.98vw,18px)}
 body.exec .vstp.many .sl .n{width:22px;height:22px;font-size:11px}
 body.exec .vstp .sf{align-self:center;width:100%;animation:vin .6s .1s cubic-bezier(.2,.8,.2,1) both}
-body.exec .vstp .sf .vimg{height:50vh}
+body.exec .vstp .sf .vimg{height:54vh}
 /* 영업 → 현장 인계 */
 body.exec .vhand{grid-template-columns:.8fr 64px 1.3fr;gap:2vw;align-items:stretch}
 body.exec .hl1,body.exec .hl2{border-radius:24px;padding:2.2vh 1.6vw;display:flex;flex-direction:column;gap:.8vh}
@@ -546,7 +546,41 @@ body.exec .vstp{grid-template-columns:minmax(0,.72fr) minmax(0,2fr)}
 body.exec .vstp .sf .vimg{position:relative;overflow:hidden;border-radius:14px;height:62vh}
 body.exec .lens2{position:absolute;border-radius:8px;background-repeat:no-repeat;transform:scale(1);box-shadow:0 0 0 3px var(--tk-blue),0 0 0 9999px rgba(25,31,40,0);transition:transform .9s cubic-bezier(.2,.8,.2,1),box-shadow .9s;z-index:2}
 body.exec .lens2.go{transform:scale(var(--sc));box-shadow:0 0 0 3px var(--tk-blue),0 22px 50px rgba(25,31,40,.30),0 0 0 9999px rgba(25,31,40,.30)}
-body.exec .fol,body.exec .fo{display:none!important}body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
+body.exec .fol,body.exec .fo{display:none!important}/* 목차 */
+body.exec .vtoc{grid-template-columns:1fr;gap:1.4vh;align-content:center}
+body.exec .tc{display:grid;grid-template-columns:9vw 1fr;align-items:center;gap:2vw;padding:2.2vh 2vw;border-radius:18px;background:var(--tk-gray);animation:vin .6s var(--d) cubic-bezier(.2,.8,.2,1) both}
+body.exec .tc b{font-size:clamp(16px,1.25vw,24px);font-weight:900;color:var(--tk-blue);letter-spacing:.02em}
+body.exec .tc.o b{color:#FF6F0F}
+body.exec .tc h4{margin:0;font-size:clamp(19px,1.6vw,30px);color:var(--tk-ink)}
+body.exec .tc p{margin:.5vh 0 0;font-size:clamp(14px,1.1vw,20px);color:var(--tk-sub);font-weight:600}
+/* 단계형 장: 키우지 않는 화면은 살짝 흐리게(이름 등 세부가 읽히지 않게) */
+body.exec .lens2.go{box-shadow:0 0 0 3px var(--tk-blue),0 22px 50px rgba(25,31,40,.30),0 0 0 9999px rgba(25,31,40,.42)}
+body.exec .tteam{margin:0 0 .6vh;display:flex;align-items:center;gap:.8vw;font-size:clamp(15px,1.15vw,21px);font-weight:700;color:var(--tk-sub)}
+body.exec .tteam span{background:var(--tk-ink);color:#fff;border-radius:999px;padding:.4vh .9vw;font-size:.85em;font-weight:800}
+body.exec .vstp .sf .vimg{height:54vh}
+body.exec .vstp{align-items:center;margin-top:1vh}
+body.exec .vstp .sf{align-self:center}
+body.exec .vstp .sf .vimg{height:50vh}
+body.exec .vstp .sf figcaption span{display:none}
+body.exec .ckl{margin:.6vh 0 0;font-size:clamp(15px,1.2vw,22px);font-weight:700;color:var(--tk-ink);line-height:1.55}
+body.exec .ckl b{display:inline-block;background:var(--tk-blue);color:#fff;border-radius:6px;padding:.1vh .55vw;margin-right:.6vw;font-size:.78em;vertical-align:2px}
+body.exec .ckl b.a{background:var(--tk-ink);margin-left:1.2vw}
+body.exec .vstp .sf figcaption p.ckl{display:block;margin:.6vh 0 0}
+/* 대표 지시: 화면 확대 안 함 — 화면 전체 그대로, 말하는 곳만 그 자리에서 테두리 + 나머지 살짝 어둡게 */
+body.exec .lens2.go{transform:none!important;box-shadow:0 0 0 3px var(--tk-blue),0 0 0 9999px rgba(25,31,40,.28)!important}
+body.exec .vstp .sf .vimg{height:62vh}
+body.exec .vstp .sf figcaption p.ckl b{display:inline-block!important;width:auto!important;height:auto!important;background:var(--tk-blue)!important;color:#fff!important;border-radius:6px;padding:.1vh .55vw!important;margin:0 .6vw 0 0!important;font-size:.78em!important;line-height:1.5!important;vertical-align:2px}
+body.exec .vstp .sf figcaption p.ckl b.a{background:var(--tk-ink)!important;margin-left:1.2vw!important}
+/* 재편 4: 단계별 장면(iframe) — 카드 전체를 장면이 채움 · 마무리 세 줄 */
+body.exec #card.visc:has(.vmot){padding:0!important;gap:0!important;overflow:hidden}
+body.exec #card.visc:has(.vmot)>:not(.vmot){display:none!important}
+body.exec #card .vmot{position:absolute;inset:0;margin:0;padding:0;display:block}
+body.exec #card .vmot iframe{width:100%;height:100%;border:0;display:block;background:#fff}
+body.exec .vfin{display:grid;gap:1.6vh;align-content:center}
+body.exec .vfin .fin{display:grid;grid-template-columns:8vw 1fr;align-items:center;gap:2vw;padding:2.4vh 2.2vw;border-radius:18px;background:var(--tk-gray)}
+body.exec .vfin .fin b{font-size:clamp(18px,1.4vw,26px);font-weight:900;color:var(--tk-blue)}
+body.exec .vfin .fin span{font-size:clamp(19px,1.55vw,30px);font-weight:800;color:var(--tk-ink);line-height:1.4}
+body.exec #card .who{margin:-1vh 0 0;font-size:clamp(15px,1.2vw,21px);font-weight:600;color:var(--tk-sub)}
 body.exec #card .who b{display:inline-block;margin-right:10px;padding:3px 10px;border-radius:999px;background:var(--tk-blue-bg);color:var(--tk-blue);font-size:.85em}
 body.exec .sv.go .box{opacity:1}
 </style>
@@ -2287,7 +2321,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
  el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=w.toFixed(1)+'px '+hh.toFixed(1)+'px';el.style.backgroundPosition='0 0';el.querySelectorAll('.lens2').forEach(n=>n.remove());
  const L=q[0]*s,Tp=q[1]*s,Wd=q[2]*s,Hd=q[3]*s,ln=document.createElement('div');ln.className='lens2';
  Object.assign(ln.style,{left:L+'px',top:Tp+'px',width:Wd+'px',height:Hd+'px',backgroundImage:'url('+BASE+m.img+')',backgroundSize:w.toFixed(1)+'px '+hh.toFixed(1)+'px',backgroundPosition:(-L).toFixed(1)+'px '+(-Tp).toFixed(1)+'px',transformOrigin:(w>Wd?L/(w-Wd)*100:50).toFixed(1)+'% '+(hh>Hd?Tp/(hh-Hd)*100:50).toFixed(1)+'%'});
- ln.style.setProperty('--sc',Math.max(1.02,Math.min(1.5,(w-8)/Wd,(hh-8)/Hd)).toFixed(3));el.appendChild(ln);setTimeout(()=>ln.classList.add('go'),450);return}}const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
+ ln.style.setProperty('--sc',Math.max(1.02,Math.min(2.4,(w*.92)/Wd,(hh*.92)/Hd)).toFixed(3));el.appendChild(ln);{const vv=el.closest('.vstp'),on=vv&&vv.querySelector('li.on[data-stp]'),cap=el.closest('.sf').querySelector('figcaption');if(on&&cap&&!cap.querySelector('.ckl')){const q2=on.dataset.stp.split(':'),it=((window.EXEC_STP[q2[0]]||{}).items||[])[+q2[1]];if(it&&it.ck)cap.insertAdjacentHTML('beforeend','<p class="ckl"><b>확인</b>'+it.ck+'<b class="a">조치</b>'+it.act+'</p>')}}setTimeout(()=>ln.classList.add('go'),450);return}}const W0=el.clientWidth,H0=el.clientHeight;if(!m||!W0||!H0)return;const asp=W0/H0;
    let [x,y,w,hh]=el.dataset.r.split(',').map(Number);if(w/hh<asp){const nw=hh*asp;x-=(nw-w)/2;w=nw}else{const nh=w/asp;y-=(nh-hh)/2;hh=nh}
    if(w>m.W){w=m.W;hh=w/asp}if(hh>m.H){hh=m.H;w=hh*asp}x=Math.max(0,Math.min(m.W-w,x));y=Math.max(0,Math.min(m.H-hh,y));
    const s=W0/w;el.style.backgroundImage='url('+BASE+m.img+')';el.style.backgroundSize=(m.W*s).toFixed(1)+'px '+(m.H*s).toFixed(1)+'px';el.style.backgroundPosition=(-x*s).toFixed(1)+'px '+(-y*s).toFixed(1)+'px';if(el.closest('.sf')&&window.EXEC_FOCUS)window.EXEC_FOCUS(el,x,y,s)});
@@ -2733,10 +2767,245 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    if(fig&&fb.length){const cap=fig.querySelector('figcaption');const ol=document.createElement('ol');ol.className='fol';ol.innerHTML=fb.map((b,i)=>'<li style="--d:'+(.45+(i+1)*.35)+'s"><i>'+(i+1)+'</i>'+String(b[4]).replace(/^[①-⑩]\s*/,'')+'</li>').join('');(cap||fig).appendChild(ol)}}}
 
  /* 숫자 훅 장(k1~k4)은 대표 요청으로 뺌 — 전 상태로 되돌림 */
- {const K=['k1','k2','k3','k4'];for(let i=E_.length-1;i>=0;i--)if(K.includes(E_[i].id))E_.splice(i,1);
-  const TR={g01:'실제 업무를 보면 이렇습니다.',b21:'어디서 막혔는지 보였다면, 그다음은 실제 조치입니다.',b23:'고객자산 가운데 공사를 끝낸 고객은 확장관리에서 따로 봅니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+ {const K=['k1','k2','k3','k4','m00'];for(let i=E_.length-1;i>=0;i--)if(K.includes(E_[i].id))E_.splice(i,1);
+  const TR={r02:'먼저 영업관리에서 무엇이 문제였는지부터 말씀드리겠습니다.',g01:'실제 업무를 보면 이렇습니다.',b21:'어디서 막혔는지 보였다면, 그다음은 실제 조치입니다.',b23:'고객자산 가운데 공사를 끝낸 고객은 확장관리에서 따로 봅니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
   const it=(window.EXEC_STP.b21||{items:[]}).items.find(x=>x.t==='왜 졌는지');if(it)it.hook='실주는 31건입니다.<br><em>왜 졌는지 남은 건 1건입니다.</em>';
-  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});{const EN={b09:6,b10:7};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} /* ───── 2026-10-18 재편: 기능 순회 → 이야기 하나(왜 바꿨나 → 무엇이 달라졌나 → 누가 어떻게 운영하나). 목차 + PART 1~5, 화면은 근거로만 ───── */
+ window.__STASH={};E_.forEach(s=>{window.__STASH[s.id]=s});
+ {const STP=window.EXEC_STP;
+  STP.b06.eb='PART 2 영업 — 문의 한 건에서';STP.b06.many=0;STP.b06.items=[
+   {t:'고객이 무엇을 요청했나',hook:'견적이 왜 멈췄는지,<br><em>매번 다시 물어봐야 했습니다.</em>',why:'이제는 문의 한 건을 열면 고객이 남긴 말과 현장 · 공종 · 연락처, 비어 있는 정보가 먼저 보입니다.',k:'i0:0',r:'150,180,305,430',
+    say:'견적이 왜 안 나왔는지 챙기긴 했지만, 문의마다 기록과 진행을 함께 볼 곳이 없어서 매번 담당자에게 다시 물어봐야 했습니다. 이제는 문의 한 건을 열면 고객이 무엇을 요청했는지부터 보입니다.'},
+   {t:'왜 아직 처리되지 않았나',hook:'왜 멈췄는지는<br><em>응대 기록에 남아 있습니다.</em>',why:'전화 · 카카오 · 방문 결과가 시간순으로 쌓이고, 연락 시도와 실제 연결을 나눠 셉니다. 견적이 멈춘 이유도 여기서 확인합니다.',k:'i2:0',r:'470,185,975,175'},
+   {t:'누가 언제 무엇을',hook:'그래서 다음은<br><em>누가 언제 무엇을 할지 정해져 있습니다.</em>',why:'문의마다 다음 할 일 · 기한 · 지금까지 한 일 · 빠진 정보가 붙어, 담당자와 관리자가 같은 것을 봅니다.',k:'a05:1',r:'1553,235,320,562'},
+   {t:'영업건이 된 뒤에도',hook:'영업건이 된 뒤에도<br><em>같은 방식으로 이어집니다.</em>',why:'단계마다 지금 할 일과 완료 조건, 다음 일정이 붙습니다. 단계를 옮긴 것만으로 끝났다고 보지 않습니다.',k:'d0:0',r:'1445,197,322,250'}];
+  STP.b08.eb='PART 3 관리자의 개입';STP.b08.many=0;STP.b08.items=[
+   {t:'문제를 발견한다',hook:'관리자는 먼저<br><em>어디에 개입할지를 찾습니다.</em>',why:'기한 지남 · 담당 미지정 · 다음 행동 없음처럼 오늘 먼저 처리할 건이 모입니다.',k:'e5:0',r:'257,216,532,280',
+    say:'관리자가 하는 일을 화면마다 설명하기보다, 한 가지 흐름으로 보여 드리겠습니다. 문제를 발견하고, 해당 건을 열어 이유를 보고, 담당자와 다음 조치를 정하고, 결과를 확인합니다.'},
+   {t:'이유를 확인한다',hook:'숫자만 보지 않고,<br><em>해당 건을 열어 이유를 봅니다.</em>',why:'건마다 뽑힌 이유와 지난 기록, 고객이 원한 것이 붙어 올라옵니다.',k:'a06:0',r:'251,355,1342,403'},
+   {t:'조치를 정한다',hook:'담당자와<br><em>다음 조치와 기한을 정합니다.</em>',why:'할 일을 지정하면 그 현장의 다음 업무로 등록돼 담당자 오늘 업무에 올라갑니다.',k:'e5:0',r:'1594,645,296,497'},
+   {t:'결과를 확인한다',hook:'요청을 보낸 것으로 끝내지 않고,<br><em>처리 결과까지 확인합니다.</em>',why:'보낸 요청은 담당 확인 → 실행 → 결과 기록 → 완료로 따라가고, 기한이 지나면 다음 조치를 정합니다.',k:'a06:0',r:'1610,355,290,310'},
+   {t:'결과로 이어졌나',hook:'그 활동이<br><em>어떤 결과로 이어졌는지 봅니다.</em>',why:'성과분석에서 수주실적과 회사 매출, 실주 사유 기록을 함께 봅니다. 실주 31건 중 사유가 남은 건은 1건이라, 사유를 남기는 기준부터 정착시키겠습니다.',k:'e1:0',r:'257,331,1497,277'}];
+  STP.g04.eb='PART 4 현장으로 이어지는 관리 — 한 현장에서';STP.g04.many=0;STP.g04.items=[
+   {t:'전체 현장 보기',hook:'현장도 사람에게 묻고 다니는 대신,<br><em>보드에서 먼저 봅니다.</em>',why:'급한 현장과 그 이유, 처리할 일이 맨 위에 나옵니다.',k:'q0:0',r:'252,96,815,830'},
+   {t:'공사범위 · 브이월드',hook:'이 현장에서<br><em>어디까지 공사하는지 확인합니다.</em>',why:'내역서의 동별 물량과 브이월드 위성지도로 공사 동을 표시합니다. 위성 면적은 참고값이고, 확정은 실측 · 내역서입니다.',k:'p5:0',r:'634,600,1258,480',
+    say:'본사에서 확인한 공사범위를 소장님도 같은 자료로 보게 하는 것이 이 장면의 목적입니다.'},
+   {t:'소장님께 전달',hook:'소장님께 어떤 자료를 보냈는지,<br><em>같은 현장에서 확인하겠습니다.</em>',why:'현장정보 · 동별물량 · 현장사진을 한 묶음으로 보내고 보낸 기록을 남깁니다. 받으셨는지는 소통방에서 따로 확인합니다.',k:'p4:0',r:'634,566,640,325'},
+   {t:'진행 확인',hook:'공사가 시작되면<br><em>같은 현장에서 진행을 봅니다.</em>',why:'작업일지 사진으로 작업 · 동 · 공정 · 인원을 채우고, 작업 없는 날은 휴무 · 우천으로 남겨 미보고와 구분합니다.',k:'p7:0',r:'629,576,1262,461'},
+   {t:'준공까지',hook:'준공까지<br><em>무엇이 남았는지 확인합니다.</em>',why:'완료일과 확인 방법을 남기고, 사진첩 발송 · 범위별 완료 점검 · 사진 누락 확인으로 마무리합니다.',k:'p9:0',r:'254,514,360,545'}];
+  const strip=s=>s.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const mk=(id,title,km)=>ES(id,title,'pipe',km,STP[id].items.map(x=>T(x.t,strip(x.hook)+' '+x.why+(x.say?'\n'+x.say:''),'#card',Z())));
+  const rep=(id,obj)=>{const i=E_.findIndex(s=>s.id===id);if(i>=0)E_.splice(i,1,obj);else E_.push(obj)};
+  rep('b06',mk('b06','00 · 문의 한 건에서','견적이 왜 멈췄는지, 매번 다시 물어봐야 했습니다.'));
+  rep('b08',mk('b08','00 · 관리자의 개입','관리자는 먼저 어디에 개입할지를 찾습니다.'));
+  rep('g04',mk('g04','00 · 한 현장에서','현장도 사람에게 묻고 다니는 대신, 보드에서 먼저 봅니다.'));
+  /* 목차 — 발표의 중심 문장 + 다섯 부분 */
+  const TOC=[['나의 문제인식','계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동'],['영업 — 문의 한 건에서','고객 요청 · 멈춘 이유 · 다음 업무'],['관리자의 개입','문제 발견 → 이유 확인 → 조치 → 결과 확인'],['현장으로 이어지는 관리','공사범위 · 소장님 전달 · 진행 · 준공'],['인수인계와 향후계획','희선님께 넘길 일 · 제가 맡을 연결 구간 · 기록 활용']];
+  window.EXEC_VIS.t00=()=>'<div class="vis vtoc">'+TOC.map((x,i)=>'<div class="tc'+(i===3?' o':'')+'" style="--d:'+(.25+i*.12)+'s"><b>PART '+(i+1)+'</b><div><h4>'+x[0]+'</h4><p>'+x[1]+'</p></div></div>').join('')+'</div>';
+  const t0=EX('t00','00 · 목차','매번 물어서 확인하던 업무를, 기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.','목차','매번 물어서 확인하던 업무를,<br><em>기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.</em>',{},
+   `오늘 발표의 중심은 한 문장입니다. 매번 물어서 확인하던 업무를, 기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.
+왜 바꿨는지, 실제로 무엇이 달라졌는지, 앞으로 누가 어떻게 운영할지를 다섯 부분으로 말씀드리겠습니다.
+견적문의 · 컨트롤타워 · 성과분석 같은 화면은 하나씩 설명하기보다, 이 변화를 보여 주는 근거로 필요한 만큼만 보여 드리겠습니다.`,'먼저 제 문제인식부터 말씀드리겠습니다.');t0.vis='t00';t0.mo='drop';t0.ty='mask';E_.push(t0);
+  /* 마무리 — 새 정보 없이 역할만, 움직임 없음 */
+  {const q=E_.find(s=>s.id==='q16');if(q){q.card.h='일상 영업관리는 희선님께 넘기고,<br><em>저는 준공 마무리까지 이어지는지 확인하겠습니다.</em>';delete q.vis;q.mo='';q.ty='mask';
+   q.steps[0].script=`제 보완점은 계획을 세운 뒤 실행과 마감까지 충분히 이어가지 못했던 점이었습니다.
+그래서 오늘 말씀드린 변화의 중심은, 매번 물어서 확인하던 업무를 기록을 보고 다음 조치를 정하는 방식으로 바꾸는 것입니다.
+일상 영업관리는 희선님이 이어갈 수 있도록 업무 기준과 진행 중인 건을 함께 넘기겠습니다.
+저는 영업에서 정리한 내용이 현장 준비와 준공 마무리까지 이어지는지 확인하겠습니다. 감사합니다.`}}
+  /* 향후계획은 한 장: 엑셀 재취합을 줄이고 남은 기록을 다음 업무에 */
+  {const d=E_.find(s=>s.id==='d01');if(d){d.card.h='엑셀로 다시 모으는 일은 줄이고,<br><em>남은 기록을 다음 업무에 쓰겠습니다.</em>';d.title='00 · 향후계획 · 기록 활용'}}
+  const TR={t00:'먼저 제 문제인식부터 말씀드리겠습니다.',r02:'영업관리에서 실제로 무엇이 문제였는지 보겠습니다.',p34:'문의 한 건을 열어, 무엇이 달라졌는지 보겠습니다.',b06:'담당자가 바뀌어도 이 맥락은 이어집니다.',b10:'그럼 관리자는 어떻게 개입하는지 보겠습니다.',b08:'이렇게 정리된 영업 내용은 현장으로 넘어가야 합니다.',s01:'현장관리에서도 비슷한 문제가 있었습니다.',g01:'그래서 한 현장을 처음부터 끝까지 같은 곳에서 보도록 했습니다.',g04:'그리고 마감은 이렇게 지키겠습니다.',g05:'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.',h01:'인계 이후에는 이렇게 나눠 맡겠습니다.',h02:'그리고 남은 기록은 다음 업무에 쓰겠습니다.',d01:'마지막으로 말씀드리겠습니다.'};
+  E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+  const TT={b10:'담당자가 바뀌어도',s01:'영업 → 현장',g01:'현장관리 · 문제',g05:'마감 전에',h01:'희선님 인수인계',h02:'인계 이후 역할'};E_.forEach(s=>{if(TT[s.id])s.title='00 · '+TT[s.id]});
+  window.__EBX={t00:'목차',r01:'PART 1 나의 문제인식',r02:'PART 1 나의 문제인식 · 앞으로의 행동',p02:'PART 1 나의 문제인식 · 견적문의',p34:'PART 1 나의 문제인식 · 진척과 보고',b06:STP.b06.eb,b10:'PART 2 영업 — 담당자가 바뀌어도',b08:STP.b08.eb,s01:'PART 4 현장으로 이어지는 관리 · 영업 → 현장',g01:'PART 4 현장으로 이어지는 관리 · 문제',g04:STP.g04.eb,g05:'PART 4 현장으로 이어지는 관리 · 마감 전에',h01:'PART 5 인수인계와 향후계획 · 희선님 인수인계',h02:'PART 5 인수인계와 향후계획 · 역할',d01:'PART 5 인수인계와 향후계획 · 기록 활용',q16:'마무리'};
+  const ORD=['t00','r01','r02','p02','p34','p05','b06','b07','b09','b10','b08','s01','g01','g02','g03','g04','g05','g06','h01','h02','h03','c13','c14','d01','g07','q16'];
+  const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ /* 재편 2: 53단계 구성에서 차용(구축 목적 · 파이프라인 3단계 · 담당자 기록 · 현장 실제 업무 · 보완점 · 누락 · 연결 구간 · 매일 · 매주 · 실행 약속), 영업 = 파랑 · 현장 = 주황 */
+ {const STP=window.EXEC_STP,strip=s=>s.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  const p=STP.b07.items;STP.b07.items=[p[0],p[2],p[4]].filter(Boolean);STP.b07.eb='PART 2 영업 — 단계마다 다음 일';STP.b07.many=0;
+  {const i=E_.findIndex(s=>s.id==='b07');if(i>=0){const o=E_[i];E_.splice(i,1,ES('b07',o.title,'pipe',o.keyMessage,STP.b07.items.map(x=>T(x.t,strip(x.hook)+' '+x.why,'#card',Z()))))}}
+  Object.assign(window.__EBX,{p05:'PART 1 나의 문제인식 · 구축 목적',b07:STP.b07.eb,b09:'PART 2 영업 — 담당자 기록',g02:'PART 4 현장으로 이어지는 관리 · 실제 업무',g03:'PART 4 현장으로 이어지는 관리 · 나의 보완점',g06:'PART 4 현장으로 이어지는 관리 · 누락과 반복',h03:'PART 5 인수인계와 향후계획 · 연결 구간',c13:'PART 5 인수인계와 향후계획 · 매일',c14:'PART 5 인수인계와 향후계획 · 매주',g07:'PART 5 인수인계와 향후계획 · 실행 약속'});
+  const TT={p05:'구축 목적',b07:'단계마다 다음 일',b09:'담당자 기록',g02:'현장관리 · 실제 업무',g03:'현장관리 · 나의 보완점',g06:'누락과 반복',h03:'연결 구간',c13:'매일',c14:'매주',g07:'실행 약속'};
+  const TR={p05:'문의 한 건을 열어, 무엇이 달라졌는지 보겠습니다.',p34:'그래서 무엇을 위해 만들었는지부터 말씀드리겠습니다.',b06:'영업건이 되면 단계마다 다음 일이 붙습니다.',b07:'담당자는 그 현장에서 기록하고 다음 일을 이어갑니다.',b10:'그럼 관리자는 어떻게 개입하는지 보겠습니다.',g01:'실제 업무를 보면 이렇습니다.',g02:'여기서 제 보완점과도 만납니다.',g03:'그래서 한 현장을 처음부터 끝까지 같은 곳에서 보도록 했습니다.',g05:'누락과 반복 업무는 이렇게 관리하겠습니다.',g06:'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.',h02:'제가 맡을 연결 구간은 이렇습니다.',h03:'이 일을 매일과 매주 이렇게 운영하겠습니다.',c14:'그리고 남은 기록은 다음 업무에 쓰겠습니다.',d01:'계획부터 끝날 때까지 이렇게 지키겠습니다.',g07:'마지막으로 말씀드리겠습니다.'};
+  const OR=['s01','g01','g02','g03','g04','g05','g06','d01'];
+  E_.forEach(s=>{if(TT[s.id])s.title='00 · '+TT[s.id];if(TR[s.id])s.transition=TR[s.id];s.bm=OR.includes(s.id)});
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} /* 재편 3: 영업 → 현장 연결이 아니라 영업관리 · 현장관리 두 업무를 나란히(대표: "현장업무는 현장업무, 영업업무는 그중 하나") */
+ {const RM=['s01','h03','b07'];{const it=window.EXEC_STP.b06.items[3];if(it)it.k='d4:0';}for(let i=E_.length-1;i>=0;i--)if(RM.includes(E_[i].id))E_.splice(i,1);
+  const TOC=[['나의 문제인식','계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동'],['영업관리','문의 한 건 · 단계마다 다음 일 · 관리자의 개입'],['현장관리','한 현장에서 공사범위 · 소장님 전달 · 진행 · 준공, 마감 전 확인'],['인수인계와 향후계획','희선님께 넘길 영업관리 · 제가 맡을 일 · 매일 · 매주 운영']];
+  window.EXEC_VIS.t00=()=>'<div class="vis vtoc"><p class="tteam"><span>서비스운영팀</span>영업관리와 현장관리는 한 팀에서 함께 운영하는 두 업무입니다</p>'+TOC.map((x,i)=>'<div class="tc'+(i===2?' o':'')+'" style="--d:'+(.25+i*.12)+'s"><b>PART '+(i+1)+'</b><div><h4>'+x[0]+'</h4><p>'+x[1]+'</p></div></div>').join('')+'</div>';
+  {const t=E_.find(s=>s.id==='t00');if(t)t.steps[0].script=`오늘 발표의 중심은 한 문장입니다. 매번 물어서 확인하던 업무를, 기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.
+영업관리와 현장관리는 서비스운영팀 한 팀에서 함께 운영하는 두 업무입니다. 두 업무 각각에서 왜 바꿨는지, 실제로 무엇이 달라졌는지, 앞으로 누가 어떻게 운영할지를 네 부분으로 말씀드리겠습니다.
+화면은 하나씩 설명하기보다, 이 변화를 보여 주는 근거로 필요한 만큼만 보여 드리겠습니다.`}
+  window.EXEC_STP.b06.eb='PART 2 영업관리 — 문의 한 건에서';window.EXEC_STP.b07.eb='PART 2 영업관리 — 단계마다 다음 일';window.EXEC_STP.b08.eb='PART 2 영업관리 — 관리자의 개입';window.EXEC_STP.g04.eb='PART 3 현장관리 — 한 현장에서';
+  Object.assign(window.__EBX,{b06:window.EXEC_STP.b06.eb,b07:window.EXEC_STP.b07.eb,b08:window.EXEC_STP.b08.eb,b09:'PART 2 영업관리 — 담당자 기록',b10:'PART 2 영업관리 — 담당자가 바뀌어도',
+   g01:'PART 3 현장관리 · 문제',g02:'PART 3 현장관리 · 실제 업무',g03:'PART 3 현장관리 · 나의 보완점',g04:window.EXEC_STP.g04.eb,g05:'PART 3 현장관리 · 마감 전에',g06:'PART 3 현장관리 · 누락과 반복',
+   h01:'PART 4 인수인계와 향후계획 · 희선님 인수인계',h02:'PART 4 인수인계와 향후계획 · 역할',c13:'PART 4 인수인계와 향후계획 · 매일',c14:'PART 4 인수인계와 향후계획 · 매주',d01:'PART 4 인수인계와 향후계획 · 기록 활용',g07:'PART 4 인수인계와 향후계획 · 실행 약속'});
+  /* 역할: 영업↔현장 연결 → 현장관리 · 기준 개선 */
+  window.EXEC_VIS.h02=()=>'<div class="vis vrole4">'+[['영','영업담당자',['고객 응대 · 현장 영업','요구 · 결과 기록','다음 업무 · 일정']],['희','희선님 · 일상 영업관리',['신규 문의 · 배정 확인','기록 · 일정 · 후속 점검','미처리 확인 요청','주간 영업현황']],['송','송보람 · 현장관리 · 기준 개선',['현장 준비 · 진행 · 마무리','빠진 현장 · 남은 업무 확인','영업관리 기준 · 개선','판단이 필요한 예외']],['대','대표 · 상무',['협의 · 승인 · 판단','권한은 지금 기준 그대로']]].map(r=>'<div class="rc"><span class="ini">'+r[0]+'</span><b>'+r[1]+'</b><ul>'+r[2].map(t=>'<li>'+t+'</li>').join('')+'</ul></div>').join('')+'</div>';
+  {const s=E_.find(x=>x.id==='h02');if(s){s.card.h='일상 영업관리는 희선님이 이어받고,<br><em>저는 현장관리와 기준 개선을 맡겠습니다.</em>';s.keyMessage='일상 영업관리는 희선님이 이어받고, 저는 현장관리와 기준 개선을 맡겠습니다.';
+   s.steps[0].script=`영업담당자는 지금처럼 고객 응대와 현장 영업, 확인된 요구와 결과 기록, 다음 업무와 일정을 맡습니다.
+희선님은 신규 문의와 배정 상태 확인, 기록 · 일정 · 후속조치 점검, 미처리 확인 요청, 주간 영업현황 정리를 맡는 방향입니다.
+저는 현장관리의 준비 · 진행 · 마무리와 빠진 현장 · 남은 업무 확인을 맡고, 영업관리는 기준을 보완하고 판단이 필요한 예외만 함께 보겠습니다.
+대표님과 상무님의 협의 · 승인 권한은 지금 기준 그대로이고, 희선님이 맡은 건을 제가 다시 처리하는 이중 운영으로 가지 않겠습니다.`}}
+  /* 마무리 */
+  {const q=E_.find(s=>s.id==='q16');if(q){q.card.h='영업관리는 희선님이 이어가도록 넘기고,<br><em>저는 현장관리를 마감까지 챙기겠습니다.</em>';
+   q.steps[0].script=`제 보완점은 계획을 세운 뒤 실행과 마감까지 충분히 이어가지 못했던 점이었습니다.
+그래서 오늘 말씀드린 변화의 중심은, 매번 물어서 확인하던 업무를 기록을 보고 다음 조치를 정하는 방식으로 바꾸는 것입니다.
+일상 영업관리는 희선님이 이어갈 수 있도록 업무 기준과 진행 중인 건을 함께 넘기겠습니다.
+저는 현장관리에서 계획한 일이 기한 안에 끝나는지, 빠진 현장과 남은 업무가 없는지까지 확인하겠습니다. 감사합니다.`}}
+  const TR={b06:'담당자는 그 현장에서 기록하고 다음 일을 이어갑니다.',b08:'다음은 현장관리입니다.',g01:'실제 업무를 보면 이렇습니다.',g06:'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.',h02:'이 일을 매일과 매주 이렇게 운영하겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}} /* 단계마다 "이 화면에서 확인하는 것 → 그래서 하는 일"(대표: "저걸 보고 뭘 체크하겠다는 거냐") — 화면에 보이는 내용으로만 */
+ {const S=window.EXEC_STP,C=(id,arr)=>arr.forEach((x,i)=>{const it=S[id].items[i];if(it){it.ck=x[0];it.act=x[1]}});
+  C('b06',[['고객이 남긴 말과 비어 있는 주소 · 공종','첫 연락 때 빈 정보부터 묻는다'],['응대 2건 · 실제 연결 0 — 아직 고객과 통화된 적 없음','연결될 때까지 후속 연락하고 결과를 남긴다'],['6일째 담당 미배정 · 다음 할 일 = 담당 배정 · 배정 지연','바로 배정한다'],['체결은 확인됐지만 계약서 첨부 · 특이조건 선택이 남아 13일 지남','계약서를 받아 첨부해야 다음 단계로 넘어간다']]);
+  C('b08',[['조치 필요 156건 중 오늘 먼저 볼 12건 — 기한 지남 26 · 담당 미지정 2','12건부터 연다'],['카드마다 뽑힌 이유 — 담당 배정 안 됨 4일 · 재배정 후 처리 기록 없음 12일','배정 · 재배정 · 지사 확인 요청 중 하나를 고른다'],['기한 지난 26건 — 다음 할 일 날짜가 지났는데 기록 없음','할 일을 지정하고 담당자에게 알린다'],['보낸 요청 1건이 요청 미이행 · 기한 9일 지남','재확인 요청하거나 다음 조치를 정한다'],['수주 30.2억 중 매출 23.4억 · 실주 31건 중 사유 기록 1건','실주 사유를 남기는 기준부터 정착시킨다']]);
+  C('g04',[['급한 현장 6곳 — 착공 임박 · 자재출고일 없음 · 사진첩 기한 지남','위에서부터 처리한다'],['위성지도로 표시한 공사 부위와 추정 면적(참고값)','실측 · 내역서로 확정해 소장님께 같이 보낸다'],['현장정보 공유문 미전송 · 동별물량 · 현장사진 준비','보내고 전송 완료를 기록, 받으셨는지는 소통방에서 확인'],['오늘 보고 없음 — 작업일 · 동 · 공정 · 인원 칸','작업 없는 날은 휴무 · 우천으로 남겨 미보고와 구분한다'],['작업완료 미확인 · 범위별 완료 점검 0% · 사진 누락 확인','완료일과 확인 방법을 남기고 사진첩을 3일 안에 보낸다']])} /* ───── 2026-10-18 재편 4: 실제 화면을 단순하게 다시 그린 단계별 장면(scene-motion.html · d03-motion.html) — 확대 없음. 영업 · 현장은 각각 관리, 실제 인계 건만 연결 ───── */
+ {const ST=window.__STASH||{};const MOT={};window.__MOTIDS=[];window.__MOTSRC={};
+  const MS=(id,title,km,src,steps,next)=>{const s=ES(id,title,'pipe',km,steps.map(x=>T(x[0],x[1],'#card',Z())),next);window.__MOTIDS.push(id);window.__MOTSRC[id]=src;return s};
+  window.EXEC_VIS.__mot=(id,ti)=>{const src=window.__MOTSRC[id];const u=src.indexOf('?')>=0?src+'&':src+'?';return '<div class="vis vmot"><iframe src="'+u+'embed=1&step='+ti+'" title="'+id+'" loading="eager"></iframe></div>'};
+  const L=[];
+  L.push(MS('b06','00 · 문의 한 건에서','견적이 왜 멈췄는지, 매번 다시 물어봐야 했습니다.','scene-motion.html?s=b06',[
+   ['요청',`견적이 왜 안 나왔는지 챙기긴 했지만, 문의마다 기록과 진행을 함께 볼 곳이 없어서 매번 담당자에게 다시 물어봐야 했습니다.
+이제는 문의 한 건을 열면 고객이 남긴 말과 비어 있는 정보가 먼저 보입니다. 고객이 같은 요청을 다시 설명하지 않게 하려는 것입니다. 이 문의는 주소와 공종이 비어 있어 채울 정보가 아홉 개 중 여덟 개 남아 있습니다.`],
+   ['멈춘 이유',`이 문의가 왜 멈췄는지는 따로 묻지 않아도 기록에 남아 있습니다. 담당이 정해지지 않았고, 응대 이력은 접수 1건뿐이라 연락 시도도, 실제 연결도 0입니다. 10월 12일 접수 뒤 6일 동안 아무도 연락하지 않았습니다.`],
+   ['다음 일',`그래서 지금 할 일은 담당자 배정입니다. 공종 경험, 업무량, 지역을 기준으로 추천이 나오고, 지사로 넘길 수도 있습니다. 응대 기준은 배정 30분, 첫 연락 2시간입니다.`],
+   ['관리자 화면',`관리자 화면에서도 같은 문의가 같은 이유로 보입니다. 담당자를 기다리는 문의 2건 가운데 가장 오래된 건으로, 확인 필요는 배정 지연입니다. 담당자와 관리자가 같은 기록을 보고 다음 조치를 정합니다.`]],
+   '이런 건들을 관리자는 대시보드에서 먼저 봅니다.'));
+  L.push(MS('b08','00 · 대시보드','숫자가 나온 것보다, 어디서 막혔는지가 먼저 보여야 합니다.','scene-motion.html?s=b08',[
+   ['전체 상황',`영업 대시보드는 전체 상황을 보는 화면입니다. 이번 달 계약, 올해 수주실적 30.2억, 진행 중 파이프라인 259.9억, 견적문의 436건, 조치 필요 156건, 이번 주 활동을 같은 기준으로 한 화면에 둡니다.`],
+   ['막힌 곳',`숫자만 보면 무엇을 해야 할지 모릅니다. 조치 필요 156건은 기한이 지난 26건과 다음 할 일이 없는 130건으로 나뉩니다. 숫자를 보고하는 데서 끝내지 않고, 어디서 막혔는지로 봅니다.`],
+   ['오늘 놓치면',`그중 오늘 놓치면 안 되는 일이 4건입니다. 자봉마을써니밸리아파트는 통화 후속 확인이 44일 지났습니다. 이 건을 열어 보겠습니다.`]],
+   '그중 한 건을 열어 보겠습니다.'));
+  L.push(MS('b07','00 · 영업건 한 건에서','‘진행 중’이라는 말만으로는, 다음 일을 정할 수 없었습니다.','scene-motion.html?s=b07',[
+   ['최근 기록',`예전에는 ‘진행 중’이라는 말로만 상태를 알았습니다. 이 영업건은 고객과 일곱 번 접촉했지만, 기록 대부분이 ‘통화 완료, 진행 중, 다음 일정 협의’입니다. 접촉은 있었지만 진척은 없었다는 것이 기록으로 보입니다.`],
+   ['이 단계 확인',`지금 단계는 경쟁 · 입찰입니다. 이 단계에서 끝나야 할 일은 입찰 준비와 제출이고, 완료 조건은 제출 접수증 첨부입니다. 입찰 준비는 다섯 개 중 0개이고, 내부 처리 기한은 44일 지났습니다. 단계를 옮겼다는 것만으로 끝났다고 보지 않고, 완료 조건으로 봅니다.`],
+   ['다음 업무',`그래서 다음 통화에서 무엇부터 정할지가 보입니다. 주소, 공종, 공사 예정, 유입 경로가 비어 있고 결정권자도 확인되지 않았습니다. 결정 일정과 빈 정보를 확인하고 다음 날짜를 정하면, 그날 아침 오늘 업무에 이 현장이 다시 올라옵니다.`]],
+   '이렇게 멈춘 건에 관리자가 어떻게 개입하는지 보겠습니다.'));
+  L.push(MS('b22','00 · 컨트롤타워','요청을 보낸 것으로 끝내지 않고, 처리 결과까지 확인합니다.','scene-motion.html?s=b22',[
+   ['먼저 볼 것',`컨트롤타워는 관리자가 개입하고 결과를 확인하는 화면입니다. 이 화면은 제 보완점과 가장 직접 연결됩니다. 조치가 필요한 156건 중 오늘 먼저 볼 12건이 위에 나옵니다.`],
+   ['끊긴 곳',`누가 늦었는지가 아니라 어디서 끊겼는지를 봅니다. 담당자와 문제를 표로 나누면, 기한 지난 25건이 관계관리 · 미확인 · 기준일 확인 필요 단계에 몰려 있습니다. 연락 기록이 없다는 것만으로 연락하지 않았다고 보지 않고, 이관 기록 확인 건은 따로 둡니다.`],
+   ['할 일 지정',`칸을 누르면 해당 건이 나오고, 기록을 확인한 뒤 할 일을 지정합니다. 지정한 일은 그 현장의 다음 업무로 등록돼 담당자 오늘 업무에 올라갑니다. 지정은 시작이지 완료가 아닙니다.`],
+   ['오늘 업무',`담당자 오늘 업무에는 뽑힌 이유가 붙어 올라옵니다. 앞에서 본 문의-6643도 담당 배정 안 됨 6일로 올라와 있습니다.`],
+   ['결과 확인',`보낸 요청은 요청, 담당 확인, 실행, 결과 기록, 완료로 따라갑니다. 이 요청은 기한이 9일 지났는데 담당 확인도 아직 없습니다. 제가 요청했다는 사실로 끝내지 않고, 기한이 지나면 재확인이나 담당 변경 같은 다음 조치를 정하겠습니다. 세부 권한과 전환일은 아직 확정 전이라 운영 방향으로 말씀드립니다.`]],
+   '개입한 결과는 성과분석에서 봅니다.'));
+  L.push(MS('b21','00 · 성과분석','얼마를 수주했는지만 보면, 다음에 무엇을 바꿔야 할지는 보이지 않습니다.','scene-motion.html?s=b21',[
+   ['결과 나눠 보기',`성과분석은 활동과 결과를 보고 무엇을 바꿀지 찾는 화면입니다. 올해 수주실적은 30.2억이지만 회사에 들어오는 돈은 23.4억입니다. 협약 · 기술자문 건은 시공사가 낙찰받고 우리는 기술자문료를 받는 구조라, 두 숫자를 섞으면 실적을 잘못 읽게 됩니다.`],
+   ['멈춘 구간',`이 화면은 실적이 낮은 사람을 찾는 화면이 아닙니다. 평가는 정한 네 칸으로만 하고, 나머지는 어디서 막혔는지 보는 참고입니다. 오늘 발표에서는 담당자별 비율을 보여 드리지 않습니다.`],
+   ['왜 졌나',`실주 31건 가운데 이유가 남은 건은 1건입니다. 이유가 없으면 다음 제안에서 무엇을 바꿀지 정할 수 없습니다. 실주 처리 때 사유를 남기는 기준부터 정착시키겠습니다.`],
+   ['아직 판단 안 함',`기록이 쌓이기 전에는 원인을 단정하지 않습니다. 행동과 결과를 잇는 분석은 기록이 10건 쌓이면 보이게 했고, 지금은 대부분 기록 부족입니다.`]],
+   '한 영업건을 넘어, 같은 단지와 이어온 관계는 고객자산에서 봅니다.'));
+  L.push(MS('b23','00 · 고객자산','담당자는 바뀔 수 있습니다. 고객과 나눈 이야기까지 사라지면 안 됩니다.','scene-motion.html?s=b23',[
+   ['쌓인 관계',`고객자산은 한 영업건이 아니라 같은 단지와 이어온 관계를 보는 화면입니다. 단지마다 누적 수주, 진행 중 금액, 관계 상태, 마지막 연락이 붙어 있습니다.`],
+   ['확인할 이유',`연락할 단지를 고를 때 왜 지금인지가 먼저 보입니다. 재접촉 필요 12곳, 반복 실주 43곳처럼 확인할 이유로 묶습니다. 관계 분류는 기록을 검토할 출발점이지, 고객의 실제 의사를 확정한 것은 아닙니다.`],
+   ['단지를 열면',`단지를 열면 첫 관계부터 영업기회, 실주, 진행까지 한 줄로 이어집니다. 오늘 화면에서는 메모 원문을 가렸습니다. 이 단지는 실주 1건의 사유가 없어서, 다음 제안 전에 그 이유부터 확인하라고 알려 줍니다.`],
+   ['인계할 때',`희선님께 넘길 때 연락처만 넘기지 않고, 단지마다 현재 관계, 최근 대화, 남은 약속, 다음 확인일, 관련 자료를 함께 넘기겠습니다. 담당자가 바뀌어도 이전 요구사항과 관계를 처음부터 다시 확인하지 않게 하려는 것입니다.`]],
+   '공사를 끝낸 고객은 확장관리에서 따로 봅니다.'));
+  L.push(MS('b24','00 · 확장관리','수주하고 준공하면, 그 고객은 잊어도 될까요?','scene-motion.html?s=b24',[
+   ['준공 뒤 흐름',`확장관리는 공사를 끝낸 고객의 다음 공사를 봅니다. 준공 뒤 30일에 사후 연락을 하고, 니즈가 확인되면 견적을 확인한 뒤 새 영업건으로 이어갑니다. 관계 연락은 2개월에 한 번입니다.`],
+   ['기록 확인',`기록이 없는 것과 연락하지 않은 것은 다릅니다. 실제 기한 초과는 0건이고, 기록 확인이 필요한 건이 16건입니다. 이런 건은 미실행으로 세지 않고 기록 보완으로 둡니다.`],
+   ['다음 접촉',`현장마다 준공일, 마지막 접촉, 다음 접촉일이 한 줄에 붙습니다. 다음 접촉일이 지난 15건은 통화한 뒤 니즈와 다음 접촉일을 남기겠습니다. 인계 뒤에는 희선님이 다음 접촉일이 지난 고객을 점검하고, 영업 판단이 필요한 건은 담당자와 함께 보겠습니다.`]],
+   '영업과 현장이 어떻게 이어지는지 말씀드리겠습니다.'));
+  L.push(MS('s01','00 · 연결 구간','영업과 현장은 각각 관리하고, 실제로 인계되는 건은 남은 업무까지 잇습니다.','scene-motion.html?s=s01',[
+   ['각각 관리',`영업관리와 현장관리를 함께 맡고 있지만, 모든 영업건이 현장관리로 이어지는 것은 아닙니다. 영업은 문의와 진행, 후속관계와 결과를 관리하고, 현장은 맡은 범위의 준비와 진행, 마무리를 관리합니다.`],
+   ['실제 인계',`그중 실제로 인계되는 건은 고객과 확인한 범위와 일정, 필요한 자료, 다음 담당자, 아직 정해지지 않은 사항이 다음 담당자에게 정확히 이어지도록 하겠습니다. 지금은 CRM과 현장 보드가 따로 있어, 이 목록을 기준으로 사람이 넘깁니다.`],
+   ['연결 확인',`영업건과 연결되지 않은 현장은 누락으로 단정하지 않습니다. 연결할 필요가 없는 경우인지, 연결 대상을 확인하는 중인지, 실제 인계가 빠진 것인지 나눠 확인하고, 임의의 영업건을 만들어 붙이지 않겠습니다.`]],
+   '이제 현장관리입니다.'));
+  L.push(MS('g04','00 · 한 현장에서','현장도 사람에게 묻고 다니는 대신, 보드에서 먼저 봅니다.','scene-motion.html?s=g04',[
+   ['보드에서',`아침에 보드를 열면 급한 현장과 그 이유가 먼저 나옵니다. 오늘은 급한 현장 6곳, 처리할 일 37건이고, 진행 중 현장의 공정률이 아래에 붙습니다. 그중 개신3단지그린빌아파트를 열어 보겠습니다.`],
+   ['정보 확정',`현장 하나는 등록부터 비용 · 종결까지 13단계가 한 페이지에 있습니다. 먼저 계약서와 내역서에서 현장명, 주소, 시공사, 공사범위를 읽어 와 확정합니다. 이 현장은 아직 모두 후보 상태이고, 동 목록이 비어 있습니다.`],
+   ['공사범위',`공사범위는 브이월드 위성지도로 확인합니다. 위성지도와 건물 외곽선을 받아 공사 부위를 칠하는 기능이고, 위성으로 추정한 면적은 참고값입니다. 확정은 실측과 내역서로 합니다. 이 현장은 동 목록이 비어 있어 아직 칠한 부위가 없고, 동 번호를 확인해 칠한 뒤 소장님께 같이 보내겠습니다.`],
+   ['소장님께',`소장님께는 현장정보, 벽체를 삭제한 동별물량, 현장사진을 한 묶음으로 보내고, 보낸 기록을 같은 현장에 남깁니다. 소장님이 본사와 같은 자료로 공사범위와 준비사항을 확인하게 하려는 것입니다. 받으셨는지는 소통방에서 따로 확인합니다.`],
+   ['진행',`공사가 시작되면 같은 현장에서 진행을 봅니다. 작업일지 사진으로 작업, 동, 공정, 인원을 채우고, 작업이 없는 날은 휴무나 우천으로 남겨 미보고와 구분합니다.`],
+   ['준공까지',`공사가 끝난 것과 우리 업무가 끝난 것은 다릅니다. 폐기물 반출 사진만으로 완료를 정하지 않고 완료일과 확인 방법을 남기며, 사진첩 발송, 범위별 완료 점검, 사진 누락 확인까지 이어갑니다.`]],
+   '자재판매 현장도 같은 방식으로 봅니다.'));
+  L.push(MS('g10','00 · 직영현장','자료를 보낸 것과, 현장이 준비된 것은 다릅니다.','scene-motion.html?s=g10',[
+   ['들어오는 길',`자재판매라고 해서 현장관리 대상이 아닌 것은 아닙니다. 매뉴얼대로 컨설팅 계약서 관련방에서 실행여부 N, 자재판매로 들어온 현장을 직영현장으로 파악하고, 보드의 직영현장 목록에서 봅니다.`],
+   ['확인할 것',`직영현장 담당자에게는 물량, 마감 색상, 예상 투입 일정을 확인하고, 확인한 면적과 일정을 대시보드에 기입합니다. 그다음 자재견적서, 서류 발송, 물품공급계약서, 발주 이력 확인과 구매물량 기입까지 이어서 봅니다.`],
+   ['완료 기준',`정보 미확인, 착공 임박, 출고 확인, 계약 발송 · 회수, 견적 · 구매 차이처럼 완료 기준이 다른 일을 한 칸에 섞지 않고 따로 셉니다. 줄마다 지금 할 일이 하나씩 붙습니다.`]],
+   '그리고 마감은 이렇게 지키겠습니다.'));
+  L.push(MS('d03','00 · 현장 데이터분석 · 실행 순서','그래프를 하나 더 만드는 일이 아니라, 다음 현장의 기준을 바꾸는 일입니다.','d03-motion.html',[
+   ['기록',`공사가 끝나면 공종 · 면적 · 실행가액, 노임 · 공사일수 · 품수, 장비대 · 폐기물 비용, 자재 사용량을 내역서 · 계약서 · 카톡방 · 이카운트에서 다시 찾아 모읍니다. 그런데 이 자료가 다음 견적이나 다음 현장 준비에 다시 쓰이는 구조는 아직 없습니다.
+지금은 준공 현장의 자료를 사람이 확인하고 엑셀에 취합하고 있습니다. 앞으로 연결 가능한 항목부터 원본과 현장 · 공종을 맞춰 취합을 자동화하겠습니다. 끝난 현장의 계약 · 견적, 출역표 · 정산서, ERP 자재 자료를 다시 옮겨 적지 않도록 현장별로 연결하겠습니다.`],
+   ['비교',`품수로 계산한 노무비와 노임금액, 컨설팅면적과 실제 시트 사용량의 차이를 자동으로 모으겠습니다. 같은 현장 · 공종으로 기준을 맞추고, 차이가 있는 항목을 확인 대상으로 모읍니다.`],
+   ['이유 확인',`이 차이를 바로 손실 원인으로 보지는 않겠습니다. 제가 원본과 담당자에게 품수 · 단가 · 정산 범위, 면적 · 할증 · 집계 범위, 장비 · 폐기물 비용 포함 여부를 확인하겠습니다.`],
+   ['기준 보완',`확인된 내용만 다음 견적의 노무비 · 자재 산정 근거, 공종별 품수 · 자재 소요, 공정표와 소장 확인사항에 반영하겠습니다. 확인되지 않은 원인이나 임의의 목표 수치는 기준으로 만들지 않습니다.`],
+   ['다시 확인',`다음 현장이 끝나면 같은 기준으로 다시 비교하고 품질 · 하자까지 확인하겠습니다. 화면은 실제 금액 · 현장명 없이 만든 향후 구성 예시이고, 지금 모든 자동화가 운영 중이라는 뜻은 아닙니다. 끝난 현장의 기록이 다음 현장의 기준이 되도록 관리하겠습니다.`]],
+   '확인된 경험은 비슷한 현장에 참고하겠습니다.'));
+  L.push(MS('h01','00 · 희선님 인수인계','인수인계가 끝났다는 기준은, 설명을 마쳤다는 것이 아닙니다.','scene-motion.html?s=h01',[
+   ['범위 · 사례',`영업관리의 일상운영은 희선님께 인수인계할 계획입니다. 업무범위와 판단 기준을 정리하고, 진행 중인 건으로 보여 드리겠습니다. 희선님이 진행 맥락과 남은 업무를 이어받을 수 있도록, 건마다 상태, 최근 처리, 남은 일, 담당자, 다음 확인일, 관련 자료를 함께 넘기겠습니다.`],
+   ['함께 처리',`설명으로 끝내지 않고 같은 건을 함께 처리하면서 기준을 맞추겠습니다.`],
+   ['희선님 주도',`그다음은 희선님이 주도하고 저는 검토합니다. 희선님이 맡은 건을 제가 다시 처리하는 이중 운영으로 가지 않겠습니다.`],
+   ['독립 운영',`완료 기준은 질문을 하지 않는 것이 아니라, 새 문의가 들어왔을 때 확인할 것을 찾고, 멈춘 이유와 다음 조치를 정리하고, 현장으로 자료를 넘기고, 어려운 건은 맞는 책임자에게 연결할 수 있는지입니다. 세부 분담과 전환일은 아직 확정 전이라 운영안으로 말씀드립니다.`]],
+   '인계 이후에는 이렇게 나눠 맡겠습니다.'));
+  L.push(MS('c13','00 · 매일 · 매주','확인 요청을 보내는 데서 끝내지 않고, 지난주와 무엇이 달라졌는지 보겠습니다.','scene-motion.html?s=c13',[
+   ['매일',`매일은 새 문의와 배정, 약속한 업무가 진행됐는지 보고, 안 됐다면 미처리인지, 고객과 정한 대기인지, 기록 누락인지 원인을 나눕니다. 담당과 기한을 정하고, 요청을 보낸 것이 아니라 실제 조치까지 확인합니다. 인계 뒤 일상 미처리 확인은 희선님이, 판단이 필요한 예외와 반복되는 문제는 제가 보겠습니다.`],
+   ['매주',`매주는 지난주에 진행되지 않은 건, 이번 주에 누가 무엇을 했는지, 무엇이 달라졌는지, 남은 과제와 필요한 결정을 보고하겠습니다. 주간 브리핑의 이 칸은 이번 달부터 채워 가겠습니다.`]],
+   '마지막으로 말씀드리겠습니다.'));
+  window.__MOTIDS.forEach(id=>{window.EXEC_VIS['mot:'+id]=ti=>window.EXEC_VIS.__mot(id,ti)});
+  L.forEach(s=>{const i=E_.findIndex(x=>x.id===s.id);if(i>=0)E_.splice(i,1,s);else E_.push(s)});
+  /* 기존 카드 장 보정 */
+  {const d=E_.find(s=>s.id==='d01');if(d){d.card.h='공사는 끝났는데,<br><em>다음 견적은 또 처음부터 시작해야 할까요?</em>';d.title='00 · 현장 데이터분석 · 문제';d.keyMessage='끝난 현장의 기록을 다음 업무의 기준으로 남깁니다.';
+   d.steps[0].script=d.steps[0].script.replace('그래서 새 데이터를 더 모으겠다는 것이 아니라','지금은 이 자료를 사람이 확인해 엑셀에 다시 취합하고 있습니다. 앞으로는 연결 가능한 항목부터 단계적으로 자동화하겠습니다.\n그래서 새 데이터를 더 모으겠다는 것이 아니라');d.transition='이 분석은 이 순서로 진행하겠습니다.'}}
+  {const V4=()=>'<div class="vis vcol"><ol class="trk trk2">'+[['준공 현장 기록','범위 · 기간 · 자재 · 비용 · 특이사항'],['비슷한 현장의 견적 · 준비','참고자료로'],['영업 중 확인 질문','고객에게 먼저 물을 것'],['소장 전달자료 · 공정','준공 기준까지'],['고객자산 관계 이력','확인된 후속사항']].map(x=>'<li><i></i><span>'+x[0]+'</span><small>'+x[1]+'</small></li>').join('')+'</ol><div class="chk"><p>확인된 경험만</p><p>비슷한 공종 · 조건끼리</p><p>다음 현장에서 다시 확인</p></div><p class="vnote">자동 연동 아님 · 단계적으로 연결할 운영계획 · 모든 현장 기록이 새 영업건이 된다는 뜻 아님</p></div>';
+   window.EXEC_VIS.d04b=V4;
+   const s=EX('d04','00 · 비슷한 현장에 참고','확인된 현장 경험을 비슷한 현장의 견적과 준비에 참고합니다.','PART 4 향후계획 — 비슷한 현장에 참고','확인된 현장 경험을,<br><em>비슷한 현장의 견적과 준비에 참고하겠습니다.</em>',{},
+   `준공한 현장에서 확인된 범위, 기간, 자재, 비용, 특이사항은 비슷한 현장의 견적과 준비 때 참고자료가 됩니다.
+예를 들어 자료 요청과 회신 기록이 쌓이면, 어느 자료에서 반복 확인이 생기는지 보겠습니다. 회신이 늦어진 이유를 확인한 뒤, 다음 현장에서는 요청 시점이나 전달할 자료 목록을 보완하겠습니다.
+영업 중에 고객에게 먼저 확인할 질문, 소장님께 전달하는 자료와 공정 · 준공 기준도 같은 방식으로 다듬고, 확인된 후속사항은 고객자산의 관계 이력에 이어 두겠습니다.
+모든 현장 기록이 새 영업건으로 이어진다는 뜻은 아니고, 영업 CRM과 현장관리 보드도 아직 자동으로 이어져 있지 않습니다. 단계적으로 연결할 운영계획입니다.`,'이 일을 누가 어떻게 이어갈지 말씀드리겠습니다.');s.vis='d04b';s.mo='';s.ty='mask';s.bm=true;
+   const i=E_.findIndex(x=>x.id==='d04');if(i>=0)E_.splice(i,1,s);else E_.push(s)}
+  /* 역할 — 희선님 일상 영업관리 · 송보람 현장관리 + 협의 · 예외 · 실제 인계 건 */
+  window.EXEC_VIS.h02=()=>'<div class="vis vrole4">'+[['영','영업담당자',['고객 응대 · 현장 영업','확인된 요구 · 결과 기록','다음 업무 · 일정']],['희','희선님 · 일상 영업관리',['신규 문의 · 배정 확인','기록 · 일정 · 후속 점검','미처리 확인 요청','주간 영업현황','현장으로 넘길 자료 취합']],['송','송보람 · 현장관리 · 연결',['현장 준비 · 진행 · 마무리','실제 인계 건의 정보 확인','협의 · 판단이 필요한 예외','영업관리 기준 보완','반복 문제 개선']],['대','대표 · 상무',['협의 · 승인 · 판단','권한은 지금 기준 그대로']]].map(r=>'<div class="rc"><span class="ini">'+r[0]+'</span><b>'+r[1]+'</b><ul>'+r[2].map(t=>'<li>'+t+'</li>').join('')+'</ul></div>').join('')+'</div>';
+  {const s=E_.find(x=>x.id==='h02');if(s){s.card.h='일상 영업관리는 희선님이 이어받고,<br><em>저는 현장관리와 협의가 필요한 연결 구간을 맡겠습니다.</em>';s.keyMessage='일상 영업관리는 희선님이 이어받고, 저는 현장관리와 협의가 필요한 연결 구간을 맡겠습니다.';s.vis='h02';s.bm=false;
+   s.steps[0].script=`영업담당자는 지금처럼 고객 응대와 현장 영업, 확인된 요구와 결과 기록, 다음 업무와 일정을 맡습니다.
+희선님은 신규 문의와 배정 상태 확인, 기록 · 일정 · 후속조치 점검, 미처리 확인 요청, 주간 영업현황 정리, 현장으로 넘길 자료 취합을 맡는 방향입니다.
+저는 현장관리의 준비 · 진행 · 마무리를 맡고, 실제로 현장으로 인계되는 건의 정보 확인, 협의와 판단이 필요한 예외, 영업관리 기준 보완과 반복되는 문제 개선을 맡겠습니다.
+대표님과 상무님의 협의 · 승인 권한은 지금 기준 그대로이고, 희선님이 맡은 건을 제가 다시 처리하는 이중 운영으로 가지 않겠습니다.`;s.transition='이 일을 매일과 매주 이렇게 운영하겠습니다.'}}
+  /* 마무리 — 대표 제안 문안(2026-10-18) */
+  window.EXEC_VIS.q16b=()=>'<div class="vis vfin">'+[['동료','같은 내용을 다시 찾지 않도록'],['고객','진행 상황을 먼저 묻기 전에 안내할 수 있도록'],['보고','기능을 얼마나 추가했는지가 아니라, 반복업무가 줄었는지 · 맡은 일이 제때 마무리됐는지로']].map(x=>'<div class="fin"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('')+'</div>';
+  {const q=E_.find(s=>s.id==='q16');if(q){q.card.eb='마무리';q.card.h='만들었다는 보고로 끝내지 않고,<br><em>달라진 업무로 보여드리겠습니다.</em>';q.keyMessage='만들었다는 보고로 끝내지 않고, 달라진 업무로 보여드리겠습니다.';q.vis='q16b';q.mo='';q.ty='mask';q.bm=false;
+   q.steps[0].script=`제가 이번에 바꾸려는 것은 화면만이 아니라, 업무를 대하는 제 방식입니다.
+개선할 일을 찾고 계획을 세웠지만, 실행과 마감까지 이어가는 데는 부족함이 있었습니다. 앞으로는 무엇을 새로 만들었는지만큼, 그것이 실제로 쓰이고 일이 제때 마무리되는지를 보겠습니다.
+영업관리는 희선님이 진행 맥락과 남은 업무를 이어받을 수 있도록 인계하겠습니다. 현장관리는 반복해서 자료를 찾고 옮겨 적는 일을 줄여, 준비가 부족하거나 진행이 막힌 곳을 먼저 확인하고 조치하겠습니다.
+동료가 같은 내용을 다시 찾지 않도록, 고객이 진행 상황을 먼저 물어보기 전에 안내할 수 있도록. 제가 만드는 시스템과 운영 기준이 그 변화로 이어지게 하겠습니다.
+앞으로는 기능을 얼마나 추가했는지가 아니라, 반복업무가 줄었는지, 맡은 일이 제때 마무리됐는지로 보고드리겠습니다.
+만들었다는 보고로 끝내지 않고, 달라진 업무로 보여드리겠습니다. 감사합니다.`;q.transition=''}}
+  /* 참고자료 — 현장 데이터분석 일곱 가지(본편 뒤) */
+  {const d=ST.d02;if(d){d.title='00 · 참고 · 데이터분석 일곱 가지';d.card.eb='참고자료 · 현장 데이터분석';d.transition='';d.bm=true;if(!E_.includes(d))E_.push(d)}}
+  /* 목차 */
+  const TOC=[['나의 문제인식','계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동'],['영업관리','문의 한 건 · 대시보드 · 영업건 · 컨트롤타워 · 성과분석 · 고객자산 · 확장관리'],['현장관리','한 현장에서 공사범위 · 소장님 전달 · 진행 · 준공, 직영현장, 마감 전 확인'],['향후계획과 인수인계','기록 활용 · 희선님 인수인계 · 역할 · 매일 · 매주']];
+  window.EXEC_VIS.t00=()=>'<div class="vis vtoc"><p class="tteam"><span>서비스운영팀</span>영업과 현장은 각각 관리하고, 실제로 인계되는 건은 남은 업무까지 잇습니다</p>'+TOC.map((x,i)=>'<div class="tc'+(i===2?' o':'')+'" style="--d:'+(.25+i*.12)+'s"><b>PART '+(i+1)+'</b><div><h4>'+x[0]+'</h4><p>'+x[1]+'</p></div></div>').join('')+'</div>';
+  {const t=E_.find(s=>s.id==='t00');if(t)t.steps[0].script=`오늘 발표의 중심은 한 문장입니다. 매번 물어서 확인하던 업무를, 기록을 보고 다음 조치를 정하는 방식으로 바꾸고 있습니다.
+영업관리와 현장관리는 서비스운영팀에서 함께 맡고 있지만, 모든 영업건이 현장으로 이어지는 것은 아닙니다. 두 업무를 각각 관리하고, 실제로 인계되는 건은 남은 업무까지 이어지게 하려 합니다.
+제 문제인식, 영업관리, 현장관리, 그리고 향후계획과 인수인계 순서로 말씀드리겠습니다. 화면은 실제 화면을 단순하게 다시 그려 단계별로 보여 드리겠습니다.`}
+  Object.assign(window.__EBX,{b06:'PART 2 영업관리 — 문의 한 건에서',b08:'PART 2 영업관리 — 대시보드',b07:'PART 2 영업관리 — 영업건 한 건에서',b22:'PART 2 영업관리 — 컨트롤타워',b21:'PART 2 영업관리 — 성과분석',b23:'PART 2 영업관리 — 고객자산',b24:'PART 2 영업관리 — 확장관리',s01:'영업관리 · 현장관리 — 연결 구간',g04:'PART 3 현장관리 — 한 현장에서',g10:'PART 3 현장관리 — 직영현장',d01:'PART 4 향후계획 — 기록 활용',d03:'PART 4 향후계획 — 데이터분석 실행 순서',d04:'PART 4 향후계획 — 비슷한 현장에 참고',h01:'PART 4 인수인계 — 희선님 인수인계',h02:'PART 4 인수인계 — 역할',c13:'PART 4 인수인계 — 매일 · 매주',q16:'마무리',d02:'참고자료 · 현장 데이터분석'});
+  const TR={p05:'문의 한 건을 열어, 무엇이 달라졌는지 보겠습니다.',g01:'실제 업무를 보면 이렇습니다.',g02:'여기서 제 보완점과도 만납니다.',g03:'그래서 한 현장을 처음부터 끝까지 같은 곳에서 보도록 했습니다.',g05:'누락과 반복 업무는 이렇게 관리하겠습니다.',g06:'현장 기록은 정리해서 보관하는 데서 끝나면 안 됩니다.',h01:'인계 이후에는 이렇게 나눠 맡겠습니다.'};E_.forEach(s=>{if(TR[s.id])s.transition=TR[s.id]});
+  const ORD=['t00','r01','r02','p02','p34','p05','b06','b08','b07','b22','b21','b23','b24','s01','g01','g02','g03','g04','g10','g05','g06','d03','d04','h01','h02','c13','q16','d02'];
+  const keep=E_.filter(s=>ORD.includes(s.id)).sort((a,b)=>ORD.indexOf(a.id)-ORD.indexOf(b.id));E_.length=0;keep.forEach(s=>E_.push(s));
+  const OR=['g01','g02','g03','g04','g10','g05','g06','d01','d03','d04','d02'];E_.forEach(s=>{s.bm=OR.includes(s.id)});
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+
+ /* ───── 2026-10-18 재편 5: 중복 정리(대표 승인) — 반성 · 미리 공유 · 156건 · 관리자 화면 · 넘길 목록 · 역할 · 기록 없음 · 준공 자료 · 요청≠완료 ───── */
+ {const F=id=>E_.find(s=>s.id===id),cut=(id,k)=>{const s=F(id);if(s&&s.steps[k])s.steps.splice(k,1)},rp=(id,k,a,b)=>{const s=F(id);if(s&&s.steps[k])s.steps[k].script=s.steps[k].script.replace(a,b)};
+  cut('b06',3);cut('b08',1);cut('b23',3);cut('c13',0);
+  rp('b08',0,'같은 기준으로 한 화면에 둡니다.','같은 기준으로 한 화면에 둡니다. 맨 위에는 이번 주 기한이 잡힌 계약 · 입찰 예정이 없다는 것이 먼저 나옵니다.');
+  rp('b22',0,' 이 화면은 제 보완점과 가장 직접 연결됩니다.','');
+  rp('b24',2,' 인계 뒤에는 희선님이 다음 접촉일이 지난 고객을 점검하고, 영업 판단이 필요한 건은 담당자와 함께 보겠습니다.','');
+  rp('d03',0,/^공사가 끝나면[^\n]*\n/,'앞에서 말씀드린 것처럼 준공 때마다 여러 자료를 다시 찾아 모으고 있고, 그 자료가 다음 견적에 다시 쓰이지 않습니다.\n');
+  rp('g05',0,'정보가 없거나 협조가 필요한 일은 기한이 지나고 나서 설명하는 것이 아니라, 미리 요청하고 진행이 막혔다는 사실을 공유하겠습니다. ','');
+  rp('g06',0,'확인하고, 요청을 보냈다는 사실이 아니라 실제 결과까지 남기겠습니다.','확인하겠습니다.');
+  rp('g06',0,/\n또 준공 때 여러 자료에서 다시 모으는 정보는[^\n]*/,'');
+  rp('t00',0,/영업관리와 현장관리는 서비스운영팀에서 함께 맡고 있지만[^\n]*\n/,'');
+  {const c=F('c13');if(c){c.title='00 · 매주';c.keyMessage='지난주에 안 된 일이, 이번 주에 어떻게 달라졌는지 보고하겠습니다.';c.steps[0].script=`매일 확인은 앞에서 보신 컨트롤타워에서 합니다. 매주는 그 결과가 달라졌는지를 보겠습니다.
+지난주에 진행되지 않은 건, 이번 주에 누가 무엇을 했는지, 무엇이 달라졌는지, 남은 과제와 필요한 결정을 이유와 함께 보고하겠습니다. 주간 브리핑의 이 칸은 이번 달부터 채워 가겠습니다.`}}
+  window.__EBX.c13='PART 4 인수인계 — 매주';
+  {const o=window.EXEC_VIS.t00;window.EXEC_VIS.t00=(...a)=>o(...a).replace('영업과 현장은 각각 관리하고, 실제로 인계되는 건은 남은 업무까지 잇습니다','영업관리와 현장관리, 두 업무를 함께 맡고 있습니다')}
+  {const o=window.EXEC_VIS.g05;if(o)window.EXEC_VIS.g05=(...a)=>o(...a).replace(/<p>막히면 그 사실을 먼저 공유<\/p>/,'')}
+  {const i=E_.findIndex(s=>s.id==='g03');if(i>=0)E_.splice(i,1)}
+  {const g=F('g02');if(g)g.transition='그래서 한 현장을 처음부터 끝까지 같은 곳에서 보도록 했습니다.'}
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}}
+ E_.forEach(s=>{s.part='E';if(s.view==='pc'){s.view='card';s.shot=true;s.card={eb:s.title.replace(/^[0-9]+ · /,''),h:s.keyMessage}}});E_.forEach(s=>{if(s.shot&&s.card)s.card.eb=s.card.eb.replace(/^개선 (\d) · /,'PART 2 개선 $1 · ')});E_.forEach(s=>{if((window.__STPIDS||[]).includes(s.id)){s.shot=false;s.vis='stp:'+s.id;s.card.eb=window.EXEC_STP[s.id].eb}});E_.forEach(s=>{if((window.__MOTIDS||[]).includes(s.id)){s.shot=false;s.vis='mot:'+s.id}});{if(window.__EBX)E_.forEach(s=>{if(window.__EBX[s.id]&&s.card)s.card.eb=window.__EBX[s.id]});const EN={};E_.forEach(s=>{if(EN[s.id]&&s.card&&s.card.eb)s.card.eb=s.card.eb.replace(/개선 \d/,'개선 '+EN[s.id])})}
  const RO=R_.filter(s=>s.id!=='f7').concat(R_.filter(s=>s.id==='f7'));
  const ordered=WHO==='exec'?E_:WHO==='rep'?RO:[...A_.flatMap(s=>s.id==='m4'?[s,g('a3s')]:[s]),amap,...tours.flatMap(t=>t.page==='pipe'?[t,g('a4')]:[t])];
  const SAY={"rintro:0":"오늘 처음 보시는 화면이라, 하나씩 천천히 보여드리겠습니다.\nCRM은 고객 문의와 영업 진행을 한곳에 적어 두는 프로그램입니다. 지금까지는 각자 수첩이나 엑셀, 머릿속에 있던 것을 여기에 모읍니다.\n이유는 하나입니다. 연락해야 할 고객을 놓치지 않기 위해서입니다. 누구에게 언제 연락할지를 CRM이 매일 알려 줍니다.","bmap:0":"로그인하면 왼쪽에 메뉴가 다섯 개 보입니다. 오늘 업무, 견적문의, 파이프라인, 확장관리, 고객 자산입니다.\n다 외우실 필요 없습니다. 매일 여는 화면은 맨 위 '오늘 업무' 하나입니다. 나머지는 오늘 업무에서 눌러 들어가게 되는 화면입니다.\n그리고 본인이 담당하는 건만 보입니다. 다른 사람 건은 나오지 않습니다.","r_today:0":"로그인하면 바로 이 화면이 뜹니다. '오늘 업무'입니다. 오늘 내가 연락해야 할 곳을 CRM이 모아서 보여 주는 화면입니다.\n제목 옆을 보시면 오늘 몇 곳이고, 그중 급한 곳이 몇 곳인지 적혀 있습니다.","r_today:1":"'급한 곳'은 색으로 구분됩니다. 빨강은 이미 늦은 곳, 파랑은 오늘 고객과 약속한 곳, 주황은 입찰 같은 마감이 가까운 곳입니다.\n빨강부터 없애는 것이 목표입니다.","r_today:2":"급한 곳은 이렇게 카드로 나옵니다. 왼쪽 위 숫자가 순서입니다. 무엇부터 할지 고민하지 말고 1번부터 하시면 됩니다.","r_today:3":"카드 한 장을 보겠습니다. 한 장이 고객 한 곳입니다.\n맨 위 빨간 글자가 왜 급한지입니다. 그 아래 현장 이름과 고객 연락처가 있고, '원한 것'은 고객이 문의한 내용, '지난 기록'은 지난번에 남긴 내용, '목표'는 이번 통화에서 할 일입니다. 노란 칸은 전화 첫마디 예시입니다.\n아래 버튼 세 개만 기억하시면 됩니다. '전화'로 걸고, 통화가 끝나면 '결과'를 눌러 어떻게 됐는지 고릅니다. 그러면 창이 하나 열리는데, 거기서 '저장'까지 눌러야 기록이 남습니다.","r_today:4":"카드 아래 표는 그다음으로 할 곳들입니다. 늦은 것이 위에 있습니다. 줄을 누르면 그 고객 창이 열립니다.\n연락하고 결과를 저장하면 이 목록에서 빠집니다. 목록을 비우는 것이 하루 일입니다.","r_inq:0":"두 번째 메뉴 '견적문의'입니다. 홈페이지나 전화로 들어온 문의 중에서 나에게 배정된 것이 여기에 나옵니다.\n문의가 들어오면 관리자가 담당자를 정하고, 그러면 내 화면에 나타납니다.","r_inq:1":"문의는 급한 순서로 묶여 있습니다. 맨 위 '첫 연락이 필요해요'부터 연락합니다. 한 줄에 현장, 고객 연락처, 공종, 마지막 연락일이 나옵니다.","r_inq:2":"문의 한 줄을 누르면 이렇게 창이 열립니다. 위쪽 막대는 이 문의가 어디까지 진행됐는지입니다.\n접수, 담당 배정, 접촉 · 상담, 현장방문 · 견적 순서이고, 지금 위치에 색이 들어옵니다.","r_inq:3":"왼쪽은 고객이 실제로 쓴 문의 내용입니다. 그 아래 연락처와 현장 주소, 공종이 있습니다.\n전화하기 전에 이 내용부터 읽습니다.","r_inq:4":"가운데는 이 고객과 주고받은 기록입니다. 메신저처럼 시간 순서로 쌓입니다.\n통화했으면 아래 칸에 무슨 얘기를 했는지 적고 '저장'을 누릅니다. 전화를 했어도 여기에 적지 않으면 CRM에는 연락을 안 한 것으로 남습니다. 이게 제일 중요합니다.","r_inq:5":"오른쪽은 다음에 할 일입니다. 현장방문 날짜가 잡혔으면 '현장방문 일정', 견적서를 보냈으면 '견적서 발송'을 눌러 저장합니다.\n둘 중 하나를 저장하면 이 문의는 '영업건'이 되어 다음 메뉴인 파이프라인으로 자동으로 넘어갑니다. 따로 옮겨 적을 필요가 없습니다.","r_pipe:0":"세 번째 메뉴 '파이프라인'입니다. 말이 낯선데, 내가 진행 중인 영업 전체를 단계별로 늘어놓은 화면입니다.\n위쪽에 내 영업이 몇 건이고 금액이 얼마인지 나옵니다.","r_pipe:1":"세로 칸 하나가 단계 하나입니다. 왼쪽에서 오른쪽으로 영업이 진행됩니다.\n컨설팅 설계, 자료 발송완료, 관계관리, 경쟁·입찰, 계약·시공, 수주, 실주. 영업 한 건은 이 중 한 칸에 들어 있습니다.","r_pipe:2":"칸 안의 카드 한 장이 영업 한 건입니다. 현장 이름과 금액이 적혀 있습니다. 카드를 눌러 보겠습니다.","r_deal:0":"영업 한 건의 창입니다. 이 현장에 대한 일은 전부 이 창 안에서 합니다.\n맨 위에 현장 이름, 담당자, 예상 금액이 있고, 그 아래 막대가 지금 어느 단계인지 보여 줍니다.","r_deal:1":"왼쪽은 고객 정보입니다. 관리소장 이름과 전화번호가 있고, 여기서 바로 전화나 문자를 누를 수 있습니다.\n소장이 바뀌면 '＋ 추가'로 새 사람을 넣습니다. 예전 소장 기록은 지워지지 않고 남습니다.","r_deal:2":"가운데는 이 고객과 주고받은 기록입니다. 견적문의에서 본 것과 같습니다.\n연락할 때마다 아래 칸에 적고 '저장'합니다. 나중에 이 현장을 다시 열면 어디까지 얘기했는지 여기서 바로 보입니다.","r_deal:3":"오른쪽 위 '지금 할 일'입니다. CRM이 이 현장에서 지금 해야 할 일을 알려 줍니다.\n버튼은 두 개입니다. 통화했으면 '연락하고 결과 남기기', 다음에 언제 다시 연락할지는 '다음 할 일 · 날짜'입니다.\n다음 날짜를 정해 두면 그날 아침 오늘 업무에 이 현장이 다시 올라옵니다. 그래서 날짜를 꼭 정해 주셔야 합니다.","r_deal:4":"그 아래 '이 단계에서 챙길 정보'는 이 단계에서 알아내야 할 것들입니다. 비어 있으면 '입력하기'로 채웁니다.\n맨 아래 '단계 바꾸기'에 아까 본 일곱 단계가 있습니다. 견적을 보냈으면 '자료 발송완료'를 누르는 식으로, 진행이 바뀔 때 눌러 주시면 됩니다.","r_stage:0":"이제 단계를 하나씩 보겠습니다. 왼쪽 메뉴에서 단계 이름을 누르면 그 단계의 내 현장만 나옵니다.\n첫 단계 '컨설팅 설계'입니다. 문의가 영업건이 되면 처음 들어오는 곳입니다. 고객이 원하는 공사가 무엇인지 확인하고 견적을 준비하는 단계입니다.\n여기서 할 일은 고객이 원하는 것을 적고, 견적을 언제 줄지와 예상 금액을 넣는 것입니다. 목록은 급한 묶음이 위에 있으니 위에서부터 하시면 됩니다.","r_stage:1":"'자료 발송완료'입니다. 견적서나 자료를 고객에게 보낸 현장입니다.\n보내고 끝이 아니라, 받았는지 검토했는지 다시 전화해서 확인하는 단계입니다. 언제 다시 확인할지 날짜를 정해 둡니다.","r_stage:2":"'관계관리'입니다. 지금 당장 공사 계획은 없지만 계속 연락을 이어 가야 하는 고객입니다.\n연락하고 나면 다음 연락 날짜를 정합니다. 날짜가 지난 고객은 맨 위 '연락 초과'에 올라옵니다.","r_stage:3":"'경쟁·입찰'입니다. 다른 업체와 경쟁 중이거나 입찰이 잡힌 현장입니다.\n결정되는 날짜와 경쟁 업체를 넣어 둡니다. 입찰 마감이 일주일 안으로 들어오면 오늘 업무에 주황색 '마감 임박'으로 올라옵니다.","r_stage:4":"'계약·시공'입니다. 계약이 정해진 현장입니다.\n여기서 계약일과 계약 금액을 꼭 넣어 주세요. 이 두 가지가 들어가야 내 실적으로 잡힙니다. 실적은 계약한 날짜를 기준으로 계산합니다.","r_stage:5":"'수주'입니다. 계약해서 따낸 현장이 모입니다. 내 실적 목록이라고 보시면 됩니다.\n계약일이나 금액이 비어 있는 건이 위에 나오니 채워 주시고, 왜 따냈는지도 한 줄 남겨 주세요.","r_stage:6":"'실주'입니다. 놓친 현장입니다.\n왜 놓쳤는지, 어느 업체에 갔는지, 언제쯤 다시 연락해 볼 수 있는지를 남깁니다. 다음에 같은 이유로 놓치지 않기 위해서입니다.","r_exp:0":"네 번째 메뉴 '확장관리'입니다. 내가 공사를 끝낸 고객이 여기로 옵니다.\n한 번 공사한 고객은 다른 공사도 맡길 가능성이 높습니다. 그래서 공사가 끝난 뒤에도 연락을 이어 가는 화면입니다.","r_exp:1":"관리하는 고객이 몇 곳인지, 이번 주에 연락할 곳이 몇 곳인지 나옵니다. 하자 점검이나 다른 공종 확인처럼 어떤 얘기를 꺼내면 좋을지도 추천해 줍니다.","r_exp:2":"목록 맨 위가 이번 주에 연락할 고객입니다. 한 줄을 눌러 보겠습니다.","r_exp:3":"고객 창입니다. 모양은 앞에서 본 것과 같습니다. 왼쪽이 연락처, 가운데가 기록, 오른쪽이 지금 할 일입니다.\n연락한 내용을 적어 저장하고 다음 연락 날짜를 정합니다. 추가 공사 얘기가 나오면 맨 아래 버튼으로 새 견적문의로 넘깁니다.","r_sites:0":"마지막 메뉴 '고객 자산'입니다. 내가 담당하는 현장 전체 목록입니다.\n전화하기 전에 이 현장과 예전에 무슨 일이 있었는지 찾아볼 때 씁니다.","r_sites:1":"맨 위 '관계위험'은 진행 중인 영업이 있는데 연락이 뜸해진 현장입니다. 여기부터 연락합니다.","r_sites:2":"현장을 누르면 그 현장의 사람, 지금까지의 문의와 영업, 수주 이력이 한 화면에 시간 순서로 나옵니다.","rend:0":"정리하겠습니다. 화면은 많이 봤지만 매일 하실 일은 네 가지입니다.\n하나, 아침에 오늘 업무를 엽니다. 둘, 급한 곳 1번부터 전화합니다. 셋, 통화 결과를 적고 저장합니다. 넷, 다음에 언제 연락할지 날짜를 정합니다.\n이것만 하시면 나머지는 CRM이 알아서 다음 날 다시 알려 줍니다. 핸드폰에서도 같은 주소, 같은 계정으로 쓸 수 있고, 순서는 나눠 드린 매뉴얼에 그대로 있습니다.\n처음이라 불편한 점이 있을 겁니다. 쓰시다가 막히는 부분은 바로 알려 주세요.","intro:0":"관리자 화면 전체를 왼쪽 메뉴 순서대로 보여드립니다. 화면마다 무엇을 보는 곳인지와 상세 창까지 봅니다.","t_dash:0":"영업 대시보드입니다. 전체 영업이 지금 어떤 상태인지 한 화면에서 봅니다.","t_dash:1":"맨 위는 이번 달 매출, 연 누적 매출, 파이프라인 금액입니다. 누르면 근거 목록이 열립니다.","t_dash:2":"월별 매출과 문의 유입, 사업유형별 매출입니다. 매출은 계약 체결일 기준입니다.","t_dash:3":"영업 퍼널은 단계별 건수, 담당자 종합은 담당자별 매출입니다. 누르면 해당 화면으로 갑니다.","t_control:0":"컨트롤타워입니다. 확인이 필요한 건을 찾아 바로 조치하는 화면입니다.","t_control:1":"'지금 처리'는 끊긴 건과 막힌 곳, '점검 지표'는 운영 상태 점검입니다.","t_control:2":"'후속이 끊긴 건'은 매일 처리할 줄이고, '데이터 위험'은 CRM이 먼저 알려 주는 확인 항목입니다.","t_control:3":"'지금 막힌 곳'에서 조건을 고르고, '담당자별 문제 · 지시'에서 담당자에게 할 일을 지정합니다.","t_perf:0":"성과 분석입니다. 실적과 진행을 같은 기준으로 봅니다.","t_perf:1":"'전사 판정'은 이번 달 매출 페이스, 아래 카드는 담당자별 매출과 전환율입니다.","t_perf:2":"월별 매출 추이와 담당자 랭킹입니다. 기술자문 낙찰실적은 확정분만, 낙찰확정일 기준입니다.","t_perf:3":"영업 패턴은 10월부터 기록이 쌓이면 의미가 생기는 영역입니다.","t_today:0":"오늘 업무입니다. 맨 위 한 줄이 미배정 문의 알림입니다. 숫자가 있으면 담당자부터 정합니다.","t_today:1":"담당자별 현황입니다. 늦은 건이 많은 담당자가 위에 옵니다. 행을 누르면 아래 목록이 그 담당자로 좁혀집니다.","t_today:2":"견적문의 관리 목록입니다. 미배정, 첫 연락 늦음, 후속 늦음 순으로 봅니다.","t_today:3":"파이프라인 관리 목록입니다. 오늘 확인이 필요한 영업건이 같은 방식으로 나옵니다.","t_inq:0":"견적문의입니다. 맨 위 한 문장이 지금 가장 급한 일과 건수이고, 그 아래 네 칸이 단계별 건수입니다. 칸을 누르면 그 단계만 봅니다.","t_inq:1":"목록은 할 일로 묶여 있고, '담당자를 정해 주세요'가 맨 위입니다. 담당자를 정해야 연락이 시작되므로 가장 먼저 처리합니다.","t_inq:2":"문의 상세입니다. 진행 막대는 접수, 담당 배정, 접촉 · 상담, 현장방문 · 견적 네 칸입니다.","t_inq:3":"왼쪽은 문의 원문, 가운데는 주고받은 기록, 오른쪽은 지금 할 일입니다. '견적서 발송'을 저장하면 파이프라인 '컨설팅 설계'로 자동 등록됩니다.","t_pipe:0":"파이프라인입니다. 위쪽에 전체 진행 건수와 금액이 있고, 연도, 브랜드, 담당자로 좁힙니다.","t_pipe:1":"단계는 일곱 개입니다. 단계마다 건수와 금액이 나와서 어디에 몰려 있는지 봅니다.","t_pipe:2":"카드 한 장이 영업 한 건입니다. 누르면 상세가 열리고, 끌어 놓으면 단계가 바뀝니다.","a4:0":"영업건 상세입니다. 위쪽에 현장명, 담당, 예상 금액, 이 단계 며칠째인지와 진행 막대가 있습니다.","a4:1":"왼쪽은 고객과 현장입니다. 연락처, 관리 정보, 자료, 같은 현장의 다른 영업건입니다.","a4:2":"가운데는 고객과 주고받은 기록입니다. 담당자에게 묻지 않아도 진행 내용을 여기서 확인합니다.","a4:3":"오른쪽 위는 지금 할 일입니다. 다음 할 일이 비어 있으면 여기서 바로 드러납니다.","a4:4":"'이 단계에서 챙길 정보'는 채워야 할 항목, '단계 바꾸기'는 단계 변경과 수주 · 실주 처리, 그 아래가 담당자 변경입니다.","a3s:0":"컨설팅 설계입니다. 문의에서 넘어온 건이 처음 들어오는 단계입니다.\n화면은 모든 단계가 같습니다. 건수와 금액, 담당자별, 단계 진단, 목록 순입니다. 여기서는 고객 요구 미확인과 다음 할 일 없음을 봅니다.","a3s:1":"자료 발송완료입니다. 견적을 보낸 뒤 반응을 확인하는 단계입니다. 후속 기한 초과와 후속일 미지정을 봅니다.","a3s:2":"관계관리입니다. 유대강화, 침묵관리, 대기고객으로 나뉩니다. 연락 초과와 다음 연락 미지정을 봅니다.","a3s:3":"경쟁·입찰입니다. 결정일이 있는 건입니다. 결정일 미등록과 경쟁사 미기록을 봅니다.","a3s:4":"계약·시공입니다. 계약일과 계약 금액이 여기서 들어가야 매출로 잡힙니다. 계약 체결 대기 건부터 봅니다.","a3s:5":"수주입니다. 결과라서 파이프라인 숫자에는 들어가지 않습니다. 계약 정보와 이긴 이유가 비어 있는 건을 봅니다.","a3s:6":"실주입니다. 사유가 기록되지 않은 건이 맨 위에 옵니다. 사유가 있어야 원인을 볼 수 있습니다.","t_expansion:0":"확장관리입니다. 수주해서 준공한 고객을 파이프라인과 따로 이어서 관리합니다.","t_expansion:1":"관리 고객 수와 이번 주 연락할 곳, 다음 매출 추천 유형이 나옵니다.","t_expansion:2":"'이번 주 연락'이 맨 위입니다. 줄을 누르면 상세가 열립니다.","t_expansion:3":"확장관리 상세입니다. 진행 막대는 이번 주 연락, 유지접촉, 니즈 확인, 견적문의 전환 네 칸입니다.","t_expansion:4":"왼쪽은 연락할 고객, 가운데는 접촉 기록, 오른쪽은 지금 할 일과 관리 상태입니다. 니즈가 확인되면 견적문의로 전환합니다.","t_gyeongnam:0":"경남지사입니다. 본사가 넘긴 건을 지사가 처리하는지 본사에서 확인합니다.","t_gyeongnam:1":"넘김, 실담당 지정, 첫 연락, 영업기회, 수주 순으로 어디서 멈췄는지 봅니다.","t_gyeongnam:2":"'지사 미착수'가 맨 위입니다. 넘긴 뒤 며칠이 지났는지 봅니다.","t_gyeongnam:3":"확인 창입니다. 진행 막대는 본사 → 지사, 지사 실담당, 지사 첫 연락, 영업기회, 수주 다섯 칸입니다.","t_gyeongnam:4":"오른쪽 '지사 진행 확인'에서 상태를 보고, 움직임이 없으면 '지사에 확인 요청'을 누릅니다.","t_sites:0":"고객 자산입니다. 현장 기준으로 사람과 영업, 수주 이력을 한곳에서 봅니다.","t_sites:1":"위쪽에서 활성, 기존고객, 재접촉 필요, 관계위험, 휴면으로 나눠 봅니다.","t_sites:2":"자산 수와 누적 수주, 진행 기회입니다. 관계위험 현장부터 연락하라는 과제가 제안됩니다.","t_sites:3":"'관계위험'이 맨 위입니다. 진행 금액은 있는데 연락이 뜸해진 현장입니다.","t_sites:4":"현장 상세입니다. 첫 관계부터 영업기회, 수주, 실주까지 한 줄로 요약됩니다.","t_sites:5":"왼쪽은 핵심 인물, 가운데는 관계 타임라인, 오른쪽은 누적 거래와 진행 중인 영업입니다.","t_repmanage:0":"영업사원 관리입니다. 평가가 아니라, 누구의 어떤 건을 도와야 하는지 보는 화면입니다.","t_repmanage:1":"팀 전체 진행 금액과, 정체 · 다음 할 일 없음 · 첫 연락 전이 몇 건인지 봅니다.","t_repmanage:2":"한 줄이 한 사람입니다. '관리자 확인 필요'가 위에 옵니다.","t_repmanage:3":"담당자 창입니다. 왼쪽은 흐름과 이번 주 약속, 오른쪽은 지금 처리할 현장입니다. 현장을 누르면 상세로 갑니다.","t_mgmt:0":"관리팀 KPI입니다. 영업이 멈추지 않게 관리팀이 지키는 지표입니다.","t_mgmt:1":"당일 배정률, 첫 연락 2시간 내 비율이 목표와 함께 나옵니다.","t_mgmt:2":"이번 주 관리팀 약속 12가지입니다. 아래 할 일을 처리하면 숫자가 바로 올라갑니다.","t_mgmt:3":"담당별 표입니다. 미응대, 할 일 없음, 기한초과, 정체, 기록률을 봅니다.","t_work:0":"공종 분석입니다. 어떤 공종에 기회와 매출이 쌓이는지 봅니다.","t_work:1":"분류 필요, 단일 공종, 복합 공종으로 나눠 봅니다.","t_work:2":"영업기회와 진행 금액, 그리고 공종 미분류가 몇 건인지 나옵니다.","t_work:3":"'분류 필요'는 공종이 없어 분석에서 빠지는 건입니다. 금액 큰 순입니다.","t_work:4":"'분류하기'를 누르면 이 창이 열립니다. 공종을 고르고 '확정 · 다음 건'으로 이어서 처리합니다.","t_brief:0":"주간 브리핑입니다. 주간 영업회의 때 보는 화면입니다.","t_brief:1":"주간과 월간을 바꾸고 주차를 고릅니다.","t_brief:2":"지난주 수주, 신규 유입, 진행 금액과 지난주에 무엇이 움직였는지입니다.","t_brief:3":"'지난주 판정'과 '이번 주 회의 안건'입니다. 안건마다 담당과 기한을 정합니다.","t_brief:4":"담당자 표입니다. 위험 현장이 많은 순으로, 이번 주 챙길 사람을 봅니다.","t_report:0":"리포트입니다. CRM 기록을 모아 보고 장표로 만들어 줍니다.","t_report:1":"월간, 분기, 연간을 고르고 PDF로 저장합니다.","t_report:2":"보고 장표입니다. 현장에서 남긴 기록이 이 보고서의 숫자가 됩니다.","t_dup:0":"데이터 정리 · 검토입니다. 중복으로 보이는 현장과 문의를 CRM이 먼저 찾아 둡니다.","t_dup:1":"'확실 · 같은 건', '애매 · 확인 필요', '다른 건'으로 나눠 봅니다.","t_dup:2":"무엇이 겹치고 왜 생기는지입니다. 표기 차이, 같은 주소 중복 등록, 재접수입니다.","t_dup:3":"승인하기 전에는 데이터가 바뀌지 않습니다. 목록에서 두 건을 비교해 판단합니다.","end:0":"여기까지가 관리자 화면 전체입니다. 관리자는 배정과 첫 연락, 단계별 진행, 담당자별 상태, 계약 체결일 기준 실적을 여기서 확인합니다."};
