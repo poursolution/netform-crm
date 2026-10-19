@@ -44,6 +44,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* ① v5 자리를 대신하고, 위쪽(탭 · 브랜드 칩)은 그대로 */
   assert.equal(await T.count(),1);assert.equal(await page.evaluate(()=>getComputedStyle(document.getElementById('inq-v5')).display),'none','v5 는 가려 둔다');
   assert.equal(await page.locator('#pg-inq .b2b-bar').count(),1,'위 탭 줄 그대로');
+  /* ①-2 가려진 v4 목록은 줄 · 상세를 그리지 않는다(줄마다 응대 이력을 읽어 업무 요청 조회가 한 건씩 나가던 것) */
+  assert.deepEqual(await page.evaluate(()=>{let n=0;const D=InquiryDetailV2,t=D.timeline;D.timeline=function(){n++;return t.apply(this,arguments);};try{paint();}finally{D.timeline=t;}return [n,document.querySelectorAll('#inq-v4 .i4-row').length,document.querySelectorAll('#inq-v4 .i4-tab').length>0];}),[0,0,true],'가려진 v4: 응대 이력 읽기 0번 · 줄 0개 · 위 탭은 그대로');
   /* ② 단계 4칸 = v5 와 같은 계산 · 합 = 진행 중 전체 */
   assert.deepEqual(await nums(),[2,1,3,2],'접수 2 · 담당 배정 1 · 접촉 · 상담 3 · 방문 · 견적 2');
   assert.deepEqual(await page.evaluate(()=>[InquiryV4.total(),InquiryV5.compute().cols.map(c=>c.length)]),[8,[2,1,3,2]]);

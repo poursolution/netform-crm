@@ -253,8 +253,11 @@
   const flags='<div class="i4-flags"><span class="lb">함께 확인</span>'+FLAGS.map(f=>{const n=V.inTab.filter(f[3]).length,o=S.flag===f[0];return '<button type="button" class="i4-flag'+(o?' on':'')+(n||o?'':' zero')+'" data-i4="flag" data-v="'+f[0]+'" aria-pressed="'+o+'">'+h(f[1])+' <b'+(o||!n?'':' style="color:'+f[2]+'"')+'>'+n+'</b></button>';}).join('')
    +'<i></i><span class="i4-more-slot"></span><span class="cnt"'+(CACHE.handed?' title="영업건으로 넘긴(전환 · 기존 영업건에 붙임) 문의 '+CACHE.handed+'건은 진행 중에서 빠집니다"':'')+'><b>'+list.length+'건</b> · '+(S.sort==='urgent'?'급한 순':S.sort==='old'?'오래된 순':'최근 순')+' · ↑ ↓ 이동</span><div class="i4-sorts"><button type="button" data-i4="sort" data-v="urgent" aria-pressed="'+(S.sort==='urgent')+'" title="① 신규 첫 연락 → ② 고객 약속 · 회의 → ③ 후속 기한 → ④ 과거 기록 정리">급한 순</button><button type="button" data-i4="sort" data-v="old" aria-pressed="'+(S.sort==='old')+'">오래된 순</button><button type="button" data-i4="sort" data-v="new" aria-pressed="'+(S.sort==='new')+'">최근 순</button></div></div>';
   const kt=KEEP.tools;if(kt&&host.contains(kt))kt.remove();
-  host.innerHTML=tabs+flags+'<div class="i4-panes'+(S.detail&&cur?' show-detail':'')+'"><section class="i4-list" aria-label="문의 목록">'+(pg.rows.length?pg.rows.map(m=>rowHtml(m,m.key===S.sel)).join(''):'<div class="i4-empty">이 조건에 해당하는 문의가 없습니다</div>')+LP.html(pg,{ns:'i4',unit:'건',small:true})+'</section>'
-   +'<section class="i4-detail" aria-label="고른 문의">'+(cur?detailHtml(cur,S):'<div class="i4-none">왼쪽에서 문의를 고르면 여기에 열립니다</div>')+'</section></div>';
+  /* 흐름 v5 · 토스 방식이 이 자리를 대신하면(이 화면은 가려짐) 줄 · 상세는 그리지 않는다 — 줄마다 마지막 연락을 읽느라 업무 요청 조회가 한 건씩 나갔다(2026-10-18 운영 기록: 1초에 십수 번).
+     위 탭 · 칩 · 더보기 · 등록 버튼 자리는 그대로 만든다(v5 · 토스가 가져다 쓴다) */
+  const behind=(()=>{try{return !!(root.InquiryV5&&root.InquiryV5.on());}catch(e){return false;}})();
+  host.innerHTML=tabs+flags+'<div class="i4-panes'+(S.detail&&cur&&!behind?' show-detail':'')+'"><section class="i4-list" aria-label="문의 목록">'+(behind?'':pg.rows.length?pg.rows.map(m=>rowHtml(m,m.key===S.sel)).join(''):'<div class="i4-empty">이 조건에 해당하는 문의가 없습니다</div>')+(behind?'':LP.html(pg,{ns:'i4',unit:'건',small:true}))+'</section>'
+   +'<section class="i4-detail" aria-label="고른 문의">'+(behind?'':cur?detailHtml(cur,S):'<div class="i4-none">왼쪽에서 문의를 고르면 여기에 열립니다</div>')+'</section></div>';
   KEEP.tools=kt;placeMoved(host,page);fit();
   const ls=host.querySelector('.i4-list'),ds=host.querySelector('.i4-detail');if(ls)ls.scrollTop=keepList;if(ds)ds.scrollTop=prevSel===S.sel?keepDet:0;
   if(prevSel!==S.sel){const r=host.querySelector('.i4-row.on');if(r&&r.scrollIntoView)try{r.scrollIntoView({block:'nearest'});}catch(e){}}
