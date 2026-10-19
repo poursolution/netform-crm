@@ -424,11 +424,11 @@ html.emb .ctl{display:none}
  const $=s=>document.querySelector(s),st=$('#st'),slide=$('#d03'),wrap=$('#wrap'),EMB=/[?&]embed=1/.test(location.search);
  if(EMB)document.documentElement.classList.add('emb');
  const SC=[
-  {dur:9650,cues:[[150,'c1a'],[2650,'c1b'],[5150,'c1c']],role:'현재 → 향후 자동화',title:'끝난 현장 자료를 다시 옮겨 적지 않도록, 현장별로 연결합니다.',msg:'지금은 사람이 찾아 엑셀에 옮깁니다. 앞으로는 <strong>원본을 연결해 현장별로 자동 취합</strong>합니다.'},
-  {dur:14483,cues:[[150,'c2a'],[2650,'c2b'],[5150,'c2c'],[7483,'c2e'],[9983,'c2d']],role:'향후 자동화',title:'노임과 시트에서 확인할 차이를 먼저 찾습니다.',msg:'반복 계산과 비교는 자동으로, <strong>확인할 차이를 먼저 발견</strong>합니다.'},
-  {dur:14650,cues:[[150,'c3a'],[2650,'c3b'],[5150,'c3c'],[7650,'c3d'],[10150,'c3e']],role:'제가 할 일',title:'차이가 난 이유는 원본과 담당자에게 확인합니다.',msg:'<strong>숫자의 차이와 손실 원인을 구분</strong>해서 확인합니다.'},
-  {dur:14150,cues:[[150,'c4a'],[2650,'c4b'],[4650,'c4c'],[7150,'c4d'],[9650,'c4e']],role:'제가 할 일',title:'확인한 근거만 다음 견적 · 투입 기준에 반영합니다.',msg:'확인된 근거를 <strong>다음 견적과 현장 준비의 기준</strong>으로 남깁니다.'},
-  {dur:10983,cues:[[150,'c5a'],[2650,'c5b'],[3983,'c5c'],[6483,'c5d']],role:'다음 준공 후',title:'다음 현장이 끝나면 같은 기준으로 다시 비교합니다.',msg:'<strong>끝난 현장의 기록이, 다음 현장의 기준이 되도록.</strong>'}
+  {dur:25817,cues:[[150,'c1a'],[12150,'c1b'],[20983,'c1c']],role:'현재 → 향후 자동화',title:'끝난 현장 자료를 다시 옮겨 적지 않도록, 현장별로 연결합니다.',msg:'지금은 사람이 찾아 엑셀에 옮깁니다. 앞으로는 <strong>원본을 연결해 현장별로 자동 취합</strong>합니다.'},
+  {dur:26817,cues:[[150,'c2a'],[8650,'c2b'],[18983,'c2c'],[18983,'c2e'],[18983,'c2d']],role:'향후 자동화',title:'노임과 시트에서 확인할 차이를 먼저 찾습니다.',msg:'반복 계산과 비교는 자동으로, <strong>확인할 차이를 먼저 발견</strong>합니다.'},
+  {dur:23150,cues:[[150,'c3a'],[3650,'c3b'],[6317,'c3c'],[10983,'c3d'],[14650,'c3e']],role:'제가 할 일',title:'차이가 난 이유는 원본과 담당자에게 확인합니다.',msg:'<strong>숫자의 차이와 손실 원인을 구분</strong>해서 확인합니다.'},
+  {dur:25817,cues:[[150,'c4a'],[4483,'c4b'],[7983,'c4c'],[12150,'c4d'],[19317,'c4e']],role:'제가 할 일',title:'확인한 근거만 다음 견적 · 투입 기준에 반영합니다.',msg:'확인된 근거를 <strong>다음 견적과 현장 준비의 기준</strong>으로 남깁니다.'},
+  {dur:24983,cues:[[150,'c5a'],[5483,'c5b'],[5483,'c5c'],[11817,'c5d']],role:'다음 준공 후',title:'다음 현장이 끝나면 같은 기준으로 다시 비교합니다.',msg:'<strong>끝난 현장의 기록이, 다음 현장의 기준이 되도록.</strong>'}
  ];
  const TOTAL=SC.reduce((a,s)=>a+s.dur,0);
  const btns=[...document.querySelectorAll('.rail button')],pbs=btns.map(b=>b.querySelector('.pb i'));
