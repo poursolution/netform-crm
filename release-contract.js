@@ -41,10 +41,10 @@
    /* 목록이 오기 전에 '없음'으로 적힌 것 가운데 실제로 있는 것은 지운다 */
    let fixed=false;[...missing].forEach(n=>{if(have.has(n)){missing.delete(n);fixed=true;}});
    (root.CRM_RPC_ALLOW||[]).forEach(n=>{if(!have.has(n))noteMissing(n);});
-   checked=true;banner();if(fixed)emit();
+   checked=true;banner();emit();/* 목록을 받았다고 알린다 — 잠깐의 실패로 스스로 꺼 둔 기능(ops-store · 개선 과제)이 다시 켤지 판단한다 */
   }catch(e){}finally{busy=false;}
  }
- root.CRMRelease={has:name=>!missing.has(String(name||'')),noteMissing,check,missing:()=>[...missing]};
+ root.CRMRelease={has:name=>!missing.has(String(name||'')),listed:name=>have?have.has(String(name||'')):null,noteMissing,check,missing:()=>[...missing]};
  root.addEventListener('phase1:profile',()=>{setTimeout(()=>check(),1500);setTimeout(()=>check(),6000);});
  root.addEventListener('phase1:identity-cleared',()=>{missing.clear();checked=false;have=null;document.getElementById('crm-release-banner')?.remove();emit();});
 })(window);

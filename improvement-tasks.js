@@ -15,7 +15,7 @@
  const keyOf=x=>String(x.label||x.todo||x.basis||'').trim();
  const find=(scope,x)=>tasks.find(t=>t.scope===scope&&t.basis_key===keyOf(x)&&t.status!=='dropped');
  const toast=(m,t)=>{if(typeof root.toast==='function')root.toast(m,t);};
- function missing(e){if(e&&(e.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED/.test(String(e.message||e)))){unavailable=true;root.CRMRelease?.noteMissing?.(SAVE);return true;}return false;}
+ function missing(e){if(e&&(e.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED/.test(String(e.message||e)))){if(root.CRMRelease?.listed?.(SAVE)===true&&root.CRMRelease?.listed?.(LIST)===true)return false;unavailable=true;root.CRMRelease?.noteMissing?.(SAVE);return true;}return false;}
  async function load(force){
   if(!enabled()||state==='loading'||(state==='ready'&&!force))return;
   state='loading';
@@ -90,6 +90,7 @@
   const x={scope:d.scope,key:d.key,basis:d.basis,todo:d.todo,who:d.who,count:d.count};
   open(x,d.it==='edit'?tasks.find(t=>t.scope===d.scope&&t.basis_key===d.key&&t.status!=='dropped'):null);
  });
+ root.addEventListener('crm-release:changed',()=>{if(unavailable&&root.CRMRelease?.listed?.(SAVE)===true&&root.CRMRelease?.listed?.(LIST)===true)unavailable=false;});
  root.addEventListener('phase1:identity-cleared',()=>{tasks=[];state='idle';unavailable=false;close();});
  root.addEventListener('crm-release:changed',()=>repaint());
  root.ImprovementTasks={enabled,installed,load,buttonHtml,countHtml,open,list:()=>tasks.slice(),SCOPE};

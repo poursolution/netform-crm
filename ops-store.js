@@ -8,10 +8,12 @@
  async function rpc(name,p){
   if(!has(name))throw Object.assign(new Error('저장소가 아직 연결되지 않았습니다'),{unavailable:true});
   const r=await root.SB.rpc(name,{p:p||{}});
-  if(r.error){if(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED|Could not find the function/i.test(String(r.error.message||''))){off.add(name);root.CRMRelease?.noteMissing?.(name);throw Object.assign(new Error('저장소가 아직 설치되지 않았습니다'),{unavailable:true});}throw Object.assign(new Error(r.error.message||'저장하지 못했습니다'),{code:r.error.code,databaseRejected:['22023','42501','40001'].includes(r.error.code)});}
+  if(r.error){if(r.error.code==='PGRST202'||/CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED|Could not find the function/i.test(String(r.error.message||''))){if(root.CRMRelease?.listed?.(name)===true)throw new Error('서버 응답이 잠시 불안정합니다 — 잠시 뒤 다시 시도해 주세요');off.add(name);root.CRMRelease?.noteMissing?.(name);throw Object.assign(new Error('저장소가 아직 설치되지 않았습니다'),{unavailable:true});}throw Object.assign(new Error(r.error.message||'저장하지 못했습니다'),{code:r.error.code,databaseRejected:['22023','42501','40001'].includes(r.error.code)});}
   if(!r.data||r.data.ok!==true)throw new Error('서버 확인 응답이 올바르지 않습니다');
   return r.data;
  }
+ /* 운영 함수 목록(매니페스트)에 있는 것으로 확인되면 꺼 둔 것을 다시 켠다(2026-10-19 — 화면이 열리는 순간 서버가 한 번 실패하면 그 창을 닫을 때까지 기능이 꺼져 있었다) */
+ if(typeof root.addEventListener==='function')root.addEventListener('crm-release:changed',()=>{[...off].forEach(n=>{if(root.CRMRelease?.listed?.(n)===true)off.delete(n);});});
  const admin=()=>{try{return !!root.todayIsAdmin();}catch(e){return false;}};
  /* 그 주 월요일(로컬 날짜) */
  function monday(offsetWeeks){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+7*(offsetWeeks||0));const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}

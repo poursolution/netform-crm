@@ -46,6 +46,25 @@ test('운영 함수 목록에 있는 함수는 호출이 실패해도 서버 적
  delete global.document;
 });
 
+test('화면이 열리는 순간 한 번 실패해 꺼진 운영 저장소 기능은 서버 목록에 있으면 다시 켜진다(2026-10-19)',async()=>{
+ const vm=require('node:vm'),L={};let fail=true;
+ const doc={getElementById:()=>null,createElement:()=>({remove(){},setAttribute(){},querySelector:()=>({})}),querySelector:()=>null,head:{append(){}},body:{append(){}}};
+ const w={document:doc,console:{warn(){}},CustomEvent:function(t,o){this.type=t;this.detail=o&&o.detail;},dispatchEvent(ev){(L[ev.type]||[]).forEach(f=>f(ev));},addEventListener:(t,f)=>{(L[t]=L[t]||[]).push(f);},
+  todayIsAdmin:()=>true,ME:{id:'admin'},setTimeout:()=>{},CRM_RPC_ALLOW:['crm_ops_settings_v1'],
+  SB:{rpc:async n=>n==='crm_release_manifest_v1'?{data:{ok:true,functions:['crm_ops_settings_v1']}}:fail?{error:{code:'PGRST202',message:'Could not find the function'}}:{data:{ok:true,settings:{a:true}}}}};
+ w.window=w;
+ vm.runInNewContext(fs.readFileSync(path.join(root,'release-contract.js'),'utf8'),w);
+ vm.runInNewContext(fs.readFileSync(path.join(root,'ops-store.js'),'utf8'),w);
+ const O=w.OpsStore,R=w.CRMRelease;
+ assert.equal(R.listed('crm_ops_settings_v1'),null,'목록 받기 전');
+ await assert.rejects(O.rpc('crm_ops_settings_v1',{}),/설치되지/);assert.equal(O.has('crm_ops_settings_v1'),false,'목록 받기 전 실패 = 일단 끔');
+ await R.check(true);assert.equal(R.listed('crm_ops_settings_v1'),true);
+ assert.equal(O.has('crm_ops_settings_v1'),true,'목록에 있으니 다시 켬');
+ await assert.rejects(O.rpc('crm_ops_settings_v1',{}),/잠시 불안정/);assert.equal(O.has('crm_ops_settings_v1'),true,'목록을 받은 뒤의 실패는 끄지 않음');
+ fail=false;assert.equal((await O.rpc('crm_ops_settings_v1',{})).ok,true,'다음 호출은 정상');
+ assert.deepEqual(Array.from(R.missing()),[],'배너 없음');
+});
+
 test('릴리스 계약 모듈이 전송 계층 바로 뒤에 로드되고 매니페스트 RPC가 허용된다',()=>{
  const html=fs.readFileSync(path.join(root,'crm.html'),'utf8');
  const t=html.indexOf('pc-manager-transport.js?v='),r=html.indexOf('release-contract.js?v=');
