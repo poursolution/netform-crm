@@ -38,7 +38,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*1곳[\s\S]*누적 수주\s*3,400만\s*2곳 · 평균 1,700만[\s\S]*평균 최근 기록\s*\d+일/);
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['관계위험 · 진행 금액 걸림','실주 2회 · 수주 없음','수주 고객 2개월 넘게 연락 없음','핵심 인물 미확인','1년 이상 움직임 없음','주소 미입력'],JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*관계위험 · 진행 금액 걸림 1곳[\s\S]*실주 2회 · 수주 없음 1곳/);
+  /* nine_menus 보통(2026-10-20): '그래서 뭘 해야 하나' 상자 없음 — 할 일 설명은 사유 단추 title 로 · 상자 이름 = 먼저 볼 이유 */
+  assert.equal(await v.locator('.ps3-why header b').innerText(),'먼저 볼 이유');assert.equal(await v.locator('.ps3-diag>.ps3-box').count(),2,'단계 진단 · 먼저 볼 이유 두 상자');
+  assert.match(await v.locator('.ps3-why .ps3-reason').evaluateAll(l=>l.map(b=>b.textContent.replace(/\s+/g,' ').trim()+' | '+b.title).join('\n')),/관계위험 · 진행 금액 걸림\s*1 \| .+[\s\S]*실주 2회 · 수주 없음\s*1 \| .+/,'사유마다 할 일 설명(title)');
   /* 정렬: 관계위험(빨강 2개) → 나머지는 사유 수 → 일수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.querySelector('.prv-a>b').textContent));
   assert.equal(order[0],'예현마을현대홈타운아파트',JSON.stringify(order));

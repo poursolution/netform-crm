@@ -39,7 +39,7 @@
   if(r.unresponded>=3)rs.push('first3');
   if(r.risk>=4&&r.weekTracked&&r.weekAdvanced===0)rs.push('risk4');
   if(r.overdue>0)rs.push('overdue');
-  if(r.unresponded>0&&r.unresponded<3)rs.push('first');
+  /* nine_menus 보통(검토서 7절 반복 정리): '첫 연락 전 있음'(1~2건)은 팀 진단 숫자 · 줄 아래 글 · 업무량 칸에 이미 보여 사유로 또 세지 않는다(3건 이상만 빨강 사유) */
   if(r.stale>0)rs.push('stale');
   if(r.noNext>0)rs.push('nonext');
   if(r.weekTracked&&r.weekAdvanced===0&&r.current.length)rs.push('noadv');

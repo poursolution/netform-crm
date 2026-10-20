@@ -56,7 +56,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const kpi=await page.evaluate(()=>[...document.querySelectorAll('#si-dash .db-kpi')].map(b=>[b.querySelector('span').innerText,b.querySelector('small').innerText,b.title]).find(k=>k[0]==='진행 중 파이프라인'));
   assert.equal(kpi[1],'진행 5건 · 수주 · 실주 · 과거 이관 6건 제외');assert.match(kpi[2],/^기준: 현재 CRM 유효 단계/);
   await page.evaluate(()=>goPage('brief'));await page.waitForSelector('#brief-b .bb-ref');
-  assert.match(one(await page.locator('#brief-b .bb-ref').innerText()),/^전체 현황 \(참고\) 진행 5건 \(성과 대상 담당 4건\) · 과거 이관 · 분류 전 6건 따로/);
+  assert.match(one(await page.locator('#brief-b .bb-ref').innerText()),/^전체 현황 \(참고 · 파이프라인과 같은 숫자\) 진행 5건 \(성과 대상 담당 4건\) · 과거 이관 · 분류 전 6건 따로/);
   /* ③ 과거 이관 · 분류 전 목록 */
   await page.evaluate(()=>{goPage('pipe');PipelineWorkspace.open('legacy');});await page.waitForSelector('#pipeline-legacy .plg-row');
   const shot=async n=>{if(process.env.SHOT_DIR)await page.screenshot({path:require('node:path').join(process.env.SHOT_DIR,'scope-'+n+'.png')});};
