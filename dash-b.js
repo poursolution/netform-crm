@@ -112,6 +112,32 @@
 
  /* 진행 건수 옆의 기준 한 줄: 진행 범위는 PipelineScope 하나 — 과거 이관 · 분류 전은 빼고 건수만 따로 적는다(2026-10-05 정합성 ②) */
  function scopeSub(n){const P=root.PipelineScope;if(!P||!P.on())return '진행 '+n+'건';let lg=0;try{lg=P.split().legacy.length;}catch(e){}return '진행 '+n+'건 · 수주 · 실주'+(lg?' · 과거 이관 '+lg+'건':'')+' 제외';}
+ /* ── six_fixes ④: 첫 화면을 보는 사람에 따라 — 관리자 · 팀장 = 팀 현황 · 막힌 곳(담당자 × 문제) · 요청 처리 결과 / 담당자 = 내 업무 4구역 · 고객 약속 · 후속 일정.
+    아래 숫자 카드 · 탭(사원별 표 포함)은 그대로 전 직원 공개. 구역 판정은 오늘 업무와 같은 함수(DayZoneRules) ── */
+ function zonePrim(d){let a=null;try{a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null;}catch(e){}const v=d.expected_resume_at||d.wake_up_at||d.relationship_hold_until||'';return {type:'deal',due:a?String(a.due||a.due_at||''):'',text:a?String(a.text||''):'',actType:a?String(a.type||''):'',waitReason:String(d.waiting_reason||''),waitUntil:String(v||'').slice(0,10)};}
+ function roleTop(C){
+  const RU=R.DayZoneRules;if(!RU)return '';const deals=(C.active||[]).filter(x=>x.type!=='inq'&&x.item),me=String(R.ME&&R.ME.name||''),admin=canAssign(),Z=['now','late','wait','fix'];
+  const zc=list=>{const n={now:0,late:0,wait:0,fix:0};list.forEach(x=>{const z=RU.zone(zonePrim(x.item));if(z)n[z]++;});return n;};
+  if(admin){
+   const owners=[...new Set(deals.map(x=>x.owner||'미배정'))].sort((a,b)=>(a==='미배정'?-1:0)-(b==='미배정'?-1:0)||a.localeCompare(b,'ko'));
+   const rows=owners.map(o=>{const L=deals.filter(x=>(x.owner||'미배정')===o),n=zc(L),c=L.filter(x=>(x.issues||[]).includes('contact')).length,s=L.filter(x=>(x.issues||[]).some(k=>k==='stale'||k==='stall')).length;return {o,n,c,s};});
+   const tot=rows.reduce((t,r)=>{Z.forEach(k=>t[k]+=r.n[k]);return t;},{now:0,late:0,wait:0,fix:0});
+   const cell=(v,red)=>'<td'+(v&&red?' class="r"':'')+'>'+(v||'·')+'</td>';
+   const SR=sentReqs(),W=R.WorkRequest;let closed=0;try{closed=(W&&W.state().list||[]).filter(r=>r&&r.by_me&&['done','replied'].includes(r.status)).length;}catch(e){}
+   const req=SR==null?'<p class="db-rt-none">요청 저장소 연결 전 · 확인 불가</p>':'<div class="db-rt-req"><div><span>답 기다림</span><b>'+SR.length+'</b></div><div><span>기한 넘김</span><b class="'+(SR.filter(x=>x.late).length?'r':'')+'">'+SR.filter(x=>x.late).length+'</b></div><div><span>처리 끝</span><b>'+closed+'</b></div></div>';
+   return '<section class="db-rt" aria-label="팀 현황"><div class="db-rt-c wide"><header><b>팀 오늘 업무 · 막힌 곳</b><span>담당자 × 문제 · 오늘 업무와 같은 판정</span></header><div class="db-rt-scroll"><table class="db-rt-t"><thead><tr><th>담당</th><th>오늘 처리</th><th>기한 초과</th><th>회신 대기</th><th>기록 보완</th><th>연락 끊김</th><th>멈춤</th></tr></thead><tbody>'
+    +rows.map(r=>'<tr><td>'+h(r.o)+'</td>'+cell(r.n.now)+cell(r.n.late,1)+cell(r.n.wait)+cell(r.n.fix)+cell(r.c,1)+cell(r.s,1)+'</tr>').join('')
+    +'<tr class="sum"><td>합계</td>'+cell(tot.now)+cell(tot.late,1)+cell(tot.wait)+cell(tot.fix)+cell(rows.reduce((s,r)=>s+r.c,0),1)+cell(rows.reduce((s,r)=>s+r.s,0),1)+'</tr></tbody></table></div></div>'
+    +'<div class="db-rt-c"><header><b>내가 보낸 요청</b><span>처리 결과</span></header>'+req+'<button type="button" class="db-rt-go" data-db="go" data-v="control">컨트롤타워에서 보기 ›</button></div></section>';
+  }
+  const mine=deals.filter(x=>x.owner===me),n=zc(mine),day=RU.kst();
+  const up=mine.map(x=>({x,p:zonePrim(x.item)})).map(o=>({...o,dd:RU.diff(RU.dayOf(o.p.due),day)})).filter(o=>o.dd!=null&&o.dd>=0&&o.dd<=7&&o.p.text).sort((a,b)=>a.dd-b.dd);
+  const li=o=>'<li><b>'+(o.dd===0?'오늘':RU.dayOf(o.p.due).slice(5).replace('-','.'))+'</b><span>'+h(siteShort(o.x.site))+'</span><em>'+h(o.p.text)+'</em></li>';
+  const pr=up.filter(o=>RU.isPromise(o.p)),fu=up.filter(o=>!RU.isPromise(o.p));
+  return '<section class="db-rt" aria-label="내 업무"><div class="db-rt-c"><header><b>내 업무</b><span>오늘 업무 4구역</span></header><div class="db-rt-z">'+Z.map(k=>'<button type="button" data-db="rz" data-v="'+k+'"><span>'+RU.LABEL[k]+'</span><b class="'+(k==='late'&&n[k]?'r':'')+'">'+n[k]+'</b></button>').join('')+'</div></div>'
+   +'<div class="db-rt-c"><header><b>고객 약속</b><span>7일 안</span></header>'+(pr.length?'<ul class="db-rt-l">'+pr.slice(0,5).map(li).join('')+'</ul>':'<p class="db-rt-none">7일 안 고객 약속 없음</p>')+'</div>'
+   +'<div class="db-rt-c"><header><b>후속 일정</b><span>7일 안</span></header>'+(fu.length?'<ul class="db-rt-l">'+fu.slice(0,5).map(li).join('')+'</ul>':'<p class="db-rt-none">7일 안 후속 일정 없음</p>')+'</div></section>';
+ }
  /* ── 1. 전체 현황 ── */
  function dash(C){
   const S=st(),N=nearList(C),PP=people(C),{B,P,L,active,risk,cnt,q,bad,fit,con,made,A,names}=C;
@@ -130,7 +156,7 @@
   /* '오늘 먼저 볼 것' 검은 띠는 뺐다(2026-10-04 대표) — 같은 숫자가 위 카드에 있고, 계약 임박은 파이프라인 탭에서 본다 */
   const secs=[['perf','성과','문의 → 계약 · 추이 · 브랜드'],['people','사람','담당자별 · 이번 주 기록'],['pipe','파이프라인',v3()?'단계 · 담당 · 체류':'단계 · 계약 임박'],['act','활동','최근 기록']];
   const tabs='<div class="db-secs" role="tablist">'+secs.map(t=>'<button type="button" role="tab" aria-selected="'+(S.sec===t[0])+'" data-db="sec" data-v="'+t[0]+'">'+t[1]+'<span>'+t[2]+'</span></button>').join('')+'</div>';
-  return kpis+(v3()?judgeAll(C,N)+todayBand(C,N):'')+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
+  return (v3()?roleTop(C):'')+kpis+(v3()?judgeAll(C,N)+todayBand(C,N):'')+tabs+(S.sec==='people'?secPeople(C,PP):S.sec==='pipe'?secPipe(C,N):S.sec==='act'?secAct(C):secPerf(C));
  }
  function brandRows(C){
   const {B,P,L,q,loss}=C;
@@ -764,7 +790,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   if(a==='go')return R.goPage(v);
   if(a==='quarter'){f.quarter=Number(v);f.month=0;return R.paint();}
   if(a==='sec'){S.sec=v;return render();}
-  if(a==='basis'){S.basis=!S.basis;return render();}
+  if(a==='basis'){S.basis=!S.basis;return render();}if(a==='rz'){try{const Z=R.DayZones&&R.DayZones.state();if(Z){Z.zone=v;Z.rs='';Z.closing=false;}}catch(x){}try{R.goPage('today');}catch(x){}return;}
   if(a==='scroll'){const el=document.getElementById(v);if(el)try{el.scrollIntoView({block:'start',behavior:'smooth'});}catch(err){el.scrollIntoView();}return;}
   if(a==='page'){if(LPg())LPg().set(S,v,Number(b.dataset.page)||1);return render();}
   if(a==='cell'){const i=v.lastIndexOf('|');S.selP=v.slice(0,i)||null;S.selC=v.slice(i+1)||null;S.touched=true;return render();}

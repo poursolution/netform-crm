@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    /* ── 영업 대시보드 v3 · 성과 분석(README 'v3 정리'): 대표 한 줄 → 판단 카드 3장 → 아직 판단 못 하는 것 → 사람(기준 + 담당자별 표) → 돈 → 더 보기 ── */
    const p=page.locator('#si-perf .db-shell'),v=p.locator('.pf3.v3'),o=s=>s.replace(/\s+/g,' ').trim();
    assert.equal(await v.count(),1);
-   assert.equal(await v.evaluate(n=>[...n.children].map(e=>e.className.split(' ').pop()).join(' ')),'pf3-ceo db-judges pf3-pending pf3-crit pf3-h2 pf3-pt pf3-h2 pf3-money pf3-h2 pf3-more','순서 · 예전 브랜드 × 낙찰사 표 · 기술자문 탭은 돈 3칸으로 대체');
+   assert.equal(await v.evaluate(n=>[...n.children].map(e=>e.className.split(' ').pop()).join(' ')),'pf3-ceo db-judges pf3-pending pf3-crit pf3-h2 pf3-ar pf3-h2 pf3-pt pf3-h2 pf3-money pf3-h2 pf3-more','순서 · 예전 브랜드 × 낙찰사 표 · 기술자문 탭은 돈 3칸으로 대체');
    assert.equal(await v.locator('.pf3-tabs, .pf3-verdict, .pf3-pcs').count(),0);
    assert.deepEqual((await v.locator('.pf3-ceo>div').allInnerTexts()).map(o),['올해 실적 수주 9.6억 · 매출 8.6억 목표 대비는 목표값 입력 후 표시 · 월평균 1.1억','잘 안 되는 곳 황윤선 메이드율 33% 팀 57%보다 24%p 낮음 · 결과 확정 3건(실주 2)','아직 모르는 것 없음 실주 3건 사유 모두 기록됨','결정해 주실 것 없음 지금 자료로는 결정이 필요한 항목이 없습니다']);
    assert.deepEqual((await v.locator('.db-judge').allInnerTexts()).map(o),['① 올해 얼마 벌었나 9.6억 수주실적 · 회사 매출 8.6억 (90%) 직접 수주 2건 8억 협약 · 기술자문 2건 1.6억 월평균 (1~9월) 1.1억 판단 근거 펼치기 ▾ 수주 4건 →','② 담당별 차이 42%p 최고 75% · 최저 33% · 팀 57% 이필선 · 결과 확정 4건 75% 황윤선 · 결과 확정 3건 33% 판단 근거 펼치기 ▾ 담당자별 표 →','③ 왜 졌나 3 / 3 실주 사유가 기록된 건 가격 2건 기타 1건 사유 미기록 0건 판단 근거 펼치기 ▾ 실주 3건 · 실주 분석 →']);
@@ -73,6 +73,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await page.locator('#si-perf .pf3-more>.hd button',{hasText:'유입경로'}).click();await page.waitForTimeout(250);assert.ok((await page.locator('#si-perf .pf3-more .pf3-ch').count())>0,'유입경로 표');
    await page.locator('#si-perf .pf3-more>.hd button',{hasText:'접수 월별 전환'}).click();await page.waitForTimeout(250);assert.ok((await page.locator('#si-perf .pf3-more .pf3-cr').count())>0,'접수 월별 전환 표');
    assert.deepEqual(await page.locator('#si-perf .pf3-pr:not(.hd):not(.grp)').evaluateAll(l=>l.filter(r=>[...r.children].some(c=>!c.classList.contains('why')&&c.scrollWidth>c.clientWidth+1)).length),0,'담당자별 표 글 넘침 없음');
+   /* six_fixes ⑤: 같은 기간 · 사원별 행동 → 결과 한 줄 */
+   assert.deepEqual((await page.locator('#si-perf .pf3-arr.hd span').allInnerTexts()).map(s=>s.trim()),['담당','연락 (실제 연결)','방문','견적 발송','','영업 진전','계약실적'],'행동 → 결과 칸 순서');
+   assert.match(await page.locator('#pf3-ar').innerText(),/같은 기간 · \d{4}\.\d+\.\d+ – \d+\.\d+ · 사원별 한 줄/,'기간을 날짜로');assert.ok(await page.locator('#si-perf .pf3-arr:not(.hd)').count()>=1,'사원 줄');
    if(shot)await page.screenshot({path:shot,fullPage:true});
    /* 끄면 v2 성과 분석(PerfV3 예전 배치) */
    await page.evaluate(()=>{G.dashV3Off=true;paint();});await page.waitForTimeout(300);assert.equal(await page.locator('#si-perf .pf3.v3').count(),0);assert.equal(await page.locator('#si-perf .pf3-verdict').count(),1);
