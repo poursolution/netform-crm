@@ -29,7 +29,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     Object.assign(deal(7,'[경기 용인] 가람마을아파트','석민이앤씨','황윤선',{site_id:S+1}),{created:day(-400),code:'won',stage_code:'won',outcome:'won',won_amount:92e6,closed_at:day(-380),contract_date:day(-380),amt:92e6}),
     Object.assign(deal(8,'[경기 수원] 선경빌','석민이앤씨','황윤선',{manager_name:'관리과장',manager_mobile:'01000008888'}),{created:day(-200),code:'lost',stage_code:'lost',outcome:'lost',closed_at:day(-90),amt:4e7})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.sixTidyOff=true;/* 판정 줄 원문을 보는 검사 — 줄 정리(six_fixes ①)는 아래 따로 확인 */G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.queueDetailContactOperation=()=>'op';SB={rpc:async()=>({data:{ok:true,tasks:[],entries:[],sites:[]}})};TOKEN='test';OpsStore.aiOn=()=>false;
    PipelineWorkspace.open('consulting');
@@ -52,6 +52,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    ['한강제이타워','POUR솔루션 · 공종 미분류 · 정정훈','미팅 여부 확인 필요','CRM 연락 기록 없음 (이관 전 기록 확인 필요)','기존 연락·미팅 기록 확인 → 첫 연락 전이면 연락 후 일정 협의','판정 불가 · 기한 계산 안 함','연락처 찾기','contact','open']]);
   /* 판정 하나(2026-10-06 집계 · 판정 정리 ② ③ ④): 다음 업무 아래 '판정: 근거', 현재 상황 아래 '최근 실제 연결 / 실제 연결 없음' */
   assert.deepEqual(await L.locator('.prv-row').evaluateAll(l=>l.map(r=>[((r.querySelector('.prv-c>small.why')||{}).textContent||'').replace(/[\d.]+/g,'D'),r.querySelector('.prv-b>small.cn').textContent.replace(/[\d.]+/g,'D')])),[['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','실제 연결 없음'],['판정: 다음 행동일 D','최근 실제 연결 D'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음'],['판정: 판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인) → 데이터 검토에서 이관 전 기록 확인','실제 연결 없음']].map((x,i)=>i===4?['','실제 연결 없음']:x)/* 미배정 줄은 담당 배정이 먼저 — 판정 줄 없음 */,'판정 줄 · 실제 연결 줄');
+  /* six_fixes ①: 줄 = 상태 / 할 일 / 기한 — 연락 두 줄 · '판정: …' 줄은 줄에서 빼고 마우스를 올리면(title) · 보완 단추는 남김 */
+  {await page.evaluate(()=>{G.sixTidyOff=false;paint();});await page.waitForTimeout(400);
+   const tidy=await L.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.querySelectorAll('.prv-b>small.cn').length,[...r.querySelectorAll('.prv-c>small.why')].filter(s=>!s.querySelector('u')).length,/판정:/.test((r.querySelector('.prv-c>small')||{}).title||''),/최근|연락|기록/.test((r.querySelector('.prv-b>span')||{}).title||'')]));
+   assert.ok(tidy.length&&tidy.every(x=>x[0]===0&&x[1]===0),'연락 두 줄 · 판정 줄 없음: '+JSON.stringify(tidy));assert.ok(tidy.filter(x=>x[2]).length>=tidy.length-1&&tidy.every(x=>x[3]),'판정 · 연락은 마우스를 올리면(담당 미지정 줄은 판정 없음): '+JSON.stringify(tidy));
+   await page.evaluate(()=>{G.sixTidyOff=true;paint();});await page.waitForTimeout(400);}
   assert.equal(await page.evaluate(()=>document.querySelectorAll('#pipeline-stage-v3 .prv-more,#pipeline-stage-v3 .prv-main,#pipeline-stage-v3 [data-ps3="toggle"]').length),0,'펼침 칸 · 펼침 누름이 없다');
   /* 강조색은 빨강 하나: 기한 지남 · 미배정. 왼쪽 3px 브랜드 띠 · 흰 버튼 120px 칸 · 줄 높이 */
   const css=await page.evaluate(()=>{const R=[...document.querySelectorAll('#pipeline-stage-v3 .prv-row')],cs=(n,p)=>getComputedStyle(n)[p];
