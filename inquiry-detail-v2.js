@@ -675,7 +675,7 @@
     if(s.tab==='call'){
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
      if(assigned&&!s._ceOptions&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
-     const options=s._ceOptions||Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{});
+     const options=Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s._ceOptions?{}:s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{},s._ceOptions||{});
      let refresh=false;
      if(root.PCInquirySave?.route(q)){
       const owner=root.MobileSaveJournal.owner(),session=root.MobileSaveJournal.session?.(),selected=root.G?.inqSelKey,form=Object.fromEntries(['tab','text','ch','res','con','rea','act','nday','due','next'].map(k=>[k,s[k]]));
