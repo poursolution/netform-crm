@@ -40,7 +40,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const order=await D.locator('.idv3-c2').evaluate(c=>[...c.children].map(n=>n.classList.contains('idv3-sum')?'sum':n.classList.contains('idv3-composer')?'rec':n.classList.contains('idv3-chead')?'head':n.classList.contains('idv3-thread')?'thread':n.className));
   assert.deepEqual(order,['sum','rec','head','thread'],'가운데 순서');
   const sum=one(await D.locator('.idv3-sum').innerText());
-  assert.match(sum,/^고객 문의 요약 고정 원문 보기 › 이번 문의 아파트 경사로 부분시공 문의 주심 · 6년차 아파트로 아파트 내 경사로 부분에 빨간색 도장 시공이 가능한지/,sum);
+  assert.match(sum,/^고객 요청 원문 보기 › 이번 문의 아파트 경사로 부분시공 문의 주심 · 6년차 아파트로 아파트 내 경사로 부분에 빨간색 도장 시공이 가능한지/,sum);
   assert.match(sum,/추후 계획 면적이 크진 않으나, 추후 내년쯤 옥상이나 외벽 등 다른 공사도 예정이라고 하심 · 일정 미확인$/,'내년쯤 = 일정 미확인: '+sum);
   assert.equal(await D.locator('.idv3-sum').evaluate(e=>getComputedStyle(e).position),'sticky','요약 고정');
   await D.locator('[data-idv="orig-toggle"]').click();await page.waitForTimeout(150);
@@ -49,14 +49,14 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 왼쪽: 원문 큰 칸 없음 · 문의 정보 한 곳 · 공종 확인 */
   const left=one(await D.locator('.idv3-c1').innerText());
   assert.doesNotMatch(left,/고객이 남긴 말|채울 정보/,'원문 큰 칸 · 채울 정보 칸 따로 없음');
-  assert.match(left,/문의 정보 한 곳 · 누르면 수정/);
+  assert.match(left,/현장 정보 이어받음 · 누르면 수정/);/* inquiry_respond: 현장 정보 이어받음 · 보완 정보 접힘 */
   assert.match(left,/공종 기타\(아스콘\)\? · 원문은 경사로 도장 · 확인/,'3 ① 공종 확인(값은 그대로): '+left);
   /* 오른쪽: 첫마디 · 전화 · 문자 없음 · 모바일 안내 · 다음 단계 이름 */
   const right=one(await D.locator('.idv3-c3').innerText());
   assert.doesNotMatch(right,/첫마디/);assert.equal(await D.locator('.idv3-c3 [data-idv="dial"],.idv3-c3 [data-idv="sms-open"]').count(),0,'전화 · 문자 버튼 없음');
   assert.match(right,/모바일에서 전화 · 문자 · 방문 일정/);
   assert.match(right,/방문 결과 기록 견적 진행 기록/,'다음 단계 이름');
-  assert.match(right,/지금 할 일 .+ 기한 10\.17 · 3일 지남/,'지금 할 일 + 기한: '+right);
+  assert.doesNotMatch(right,/지금 할 일/,'inquiry_respond: 지금 할 일은 가운데 다음 업무와 같아 오른쪽에서 뺌');
   assert.doesNotMatch(one(await D.locator('.idv3-top .r1').innerText()),/옥상 방수/,'머리 줄: 추후 계획(내년 옥상)을 지금 문의로 쓰지 않음');
   /* 3 ② 연결일 확인 */
   assert.match(one(await D.locator('.idv3-top').innerText()),/연결일 확인 필요 · 첫 응대 10\.10 \/ 이력 연락 0/,'3 ② 연결일 확인 필요');
@@ -66,7 +66,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.doesNotMatch(one(await D.locator('.idv3-c1').innerText()),/확인$|· 확인/);
   assert.doesNotMatch(one(await D.locator('.idv3-top').innerText()),/연결일 확인 필요/);
   assert.match(one(await D.locator('.idv3-sum').innerText()),/이번 문의 옥상 방수 견적 요청드립니다 추후 계획 언급 없음$/);
-  assert.match(one(await D.locator('.idv3-c3').innerText()),/첫 연락 기한 10\.20 11:00/);
+  assert.match(one(await D.locator('.idv3-top').innerText()),/CRM 연락 기록 없음 · 접수 0일/,'기록 없음 = 회색 · 접수일만');
   /* 끄기 */
   await page.evaluate(()=>{InquiryWorkbench.close();G.inqTidyOff=true;});await open(1);
   assert.equal(await D.locator('.idv3-sum').count(),0);assert.match(one(await D.locator('.idv3-c1').innerText()),/고객이 남긴 말/,'끄기 = 예전 배치');

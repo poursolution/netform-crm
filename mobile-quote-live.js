@@ -50,6 +50,8 @@
    +'<div style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px"><div style="font-size:15px;font-weight:700">'+esc(d.nm)+'</div>'+(msg?'<div role="status" style="font-size:13.5px;color:#b42318">'+esc(msg)+'</div>':'')+prog+body+(!last||done(last)?'<span data-ql-act="todraft" role="button" tabindex="0" style="min-height:48px;border-radius:12px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">'+(last?'새 수정본 견적 작성':'견적 작성 (간단 · 공법)')+'</span>':'')+(rows?'<div><div style="font-size:13px;color:#6b7280;margin-bottom:4px">견적 버전</div>'+rows+'</div>':'')+'</div></div>';
  }
  function preview(root,d,t){
+  /* 발송 기록: 다음 확인일을 고치면 그 값, 아니면 발송일 + 7일을 따라감 */
+  if(mode==='send'&&t&&t.dataset){if(t.dataset.ql==='snext')t.dataset.touched='1';else if(t.dataset.ql==='sdate'){const b=root.querySelector('[data-ql="snext"]');if(b&&b.dataset.touched!=='1'&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))b.value=addDay(t.value,7);}return;}
   if(mode==='draft'){if(t&&t.dataset&&t.dataset.qd)draftField(t);return;}
   const el=root.querySelector('[data-ql="preview"]');if(!el)return;
   const c=calc(d,root);if(!c)return;
@@ -100,29 +102,37 @@
    msg='견적 요청을 등록했습니다. 견적 예정일 '+due;
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
- } function renderSend(d){
+ }
+ /* 견적 후속(2026-10-20 design_handoff_mobile_all v4 보완 'I 견적'): 후속 = 실제 발송일 + 7일, 이미 열린 견적 후속 업무가 있으면 새로 만들지 않는다(재발송 포함) */
+ const FU=/견적.*(확인|후속|반응)|발송\s*후\s*확인/;
+ const addDay=(k,n)=>new Date(Date.parse(k+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+ function openFollow(d){const L=(Array.isArray(d.openNextActions)?d.openNextActions:[]).concat([d.nextActionObj,d.nextAction]).filter(a=>a&&a.status==='open'&&FU.test(String(a.text||a.title||'')));return L[0]||null;}
+ function renderSend(d){
   const A=versions(d),last=A[A.length-1],inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
   const lab=(l,h)=>'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">'+l+h+'</label>';
   return shell(d,'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">'+(last?'V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)':'등록된 견적 없음')+'</div>'
    +lab('발송일','<input data-ql="sdate" type="date" value="'+kst(0)+'" max="'+kst(0)+'" style="'+inp+'">')
    +lab('받는 사람(필수)','<input data-ql="sto" maxlength="60" placeholder="예: 관리소장 김OO" style="'+inp+'">')
    +lab('보낸 방법','<select data-ql="sway" style="'+inp+'"><option>이메일</option><option>카카오톡</option><option>문자</option><option>직접 전달</option></select>')
-   +lab('다음 확인일 (기본 +3일)','<input data-ql="snext" type="date" value="'+kst(3)+'" style="'+inp+'">')
-   +'<div style="font-size:12.5px;color:#6b7280">저장하면 발송 기록과 다음 확인 연락 일정이 남습니다. 단계를 발송 완료로 옮기는 것은 상세의 [단계 변경]에서 합니다.</div>'
+   +(openFollow(d)?'<div data-ql="sfu" style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55"><span style="font-size:12px;color:#6b7280;font-weight:700">후속 연락</span><br><b>'+esc(String(openFollow(d).text||openFollow(d).title||''))+'</b> · '+esc(String(openFollow(d).due||openFollow(d).due_at||'').slice(0,10))+'<br><span style="font-size:12.5px;color:#6b7280">이미 잡힌 후속이 있어 새로 만들지 않습니다(재발송도 같음)</span></div>'
+    :lab('다음 확인일 (실제 발송일 + 7일)','<input data-ql="snext" type="date" value="'+addDay(kst(0),7)+'" style="'+inp+'">'))
+   +'<div style="font-size:12.5px;color:#6b7280">저장하면 발송 기록'+(openFollow(d)?'만 남고 기존 후속은 그대로입니다':'과 후속 확인 연락 1건이 남습니다')+'. 단계를 발송 완료로 옮기는 것은 상세의 [단계 변경]에서 합니다.</div>'
    +'<span data-ql-act="send" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">발송 기록 저장</span>');
  }
  function submitSend(d,root,after){
   if(busy)return;
-  const q=k=>root.querySelector('[data-ql="'+k+'"]')?.value||'',to=q('sto').trim(),sd=q('sdate'),nx=q('snext'),way=q('sway');
+  const q=k=>root.querySelector('[data-ql="'+k+'"]')?.value||'',to=q('sto').trim(),sd=q('sdate'),fu=openFollow(d),way=q('sway');
+  /* 다음 확인일: 사람이 고친 값, 아니면 실제 발송일 + 7일(발송일을 바꿔도 따라감) */
+  const box=root.querySelector('[data-ql="snext"]'),nx=fu?'':(box&&box.dataset.touched==='1'?box.value:addDay(sd||kst(0),7));
   if(to.length<2){msg='받는 사람을 입력해 주세요.';return after();}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(sd)||sd>kst(0)){msg='발송일은 오늘 이전 날짜로 입력해 주세요.';return after();}
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(nx)||nx<sd||nx<kst(0)){msg='다음 확인일은 오늘 이후로 입력해 주세요.';return after();}
+  if(!fu&&(!/^\d{4}-\d{2}-\d{2}$/.test(nx)||nx<sd||nx<kst(0))){msg='다음 확인일은 오늘 이후로 입력해 주세요.';return after();}
   if(typeof w.queueMobileContactOperation!=='function'){msg='이 기기에서는 기록을 저장할 수 없습니다.';return after();}
   try{
    const last=versions(d)[versions(d).length-1],cur=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null;
    w.queueMobileContactOperation('activity',{opportunity_id:String(d.id),intent:'standalone',type:'견적발송',note:(last?'견적 V'+last.version_no+' ':'')+'발송 · '+way+' · 받는 사람 '+to+' · 발송일 '+sd,occurred_at:new Date().toISOString(),meaningful_contact:false});
-   w.queueMobileContactOperation('next_action',{opportunity_id:String(d.id),intent:'standalone',type:'전화',text:'견적 발송 후 확인 연락',due_at:nx});
-   msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). 다음 확인 '+nx;
+   if(!fu)w.queueMobileContactOperation('next_action',{opportunity_id:String(d.id),intent:'standalone',type:'전화',text:'견적 발송 후 확인 연락',due_at:nx});
+   msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). '+(fu?'후속은 기존 업무 그대로':'다음 확인 '+nx);
   }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
   after();
  } /* ── 견적 작성(간단견적 · 공법견적) — PC '견적 작성'과 같은 계산(QuoteCompose)과 같은 저장 함수(crm_quote_version_save_v1 · 서버가 다시 계산해 다르면 저장 안 함).

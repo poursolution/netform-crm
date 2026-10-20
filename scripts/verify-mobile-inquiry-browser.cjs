@@ -156,6 +156,28 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',TASK='bbbbbbbb-2222-4222-8222-b
   await setup();await open();await pick('배드핏');assert.equal(await D.locator('[data-ce="save"]').isDisabled(),true);await D.locator('[data-ce="save"]').dispatchEvent('click');assert.equal(await page.evaluate(()=>__f.calls.length),0);await safe();
   checks.push('Release-off and unsupported close stay blocked in original D; no retired UI or legacy write fallback');
 
+  /* 모바일 v5(2026-10-20 '기획대로'): 문의 응대도 확인할 것(견적문의 기준) · 부재 다시 연락 · 한 줄 미리보기 · 저장 뒤 정리됨 — 저장 엔진은 같은 PCInquirySave */
+  await setup();
+  await open();await page.evaluate(()=>{G.mobileV5Off=false;MobileInquiryEntry.open(__view);});await D.waitFor();
+  await pick('연결됨');
+  assert.deepEqual(await D.locator('.v5r-ck span').allInnerTexts(),['견적 요청 범위','방문이 필요한지'],'문의 = 견적문의 기준 항목');
+  await D.locator('.v5r-ck').nth(0).click();
+  assert.match(await D.locator('.ce-prev').innerText(),/^저장하면: 응대 기록 1/,'v5 한 줄 미리보기');
+  await save();await page.waitForFunction(()=>MobileInquiryEntry.state()===null&&!!document.querySelector('#sheetcard .approved-v5a'));
+  {const b=await business();assert.match(b.logs[0].content,/\[확인\] 견적 요청 범위 \/ \[아직\] 방문이 필요한지/,'체크한 것 = 응대 기록 글(상담 내용 없이도 저장)');}
+  assert.match(await page.locator('#sheetcard .approved-v5a').innerText(),/정리됨[\s\S]*끝난 일[\s\S]*첫 연락/);
+  await page.locator('#sheetcard [data-v5a="close"]').click();await page.waitForFunction(()=>!document.querySelector('#sheetcard .approved-v5a'));
+  await setup();
+  await open();await page.evaluate(()=>{G.mobileV5Off=false;MobileInquiryEntry.open(__view);});await D.waitFor();
+  await pick('부재');
+  assert.deepEqual(await D.locator('.v5r-retry .v5r-chip').allInnerTexts(),['2시간 후','내일 오전','날짜 고르기']);
+  await D.locator('.v5r-chip[data-v="am"]').click();assert.match(await D.locator('.ce-prev').innerText(),/연락 시도 1[\s\S]*다시 연락 내일 오전/);
+  await save();await page.waitForFunction(()=>MobileInquiryEntry.state()===null&&!!document.querySelector('#sheetcard .approved-v5a'));
+  {const b=await business();assert.equal(b.logs[0].result,'부재');assert.match(b.logs[0].content||'',/다시 연락 내일 오전/,'시각은 기록 글에');}
+  assert.match(await page.locator('#sheetcard .approved-v5a').innerText(),/남긴 것[\s\S]*연락 시도 1회/);
+  await page.locator('#sheetcard [data-v5a="close"]').click();
+  checks.push('v5: inquiry D shows inquiry-rule checks · one-line preview · retry chips, records checks/retry in the shared save text, then 정리됨');
+
   // The user's actual review link must work without this test's setup/injected ADMIN fixture.
   await page.goto(origin+'/mobile.html?demo=1&review=guide&screen=A&reset=1',{waitUntil:'domcontentloaded'});await page.locator('.approved-a').waitFor();
   const first=page.locator('.approved-a [data-gs="task"]').first();assert.equal(await first.getAttribute('data-kind'),'inquiry');

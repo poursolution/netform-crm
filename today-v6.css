@@ -1,11 +1,11 @@
 /* PC 오늘 업무 v6 (design_handoff_pc_today_v6) — 크기는 시안 값. 색은 브랜드(띠 · 이름)와 빨강(기한 지난 숫자)만, 나머지는 회색 계열 */
 #today-v2 .tv6{display:flex;flex-direction:column;gap:14px;color:#15171c;word-break:keep-all}
-#today-v2 .tv6-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+#today-v2 .tv6-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:0 4px}
 #today-v2 .tv6-title b{font-size:21px;letter-spacing:-0.02em}
 #today-v2 .tv6-title span{font-size:13px;color:#4b5563}
 #today-v2 .tv6-tabs{background:#fff;border:1px solid #e8eaef;border-radius:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));overflow:hidden}
 #today-v2 .tv6-main{display:flex;flex-direction:column;gap:10px;min-width:0}
-#today-v2 .tv6-colh{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr) 96px;gap:14px;padding:9px 16px 9px 19px;border-bottom:1px solid #eef0f3;background:#fafbfc;font-size:11.5px;font-weight:700;color:#6b7280}
+#today-v2 .tv6-colh{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr) 96px;gap:14px;padding:9px 16px 9px 19px;border-bottom:1px solid #eef0f3;background:#fff;font-size:11.5px;font-weight:700;color:#6b7280}
 #today-v2 .tv6-tabs button{border:0;border-left:1px solid #eef0f3;border-bottom:3px solid transparent;background:#fff;text-align:left;padding:14px 18px 12px;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer;font:inherit;color:#15171c}
 #today-v2 .tv6-tabs button:first-child{border-left:0}
 #today-v2 .tv6-tabs button[aria-selected="true"]{border-bottom-color:#15171c}
@@ -41,7 +41,7 @@
 #today-v2 .tv6 .sub{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #today-v2 .tv6 .sub b{font-weight:600}
 #today-v2 .tv6 .kd,#today-v2 .tv6 .rq{font-style:normal;font-size:11px;font-weight:700;color:#4b5563;background:#f1f2f5;border-radius:4px;padding:1px 6px;margin-right:5px}
-#today-v2 .tv6-lh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+#today-v2 .tv6-lh{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;padding:14px 19px 10px;background:#fff;border-bottom:1px solid #eef0f3}
 #today-v2 .tv6-lh b{font-size:15px}#today-v2 .tv6-lh b span{font-weight:500;color:#6b7280}#today-v2 .tv6-lh small{font-size:12px;color:#9ca3af}
 #today-v2 .tv6-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
 #today-v2 .tv6-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr) auto;gap:14px;align-items:center;padding:13px 16px;border-bottom:1px solid #f0f1f4;border-left:3px solid #9aa0ab;cursor:pointer}
