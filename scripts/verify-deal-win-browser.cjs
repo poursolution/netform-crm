@@ -55,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await dlg.locator('.wn-types button small').allInnerTexts(),['자사가 직접 계약 · 시공','우리 영업 → 협약시공사 낙찰 → 기술자문 계약','공식 이관 → 그 업체 낙찰 · 사전 보고 승인']);
   assert.equal(await dlg.locator('.wn-types button[aria-pressed="true"] b').innerText(),'직접 수주');
   assert.deepEqual(await dlg.locator('.wn-form label').allInnerTexts(),['계약 업체 *','낙찰금액 *','낙찰일 *','실적 귀속']);assert.equal(await dlg.locator('[data-wn-f="company"]').inputValue(),'석민이앤씨','직접 수주 = 우리 브랜드가 계약 업체');
-  assert.equal(await dlg.locator('[data-wn-f="date"]').inputValue(),'2026-10-21');assert.match(await dlg.locator('.wn-note').innerText(),/^실적 금액 = 낙찰금액\. 계약 · 시공 단계로 이어집니다\.$/);
+  assert.equal(await dlg.locator('[data-wn-f="date"]').inputValue(),'2026-10-21');assert.match(await dlg.locator('.wn-note').innerText(),/^낙찰금액은 수주 결과\(VAT 별도\)로 남습니다\. 계약실적은 계약 체결일 · 확인된 공사 계약금액 기준으로 따로 집계합니다\. 계약 · 시공 단계로 이어집니다\.$/);
   /* 2. 협약시공사 수주 · 기술자문 */
   await dlg.locator('.wn-types button').nth(1).click();await page.waitForTimeout(100);
   assert.deepEqual(await page.locator('#wn-dialog .wn-form label').allInnerTexts(),['낙찰 시공사 *','낙찰금액 *','낙찰일 *','실적 귀속','기술자문 발생 *','기술자문 계약','POUR 계약']);
@@ -67,7 +67,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#wn-dialog [data-wn-f="date"]').fill('2026-10-01');
   await page.locator('#wn-dialog [data-wn="save"]').click();assert.match(await page.locator('#wn-dialog .wn-err').innerText(),/기술자문 계약금액을 넣어 주세요/);
   await page.locator('#wn-dialog [data-wn-f="tech_amount"]').fill('433650000');await page.locator('#wn-dialog [data-wn-f="pour_amount"]').fill('136690000');
-  assert.equal(await page.locator('#wn-dialog .wn-note').innerText(),'실적 금액 = 낙찰금액 1,043,900,000원. 기술자문 433,650,000원 · POUR 136,690,000원은 더하지 않고 연결 계약으로 따로 저장합니다. 저장하면 기술자문 관리 건이 자동으로 생깁니다.');
+  assert.equal(await page.locator('#wn-dialog .wn-note').innerText(),'낙찰금액 1,043,900,000원은 수주 결과(VAT 별도)로 남습니다. 기술자문 433,650,000원 · POUR 136,690,000원은 더하지 않고 연결 계약으로 따로 저장합니다. 저장하면 기술자문 관리 건이 자동으로 생깁니다. 계약실적은 계약 체결일 · 확인된 공사 계약금액 기준으로 따로 집계합니다.');
   await page.locator('#wn-dialog .wn-yn button').nth(1).click();assert.deepEqual(await page.locator('#wn-dialog .wn-form label').allInnerTexts(),['낙찰 시공사 *','낙찰금액 *','낙찰일 *','실적 귀속','기술자문 발생 *'],'아니오 = 기술자문 계약 칸이 사라짐');
   await page.locator('#wn-dialog .wn-yn button').nth(0).click();assert.equal(await page.locator('#wn-dialog [data-wn-f="tech_amount"]').inputValue(),'433,650,000','적어 둔 값은 남는다');
   if(shot)await page.screenshot({path:shot+'-form.png'});
@@ -139,7 +139,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>{CUR_DETAIL.item.win&&0;DealWin.open();});await page.waitForTimeout(200);
   await page.locator('#wn-dialog .wn-types button').nth(2).click();await page.waitForTimeout(100);
   assert.match(await page.locator('#wn-dialog .wn-form').innerText(),/사전 보고\s*아직 타사 이관 등록이 없습니다 — 등록\(사전 보고 포함\)부터 합니다\s*관리자 승인 후 실적 반영/);
-  assert.equal(await page.locator('#wn-dialog .wn-note').innerText(),'실적 금액 = 낙찰금액. 사전 보고된 이관 건만, 관리자 승인 후 실적에 들어갑니다.');
+  assert.equal(await page.locator('#wn-dialog .wn-note').innerText(),'낙찰금액은 수주 결과로 남습니다. 사전 보고된 이관 건만, 관리자 승인 후 실적에 들어갑니다.');
   assert.equal(await page.locator('#wn-dialog [data-wn="save"]').innerText(),'타사 이관 등록부터');
   await page.locator('#wn-dialog [data-wn="save"]').click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#wn-dialog').count(),0);assert.match(await page.locator('#tf-dialog header').innerText(),/^타사 이관 등록/);

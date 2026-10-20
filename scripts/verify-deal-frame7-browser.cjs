@@ -34,7 +34,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(8,'[서울 강북] 두 번째 컨설팅 단지','POUR솔루션','이필선','consulting',{next_action:{id:'n8',text:'미팅 일정 잡기',type:'전화',due:day(3),status:'open'}}),
     mk(9,'[경기 평택] 평택비전지웰푸르지오','석민이앤씨','황윤선','won',{site_id:S5,created:'2023-01-10',outcome:'won',won_amount:120000000,closed_at:'2023-06-01',contract_date:'2023-06-01',amt:120000000,activities:[]})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   /* 이 검사는 7단계 틀의 머리 · 왼쪽 · 단계별 값을 본다(오른쪽은 되돌리기 스위치 뒤의 예전 배치). 오른쪽 정리는 verify-detail-right-fix-browser.cjs */G.dealRightKeep=true;
+   /* 이 검사는 7단계 틀의 머리 · 왼쪽 · 단계별 값을 본다(오른쪽은 되돌리기 스위치 뒤의 예전 배치). 오른쪽 정리는 verify-detail-right-fix-browser.cjs */G.dealRightKeep=true;G.dealRespondOff=true;/* 지금 응대 중심(단계 띠 · 배치)은 verify-deal-respond-browser.cjs */
    LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.__dial=0;window.contactDial=()=>{__dial++;};
@@ -138,7 +138,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.match(s.meta,/· 실주 2026\.5\.7 ·/);
   assert.equal(s.task,'실주 기록 완성');assert.equal(s.due,'기록 보완 지연 아님 · 정보 보완');assert.equal(s.dueC,'gray');
   assert.equal(s.kv[1],'실주일 2026.5.7 · 낙찰사 A건설');assert.deepEqual(s.btns,[['실주 기록 채우기',true]]);
-  assert.deepEqual(s.first,[['미입력','실주 사유'],['확인 필요','재영업 가능 여부 · 미정'],['해당 없음','다음 연락 · 재영업 예일 때만']]);
+  assert.deepEqual(s.first,[['미입력','실주 사유'],['확인됨','재영업 · 미정'],['해당 없음','다음 연락 · 재영업 예일 때만']]);
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'deal-frame7.png')});
   /* ⑧ 과거 이관 · 분류 전(아직 단계가 없는 건 — 운영 자료의 다수)도 같은 틀: 막대에 '지금' 없음 · 할 일 = 영업 재개 판단 · 주 버튼 [영업 재개] */
   await page.evaluate(async()=>{const d=JSON.parse(JSON.stringify(B.deals[2]));d.id='99999999-1111-4111-8111-111111111111';d.site='[부산] 과거 이관 단지';d.code='old_stage_x';d.stage_code='old_stage_x';d.quote_versions=[];B.deals.push(d);window.__lg=PipelineScope.isLegacy(d);try{closeDetail();}catch(e){}await DealWin.load();drwDeal(JSON.stringify(d));});

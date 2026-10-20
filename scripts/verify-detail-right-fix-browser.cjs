@@ -33,7 +33,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     mk(7,'[대구] 강북이진캐스빌','석민이앤씨','한준엽','lost',{outcome:'lost',closed_at:'2026-05-07',amt:350000000}),
     mk(8,'[부산] 과거 이관 단지','석민이앤씨','김성민','old_stage_x',{amt:380000000,activities:[act('a81','방문','현장 방문 · 2개 층 바닥 들뜸 확인','2026-08-20T15:00:00+09:00','김성민'),act('a82','전화','통화 연결 · 방문 일정 협의','2026-07-30T10:20:00+09:00','김성민')]}),mk(9,'[경기 안양] 미팅 전 컨설팅 단지','POUR솔루션','이필선','consulting',{activities:[]}),mk(10,'[서울 마포] 나눔빌딩','석민이앤씨','황윤선','bidding',{amt:300000000})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[],messageLogs:[],message_logs:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
+   G.dealRespondOff=true;/* 지금 응대 중심 배치는 verify-deal-respond-browser.cjs — 여기서는 그 아래 층(오른쪽 정리)을 본다 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.dkOpen=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};
    window.pushWrite=()=>'req';window.__rpc=[];window.__uploads=[];window.uploadExecAttachment=async(d,f,cat,tags,memo)=>{__uploads.push({name:f.name,cat,memo});return {id:'u'+__uploads.length,file_name:f.name,mime_type:f.type,category:cat,memo,status:'ready',created_at:new Date().toISOString()};};window.logActivity=(type,note,res,at)=>({id:'l'+Date.now(),type,note,at});
    SB={rpc:async(n,a)=>{__rpc.push([n,a]);if(n==='crm_deal_win_list_v1')return {data:{ok:true,rows:[],advisory:[]}};

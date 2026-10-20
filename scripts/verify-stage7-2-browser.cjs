@@ -94,11 +94,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['계약일 · 금액 없음',2],['착공일 미입력',1],['인계서 미확인',1],['시공 중 주 1회 방문 없음',2],['준공 확인 없음',1]]);
   /* ⑥⑦⑧ 실주: 기록 완료 = 사유 + 재영업 여부 · 경쟁사는 경쟁사 낙찰일 때만 · 왼쪽 칸 = 완성률 + 보완할 것 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('lost');});await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(250);
-  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,Number(t.querySelector('.n').textContent)])),[['전체',4],['기록 보완 필요',3],['기록 완료',1],['재영업 가능 · 예',0]]);
-  assert.deepEqual(await V.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.dataset.key.replace(/^deal:/,''),r.dataset.tab])).then(a=>a.sort()),[['l-cancel','1'],['l-comp','0'],['l-none','0'],['l-undecided','0']].sort());
+  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,Number(t.querySelector('.n').textContent)])),[['전체',4],['기록 보완 필요',2],['기록 완료',2],['재영업 가능 · 예',0]]/* 2026-10-20 7stage_rules: 재영업 '미정'도 고른 값 그대로 기록 완료 */);
+  assert.deepEqual(await V.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.dataset.key.replace(/^deal:/,''),r.dataset.tab])).then(a=>a.sort()),[['l-cancel','1'],['l-comp','0'],['l-none','0'],['l-undecided','1']].sort());/* 사유 + 재영업 '미정' = 기록 완료 칸 */
   const side=await V.locator('.ps3-diag').innerText();
-  assert.match(one(side),/결과 기록 완성률 25% 1 \/ 4/);assert.match(one(side),/보완할 것 3건/);assert.doesNotMatch(side,/평균 체류|왜 멈춰 있나/,'체류 · 왜 멈춰 있나는 없음');
-  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['실주 사유 미입력',1],['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',1],['재영업 가능 여부 미입력',2],['재접촉 할 일 없음',0]],'경쟁사 필수는 경쟁사 낙찰 1건만 · 사업 취소는 해당 없음(세지 않음) · 미정은 미입력');
+  assert.match(one(side),/결과 기록 완성률 50% 2 \/ 4/);assert.match(one(side),/보완할 것 2건/);assert.doesNotMatch(side,/평균 체류|왜 멈춰 있나/,'체류 · 왜 멈춰 있나는 없음');
+  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['실주 사유 미입력',1],['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',1],['재영업 가능 여부 미입력',1],['재접촉 할 일 없음',0]],'경쟁사 필수는 경쟁사 낙찰 1건만 · 사업 취소는 해당 없음(세지 않음) · 미정은 고른 값 그대로 기록 완료(2026-10-20 7stage_rules)');
   assert.equal(one(await L.locator('.prv-row[data-key$="l-cancel"] .prv-b>small.base').innerText()),'기록 완료 · 경쟁사 해당 없음');
   /* ⑤ 자료 없음 3가지 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('sent');});await page.waitForSelector('#pipeline-stage-v3[data-stage="sent"] .prv-row');await page.waitForTimeout(250);

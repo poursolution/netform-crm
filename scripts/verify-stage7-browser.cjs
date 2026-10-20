@@ -93,7 +93,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const kd=await page.evaluate(()=>{const k=DAY(-9),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);return {dot:m[1]+'.'+(+m[2])+'.'+(+m[3]),md:(+m[2])+'.'+(+m[3])};});
   const ly=await rowOf('l-yes'),ln=await rowOf('l-no');
   assert.deepEqual([ly.now,ly.why],['실주 · '+kd.dot+' · 가격','판정: 실주 '+kd.md+' · 기한 없음'],'실주일 = 한국 날짜(UTC 15:00 = 다음날) · 목록과 판정이 같은 날');
-  assert.deepEqual([ly.tab,ly.task,ly.btn,ly.base,ln.tab,ln.task,ln.base],['2','재접촉 할 일 하나 등록','재접촉 등록','재접촉 할 일 없음','1','사유 + 재영업 여부 입력됨','기록 완료 · 경쟁사 해당 없음'],'재영업 "예"만 재접촉 할 일 · "아니오"는 결과 기록만');
+  assert.deepEqual([ly.tab,ly.task,ly.btn,ly.base,ln.tab,ln.task,ln.base],['2','재접촉 할 일 하나 등록','재접촉 등록','재접촉 할 일 없음','1','사유 + 재영업 여부(미정 포함) 입력됨','기록 완료 · 경쟁사 해당 없음'],'재영업 "예"만 재접촉 할 일 · "아니오"는 결과 기록만');
   assert.deepEqual(await V.locator('.ps3-tab .l').allInnerTexts(),['전체','기록 보완 필요','기록 완료','재영업 가능 · 예']);
   /* 공통: 수주 ↔ 실주 서로 거치지 않음 · 필수값 없으면 단계 이동 차단 · 실주 처리 때 서버가 열린 업무를 닫는다(전환 함수 계약) */
   assert.deepEqual(await page.evaluate(()=>[StageTransition.choices('won'),StageTransition.choices('lost'),StageTransition.validate('compete','lost',{transition_date:DAY(0),fields:{}},DAY(0)).length>0,StageTransition.validate('consulting','sent',{transition_date:DAY(0),fields:{materials:['견적서'],quote_version:'v1',recipient:'관리소장',sent_date:DAY(0),followup_date:DAY(3)}},DAY(0))]),[[],[],true,[]]);
