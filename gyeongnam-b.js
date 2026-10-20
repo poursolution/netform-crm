@@ -1,14 +1,14 @@
 /* 경남지사 — 파이프라인 B안 틀 (2026-10-03 대표: "확장관리 · 경남지사 · 고객자산 · 문자 전부 파이프라인 기준으로")
    본사 확인용 화면 그대로(처리는 지사, 확인은 본사 · 이 화면에서 지사 실담당을 배정하지 않는다). StageBoard 공용 부품으로
    왼쪽 지사 진행 진단(미착수 · 연락 전 · 진행 확인 막대 3칸 · 숫자 3개 · 왜 멈춰 있나 · 본사가 할 일 · 지사 담당 현황) / 오른쪽 확인할 건(리스트 · 보드).
-   근거 데이터 · 확인 창 · 확인 요청 · 회수 검토 기록은 gyeongnam-v2(facts · decorate · 내부 메모 저장 경로) 그대로. 기준(7일 무응답 · 16일 회수 검토)은 기존 v2 진단과 같다.
+   근거 데이터 · 확인 창 · 확인 요청 · 회수 검토 기록은 gyeongnam-v2(facts · decorate · 내부 메모 저장 경로) 그대로. 기준(7일 무응답 · 14일 회수 검토 = 룰북 · 요청 엔진 branchRecallDays 기본값과 같음)은 기존 v2 진단과 같다.
    끄기: G.gyeongnamBOff=true → 경남지사 v2 묶음 표. */
 (function(root){
  'use strict';
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const SB=()=>root.StageBoard,V=()=>root.GyeongnamV2;
  const RED='#d93a3a',INK='#374151',REQ='[지사 확인 요청]',RECALL='[본사 회수 검토]';
- const SILENT=7,RECALL_DAYS=16;
+ const SILENT=7,RECALL_DAYS=14;/* 2026-10-20 대표 결정 "경남지사는 룰북으로" — 회수 검토 기준 = 영업팀 회의 지침 14일(예전 16일) */
  const enabled=()=>!root.G.gyeongnamBOff&&!root.G.gyeongnamV2Off&&!!root.StageBoard&&!!root.GyeongnamV2;
  const handedAt=q=>root.inquiryAssignedAt(q)||root.inquiryDate(q);
  const notes=q=>{const p=root.itemPatch(q,'inq')||{};return [...(q.activities||[]),...(p.activities||[])].map(a=>String(a.note||''));};
@@ -19,7 +19,7 @@
   axis:'지사 진행',
   /* 진행 상태 3단계(contact_link ②): 고객 연결 확인(실제 통화 · 회신) / 니즈 확인(공종 · 범위 · 시기) / 방문 · 견적 진행(→ 영업기회). 연락 시도만으로 진척으로 세지 않는다 · 연락 전은 1단계 안의 빨강 사유 */
   S:[['conn','연결 확인 필요','#9aa0ab','첫 연락·실제 연결 여부 확인 · 완료를 의미하지 않음'],['need','니즈 확인','#3b6ce4','공종 · 범위 · 시기 들음'],['visit','방문·견적 진행','#1f9d55','방문 일정 또는 견적 요청 → 영업기회']],
-  RS:{recall:['배정 16일 · 연결 기록 없음',RED,'회수 검토','현재 배정 16일 넘게 지사 실담당 · 고객 연결 기록이 없는 건은 본사 회수 또는 본사 직접 응대 검토(기록 없음 ≠ 미응대 — 먼저 확인)','recall'],
+  RS:{recall:['배정 '+RECALL_DAYS+'일 · 연결 기록 없음',RED,'회수 검토','현재 배정 '+RECALL_DAYS+'일 넘게 지사 실담당 · 고객 연결 기록이 없는 건은 본사 회수 또는 본사 직접 응대 검토(기록 없음 ≠ 미응대 — 먼저 확인)','recall'],
       silent:['배정 7일 · 연결 기록 없음',RED,'확인 요청','7일 넘게 지사의 고객 연결 기록이 없으면 연락 시도만 했는지 · 기록을 안 남겼는지 지사에 확인','request'],
       none:['지사 실담당 미지정',INK,'확인 요청','지사장에게 실담당 지정을 확인 요청(이 화면에서 직접 배정하지 않음)','request'],
       nofirst:['실제 연결 기록 없음',INK,'확인 요청','실담당은 정해졌지만 고객과 실제 연결된 기록이 없음 — 시도 · 연결 여부 확인','request'],

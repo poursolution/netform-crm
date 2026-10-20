@@ -34,7 +34,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.pd-kpis').innerText(),/넘긴 건\s*4건[\s\S]*지사 미착수\s*2건[\s\S]*평균 18일[\s\S]*지사 첫 연락\s*1건/);
   assert.deepEqual(await v.locator('.pd-card header b').allInnerTexts(),['어디서 멈췄나','언제 넘겼나','지사 담당은 움직이나']);
   assert.match(await v.locator('.pd-card').nth(0).innerText(),/넘김\s*4[\s\S]*지사 실담당 지정\s*2[\s\S]*지사 첫 연락\s*1[\s\S]*영업기회\s*0[\s\S]*수주\s*0/);
-  assert.match(await v.locator('.pd-action').innerText(),/본사가 할 일[\s\S]*지사 미착수 2건[\s\S]*16일 넘은 건 2건/);
+  assert.match(await v.locator('.pd-action').innerText(),/본사가 할 일[\s\S]*지사 미착수 2건[\s\S]*14일 넘은 건 2건/);
   /* 묶음 표: 같은 건이 한 번만 */
   assert.deepEqual(await v.locator('.plv-thead span').allInnerTexts(),['현장 · 지사 담당','넘긴 날','지사 담당','지사 첫 연락','현재 단계','넘긴 후','']);
   assert.deepEqual(await v.locator('.plv-ghead b').allInnerTexts(),['지사 미착수','지사 응대 없음','영업 진행 확인됨']);
