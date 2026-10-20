@@ -256,7 +256,8 @@
   const directCon=contractsIn(x.L,x.w.a,x.w.b,null,'direct'),directPrev=contractsIn(x.L,x.w.p,x.w.a,null,'direct');
   const cN=directCon.count+pw.count+tf.count,cA=directCon.net+pw.amount+tf.amount,pN=directPrev.count+pwP.count+tfP.count,pA=directPrev.net+pwP.amount+tfP.amount;
   const fn=[['신규 견적문의',x.newQ.length+'건',dl(x.newQ.length,x.newQp.length),dc(x.newQ.length,x.newQp.length),''],['적합 문의',x.fit+'건',closedText(x.bad,'ex'),'',''],['견적 발송',x.quotes.length+'건',dl(x.quotes.length,x.quotesP.length),dc(x.quotes.length,x.quotesP.length),''],
-   ['수주실적',con?cN+'건 · '+amt(cA):'원장 확인 중',con?(cN>=pN?'▲':'▼')+Math.abs(cN-pN)+'건 · '+(cA>=pA?'+':'-')+amt(Math.abs(cA-pA)):'계약실적 원장을 읽는 중입니다','up',' last']];
+   /* nine_fixes 6 과 같은 기준(리포트): 종류 다른 금액(원장 계약금액 · 낙찰금액)은 합치지 않는다 — 건수 + 직접 계약 금액, 나머지는 아래 꼬리표 */
+   ['수주',con?cN+'건':'원장 확인 중',con?(cN>=pN?'▲':'▼')+Math.abs(cN-pN)+'건 · 직접 계약 '+amt(directCon.net)+(pw.count?' · 협약 · 기술자문 '+pw.count:'')+(tf.count?' · 타사 이관 '+tf.count:''):'계약실적 원장을 읽는 중입니다','up',' last']];
   const fitR=pct(x.fit,x.newQ.length),fitRp=pct(x.fitP,x.newQp.length),made=con?madeOf(directCon.count,x.loss.length+tfL,tf.count,pw.count):null,madeP=con?madeOf(directPrev.count,x.lossP.length+tfLp,tfP.count,pwP.count):null,conv=con?pct(cN,x.newQ.length):null,convP=con?pct(pN,x.newQp.length):null,coh=x.linked?pct(x.cwon,x.cohort.length):null;
   const pp=(a,b)=>a==null||b==null?'':(a>=b?'▲':'▼')+Math.abs(Math.round((a-b)*10)/10).toFixed(1)+'%p';
   const rates=[['문의 적합률',pctText(fitR),pp(fitR,fitRp),'적합 '+x.fit+' ÷ 문의 '+x.newQ.length+' · 문의 품질'],
@@ -331,7 +332,8 @@
      return '<div class="bb-next'+(r?' done':'')+'"><span class="no">'+(i+1)+'</span><div class="tx"><b>'+h(c.t)+'</b><span>'+h(c.why)+'</span></div><div class="ctl"><div class="own">'+(c.owners.length?c.owners.map(o=>'<button type="button" data-bb="own" data-k="'+c.kind+'" data-v="'+attr(o)+'" aria-pressed="'+(own===o)+'"'+(r?' disabled':'')+'>'+h(o)+'</button>').join(''):'<small>담당 미정</small>')+'</div><div class="due">'+DUES.map(o=>'<button type="button" data-bb="due" data-k="'+c.kind+'" data-v="'+o+'" aria-pressed="'+(due===o)+'"'+(r?' disabled':'')+'>'+o+'</button>').join('')+'</div><button type="button" class="reg" data-bb="reg" data-k="'+c.kind+'"'+(admin?'':' disabled title="관리자만 등록할 수 있습니다"')+'>'+(r?'등록됨 ✓':'등록')+'</button></div></div>';}).join('')
     :'<p class="bb-empty">규칙에 걸린 항목이 없습니다 — 입찰 임박 · 견적 지연 · 미응대 · 장기 미접촉 · 다음 행동 미등록 · 계약 예상이 생기면 여기에 뜹니다.</p>')+'</section>';
   /* 7. 전체 현황(참고) */
-  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
+  /* nine_menus 보통(검토서 10절): 전체 파이프라인 숫자를 되풀이하는 칸 — 파이프라인과 같은 숫자임을 적고, 방치 기준(180일)은 위 60일 기준과 다른 것임을 이름에 */
+  const s7='<section class="bb-ref"><div><b>전체 현황 (참고 · 파이프라인과 같은 숫자)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 무연락 '+x.stale180+'건(장기 · 위 60일 기준과 별도)</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
   const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
   /* 화면 머리의 발송 안내는 실제 설정값 그대로(2026-10-05 정합성 ⑤) — 꺼져 있는데 '잔디로 발송됩니다'라고 적지 않는다 */

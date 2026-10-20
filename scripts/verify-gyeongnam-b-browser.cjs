@@ -31,7 +31,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*3건[\s\S]*확인 필요\s*4건[\s\S]*평균 현재 배정 후\s*\d+일/);
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['배정 16일 · 연결 기록 없음','배정 7일 · 연결 기록 없음','지사 실담당 미지정','실제 연결 기록 없음'],JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*배정 16일 · 연결 기록 없음 2건[\s\S]*배정 7일 · 연결 기록 없음 3건/);
+  /* nine_menus 보통(2026-10-20): '그래서 뭘 해야 하나' 상자 없음 — 할 일 설명은 사유 단추 title 로 */
+  assert.match(await v.locator('.ps3-why .ps3-reason').evaluateAll(l=>l.map(b=>b.textContent.replace(/\s+/g,' ').trim()+' | '+b.title).join('\n')),/배정 16일 · 연결 기록 없음\s*2 \| 현재 배정 16일[\s\S]*배정 7일 · 연결 기록 없음\s*3 \| 7일 넘게/);assert.equal(await v.locator('.ps3-diag>.ps3-box').count(),2);
   assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['현장 · 담당','현재 상황','걸린 사유 · 경과',''],'줄 = 파이프라인 v11 4칸');
   assert.match(await v.locator('.gb-team').innerText(),new RegExp('지사 담당은 움직이나[\\s\\S]*'+rep+'[\\s\\S]*넘겨받음 3 · 연락 1'));
   /* 정렬: 16일 넘은 둘(18일 → 17일) → 8일 무응답 → 6일 → 진행 중 */

@@ -62,7 +62,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await v.locator('.ps3-kpis').innerText(),/실제 기한 초과\s*1건\s*기록 확인 필요 1건 · 대상 5건\(보류 제외\) · 날짜 기준 다음 접촉일 · 연락 주기 · 표본 판정 가능 4건[\s\S]*니즈 확인\s*1건[\s\S]*접촉 예정일 미지정\s*\d+건\s*날짜 칸 = 접촉 예정일\(약속 없으면 준공 \+ D\+30 자동값\) · 준공 후 경과는 지연 아님/);/* nine_menus 3절: 자동 계산일 ≠ 고객 약속 *//* counting 11: 빨강 2건 = 실제 기한 초과 1 + 기록 확인 필요 1 */
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.deepEqual(reasons,['사후 연락 기록 확인 필요','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 · 연락 기록 없는 건은 다음 접촉일 지남으로 안 셈(2026-10-20) '+JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*사후 연락 기록 확인 필요 1건[\s\S]*관계 연락 주기 넘김 1건/);
+  /* nine_menus 보통(2026-10-20): '그래서 뭘 해야 하나' 상자 없음 — 할 일 설명은 사유 단추 title 로 */
+  assert.equal(await v.locator('.ps3-diag>.ps3-box').count(),2,'단계 진단 · 먼저 볼 이유 두 상자');
+  assert.match(await v.locator('.ps3-why .ps3-reason').evaluateAll(l=>l.map(b=>b.textContent.replace(/\s+/g,' ').trim()+' | '+b.title).join('\n')),/사후 연락 기록 확인 필요\s*1 \| 기존 연락 기록부터 확인[\s\S]*관계 연락 주기 넘김\s*1 \| 모든 수주 고객은/);
   /* 현장: 빨강 사유 순(접촉일 지남 e1 → 2개월 연락 없음 e7) → 사유 수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.deepEqual(order.slice(0,2),['e7','e1'],'실제 기한 초과(빨강) 먼저 · 기록 확인은 그다음 '+JSON.stringify(order));
