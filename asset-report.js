@@ -29,10 +29,13 @@
   return {late,fix};
  }
  /* 단지 건강(siteHealth)을 새 기준으로 다시 가린다. 한 번 가린 단지는 표시(__ar)를 달아 다시 하지 않는다 — 자료가 바뀌면 단지 목록이 새로 만들어진다 */
+ /* nine_fixes 4(2026-10-20): 관계 상태(활성 · 재접촉 · 휴면)의 '마지막 연락'은 수정일 · 등록일(lastDays)이 아니라 응대 기록(ContactState)으로 — 목록에 보이는 날짜와 같은 근거. 기록이 없으면 lastDays 를 쓰지 않고 '기록 없음'으로 휴면 판정 */
+ function contactDays(s){let last='';const take=(it,type)=>{try{const v=R.ContactState.of(it,type),k=String(v.lastConnectedAt||v.lastAttemptAt||'').slice(0,10);if(k>last)last=k;}catch(e){}};(s.deals||[]).forEach(d=>take(d,'deal'));(s.inquiries||s.inqs||[]).forEach(q=>take(q,'inq'));if(!/^\d{4}-\d{2}-\d{2}$/.test(last))return null;const v=R.daysTo?R.daysTo(last):null;return Number.isFinite(v)?Math.max(0,-v):null;}
  function adjust(rows){
   if(!on()||!rows)return rows;
   rows.forEach(s=>{
    if(!s||s.__ar)return;s.__ar=1;
+   {const repLoss=(s.lost||[]).length>=2&&!(s.won||[]).length;if(!repLoss&&['active','recontact','dormant','risk'].includes(s.health)){const c=contactDays(s);s.contactDays=c;if(!(s.open||[]).length){const lost=(s.lost||[]).length;s.health=c==null||c>365?'dormant':(lost&&c>60)?'recontact':c<=60?'active':'recontact';}}}/* 반복 실주(risk)는 그대로 · 열린 건이 있으면 아래 상태별 주기(relOf)가 정한다 */
    const rep=(s.lost||[]).length>=2&&!(s.won||[]).length;s.repeatLoss=rep;
    const r=(s.open||[]).length?relOf(s):{late:0,fix:0};s.relLate=r.late;s.relFix=r.fix;s.baseHealth=s.health;
    if(s.health==='risk'&&!rep)s.health=r.late?'recontact':(s.open||[]).length?'active':'dormant';/* '관계위험'은 반복 실주만 — 열린 건 90일 무활동은 상태별 주기로 판단 */

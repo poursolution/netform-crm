@@ -48,9 +48,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(band,new RegExp('^'+P.m+'월 체결 계약 2건 · 8억 — 6개월 중 최고, 메이드율은 40\\.0%로 내렸습니다\\s*'+P.nm+'월은 날짜 확인된 계약 예정 2건 · 7\\.5억 중 1건\\(4억\\)이 이번 주에 갈립니다\\. 실주 3건 중 1건이 관리소장 변경과 겹쳐 대응 정책 결정이 필요합니다\\.\\s*결정 요청\\s*3건$'),band);
   assert.equal(await v.locator('.rb-band').evaluate(n=>getComputedStyle(n).backgroundColor),'rgb(17, 26, 46)','남색 띠');
   /* 2. 흐름 5칸 + 비율 4개(메이드율은 배드핏 제외) */
-  assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주실적']);
-  assert.deepEqual(await v.locator('.rb-funnel>div>b').allInnerTexts(),['4건','2건','1건','1건','2건 · 8억']);
-  assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/종결 2 제외 · Bad Fit 2/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/▲1건 · \+6억/);
+  assert.deepEqual(await v.locator('.rb-funnel>div>span').allInnerTexts(),['신규 견적문의','적합 문의','견적 발송','파이프라인 전환','수주']);/* nine_fixes 6: 금액은 종류별 · 합산 안 함 */
+  assert.match(await v.locator('.rb-funnel>div').last().innerText(),/수주\s*\d+건\s*직접 계약 \d+건 .*금액은 종류별\(합산 안 함\)/);
+  assert.deepEqual(await v.locator('.rb-funnel>div>b').allInnerTexts(),['4건','2건','1건','1건','2건']);/* nine_fixes 6: 수주 칸은 건수 · 금액은 아래 종류별 */
+  assert.match(await v.locator('.rb-funnel>div').nth(0).innerText(),/▲3 \(1\)/);assert.match(await v.locator('.rb-funnel>div').nth(1).innerText(),/종결 2 제외 · Bad Fit 2/);assert.match(await v.locator('.rb-funnel>div.last').innerText(),/직접 계약 2건 8억 ▲1 · 금액은 종류별\(합산 안 함\)/);
   assert.deepEqual(await v.locator('.rb-rates>div>span').allInnerTexts().then(a=>a.slice(0,3)),['영업 메이드율','문의 적합률','월간 계약 · 문의 비율 (활동량)']);
   assert.deepEqual(await v.locator('.rb-rates p b').allInnerTexts().then(a=>a.slice(0,3)),['40.0%','50.0%','50.0%'],'메이드율 = 수주 2 ÷ (수주 2 + 실주 3) — 배드핏 2건은 분모에 없음');
   assert.match(await v.locator('.rb-rates>div').nth(0).innerText(),/수주 2 ÷ \(수주 2 \+ 실주 3\) · 배드핏 제외/);
@@ -74,9 +75,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__saves.map(s=>[s.kind,s.period_key,s.payload.decisions,s.payload.asks.length])),[['monthly',P.ym,{mgrchg:1},3]],'선택 = 월간 스냅샷 저장');
   assert.equal(await page.locator('#report-b .rb-ask').first().locator('button[aria-pressed="true"]').innerText(),'기존 조건 유지');
   /* nine_menus 11절: 수주 합계는 종류가 다른 금액의 참고값 · '확정 전환율' 이름 없음 · 종결 · 실주 정의는 2절에 한 번만 */
-  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 검증된 공사 계약금액\(회계 매출 · 낙찰 결과 · 수금 아님\) · 수주 합계는 5절 설명대로 종류가 다른 금액의 참고값\s*전환율 두 칸은 '지금까지' 값\(작성일 기준 · 확정 아님\)/);
+  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 검증된 공사 계약금액\(회계 매출 · 낙찰 결과 · 수금 아님\) · 수주 금액은 5절 설명대로 종류별\(합산 안 함\)\s*전환율 두 칸은 '지금까지' 값\(작성일 기준 · 확정 아님\)/);
   assert.doesNotMatch(await v.innerText(),/확정 전환율|수주실적 = 낙찰금액/,'확정 · 낙찰금액 정의 문구 없음');assert.match(await v.innerText(),/지금까지 전환율 \(\d+월 문의 · 확정 아님\)/);
-  assert.match(await v.locator('.rb-table + .rb-note').innerText(),/^수주 = 직접 계약\(원장 · 계약 체결일\) \+ 협약 · 기술자문\(원장 계약 금액\) \+ 인정된 타사 이관\(낙찰금액 · 낙찰일\) — 종류 · 기준일이 다른 금액이라 합계는 참고값/);
+  assert.match(await v.locator('.rb-table + .rb-note').innerText(),/^수주 건수 = 직접 계약\(원장 · 계약 체결일\) \+ 협약 · 기술자문\(원장 계약 금액\) \+ 인정된 타사 이관\(낙찰금액 · 낙찰일\) — 종류 · 기준일이 다른 금액이라 금액은 합산하지 않고 종류별로 적음/);/* nine_fixes 6 */
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
   if(shot){await page.locator('#report-b .rb-bar0').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#report-b .rb-foot').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
   /* 편집 · 보내기 · 상세 표 */

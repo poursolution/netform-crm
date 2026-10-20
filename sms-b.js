@@ -28,7 +28,8 @@
   kpi2:(inB)=>{const t=inB.reduce((a,i)=>a+i.extra.r.total,0),U=uniq(inB.flatMap(i=>i.extra.r.targets||[])),UR=uniq(inB.flatMap(i=>(i.extra.r.targets||[]).filter(x=>x.guard&&x.guard.ok)));return ['발송 가능 (서로 다른 연락처)',UR.toLocaleString('ko-KR')+'명',t?'서로 다른 연락처 '+U.toLocaleString('ko-KR')+'명 중 · 묶음 합 '+t.toLocaleString('ko-KR')+'명(겹침 포함)':'보낼 대상 없음'];},
   kpi3:()=>{const L=root.campaignLogs?.()||[],month=new Date().toISOString().slice(0,7),mr=L.filter(x=>String(x.created_at||x.createdAt||'').slice(0,7)===month);const sent=mr.reduce((a,x)=>a+root.campaignDeliveredCount(x),0),sch=L.filter(x=>x.status==='scheduled').length,bad=L.filter(x=>x.status==='failed'||root.campaignNeedsReview(x)).length;return ['이번 달 발송',sent+'건','예약 '+sch+' · 실패·확인 '+bad];}
  };
- const tkey=x=>{try{if(typeof root.campaignTargetKey==='function')return String(root.campaignTargetKey(x));}catch(e){}const m=String(x&&x.contact&&x.contact.mobile||'').replace(/\D/g,'');return m?'phone:'+m:'deal:'+String(x&&x.deal&&x.deal.id||'')+'|'+String(x&&x.contact&&x.contact.name||'');};
+ /* nine_fixes 3(2026-10-20): campaignTargetKey 는 (영업건, 연락처) 두 인자 — 하나만 넘겨 예외 → 자체 키로 세던 것을 바로잡음(고유 연락처 수 = 보내기 창과 같은 키) */
+ const tkey=x=>{try{if(typeof root.campaignTargetKey==='function'&&x&&x.deal&&x.contact)return String(root.campaignTargetKey(x.deal,x.contact));}catch(e){}const m=String(x&&x.contact&&x.contact.mobile||'').replace(/\D/g,'');return m?'phone:'+m:'deal:'+String(x&&x.deal&&x.deal.id||'')+'|'+String(x&&x.contact&&x.contact.name||'');};
  const uniq=list=>new Set(list.map(tkey)).size;
  function item(r){
   const bucket=r.group==='keep'?'soon':r.group,ld=daysSince(r.last),dn=/^D-(\d+)$/.exec(r.sub||'');

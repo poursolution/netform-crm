@@ -90,9 +90,11 @@
   refsOf(d).forEach(q=>{const v=ofInq(q);fa=min(fa,v.firstAttemptAt);fc=min(fc,v.firstConnectedAt);la=max(la,v.lastAttemptAt);lc=max(lc,v.lastConnectedAt);if(!res)res=v.attemptRes;n+=v.attempts||0;});
   /* 마지막 의미 있는 연락 · 마지막 발신(예전 자료는 이 칸에만 남아 있다) */
   let m=null;try{m=root.relationshipMeta?root.relationshipMeta(d):null;}catch(e){}
+  /* nine_fixes 4(2026-10-20): 예전 자료의 '마지막 연락' 칸(이관 contactAt)으로만 연결 날짜가 채워진 건은 표시한다(connectedLegacyOnly) — 응대 기록이 아니라 이관 자료라는 뜻 · 값 자체는 그대로 둔다(다른 화면 호환) */
+  const lcLog=lc,laLog=la;
   if(m&&m.meaningfulAt){lc=max(lc,m.meaningfulAt);fc=min(fc,m.meaningfulAt);}
   if(m&&m.outboundAt){la=max(la,m.outboundAt);fa=min(fa,m.outboundAt);}
-  return {kind:'deal',firstAttemptAt:fa,firstConnectedAt:fc,lastAttemptAt:la,lastConnectedAt:lc,attempts:n,attemptRes:res,next:nextOf(d,'deal'),legacy:dayKey(d.created||d.created_at||d.opened_at)<live()};
+  return {kind:'deal',firstAttemptAt:fa,firstConnectedAt:fc,lastAttemptAt:la,lastConnectedAt:lc,attempts:n,attemptRes:res,next:nextOf(d,'deal'),legacy:dayKey(d.created||d.created_at||d.opened_at)<live(),connectedLegacyOnly:!lcLog&&!laLog&&!!(lc||la),loggedConnectedAt:lcLog,loggedAttemptAt:laLog};
  }
  const isInq=type=>type==='inq'||type==='inquiry';
  function of(item,type){

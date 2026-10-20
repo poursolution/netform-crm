@@ -218,11 +218,15 @@
  /* ── 잔디 글 ── */
  function jandi(x,fixes,regd){
   const line='━━━━━━━━━━━━━━',w=x.w,up=(a,b)=>a===b?'':(a>b?' ▲'+(a-b):' ▼'+(b-a)),con=x.L.ready;
-  const fitR=pct(x.fit,x.newQ.length),made=con?madeOf(x.con.count,x.loss.length):null,conv=con?pct(x.con.count,x.newQ.length):null;
+  /* nine_fixes 5(2026-10-20): 잔디 글의 수주 · 메이드율 · 문의→계약은 화면(1-b)과 같은 계산 — 직접 계약(원장) + 협약 · 기술자문 + 타사 이관, 실주 = 파이프라인 실주 + 타사 이관 실주 */
+  const TF0={count:0,amount:0,list:[]},DT=root.DealTransfer&&root.DealTransfer.enabled()?root.DealTransfer:null,DW=root.DealWin&&root.DealWin.enabled()?root.DealWin:null;
+  const tf=DT?DT.wonIn(w.a,w.b,x.target):TF0,tfL=DT?DT.lostIn(w.a,w.b,x.target):0,pw=DW?DW.partnerIn(w.a,w.b,x.target):TF0,tfP=DT?DT.wonIn(w.p,w.a,x.target):TF0,pwP=DW?DW.partnerIn(w.p,w.a,x.target):TF0;
+  const directCon=contractsIn(x.L,w.a,w.b,null,'direct'),directPrev=contractsIn(x.L,w.p,w.a,null,'direct'),cN=directCon.count+pw.count+tf.count,pN=directPrev.count+pwP.count+tfP.count;
+  const fitR=pct(x.fit,x.newQ.length),made=con?madeOf(directCon.count,x.loss.length+tfL,tf.count,pw.count):null,conv=con?pct(cN,x.newQ.length):null;
   const out=['[주간 영업 브리핑]',w.a.replace(/-/g,'.')+' ~ '+w.fri.slice(5).replace('-','.'),line,'1. 이번 주 성과',
-   '견적문의 '+x.newQ.length+'건 → 적합 '+x.fit+' → 견적 발송 '+x.quotes.length+(con?' → 계약 '+x.con.count+'건 · '+amt(x.con.net):''),
+   '견적문의 '+x.newQ.length+'건 → 적합 '+x.fit+' → 견적 발송 '+x.quotes.length+(con?' → 수주 '+cN+'건(직접 계약 '+directCon.count+'건 '+amt(directCon.net)+(pw.count?' · 협약 · 기술자문 '+pw.count:'')+(tf.count?' · 타사 이관 '+tf.count:'')+')':''),
    '· 견적문의 '+x.newQ.length+'건'+up(x.newQ.length,x.newQp.length),'· 견적 발송 '+x.quotes.length+'건'+up(x.quotes.length,x.quotesP.length)];
-  if(con)out.push('· 신규 계약 '+x.con.count+'건'+up(x.con.count,x.conP.count)+' · '+amt(x.con.net));
+  if(con)out.push('· 수주 '+cN+'건'+up(cN,pN)+' · 직접 계약 '+amt(directCon.net)+(pw.amount?' · 협약 · 기술자문 '+amt(pw.amount):'')+(tf.amount?' · 타사 이관 낙찰 '+amt(tf.amount):''));
   out.push('· 문의 적합률 '+pctText(fitR)+' · 영업 메이드율 '+pctText(made)+' · 문의→계약 '+pctText(conv),
    '· '+closedText(x.bad)+' (메이드율 제외) · 파이프라인 실주 '+x.loss.length+'건'+(x.loss.length?' ('+tallyText(tally(x.loss,lossReason))+')':''),line,
    '[전주 문제 → 결과]');
