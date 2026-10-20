@@ -7,7 +7,7 @@
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.DayZones=api;})(typeof window==='undefined'?globalThis:window,function(root){
  'use strict';
  const R=root,h=v=>R.esc?R.esc(String(v==null?'':v)):String(v==null?'':v),attr=v=>R.escAttr?R.escAttr(String(v==null?'':v)):String(v==null?'':v);
- const on=role=>!(R.G&&R.G.dayZonesOff)&&role!=='mgr';
+ /* 2026-10-20 대표: 영업관리(송보람) 계정도 새 오늘 업무(4구역 · today-v6) — 숫자 = 팀 전체 업무 · 줄 = 담당자 상세. 예전 영업관리 카드 화면은 G.dayZonesOff 로만 */const on=role=>!(R.G&&R.G.dayZonesOff);
  const st=()=>{const g=R.G||(R.G={});return g.dayZones||(g.dayZones={zone:'now',why:'',pg:{},done:{}});};
  const KST=d=>{const t=new Date((d||new Date()).getTime()+9*36e5);return t.toISOString().slice(0,10);};
  const md=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s||''));return m?Number(m[2])+'.'+Number(m[3]):'';};
