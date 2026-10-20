@@ -43,7 +43,9 @@
  const V5=()=>root.MobileV5Result&&root.MobileV5Result.on()?root.MobileV5Result:null;
  const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,V5()&&d&&S?{memo:V5().memoOf(S,d,reqsOf(d),R)}:null,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
  const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests','retry'].map(k=>input[k]).concat(input.existing?[input.existing]:[]));
- const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return CE.plan(input,ctxOf(d));};
+ /* 모바일 v5 '다시 연락' 칩(연락 시도에만): 시각은 업무에 저장하지 않으므로 기록 글 끝에 남긴다 */
+ const planWith=(input,ctx)=>{const pl=CE.plan(input,ctx),at=pl.ok&&pl.attempt&&input.retry?String(input.retry).trim().slice(0,20):'';if(at)pl.note+=' · 다시 연락 '+at;return pl;};
+ const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return planWith(input,ctxOf(d));};
  function fresh(d,selected){
   const ex=selected||existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
   return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false,reqOn:{}};
@@ -236,7 +238,7 @@
   if(!progress.signature&&S.existing){try{selectedExisting(d,S.existing);}catch(e){S.err=String(e.message||e);paint(d);return;}}
   const input=withInfo(),signature=signatureOf(input);
   if(progress.signature&&progress.signature!==signature){S.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';paint(d);return;}
-  const ctx=progress.ctx||ctxOf(d),pl=progress.pl||CE.plan(input,ctx);
+  const ctx=progress.ctx||ctxOf(d),pl=progress.pl||planWith(input,ctx);
   if(!pl.ok){S.err=pl.error;paint(d);return;}
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){S.err='로그인 상태에서만 저장할 수 있습니다.';paint(d);return;}
   progress.signature=signature;progress.ctx=ctx;progress.pl=pl;progress.input=progress.input||JSON.parse(JSON.stringify(S));
