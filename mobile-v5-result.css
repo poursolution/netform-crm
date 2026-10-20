@@ -1,0 +1,20 @@
+/* 모바일 v5 전화 후 결과 화면 (2026-10-20 '모바일 v5 · 세 작업 바로 하기') — 시안 값 그대로 */
+.approved-d.v5r .v5r-checks{display:flex;flex-direction:column;gap:6px}
+.approved-d.v5r .v5r-ck-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.approved-d.v5r .v5r-ck-h b{font-size:12px;font-weight:700;color:#6b7280}
+.approved-d.v5r .v5r-ck-h span{font-size:12px;font-weight:700;color:#6b7280}
+.approved-d.v5r .v5r-ck-h span.ok{color:#1f7a4d}
+.approved-d.v5r .v5r-ck-list{border:1px solid #e8eaef;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.approved-d.v5r button.v5r-ck{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;min-height:44px;text-align:left;border-top:1px solid #f2f3f6;background:#fff}
+.approved-d.v5r button.v5r-ck:first-child{border-top:0}
+.approved-d.v5r .v5r-ck i{width:20px;height:20px;border-radius:50%;border:1.5px solid #c9cdd5;color:#fff;font-size:12px;font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center}
+.approved-d.v5r .v5r-ck[aria-pressed="true"] i{background:#3b6ce4;border-color:#3b6ce4}
+.approved-d.v5r .v5r-ck span{font-size:14px;font-weight:600;color:#15171c;line-height:1.4}
+.approved-d.v5r .v5r-ck-sub,.approved-d.v5r .v5r-retry small,.approved-d.v5r .v5r-plan small{font-size:11.5px;color:#6b7280;line-height:1.5}
+.approved-d.v5r .v5r-retry{display:flex;flex-direction:column;gap:6px}
+.approved-d.v5r .v5r-retry>b{font-size:12px;font-weight:700;color:#6b7280}
+.approved-d.v5r .v5r-retry>span{font-size:14px;font-weight:700;color:#15171c}
+.approved-d.v5r .v5r-chips{display:flex;flex-wrap:wrap;gap:5px}
+.approved-d.v5r button.v5r-chip{font-size:13px;font-weight:600;border-radius:999px;padding:6px 12px;min-height:36px;background:#fff;color:#374151;border:1px solid #d9dde4}
+.approved-d.v5r button.v5r-chip[aria-pressed="true"]{background:#eef3fe;color:#1d3f99;border:1.5px solid #3b6ce4}
+.approved-d.v5r .v5r-plan{display:flex;flex-direction:column;gap:6px;margin-top:4px}

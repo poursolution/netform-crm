@@ -40,9 +40,12 @@
  const ctxOf=d=>({today:kst(),existing:existingFor(d),currentPlan:curPlan(d),scheduleV1:root.ScheduleFlow?.enabled()===true});
  const MR=()=>root.MobileRequests&&root.MobileRequests.enabled()?root.MobileRequests:null;
  const reqsOf=d=>{if(String(d.id)===String(activeID)&&progress.requestSnapshot)return progress.requestSnapshot;const R=MR();return R?R.forDeal(d.id):[];};
- const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
- const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests'].map(k=>input[k]).concat(input.existing?[input.existing]:[]));
- const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return CE.plan(input,ctxOf(d));};
+ const V5=()=>root.MobileV5Result&&root.MobileV5Result.on()?root.MobileV5Result:null;
+ const withInfo=()=>{const d=dealById(root.G&&root.G.deal),R=MR();return Object.assign({ch:'전화'},S,V5()&&d&&S?{memo:V5().memoOf(S,d,reqsOf(d),R)}:null,{info:S&&S.cplan?{construction_plan:S.cplan}:null,requests:d&&R&&S?reqsOf(d).map(r=>({id:r.id,title:R.labelOf(r),on:!!(S.reqOn&&S.reqOn[r.id])&&R.isContact(r)})):[]});};
+ const signatureOf=input=>JSON.stringify(['ch','res','memo','mode','purpose','date','reason','plan','who','info','requests','retry'].map(k=>input[k]).concat(input.existing?[input.existing]:[]));
+ /* 모바일 v5 '다시 연락' 칩(연락 시도에만): 시각은 업무에 저장하지 않으므로 기록 글 끝에 남긴다 */
+ const planWith=(input,ctx)=>{const pl=CE.plan(input,ctx),at=pl.ok&&pl.attempt&&input.retry?String(input.retry).trim().slice(0,20):'';if(at)pl.note+=' · 다시 연락 '+at;return pl;};
+ const planOf=d=>{const input=withInfo();if(progress.signature){if(progress.signature!==signatureOf(input))return {ok:false,error:'저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.'};if(progress.pl&&progress.ctx)return progress.pl;}return planWith(input,ctxOf(d));};
  function fresh(d,selected){
   const ex=selected||existingOf(d),dflt=CE.defaults('연결됨',ex,kst());
   return {res:'',memo:'',mode:dflt.mode,purpose:dflt.purpose,date:dflt.date,reason:'',plan:'internal',info:false,touchedNext:false,reqOn:{}};
@@ -55,7 +58,7 @@
  }
  function sheetHtml(d){
   const ex=progress.signature&&progress.ctx?progress.ctx.existing:existingFor(d),pl=S.res?planOf(d):null,c=root.contactInfoM?root.contactInfoM(d):{};
-  if(root.MobileContactView)return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst()});
+  if(root.MobileContactView)return root.MobileContactView.render({s:S,d,ex,plan:pl,ce:CE,contact:c,requests:reqsOf(d),requestApi:MR(),busy,frozen:!!progress.signature,fields:MF(),currentPlan:curPlan(d),dateOptions:dateOptions(),today:kst(),v5:!!V5()});
   const chip=(act,v,on,label,cls)=>'<button type="button" class="ce-chip'+(cls?' '+cls:'')+(act==='res'&&S.ai&&S.ai.res===v?' ai':'')+'" data-ce="'+act+'" data-v="'+attr(v)+'" aria-pressed="'+!!on+'">'+h(label||v)+'</button>';
   const res='<section><b class="ce-q"><i>1</i>연락 결과 <small>PC 기준 값</small></b><div class="ce-chips">'+CE.VALUES.map(v=>chip('res',v,S.res===v)).join('')+'</div>'+(S.ch==='방문'?'<small class="ce-sub">방문 결과 — 연결됨 = 만났음 · 부재 = 담당자 없음 (일정이 취소 · 연기됐으면 [일정 바꾸기])</small>':'')+'</section>';
   const note=!S.res?'':CE.showNote(S.res)
@@ -126,7 +129,10 @@
    if(a==='close'){root.closeSheet();root.render();return;}
    if(busy||card._ceMode==='entry'&&(!S||progress.signature&&a!=='save'))return;
    if(card._ceMode==='rs'){if(a==='rs-date'){RS.date=v;RS.err='';paintRs(dd);}else if(a==='rs-save')saveRs(dd);else if(a==='close'){root.closeSheet();root.render();}return;}
-   if(a==='res'){pickResult(dd,v);S.err='';paint(dd);}
+   if(a==='res'){pickResult(dd,v);S.err='';if(V5()){if(!root.ContactEntry.isAttempt(v)){S.v5retry='';S.retry='';}V5().syncRequests(S,dd,reqsOf(dd),MR());}paint(dd);}
+   else if(a==='v5chk'&&V5()){S.v5chk=Object.assign({},S.v5chk,{[v]:!(S.v5chk&&S.v5chk[v])});V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
+   else if(a==='v5retry'&&V5()){V5().retry(S,v,existingFor(dd));V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
+   else if(a==='v5plan'&&V5()){S.plan=v==='customer'?'customer':'internal';S.touchedNext=true;S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
    else if(a==='date'){S.date=v;S.datePanel=false;S.touchedNext=true;S.err='';paint(dd);}
    else if(a==='date-open'){S.datePanel=true;paint(dd);}
@@ -162,7 +168,7 @@
    else if(k==='date'){S.date=t.value;S.touchedNext=true;const dd=dealById(card._ceDeal);if(dd&&/^\d{4}-\d{2}-\d{2}$/.test(t.value))paint(dd);}
    else if(k==='plan'){S.plan=t.checked?'customer':'internal';}
    else if(k==='req'){S.reqOn=Object.assign({},S.reqOn,{[t.dataset.id]:t.checked});const dd1=dealById(card._ceDeal);if(dd1)paint(dd1);return;}
-   const dd=dealById(card._ceDeal);if(dd&&k!=='date'){const pv=card.querySelector('.ce-prev'),pl=S.res?planOf(dd):null;if(pv)pv.textContent=pl&&pl.ok?pl.preview:pl&&pl.error||'연락 결과를 골라 주세요';const saveButton=card.querySelector('[data-ce="save"]');if(saveButton&&card.classList.contains('ce-page'))saveButton.disabled=busy||!pl?.ok;saveDraft(dd.id,S);}
+   const dd=dealById(card._ceDeal);if(dd&&k!=='date'){const pv=card.querySelector('.ce-prev'),pl=S.res?planOf(dd):null;if(pv)pv.textContent=V5()?V5().preview(pl,S,dd,existingFor(dd),reqsOf(dd),MR()):pl&&pl.ok?pl.preview:pl&&pl.error||'연락 결과를 골라 주세요';const saveButton=card.querySelector('[data-ce="save"]');if(saveButton&&card.classList.contains('ce-page'))saveButton.disabled=busy||!pl?.ok;saveDraft(dd.id,S);}
   });
  }
  function mic(card,btn){
@@ -232,7 +238,7 @@
   if(!progress.signature&&S.existing){try{selectedExisting(d,S.existing);}catch(e){S.err=String(e.message||e);paint(d);return;}}
   const input=withInfo(),signature=signatureOf(input);
   if(progress.signature&&progress.signature!==signature){S.err='저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.';paint(d);return;}
-  const ctx=progress.ctx||ctxOf(d),pl=progress.pl||CE.plan(input,ctx);
+  const ctx=progress.ctx||ctxOf(d),pl=progress.pl||planWith(input,ctx);
   if(!pl.ok){S.err=pl.error;paint(d);return;}
   if(!root.Phase1||!root.Phase1.queue||typeof root.queueMobileContactOperation!=='function'){S.err='로그인 상태에서만 저장할 수 있습니다.';paint(d);return;}
   progress.signature=signature;progress.ctx=ctx;progress.pl=pl;progress.input=progress.input||JSON.parse(JSON.stringify(S));
