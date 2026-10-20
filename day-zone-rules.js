@@ -20,6 +20,8 @@
   if(!reason&&!until)return null;const d=diff(until,today);
   return {reason:reason||'대기 사유 미기록',until,future:d!=null&&d>=0,indefinite:!until};
  }
+ /* 문의 첫 연락 기준(PC inquiryResponseLate 와 같은 계산): 배정(없으면 접수) 뒤 기준 시간(OPS_RULES.responseSlaHours · 기본 2)이 지나도록 첫 연락 전 → 기준 넘김. 시각을 모르면 넘김으로 본다(PC 와 같음) */
+ function inqLate(p,now){if(p.responded)return false;const t=Date.parse(p.assignedAt||p.createdAt||'');if(!Number.isFinite(t))return true;const h=Number(p.hours)>0?Number(p.hours):2;return ((now==null?Date.now():now)-t)/36e5>=h;}
  /* 구역 하나 */
  function zone(p,today){
   today=today||kst();
@@ -45,5 +47,5 @@
  function count(list,today){const n={now:0,late:0,wait:0,fix:0};(list||[]).forEach(p=>{const z=zone(p,today);if(z)n[z]++;});return n;}
  const LABEL={now:'오늘 처리',late:'기한 초과',wait:'고객 회신 대기',fix:'기록 보완'};
  const ORDER=['now','late','wait','fix'];
- return {kst,dayOf,diff,waiting,zone,rank,count,isPromise,LABEL,ORDER};
+ return {kst,dayOf,diff,waiting,zone,rank,count,isPromise,inqLate,LABEL,ORDER};
 });

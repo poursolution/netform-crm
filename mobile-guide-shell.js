@@ -160,14 +160,16 @@
  function zones(){
   const RU=w.DayZoneRules,day=RU.kst(),Z={now:[],late:[],wait:[],fix:[]},R=w.MobileRequests;
   const reqOf=d=>R?.forDeal?.(d.id)?.[0]||null,reqLate=r=>{const t=Date.parse(r&&r.due_at||'');return Number.isFinite(t)&&t<Date.now();};
-  (w.buildToday()||[]).filter(t=>t.kind!=='deal').forEach(t=>Z.now.push({inq:t}));
+  /* 문의 첫 연락: 배정 시각 + 기준 시간(PC 와 같은 계산 DayZoneRules.inqLate) — 넘겼으면 기한 초과 */
+  const hrs=Number(w.OPS_RULES&&w.OPS_RULES.responseSlaHours)||2,views=(w.ADMIN&&w.ADMIN.inquiries)||[];
+  (w.buildToday()||[]).filter(t=>t.kind!=='deal').forEach(t=>{const v=views.find(x=>String(x.key)===String(t.ref)),raw=(v&&v.raw)||{},late=RU.inqLate({assignedAt:raw.sales_assigned_at||raw.assigned_at||raw.assignedAt||'',createdAt:raw.at||raw.created_at||'',hours:hrs});(late?Z.late:Z.now).push({inq:t,late});});
   mine().filter(d=>w.isOpen?.(d)).forEach(d=>{const p=zonePrim(d),r=reqOf(d);let z=RU.zone(p,day);if(!z&&r)z=reqLate(r)?'late':'now';if(z)Z[z].push({d,p,r,w:z==='wait'||z==='fix'?RU.waiting(p,day):null});});
-  Z.late.sort((a,b)=>RU.rank('late',a.p,day)-RU.rank('late',b.p,day));Z.now.sort((a,b)=>(a.inq?-1:RU.rank('now',a.p,day))-(b.inq?-1:RU.rank('now',b.p,day)));
+  Z.late.sort((a,b)=>(a.inq?1:RU.rank('late',a.p,day))-(b.inq?1:RU.rank('late',b.p,day)));Z.now.sort((a,b)=>(a.inq?-1:RU.rank('now',a.p,day))-(b.inq?-1:RU.rank('now',b.p,day)));
   return Z;
  }
  function zoneRow(z,x){
   const RU=w.DayZoneRules;
-  if(x.inq){const t=x.inq;return {id:t.ref,kind:t.kind,name:t.nm,brand:'견적문의',color:'#15171c',stage:'견적문의',due:'첫 연락',dueColor:'#15171c',task:t.why,why:t.sub||'',button:t.call?'전화':'열기'};}
+  if(x.inq){const t=x.inq;return {id:t.ref,kind:t.kind,name:t.nm,brand:'견적문의',color:'#15171c',stage:'견적문의',due:x.late?'첫 연락 기준 넘김':'첫 연락',dueColor:x.late?'#b42318':'#15171c',task:t.why,why:t.sub||'',button:t.call?'전화':'열기'};}
   const d=x.d,p=x.p,n=RU.diff(RU.dayOf(p.due)),r=x.r;
   const due=z==='late'?(n==null?'기한 지남':(-n)+'일 지남'):z==='now'?(RU.isPromise(p)?'오늘 · 약속':'오늘'):z==='wait'?'확인 '+(x.w&&x.w.until?w.ContactEntry.md(x.w.until):''):'—';
   const task=z==='wait'?(x.w&&x.w.reason)||p.text:z==='fix'?(p.text?(x.w&&x.w.indefinite?'대기 확인일 정하기':'다음 할 일 날짜 정하기'):'다음 할 일 등록'):(p.text||'다음 업무 확인');
