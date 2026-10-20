@@ -133,7 +133,7 @@
    else if(a==='v5chk'&&V5()){S.v5chk=Object.assign({},S.v5chk,{[v]:!(S.v5chk&&S.v5chk[v])});V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
    else if(a==='v5retry'&&V5()){V5().retry(S,v,existingFor(dd));V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
    else if(a==='v5quote'&&V5()){S.v5quote=v;S.err='';paint(dd);}
-   else if(a==='v5cancel'&&V5()){/* 방문 취소 · 연기 = 고객에게 들은 연기(회신 받음) + 기존 방문 날짜만 변경 — 승인 셸은 따로 여는 일정 바꾸기 화면을 쓰지 않는다 */S.res='회신 받음';S.v5cancel=true;S.v5quote='';S.mode='change';S.reason=S.reason||'방문 취소 · 연기';S.touchedNext=true;S.datePanel=true;S.err='';V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
+   else if(a==='v5cancel'&&V5()){/* 방문 취소 · 연기 = 그 방문 업무의 날짜만 변경(일정 바꾸기) — 응대 결과는 만들지 않는다. 쓰던 결과 입력은 보관 */const ex0=existingFor(dd);if(!ex0)return root.toast('바꿀 방문 일정이 없습니다.');saveDraft(dd.id,S);reschedule({existing:ex0});}
    else if(a==='v5plan'&&V5()){S.plan=v==='customer'?'customer':'internal';S.touchedNext=true;S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
    else if(a==='date'){S.date=v;S.datePanel=false;S.touchedNext=true;S.err='';paint(dd);}
@@ -290,8 +290,24 @@
     }
    }
    assertSession();
+   /* v5 방문 · 만남 = 그 방문 업무 완료(방문 결과가 그 업무의 완료 조건 · 기획 '끝난 일 · 방문') — 취소 · 연기(날짜 변경) · 담당 부재는 업무 그대로 */
+   if(V5()&&S.ch==='방문'&&pl.meaningful&&!S.v5cancel&&pl.mode!=='change'&&ex&&UUID.test(String(ex.id||''))&&!progress.visitDone){
+    await confirmOp('next_action_complete',{opportunity_id:d.id},ex.id,'visitDone');assertSession();progress.visitDone=String(ex.id);persistProgress();
+    [d.nextAction,d.nextActionObj].concat(Array.isArray(d.openNextActions)?d.openNextActions:[]).filter(a=>a&&String(a.id)===String(ex.id)).forEach(a=>{a.status='done';a.completed_at=at;});
+    if(Array.isArray(d.openNextActions))d.openNextActions=d.openNextActions.filter(a=>String(a.id)!==String(ex.id));
+   }
+   /* v5 요청 항목별 처리(crm_work_request_deal_contact_v1): 응대 기록이 서버에 확인된 뒤 이 현장의 첫 연락 · 후속 연락 요청마다 한 번. 다시 눌러도 같은 operation_id(서버가 한 번만 처리) */
+   if(V5()&&MR()?.itemReady?.()){
+    progress.requestResults=progress.requestResults||{};progress.requestOps=progress.requestOps||{};
+    for(const rq of reqsOf(d)){
+     if(progress.requestResults[rq.id])continue;const body=V5().requestBody(S,d,rq,pl,ctx.existing,MR());if(!body)continue;
+     if(!progress.requestOps[rq.id]){progress.requestOps[rq.id]=root.crypto.randomUUID();persistProgress();}
+     try{const x=await MR().completeItems(rq,Object.assign({},body,{operation_id:progress.requestOps[rq.id],activity:rec.ack}));assertSession();progress.requestResults[rq.id]={id:x.request_id,status:x.request.status,note:x.request.status==='done'?'':String(x.request.reply_note||'')};persistProgress();}
+     catch(e){throw Error('응대 기록은 저장됐습니다. 관리자 요청 처리 확인이 남았습니다: '+String(e&&e.message||e));}
+    }
+   }
    /* v5 '정리됨' · 방문 → 견적 요청에 넘길 것(입력 · 요청 · 방문 기록 번호) — 지우기 전에 복사 */
-   const v5done=V5()?{s:JSON.parse(JSON.stringify(S)),requests:JSON.parse(JSON.stringify(progress.requestSnapshot||[])),requestResults:Object.assign({},progress.requestResults||{}),activityId:rec.ack.activity_id,memo:input.memo}:null;
+   const v5done=V5()?{s:JSON.parse(JSON.stringify(S)),requests:JSON.parse(JSON.stringify(progress.requestSnapshot||[])),requestResults:Object.assign({},progress.requestResults||{}),activityId:rec.ack.activity_id,memo:input.memo,visitDone:progress.visitDone||''}:null;
    const ch0=S.ch;lastMemo=String(S.memo||'');last={pl,ctx,deal_id:String(d.id),owner,sessionToken};clearDraft();busy=false;S=null;progress={};
    const rows=CE.summary(pl,Object.assign({},ctx,{openRequests:[]}));if(infoErr)rows.push(['남음','공사 시기는 저장하지 못했습니다: '+infoErr]);
    const quoteOk=ch0==='방문'&&pl.meaningful&&!d.outcome&&String(d.code)==='consulting'&&root.MobileFields&&root.MobileFields.ready();
@@ -319,11 +335,14 @@
    +(RS.err?'<p class="ce-err" role="alert">'+h(RS.err)+'</p>':'')+'</div><div class="ce-foot"><span class="ce-prev">'+pv+'</span><button type="button" class="btn btn-primary ce-save" data-ce="rs-save"'+(busy?' disabled':'')+'>'+(busy?'확인 중…':'일정 바꾸기')+'</button></div>';
  }
  function paintRs(d){const card=root.document.getElementById('sheetcard');if(!card||!RS)return;try{persistProgress();}catch(e){RS.err=String(e.message||e);}const keep=card.querySelector('.ce')?card.scrollTop:0,head=card.querySelector('.intro')?card.querySelector('.intro').outerHTML+'<div style="height:12px"></div>':'';card.innerHTML='<div class="sheet-grip"></div>'+head+rsHtml(d);card.scrollTop=keep;}
- function reschedule(){
-  if(root.MobileGuideShell){root.toast('연락 결과의 기존 업무 날짜 변경을 이용해 주세요.');return;}
+ /* opts.existing: 모바일 v5 방문 결과의 [취소 · 연기] — 고른 방문 업무의 날짜만 바꾼다(응대 결과를 만들지 않음 · 이전 날짜는 [기한 변경] 기록으로 남음) */
+ function reschedule(opts){
+  const pick=opts&&opts.existing&&V5()?opts.existing:null;
+  if(root.MobileGuideShell&&!pick){root.toast('연락 결과의 기존 업무 날짜 변경을 이용해 주세요.');return;}
   const d=dealById(root.G&&root.G.deal);if(!d)return;
-  if(!existingOf(d)){if(typeof root.toast==='function')root.toast('바꿀 일정이 없습니다 — 결과 남기기에서 새 업무를 잡아 주세요');return;}
-  if(busy)return;RS={date:'',reason:'',err:'',existing:existingOf(d)};busy=false;progress={};owner=root.MobileSaveJournal?.owner()||'';sessionToken=root.MobileSaveJournal?.session()||'';activeID=d.id;progressMode='reschedule';recoveryError='';
+  const sel=pick||existingOf(d);
+  if(!sel){if(typeof root.toast==='function')root.toast('바꿀 일정이 없습니다 — 결과 남기기에서 새 업무를 잡아 주세요');return;}
+  if(busy)return;RS={date:'',reason:'',err:'',existing:sel};busy=false;progress={};owner=root.MobileSaveJournal?.owner()||'';sessionToken=root.MobileSaveJournal?.session()||'';activeID=d.id;progressMode='reschedule';recoveryError='';
   try{const saved=root.MobileSaveJournal.read('reschedule',d.id);if(saved){progress=saved.progress||{};RS=JSON.parse(JSON.stringify(progress.input||saved.input||RS));}}catch(e){recoveryError=String(e.message||e);RS.err=recoveryError;}
   root.openSheet(root.intro('var(--blue-50)','var(--blue-dark)',root.IC.phone,'일정 바꾸기',h(d.nm)),'');
   const card=root.document.getElementById('sheetcard');if(card){card.classList.add('ce-card');card._ceMode='rs';}
