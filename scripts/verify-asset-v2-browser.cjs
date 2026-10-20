@@ -62,7 +62,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const d=page.locator('#assetV2.on .xdv');assert.equal(await d.count(),1);assert.equal(await page.evaluate(()=>document.getElementById('siteDrawer')?.classList.contains('on')),false,'예전 드로어는 열리지 않음');
   assert.match(await d.locator('.xdv-top').innerText(),/고객 자산 · 관계위험[\s\S]*예현마을현대홈타운아파트[\s\S]*첫 관계[\s\S]*영업기회 3건[\s\S]*실주 2건 · 7\.5억[\s\S]*진행 1건 · 3\.7억[\s\S]*수주 0원/);
   assert.equal(await d.evaluate(n=>getComputedStyle(n.querySelector('.xdv-body')).gridTemplateColumns.split(' ').length),3);
-  assert.deepEqual(await d.locator('.xdv-facts dt').allInnerTexts(),['관계 시작','현재 담당','최초 관계','주소','관리사무소','최근 기록']);
+  assert.deepEqual(await d.locator('.xdv-facts dt').allInnerTexts(),['관계 시작','현재 담당','최초 관계','주소','관리사무소','마지막 고객 연락']);
   assert.match(await d.locator('.xdv-c2 .idv-chead').innerText(),/관계 타임라인/);assert.ok(await d.locator('.xdv-c2 .idv-msg').count()>=3,'타임라인 기록');
   assert.match(await d.locator('.xdv-c3').innerText(),/누적 거래[\s\S]*전체 영업기회\s*3건[\s\S]*수주\s*0건[\s\S]*실주 · 종료\s*2건[\s\S]*진행 중\s*1건[\s\S]*지금 진행 중인 영업[\s\S]*다음 할 일 없음[\s\S]*파이프라인에서 열기[\s\S]*공종 이력[\s\S]*이 단지에서 배울 것[\s\S]*실주 사유: 가격 열세[\s\S]*다음 제안 전에 실주 사유부터 확인하세요/);
   assert.equal(await d.locator('.av-opp.none').count(),1,'다음 할 일 없으면 빨강');
@@ -83,7 +83,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.evaluate(()=>goPage('sites'));await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'좁은 화면 넘침 없음');
   await page.setViewportSize({width:1600,height:1000});
-  await page.evaluate(()=>{G.assetV2Off=true;paint();});await page.waitForTimeout(200);
+  /* 2026-10-20 four_menus 3: 진행 건이 둘 이상이면 메모 대상은 담당이 고른다(금액 큰 건에 자동 저장 X) · 같은 번호 = 동일인 후보 · 과거 메모 속 주소 = 후보 */
+  {const key=await page.evaluate(()=>{const s=siteMasterData().find(x=>x.name==='시범현대아파트');const d0=s.open[0];B.deals.push(Object.assign({},d0,{id:'d4b',created:new Date().toISOString(),amt:9e7,next_action:null,activities:[],legacy_notes:[{body:'현장 주소 경기도 성남시 분당구 정자로 12 관리사무소',occurred_at:'2025-01-02'}],contacts:[]}));invalidateSiteMasterData();return siteMasterData().find(x=>x.name==='시범현대아파트').key;});
+   await page.evaluate(k=>AssetV2.open(k),key);await page.waitForTimeout(200);const m=page.locator('#assetV2.on');
+   assert.equal(await m.locator('.av-pick button').count(),2,'진행 2건 = 고르는 칩 2개');assert.match(await m.locator('.av-target').innerText(),/위에서 영업건을 고르면 저장할 수 있습니다/);
+   await m.locator('.idv-input textarea').fill('관리소장 교체 예정');await m.locator('[data-ad="save"]').click();await page.waitForTimeout(150);assert.equal(await m.locator('.idv-err').innerText(),'메모를 남길 영업건을 먼저 골라 주세요.');
+   await m.locator('.av-pick button').nth(1).click();await page.waitForTimeout(150);assert.match(await m.locator('.av-target').innerText(),/«.+ · .+ · .+ · .+»에 기록됩니다/);assert.equal(await m.locator('.av-pick button[aria-pressed="true"]').count(),1);assert.equal(await m.locator('.idv-input textarea').inputValue(),'관리소장 교체 예정','고른 뒤에도 적던 글 유지');
+   const fx=await m.locator('.xdv-facts').innerText();if(/주소\s*미입력/.test(fx))assert.match(fx,/과거 메모의 주소 후보: 경기도 성남시 분당구 정자로 12/);
+   await page.evaluate(()=>AssetV2.close());await page.waitForTimeout(100);}  await page.evaluate(()=>{G.assetV2Off=true;paint();});await page.waitForTimeout(200);
   assert.equal(await page.locator('#asset-v2').count(),0);assert.equal(await page.locator('#site-master .site-table').count(),1,'끄면 예전 화면');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',list_frame:true,status_pills:true,diagnosis:true,groups:true,shared_filters:true,more_menu:true,detail_three_columns:true,row_opens_pipeline_detail:true,address_edit_legacy:true,reviews_moved_to_cleanup:true,narrow:true,legacy_switch:true}));

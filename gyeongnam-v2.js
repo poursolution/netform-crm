@@ -21,6 +21,17 @@
  }
  const notes=q=>{const p=root.itemPatch(q,'inq')||{};return [...(q.activities||[]),...(p.activities||[])].map(a=>String(a.note||''));};
  const requested=q=>notes(q).some(n=>n.startsWith(REQ)),recallMarked=q=>notes(q).some(n=>n.startsWith(RECALL));
+ /* 2026-10-20 four_menus 2: 날짜 셋을 나눈다 — 최초 인계일(기록 중 가장 이른 인계 · 배정) · 현재 담당 배정일(assigned_at · 경과일 기준) · 확인 요청일(메모 [지사 확인 요청]) */
+ const dayOf=v=>{const t=Date.parse(String(v||''));return Number.isFinite(t)?new Date(t+9*36e5).toISOString().slice(0,10):'';};
+ function dates(q){
+  const p=root.itemPatch(q,'inq')||{},acts=[...(q.activities||[]),...(p.activities||[])];
+  const cur=dayOf(root.inquiryAssignedAt(q)),hand=acts.filter(a=>/인계|경남지사|지사로|배정/.test(String(a.type||'')+' '+String(a.note||''))&&!String(a.note||'').startsWith(REQ)&&!String(a.note||'').startsWith(RECALL)).map(a=>dayOf(a.occurred_at||a.at||a.created_at)).filter(Boolean).sort();
+  const first=[hand[0],cur].filter(Boolean).sort()[0]||dayOf(root.inquiryDate(q));
+  const req=acts.filter(a=>String(a.note||'').startsWith(REQ)).map(a=>dayOf(a.occurred_at||a.at||a.created_at)).filter(Boolean).sort().pop()||'';
+  return {first,cur:cur||first,req};
+ }
+ /* 요청 엔진(지사 확인 요청)으로 실제 전달된 요청이 있으면 그 상태 — 메모 기록과 구분 */
+ function sent(q){try{const L=(root.WorkRequest&&root.WorkRequest.state&&root.WorkRequest.state().list)||[],id=String(q.id||''),r=L.filter(x=>x&&String(x.target_id)===id&&x.target_type==='inq'&&x.status!=='cancelled').sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))[0];if(!r)return null;const s=String(r.status||'');return {r,label:/done|closed|complete/.test(s)?'처리 결과 있음':/repl|answer/.test(s)?'지사 회신 있음':'지사에 전달됨 · 회신 대기'};}catch(e){return null;}}
  function scoped(){
   const X=root.gnData(),owner=root.G.gnOwner||'전체';
   const base=X.Q.filter(q=>root.SalesFilterState.matchesBrand(q.brand)).map(q=>({q,f:facts(q)}));
@@ -88,23 +99,25 @@
  function confirming(q){return enabled()&&admin()&&root.itemOwnerTeam?.(q)==='gyeongnam'&&!root.inqCtlConverted?.(q);}
  function decorate(dlg,q){
   if(!confirming(q))return false;
-  const f=facts(q),key=root.inqKey(q),done=[true,!!f.rep,f.resp,!!f.deal,f.won],names=['본사 → 지사','지사 실담당','지사 첫 연락','영업기회','수주'],cur=done.indexOf(false);
+  const f=facts(q),key=root.inqKey(q),done=[true,!!f.rep,f.resp,!!f.deal,f.won],names=['본사 → 지사','지사 실담당','고객 실제 연결','영업기회','수주'],cur=done.indexOf(false),D=dates(q),SR=sent(q);
   const steps=dlg.querySelector('.idv-steps');if(steps)steps.innerHTML=names.map((n,i)=>'<div class="'+(done[i]?'done':i===cur?'cur':'')+'"><i></i><span>'+(i===cur?'지금 · ':'')+n+'</span></div>').join('');
-  const pill=dlg.querySelector('.idv-top1 .idv-pill');if(pill){const label=f.group==='none'?'지사 미착수':f.group==='first'?'지사 응대 없음':'영업 진행 확인됨';pill.className='idv-pill '+(f.group==='ok'?'ok':'red');pill.textContent=label+(f.days!=null?' · '+f.days+'일':'');}
+  const pill=dlg.querySelector('.idv-top1 .idv-pill');if(pill){const label=f.group==='none'?'지사 실담당 미지정':f.group==='first'?'고객 연결 기록 없음':'고객 연결 확인됨';pill.className='idv-pill '+(f.group==='ok'?'ok':'red');pill.textContent=label+(f.days!=null?' · '+f.days+'일':'');}
   /* 가운데: 접수 다음에 '본사 → 경남지사 인계' 기록 */
-  const firstMsg=dlg.querySelector('.idv-thread .idv-msg');if(firstMsg&&!dlg.querySelector('.gnv-handoff')){firstMsg.insertAdjacentHTML('afterend','<div class="idv-msg sys gnv-handoff"><div class="idv-meta"><em>인계</em><span>'+h(String(handedAt(q)||'').slice(0,10))+'</span></div><div class="idv-bubble">본사 → 경남지사 인계</div></div>');}
+  const firstMsg=dlg.querySelector('.idv-thread .idv-msg');if(firstMsg&&!dlg.querySelector('.gnv-handoff')){firstMsg.insertAdjacentHTML('afterend','<div class="idv-msg sys gnv-handoff"><div class="idv-meta"><em>인계</em><span>'+h(D.first)+'</span></div><div class="idv-bubble">본사 → 경남지사 인계 (최초)</div></div>');}
   /* 응대 이력 타임라인(2026-10-03 inquiry_v2 상세보기) 형식에서는 시스템 줄로 */
-  const firstEv=dlg.querySelector('.idv-thread .idv-ev');if(firstEv&&!dlg.querySelector('.gnv-handoff')){firstEv.insertAdjacentHTML('afterend','<div class="idv-ev sy gnv-handoff"><i></i><div><div class="idv-evmeta"><span>'+h(String(handedAt(q)||'').slice(0,10))+' · 영업관리</span><em class="k">시스템</em><em class="s">CRM</em></div><div class="idv-evtext">본사 → 경남지사 인계</div></div></div>');}
+  const firstEv=dlg.querySelector('.idv-thread .idv-ev');if(firstEv&&!dlg.querySelector('.gnv-handoff')){firstEv.insertAdjacentHTML('afterend','<div class="idv-ev sy gnv-handoff"><i></i><div><div class="idv-evmeta"><span>'+h(D.first)+' · 영업관리</span><em class="k">시스템</em><em class="s">CRM</em></div><div class="idv-evtext">본사 → 경남지사 인계 (최초)</div></div></div>');}
   const logs=notes(q).filter(n=>n&&!n.startsWith(REQ)&&!n.startsWith(RECALL)).length,stage=f.deal?root.stageLabel(root.dealStage(f.deal)):'문의',stalled=f.group!=='ok',asked=requested(q),recall=recallMarked(q);
-  const team=root.gnData().rows.filter(r=>!r.pool).map(r=>'<div><span>'+h(r.label)+'</span><em>넘겨받음 '+r.assigned+' · 연락 '+r.responded+' · 수주 '+r.won+'</em></div>').join('')||'<p class="idv-hint">등록된 지사 담당이 없습니다.</p>';
+  /* 2026-10-20 four_menus 2: 이 문의의 담당 · 날짜 셋 · 연결 상태 · 남은 업무만(전체 지사 현황은 목록 화면 왼쪽 한 곳) · 메모 기록 ≠ 지사 전달 */
   const c3=dlg.querySelector('.idv-c3');if(!c3)return false;
+  const md2=k=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(k||''));return m?(+m[2])+'/'+(+m[3]):'';};
+  const left=!f.rep?'지사 실담당 지정 확인':!f.resp?'고객 실제 연결 확인(시도만 있는지 · 기록이 없는지)':!f.deal?'공사 범위 · 시기 확인 → 영업기회 등록 여부':'영업 진행 중 · 파이프라인에서 확인';
   c3.setAttribute('aria-label','지사 진행 확인');
   c3.innerHTML='<div class="idv-now '+(stalled?'red':'ok')+'">지사 진행 확인</div><h3>'+h(f.rep?f.rep+' 담당':'지사 실담당 미지정')+'</h3><p class="idv-hint">본사 확인용 · 처리는 지사에서</p>'
-   +'<div class="gnv-state'+(stalled?' stalled':'')+'"><dl><div><dt>넘긴 후</dt><dd class="'+(stalled?'r':'')+'">'+(f.days==null?'–':f.days+'일')+'</dd></div><div><dt>지사 실담당</dt><dd class="'+(f.rep?'':'r')+'">'+h(f.rep||'미지정')+'</dd></div><div><dt>지사 연락 기록</dt><dd>'+(f.resp?logs+'건':'없음')+'</dd></div><div><dt>현재 단계</dt><dd>'+h(stage)+'</dd></div></dl>'+(stalled&&f.days!=null?'<p>넘긴 지 '+f.days+'일 동안 지사에서 움직임이 없어요</p>':'')+'</div>'
-   +(asked?'<div class="gnv-done">지사에 확인 요청함 · 지사장 응답 대기</div>':'<button type="button" class="idv-primary on" data-gnc="request" data-key="'+attr(key)+'">지사에 확인 요청</button>')
-   +(recall?'<div class="gnv-done amber">본사 회수 검토 대상으로 표시함</div>':'<button type="button" class="gnv-ghost" data-gnc="recall" data-key="'+attr(key)+'">본사 회수 검토</button>')
-   +'<p class="gnv-note">확인 요청·회수 검토는 이 문의에 메모로 기록됩니다. 실제 회수는 기존 담당 변경 절차를 따릅니다.</p><div class="idv-err" id="gnv-err" role="alert"></div>'
-   +'<div class="gnv-team"><b>경남지사 담당 현황</b>'+team+'</div>'
+   +'<div class="gnv-state'+(stalled?' stalled':'')+'"><dl><div><dt>최초 인계</dt><dd>'+h(md2(D.first)||'미기록')+'</dd></div><div><dt>현재 배정</dt><dd class="'+(stalled?'r':'')+'">'+h(md2(D.cur)||'미기록')+(f.days==null?'':' · '+f.days+'일째')+'</dd></div><div><dt>확인 요청</dt><dd>'+h(D.req?md2(D.req)+' 메모':'없음')+'</dd></div><div><dt>고객 연결</dt><dd>'+(f.resp?'확인됨 · 기록 '+logs+'건':'기록 없음')+'</dd></div><div><dt>현재 단계</dt><dd>'+h(stage)+'</dd></div><div><dt>남은 업무</dt><dd>'+h(left)+'</dd></div></dl>'+(stalled&&f.days!=null?'<p>현재 배정 '+f.days+'일째 · 지사의 고객 연결 기록이 없습니다(연락 시도만 했거나 기록하지 않았을 수 있음 · 미응대로 단정 아님)</p>':'')+'</div>'
+   +(SR?'<div class="gnv-done">'+h(SR.label)+'</div>':'')
+   +(asked?'<div class="gnv-done">확인 요청 메모 기록함 · 지사 전달 · 회신은 확인 전</div>':'<button type="button" class="idv-primary on" data-gnc="request" data-key="'+attr(key)+'">확인 요청 메모 남기기</button>')
+   +(recall?'<div class="gnv-done amber">본사 회수 검토 대상으로 표시함</div>':'<button type="button" class="gnv-ghost" data-gnc="recall" data-key="'+attr(key)+'">본사 회수 검토 표시</button>')
+   +'<p class="gnv-note">두 버튼은 이 문의에 내부 메모로만 남습니다 — 지사에 자동으로 전달되지 않습니다. 지사 전달 · 회신 확인은 오늘 업무의 [요청]으로 · 실제 회수는 담당 변경 절차.</p><div class="idv-err" id="gnv-err" role="alert"></div>'
    +'<button type="button" class="idv-link idv-change" data-idv="reassign">담당 변경(회수 · 재배정)</button>';
   return true;
  }
@@ -119,8 +132,8 @@
  document.addEventListener('click',e=>{
   const b=e.target.closest('#inq-inbox-dialog [data-gnc]');if(!b)return;const key=b.dataset.key,q=root.inqCtlFind?.(key,false);if(!q)return;
   const who=root.repN(root.ME?.name)||'';
-  if(b.dataset.gnc==='request')record(key,REQ+' 넘긴 지 '+(since(q)??'?')+'일 — 지사 실담당 지정과 첫 연락 진행을 확인해 주세요. (요청 '+who+')');
-  if(b.dataset.gnc==='recall')record(key,RECALL+' 넘긴 지 '+(since(q)??'?')+'일 — 지사 진행이 없어 본사 회수 후보로 표시합니다. (표시 '+who+')');
+  if(b.dataset.gnc==='request')record(key,REQ+' 현재 배정 '+(since(q)??'?')+'일째 — 지사 실담당 지정과 고객 실제 연결을 확인해 주세요. (내부 메모 · '+who+')');
+  if(b.dataset.gnc==='recall')record(key,RECALL+' 현재 배정 '+(since(q)??'?')+'일째 — 고객 연결 기록이 없어 본사 회수 후보로 표시합니다. (내부 메모 · '+who+')');
   setTimeout(()=>{if(root.G.page==='gyeongnam')root.paintGyeongnam();},300);
  });
  function boot(){
@@ -132,5 +145,5 @@
   };
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.GyeongnamV2={enabled,paint,decorate,confirming,brandStats,facts};
+ root.GyeongnamV2={enabled,paint,decorate,confirming,brandStats,facts,dates,sent};
 })(window);
