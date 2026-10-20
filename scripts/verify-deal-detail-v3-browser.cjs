@@ -225,7 +225,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 소장이 바뀌었어요: 관리소장 카드 안 '새 관리소장 등록' 상자 */
   await page.locator('.dv3-left [data-dv3="replace"]').click();await page.waitForTimeout(250);
   const RP=page.locator('.dv3-left .dv3-mgr .dv3-repl');assert.equal(await RP.count(),1,'관리소장 카드 안 상자');assert.equal(await page.locator('#ddvPanel').count(),0,'패널 없음');await rightIntact('새 관리소장 등록');
-  assert.match(await RP.innerText(),/새 관리소장 등록\s*취소\s*김영수 소장님은 지우지 않고 이전 소장으로 남깁니다 \(오늘 날짜\)\s*이전 소장은 어디로\?\s*다른 단지로 이동\s*퇴직\s*모름\s*새 소장\s*자동 채우기\s*수신 동의\s*동의 받음\s*아직 안 물어봄\s*거부\s*저장 · 재확인 할 일 만들기\s*저장하면 응대 이력에 ‘관리소장 변경’이 남고/);
+  assert.match(await RP.innerText(),/새 관리소장 등록\s*취소\s*김영수 소장님은 지우지 않고 이전 소장으로 남깁니다 \(오늘 날짜\)\s*이전 소장은 어디로\?\s*다른 단지로 이동\s*퇴직\s*모름\s*새 소장\s*자동 채우기\s*명함 촬영\s*사진 선택\s*명함 사진 · 캡처를 넣으면 이름 · 휴대폰을 찾아 아래 칸에 넣습니다 · 사진은 저장하지 않음\s*수신 동의\s*동의 받음\s*아직 안 물어봄\s*거부\s*저장 · 재확인 할 일 만들기\s*저장하면 응대 이력에 ‘관리소장 변경’이 남고/);
   assert.equal(await RP.locator('[data-dv3="replconsent"][aria-pressed="true"]').innerText(),'아직 안 물어봄');assert.equal(await RP.locator('.dv3-save.off').count(),1);
   await RP.locator('[data-dv3repl="paste"]').fill('이정민 소장 010-5555-6666');await page.keyboard.press('Enter');await page.waitForTimeout(200);
   assert.equal(await page.locator('.dv3-repl #qc-name').inputValue(),'이정민');assert.equal(await page.locator('.dv3-repl #qc-mobile').inputValue(),'010-5555-6666');assert.equal(await page.locator('.dv3-repl .dv3-save.off').count(),0);
