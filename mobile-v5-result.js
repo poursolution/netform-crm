@@ -21,7 +21,7 @@
   (requests||[]).forEach(r=>{
    const asks=(Array.isArray(r.asks)?r.asks:[]).map(String).filter(a=>a&&!GENERIC.test(a.trim()));
    /* 첫 연락 요청 = 견적문의 기준(견적 요청 범위 · 방문이 필요한지), 그 밖은 지금 단계 기준 */
-   const list=asks.length?asks:(r.kind==='first'?firstItems:ruleItems),contact=!!(api&&api.isContact&&api.isContact(r));
+   const list=asks.length?asks:(r.kind==='first'?firstItems:ruleItems),contact=!!(api&&(itemOn(api)?api.itemized(r):api.isContact&&api.isContact(r)));
    list.forEach((label,i)=>out.push({key:r.id+':'+i,label,rid:r.id,from:asks.length?'요청':'기준',contact}));
   });
   if(!out.length)ruleItems.forEach((label,i)=>out.push({key:'rule:'+i,label,rid:'',from:'기준',contact:false}));
@@ -31,7 +31,29 @@
  const QUOTE={now:'필요 · 지금 요청',later:'나중에',no:'필요 없음'};
  const quoteAsk=(s,d)=>s.ch==='방문'&&s.res==='연결됨'&&String(d.code)==='consulting'&&!d.outcome;
  /* 체크 → 요청 처리 여부. 첫 연락 요청(서버가 모바일 완료를 받는 요청)만: 연결 + 전부 확인 = 처리. 연락 시도는 요청 상태를 바꾸지 않는다(직접 고른 요청만 건드림 · 요청은 열린 채 그대로) */
+ /* 항목별 처리 서버 함수(crm_work_request_deal_contact_v1)가 있으면 요청은 저장 뒤 그 함수로 처리 — 예전 체크(reqOn)는 쓰지 않는다 */
+ const itemOn=api=>!!(api&&api.itemReady&&api.itemReady());
+ const asksOf=r=>(Array.isArray(r.asks)?r.asks:[]).map(String).filter(a=>a&&!GENERIC.test(a.trim()));
+ /* 다음 행동: 새 업무 · 날짜 변경 · 유지한 기존 업무(방문 · 만남이면 그 방문은 이번에 끝나므로 유지 업무로 치지 않음) */
+ const visitEnds=(s,pl,ex)=>!!(s&&s.ch==='방문'&&pl&&pl.meaningful&&!s.v5cancel&&pl.mode!=='change'&&ex);
+ const nextOf=(pl,ex,today,s)=>{const nx=pl&&(pl.next||pl.change||(pl.mode==='keep'&&ex&&!visitEnds(s,pl,ex)?{text:ex.text,due:ex.due}:null));const due=nx&&String(nx.due||'').slice(0,10);return nx&&due&&(!today||due>=today)?{text:String(nx.purpose||nx.text||''),due}:null;};
+ /* 요청 한 건을 서버에 보낼 내용(없으면 보내지 않음): 부재 = 시도 기록 · 연결 = 체크한 요청 항목 + 다음 행동 */
+ function requestBody(s,d,r,pl,ex,api){
+  if(!itemOn(api)||!api.itemized(r)||!pl||!pl.ok||pl.badfit||s.v5cancel)return null;
+  if(pl.attempt)return {result:s.res,confirmed:[]};
+  const asks=asksOf(r),confirmed=asks.filter((a,i)=>checked(s,{key:r.id+':'+i})),nx=nextOf(pl,ex,w.DayZoneRules?w.DayZoneRules.kst():'',s);
+  return {result:s.res,confirmed,next_text:nx?nx.text:'',next_due:nx?nx.due:''};
+ }
+ /* 미리보기 · 정리됨에 쓰는 예상 결과(서버 판정과 같은 규칙) */
+ function expect(s,d,r,pl,ex,api){
+  const b=requestBody(s,d,r,pl,ex,api);if(!b)return null;const m=asksOf(r).length,n=b.confirmed.length;
+  if(pl.attempt)return {state:'working',text:'진행 중 (시도 · 미연결)'};
+  if(n===m&&b.next_text)return {state:'done',text:'완료'};
+  if(n===m)return {state:'working',text:'진행 중 (다음 업무 필요)'};
+  return {state:'working',text:'일부 처리 '+n+'/'+m};
+ }
  function syncRequests(s,d,requests,api){
+  if(itemOn(api)){s.reqOn={};return s;}
   const L=items(d,requests,api),ce=w.ContactEntry,attempt=!!(s.res&&ce&&ce.isAttempt(s.res));
   const next=Object.assign({},s.reqOn||{});
   (requests||[]).forEach(r=>{if(!(api&&api.isContact(r)))return;const mine=L.filter(it=>it.rid===r.id);next[r.id]=!attempt&&!!s.res&&mine.length>0&&mine.every(it=>checked(s,it));});
@@ -67,11 +89,14 @@
  /* 저장 미리보기 한 줄 */
  function preview(pl,s,d,ex,requests,api){
   if(!pl||!pl.ok)return pl&&pl.error||'연락 결과를 골라 주세요';
-  const p=[s.v5cancel?'방문 취소 · 연기 기록 1':pl.attempt?'연락 시도 1':pl.badfit?'종결 검토 기록 1':'응대 기록 1'];
+  const p=[s.v5cancel?'방문 취소 · 연기 기록 1':pl.attempt?'연락 시도 1':pl.badfit?'종결 검토 기록 1':'응대 기록 1'],visitDone=visitEnds(s,pl,ex);
+  if(visitDone)p.push('방문 업무 "'+ex.text+'" 완료');
   const L=items(d,requests,api);
   (requests||[]).forEach(r=>{
    const title=api?api.labelOf(r):'관리자 요청',st=(pl.requests||[]).find(x=>x.id===r.id),mine=L.filter(it=>it.rid===r.id),n=mine.filter(it=>checked(s,it)).length;
-   if(st&&st.state==='done')p.push(title+' 완료');
+   const e=expect(s,d,r,pl,ex,api);
+   if(e)p.push(title+' '+e.text+(e.state!=='done'&&pl.attempt&&dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));
+   else if(st&&st.state==='done')p.push(title+' 완료');
    else if(st&&st.state==='working')p.push(title+' 진행 중 (연결 필요)'+(dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));
    else if(st&&st.state==='blocked')p.push(title+' 남음 (다음 업무 필요)');
    else if(pl.attempt)p.push(title+' 그대로 (연결 필요)'+(dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));
@@ -79,7 +104,7 @@
   });
   if(pl.next)p.push('남는 일 · '+pl.next.purpose+' '+md(pl.next.due)+(pl.next.plan==='customer'?' · 고객 약속':' · 확정 전'));
   else if(pl.change)p.push('날짜 변경 · '+pl.change.text+' → '+md(pl.change.due));
-  else if(pl.mode==='keep'&&ex)p.push('남는 일 · '+ex.text+(ex.due?' '+md(ex.due):''));
+  else if(pl.mode==='keep'&&ex&&!visitDone)p.push('남는 일 · '+ex.text+(ex.due?' '+md(ex.due):''));
   else if(pl.mode==='none')p.push(ex?'새 일정 없음 · 기존 일정 유지':'다음 일정 없음');
   if(s.retry&&pl.attempt)p.push('다시 연락 '+s.retry);
   if(quoteAsk(s,d)&&s.v5quote==='now')p.push('이어서 견적 요청');
@@ -98,7 +123,7 @@
    const box=document.createElement('div');box.className='v5r-checks';
    box.innerHTML='<div class="v5r-ck-h"><b>'+(s.ch==='방문'?'확인한 것':'확인할 것 · '+from)+'</b><span class="'+(n&&n===L.length?'ok':'')+'">'+n+' / '+L.length+' 확인</span></div><div class="v5r-ck-list">'
     +L.map(it=>'<button type="button" class="cd-native v5r-ck" data-ce="v5chk" data-v="'+h(it.key)+'" aria-pressed="'+checked(s,it)+'"><i aria-hidden="true">'+(checked(s,it)?'✓':'')+'</i><span>'+h(it.label)+'</span></button>').join('')+'</div>'
-    +'<small class="v5r-ck-sub">'+(L.some(it=>it.rid&&!it.contact)?'확인한 것만 기록 · 이 요청 닫기는 PC':'하나만 확인됐으면 · 연락 완료 · 요청은 진행 중으로 저장')+'</small>';
+    +'<small class="v5r-ck-sub">'+(L.some(it=>it.rid&&!it.contact)?'확인한 것만 기록 · 이 요청 닫기는 PC':itemOn(api)?'하나만 확인됐으면 · 연락 완료 · 요청은 일부 처리로 저장':'하나만 확인됐으면 · 연락 완료 · 요청은 진행 중으로 저장')+'</small>';
    results.after(box);
   }
   /* 방문: 만났나요? = 만남(연결됨) · 담당 부재(부재) · 취소 · 연기(일정 바꾸기) — 값은 PC 와 같고 이름만 방문 말로 */
@@ -198,9 +223,10 @@
   const reqs=info.requests||[],res=info.requestResults||{},title=r=>api?api.labelOf(r):'관리자 요청';
   const done=[],left=[];
   done.push(d.nm+' · '+(s.ch==='방문'?(pl.meaningful?'방문':'방문 · 담당 부재'):pl.attempt?'연락 시도 1회':'연락'));
-  reqs.forEach(r=>{const x=res[r.id];if(x&&x.status==='done')done.push(title(r)+' 완료 · '+(r.requested_by||'요청자')+'에게 알림');else if(r.status!=='done')left.push(title(r)+(pl.attempt?' · 연결 필요':' · 진행 중')+(dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));});
+  reqs.forEach(r=>{const x=res[r.id];if(x&&x.status==='done')done.push(title(r)+' 완료 · '+(r.requested_by||'요청자')+'에게 알림');else if(x&&x.note)left.push(title(r)+' · '+x.note+(pl.attempt&&dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));else if(r.status!=='done')left.push(title(r)+(pl.attempt?' · 연결 필요':' · 진행 중')+(dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));});
   if(quote&&quote.fieldsDone)done.push('견적 요청 1 · 이 방문에 연결');
-  rows.forEach(r=>{if(['남음','변경','신규'].includes(r[0])&&!/^관리자 요청/.test(r[1]))left.push(r[1]);});
+  if(info.visitDone)done.push('방문 업무 완료');
+  rows.forEach(r=>{if(['남음','변경','신규'].includes(r[0])&&!/^관리자 요청/.test(r[1])&&!(info.visitDone&&r[0]==='남음'&&/^기존 일정/.test(r[1])))left.push(r[1]);});
   if(quote&&quote.fieldsDone)left.push('견적 도착 확인 · 견적팀 예정일 '+(f.quote_due&&DAY.test(String(f.quote_due))?md(f.quote_due):'미정')+(quote.promiseDone?' · 고객 약속 '+md(quote.wish):''));
   if(s.retry&&pl.attempt)left.push('다시 연락 '+s.retry);
   const n=nextItem(d);
@@ -223,5 +249,5 @@
   });
   document.addEventListener('input',e=>{const t=e.target.closest&&e.target.closest('#sheetcard [data-v5a-in]');if(!t||!A||!A.quote||A.quote.busy)return;if(t.dataset.v5aIn==='req')A.quote.req=t.value;else if(t.dataset.v5aIn==='wish'){A.quote.wish=t.value;if(!t.value)A.quote.accept=false;paintQuote();}});
  }
- w.MobileV5Result=Object.freeze({on,items,syncRequests,memoOf,retry,preview,decorate,after,state:()=>A});
+ w.MobileV5Result=Object.freeze({on,items,syncRequests,memoOf,retry,preview,decorate,after,requestBody,state:()=>A});
 })(window);

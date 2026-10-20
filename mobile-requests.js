@@ -69,6 +69,22 @@
   return await markSeen(r)===true;
  }
  /* 이 기록으로 처리한 요청 닫기(지정한 것만): 연락 기록 저장이 서버에 확인된 뒤에 부른다. result = 연락 결과, absent = 연락 시도(진행 중으로 남김) */
+ /* 영업건 요청 항목별 처리(2026-10-20 · crm_work_request_deal_contact_v1): 첫 연락 · 후속 연락 요청을 이번 응대 기록 근거로 처리.
+    부재 = 진행 중 · '연락 시도 n회 · 미연결', 일부 확인 = 진행 중 · '일부 처리 k/m', 전부 + 다음 행동 · 날짜 = 완료 — 판정은 서버가 한다. 서버에 아직 없으면 꺼지고 예전 complete 로 */
+ const ITEM_RPC='crm_work_request_deal_contact_v1';
+ const itemReady=()=>enabled()&&ready()&&!S.itemOff&&root.CRMRelease?.listed?.(ITEM_RPC)!==false;
+ const itemized=r=>!!r&&r.target_type==='deal'&&['first','follow'].includes(r.kind)&&Array.isArray(r.asks)&&r.to_me===true&&isOpen(r);
+ async function completeItems(r,o){
+  if(!itemized(r)||!itemReady())throw Error('이 요청은 PC 에서 처리합니다.');
+  const owner=syncOwner(),generation=epoch,proof=o.activity,profile=root.Phase1.profile;
+  if(!proof||proof.ok!==true||proof.operation!=='activity'||proof.object_id!==r.target_id||!proof.activity_id||proof.actor_auth_uid!==profile.auth_uid||proof.actor_user_id!==profile.user_id)throw Error('이 영업건의 서버 응대 기록을 먼저 확인해 주세요.');
+  const body={id:r.id,operation_id:o.operation_id,activity_id:proof.activity_id,result:String(o.result||''),confirmed:Array.isArray(o.confirmed)?o.confirmed.map(String):[]};
+  if(o.next_text&&/^\d{4}-\d{2}-\d{2}$/.test(String(o.next_due||''))){body.next_text=String(o.next_text).slice(0,200);body.next_due=String(o.next_due);}
+  let x;try{x=await rpc(ITEM_RPC,body);}catch(e){if(e&&(e.code==='PGRST202'||/Could not find the function|CONTRACT_UNAVAILABLE|PHASE1_RPC_DENIED/i.test(String(e.message||''))))S.itemOff=true;throw e;}
+  if(!currentSession(owner,generation))throw Error('계정이 바뀌었습니다. 저장된 응대는 유지하고 요청 처리를 다시 확인해 주세요.');
+  if(!x||x.ok!==true||x.request_id!==r.id||!x.request||x.request.id!==r.id)throw Error('요청 처리 결과를 확인하지 못했습니다. 응대 기록은 유지됩니다.');
+  put(x.request);return x;
+ }
  async function complete(r,o){
   if(!r||!isContact(r)||r.to_me!==true||!ready())throw Error('이 요청은 PC 에서 처리합니다.');
   const owner=syncOwner(),generation=epoch,checkOwner=()=>{if(!currentSession(owner,generation))throw Error('계정이 바뀌었습니다. 저장된 응대는 유지하고 요청 처리를 다시 확인해 주세요.');};
@@ -114,5 +130,5 @@
  root.document.addEventListener('click',e=>{const b=e.target.closest('#scr [data-mq]');if(!b||!enabled())return;if(b.dataset.mq==='open')open(b.dataset.id);});
  root.addEventListener?.('phase1:identity-cleared',()=>reset(''));
  root.addEventListener?.('phase1:profile',syncOwner);
- root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,acknowledge,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put});
+ root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,acknowledge,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put,itemReady,itemized,completeItems});
 })(window);
