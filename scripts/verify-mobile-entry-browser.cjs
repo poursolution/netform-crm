@@ -19,6 +19,8 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   const read=()=>page.evaluate(()=>({rows:structuredClone(__review.rows),replies:structuredClone(__review.replies),request:structuredClone(__review.request),deal:structuredClone(DEALS[0]),journal:MobileSaveJournal.read('contact',DEALS[0].id),state:MobileEntry.state()}));
   try{
    await page.goto(origin+'/mobile.html?demo=1&review='+scenario+'&reset=1',{waitUntil:'domcontentloaded'});await view.locator('[data-ce="res"]').first().waitFor();
+   /* 예전 D(요청 체크 상자) = 끄기 경로. v5 결과 화면은 verify-mobile-v5-result */
+   await page.evaluate(()=>{G.mobileV5Off=true;closeSheet();MobileEntry.open();});await view.locator('[data-ce="res"]').first().waitFor();
    await body({page,view,connected,save,saved,failed,read});
    assert.equal(await page.locator('#scr .mv-now,#scr .mh-hub,#scr .mh-filter,#scr .flow-strip').count(),0,'retired surfaces stay absent');assert.deepEqual(errors,[]);assert.deepEqual(networkWrites,[]);checks.push(name);
   }finally{await context.close();}

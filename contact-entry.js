@@ -76,7 +76,9 @@
   }
   if(mode==='none'&&!reason&&!out.attempt){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
   out.reason=mode==='none'?reason:'';
-  out.note=note(ch,res,memo,out.reason)+(postpone?' [기한 변경 요청] 원래 '+postpone.from+' | 새 '+postpone.to+' | 사유 '+postpone.reason:'');
+  /* 모바일 v5 '다시 연락' 칩(연락 시도에만): 시각은 업무에 저장하지 않으므로 기록 글에 남긴다 */
+  const retryAt=out.attempt&&S.retry?String(S.retry).trim().slice(0,20):'';
+  out.note=note(ch,res,memo,out.reason)+(retryAt?' · 다시 연락 '+retryAt:'')+(postpone?' [기한 변경 요청] 원래 '+postpone.from+' | 새 '+postpone.to+' | 사유 '+postpone.reason:'');
   const type=/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화';
   if(mode==='new'){
    out.completeCurrent=false;
