@@ -23,7 +23,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      deal('33333333-3333-4333-8333-333333333333','[인천] 실주 현장','이필선','lost',{outcome:'lost',grp:'수주 실패',closed_at:T('2026-10-12'),closed:'2026-10-12',stage_contexts:{lost:{fields:{close_reason:'가격',close_detail:'확인'}}}}),
      deal(D4,'[서울] 직접 수주 예정 현장','이필선','bidding',{brand:'POUR솔루션',stage_contexts:{bidding:{fields:{bid_deadline:'2026-11-10',bid_terms:'일반'}}}})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__contracts=[{deal_id:D2,brand:'석민이앤씨',sales_owner_name:'이필선',balance:5e8,events:[{kind:'signed',effective_date:'2026-10-10',amount_delta:5e8}]}];ContractSalesData.state=()=>({status:'ready',items:__contracts});ContractSalesData.entries=(f={})=>__contracts.filter(r=>(!f.owner||f.owner==='전체'||r.sales_owner_name===f.owner)&&(!f.brand||f.brand==='전체'||r.brand===f.brand));
    /* 서버 흉내: sql/deal-win-type-v1 의 규칙. advisory = 예전부터 확정돼 있던 기술자문 낙찰 1건(기술자문료만 입력됨) */

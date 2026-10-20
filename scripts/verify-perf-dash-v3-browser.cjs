@@ -33,7 +33,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     inquiries:[inq(1,'[경기 고양] 계약 B','황윤선','2026-08-02T10:00:00+09:00',{responded_at:'2026-08-02T11:00:00+09:00',raw:{'유입경로':'전화'}}),inq(2,'[서울] 미배정 문의','','2026-10-07T08:00:00+09:00',{raw:{'유입경로':'전화'}}),inq(3,'[부산] 범위 밖','','2026-08-06T10:00:00+09:00',{status:'종결',close_reason:'기타 종결 — 배드핏(부적합) · 공사 범위 밖 · 이전 상태: 접수',raw:{'유입경로':'홈페이지'}}),inq(4,'[경기] 첫 연락 지연','이필선','2026-10-06T09:00:00+09:00'),
      ...[5,6,7,8].map((n,i)=>inq(n,'[경기] 경로 '+n,'이필선','2026-07-0'+(i+1)+'T09:00:00+09:00',{raw:{'유입경로':['채널톡','네이버 검색','지인 소개','전단'][i]}}))],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    OPS_RULES.dashMinClosed=3;/* 종료 3건부터 메이드율 판단(기본 5건 — 설정값) */
    const ev=(id,k,n,o,b)=>({deal_id:id,brand:b,sales_owner_name:o,site_name:id,events:[{kind:'signed',effective_date:k,amount_delta:n}]});

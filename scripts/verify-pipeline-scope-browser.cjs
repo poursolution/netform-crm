@@ -35,7 +35,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     deal('w1','won','이필선',{grp:'수주 성공',closed_at:'2026-06-10',won_amount:2e8}),
     deal('x1','lost','황윤선',{grp:'수주 실패',closed_at:'2026-07-01'})],
     inquiries:[],activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
   });
   await setup();
