@@ -676,9 +676,11 @@
   const PSC=root.PipelineScope,lg=x=>!!(PSC&&PSC.on()&&PSC.isLegacy(x)),open=rel.filter(x=>root.isOpen(x)&&!lg(x)),past=rel.length-open.length;
   const addr=baseVal(d,'addr'),inflow=baseVal(d,'inflow'),site=[addr,inflow?inflow+' 유입':''].filter(Boolean).join(' · ');
   const sib=open.length?'<section class="dv8-sec"><span class="dv8-k">같은 현장 진행 '+(open.length+1)+'건</span>'+open.map(x=>{const w=root.dealWorkSummary(x);return '<button type="button" class="dv8-sib" data-dv3="rel" data-id="'+attr(x.id)+'">'+h((w&&!/미분류|미기록/.test(w)?w:root.stageLabel(root.dealStage(x)))+' · '+(root.repN(x.assignee)||'미배정'))+' ›</button>';}).join('')+'</section>':'';
+  /* 2026-10-20 대표 "해당 단지 중복 영업은 그전 것이 훨씬 낫다" — 같은 단지 영업은 예전 '이 단지 영업 이력' 상자(site-history.js: 지금 영업건 / 지난 영업 n · 수주 완료 줄 · 줄마다 날짜 · 결과 · 금액 · 공종 · 담당 · 누르면 그 건)를 왼쪽에 그대로 — 줄인 '지난 영업 n건 ›' · '같은 현장 진행' 단추는 끄기(G.dv8SiteCompact) 뒤에만 */
+  const SH=root.SiteHistory;let sh='';if(SH&&SH.enabled()&&!root.G.dv8SiteCompact){try{sh=SH.html(d,closed)||'';}catch(e){sh='';}}
   return '<div class="dv8-left"><section class="dv8-sec"><span class="dv8-k">누구와 이야기하나</span>'+who+'<div class="dv8-dec"><span>결정</span><span class="'+(decOk?'':'none')+'">'+h(decOk?dec:'미확인')+'</span></div></section>'
-   +'<section class="dv8-sec"><span class="dv8-k">이 현장</span>'+(site?'<span class="dv8-site">'+h(site)+'</span>':'')+(past?'<button type="button" class="lnk dv8-past" data-dv3="p7" data-v="site">이 단지 지난 영업 '+past+'건 ›</button>':'<span class="dv8-sub">이 단지 첫 영업</span>')+'</section>'
-   +sib+'<i class="dv8-gap"></i>'
+   +'<section class="dv8-sec"><span class="dv8-k">이 현장</span>'+(site?'<span class="dv8-site">'+h(site)+'</span>':'')+(sh?'':(past?'<button type="button" class="lnk dv8-past" data-dv3="p7" data-v="site">이 단지 지난 영업 '+past+'건 ›</button>':'<span class="dv8-sub">이 단지 첫 영업</span>'))+'</section>'
+   +(sh?'<div class="dv8-sth">'+sh+'</div>':sib)+'<i class="dv8-gap"></i>'
    +'<nav class="dv8-links" aria-label="배경 정보"><button type="button" data-dv3="p7" data-v="people">연락처 · 관계자</button><button type="button" data-dv3="p7" data-v="site">현장 정보</button><button type="button" data-dv3="p7" data-v="files">자료</button>'+(closed?'':'<button type="button" data-dv3="hadd">이력 추가</button>')+'</nav></div>';
  }
  /* 왼쪽 링크가 여는 가운데 패널 — 예전 왼쪽 구역(연락처 · 기본 정보 · 이 단지 이력 · 자료)을 그대로 옮겨 그린다(기능 · 저장 길 같음) */
