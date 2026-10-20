@@ -35,10 +35,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.evaluate(()=>document.getElementById('ptitle').textContent),'문자 · 캠페인');
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸 · 진단 숫자 3개 · 사유 · 할 일 · 왜 못 보내나 */
   assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 13','지금 보낼 때 · 병목 4','시즌 · 정기 관계 6','재활성 3']);
-  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*\d+묶음[\s\S]*발송 가능\s*\d+명[\s\S]*이번 달 발송\s*0건\s*예약 0 · 실패·확인 0/);
+  assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*\d+묶음[\s\S]*발송 가능 \(서로 다른 연락처\)\s*\d+명[\s\S]*이번 달 발송\s*0건\s*예약 0 · 실패·확인 0/);
   assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['현장 · 담당','현재 상황','걸린 사유 · 경과',''],'줄 = 파이프라인 v11 4칸');
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
-  assert.ok(reasons[0]==='병목 묶음 · 한 번도 안 보냄'||reasons[0]==='대상 있음 · 발송 가능 0명',JSON.stringify(reasons));
+  assert.ok(reasons[0]==='병목 묶음 · 한 번도 안 보냄'||reasons[0]==='발송 조건 미충족 · 가능 0명',JSON.stringify(reasons));
   assert.ok(reasons.includes('자동 제외 대상 있음'),JSON.stringify(reasons));
   assert.match(await v.locator('.sb-why').innerText(),/왜 못 보내나[\s\S]*문자 수신동의 없음 1명[\s\S]*휴대폰번호 없음 1명/);
   /* 묶음 줄: 자료 발송 후 무응답 = 대상 3 · 가능 1 · 발송 기록 없음 → 빨강 '한 번도 안 보냄' */
@@ -48,7 +48,13 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.ok(order.indexOf('sent')<order.indexOf('yearend'),'빨강(병목) 먼저 '+JSON.stringify(order));
   assert.equal(await v.locator('.psb-row').count(),13,'묶음 13개');
   assert.match(await v.locator('.psb-row[data-key="yearend"]').innerText(),/연말 인사[\s\S]*시즌 · 전체 · 시즌 인사[\s\S]*(12월 15일|지남)/);
-  if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
+  /* 2026-10-20 four_menus 4: 대상 없는 묶음 = '대상 없음'(보내기 창 안 열림) · 동의 필요 명단 = 못 보내는 사람 + 영업건 열기(보내지 않음) · 묶음 합 ≠ 서로 다른 연락처 */
+  {const empty=await v.locator('.psb-row').evaluateAll(a=>a.filter(n=>/대상 없음/.test(n.innerText)).map(n=>n.dataset.key));assert.ok(empty.length>0,'대상 없는 묶음이 있다');
+   const eb=v.locator('.psb-row[data-key="'+empty[0]+'"] [data-sb="act"]');assert.equal(await eb.innerText(),'대상 없음');await eb.click();await page.waitForTimeout(200);assert.equal(await page.locator('#smsDialog.on').count(),0,'대상 없는 묶음은 문구 작성으로 들어가지 않는다');
+   await page.evaluate(()=>SmsB.open('sent','consent'));await page.waitForTimeout(150);const cd=page.locator('#smb-consent .smb-dlg');assert.equal(await cd.count(),1,'동의 필요 명단');
+   assert.match(await cd.locator('header').innerText(),/보낼 수 없는 2명/);assert.equal(await cd.locator('.smb-row').count(),2);assert.match(await cd.innerText(),/문자 수신동의 없음[\s\S]*휴대폰번호 없음|휴대폰번호 없음[\s\S]*문자 수신동의 없음/);
+   assert.deepEqual(await page.evaluate(()=>__writes.map(w=>w[0])),[],'명단을 열어도 발송 요청 없음');await cd.locator('[data-smc="close"]').click();await page.waitForTimeout(100);assert.equal(await page.locator('#smb-consent').count(),0);
+   assert.match(await v.locator('.ps3-kpis').innerText(),/서로 다른 연락처 \d+명 중 · 묶음 합 \d+명\(겹침 포함\)/);}  if(shot)await page.screenshot({path:shot+'-list.png',fullPage:true});
   /* 막대 칸 · 보드 · 머리 버튼 */
   await v.locator('.ps3-tabs .ps3-tab').nth(3).click();await page.waitForTimeout(150);assert.equal(await page.locator('#sms-b .psb-row').count(),3);
   await page.locator('#sms-b [data-sb="clear"]').click();await page.waitForTimeout(150);

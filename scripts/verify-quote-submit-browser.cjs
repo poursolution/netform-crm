@@ -30,7 +30,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     return {data:{ok:true,tasks:[],entries:[],sites:[],requests:[],links:[],rows:[],advisory:[]}};}};TOKEN='test';
    window.__open=async(i)=>{try{closeDetail();}catch(e){}await DealWin.load();drwDeal(JSON.stringify(B.deals[i]));detailTabFocus('현장·견적');};
   });
-  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView [data-dv3="files"]');await page.waitForTimeout(500);if(await page.locator('#detailView .dv3-fadd').count()===0)await page.click('#detailView [data-dv3="files"]');await page.waitForSelector('#detailView .dv3-fadd');};
+  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView [data-dv3="files"],#detailView .dv8-links [data-v="files"]');await page.waitForTimeout(500);if(await page.locator('#detailView .dv3-fadd').count()===0)await page.click(await page.locator('#detailView .dv8-links [data-v="files"]').count()?'#detailView .dv8-links [data-v="files"]':'#detailView [data-dv3="files"]');/* 지금 응대 중심: 자료 = 왼쪽 링크 → 가운데 패널 */await page.waitForSelector('#detailView .dv3-fadd');};
   /* ① 최신 견적에 [제출금액 만들기] */
   await open(0);const P=page.locator('#detailView .dv3-files');
   assert.equal(await P.locator('button[data-v="submit"]').count(),1);assert.equal(await P.locator('button[data-v="quote"]').count(),1,'기존 + 견적 버전 단추는 그대로');

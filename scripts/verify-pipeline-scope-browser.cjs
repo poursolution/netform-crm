@@ -35,7 +35,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     deal('w1','won','이필선',{grp:'수주 성공',closed_at:'2026-06-10',won_amount:2e8}),
     deal('x1','lost','황윤선',{grp:'수주 실패',closed_at:'2026-07-01'})],
     inquiries:[],activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
   });
   await setup();
@@ -77,7 +77,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await L.locator('.plg-row[data-key="l1"]>button').click();await page.waitForSelector('#detailView.dv3 .dv3-move:not([hidden])',{timeout:5000});
   const D=await page.evaluate(()=>{const v=document.getElementById('detailView'),t=s=>{const n=v.querySelector(s);return n?n.innerText.replace(/\s+/g,' ').trim():'';};
    return {legacy:v.classList.contains('dv3-legacy'),badge:t('.dv3-stagebadge'),sub:t('.dv3-subrow .tx'),mv:t('.dv3-headact .mv'),band:t('.dv3-move .hd'),steps:getComputedStyle(v.querySelector('.ddv-steps')||v).display,
-    stages:[...v.querySelectorAll('.dv3-moves [data-stage]')].map(b=>[b.textContent.trim(),b.classList.contains('cur'),b.getAttribute('aria-disabled')==='true']),now:t('.dvs-task .dvs-tt>b')+' | '+t('.dvs-task .dvs-aux'),btn:t('.dvs-task .dvs-primary')};});
+    stages:[...v.querySelectorAll('.dv3-moves [data-stage]')].map(b=>[b.textContent.trim(),b.classList.contains('cur'),b.getAttribute('aria-disabled')==='true']),now:(t('.dvs-task .dvs-tt>b')||t('.dv8-now>b'))+' | '+t('.dvs-task .dvs-aux')/* 지금 응대 중심: 할 일 = 가운데 위 한 줄 */,btn:t('.dvs-task .dvs-primary')};});
   await shot('resume');
   assert.equal(D.legacy,true);assert.equal(D.badge,'과거 이관 · 분류 전');assert.match(D.sub,/예전 단계 검증된 고객$/);assert.doesNotMatch(D.sub,/컨설팅|일째/);
   assert.equal(D.mv,'영업 재개 ▴');assert.match(D.band,/^영업 재개 — 어느 단계로 올릴까요\? 단계 · 다음 행동 · 날짜를 정하면 그때부터 진행 건이 됩니다$/);

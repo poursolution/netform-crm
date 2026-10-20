@@ -75,8 +75,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await d.locator('.xdv-facts dt').allInnerTexts(),['현재 담당','당시 영업','계약일','준공일','공종','수주 금액']);
   assert.equal(await d.locator('.xdv-facts dd.xdv-warn').count(),1,'빈 값(계약일)은 주황');
   assert.deepEqual(await d.locator('.xdv-c2 .idv-bubble').allInnerTexts(),['준공 완료 → 확장관리 대상으로 등록 / 추천: 지하주차장 · 재도장','관리소장 통화 — 하자 없음']);
-  assert.match(await d.locator('.xdv-now').innerText(),/지금 할 일[\s\S]*하자 점검 · 타공종 확인 통화[\s\S]*5일 뒤[\s\S]*전화[\s\S]*문자[\s\S]*카카오[\s\S]*접촉 · 니즈 기록/);
-  assert.match(await d.locator('.xdv-signal').innerText(),/다음 영업 신호[\s\S]*지하주차장 · 재도장[\s\S]*준공 후 60일/);
+  assert.match(await d.locator('.xdv-now').innerText(),/지금 할 일[\s\S]*기존 연락 기록 확인 → 없으면 사후 연락[\s\S]*5일 뒤[\s\S]*접촉 · 니즈 기록/);
+  assert.match(await d.locator('.xdv-signal').innerText(),/시스템 추천 · 고객 확인 전[\s\S]*지하주차장 · 재도장[\s\S]*추천만으로 새 영업건을 만들지 않음/);
   assert.deepEqual(await d.locator('.ddv-stages button').allInnerTexts(),['관리대상','유지접촉','니즈 확인','보류']);
   if(shot)await page.screenshot({path:shot+'-detail.png'});
   /* 기록 = 기존 서버 함수, 서버 확인 뒤 대화에 쌓임 */

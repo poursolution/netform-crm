@@ -36,7 +36,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      inq(14,'[경기] 응대 중 7일 넘게 연락 없음','황윤선','2026-09-20T10:00:00+09:00',{responded_at:'2026-09-21T10:00:00+09:00'}),
      inq(15,'[서울] 미배정 문의','','2026-10-07T08:00:00+09:00')],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    ContractSalesData.state=()=>({status:'ready',items:[]});
    window.__opened=[];drwDeal=s=>__opened.push(JSON.parse(s).id);drwInq=s=>__opened.push(JSON.parse(s).id);

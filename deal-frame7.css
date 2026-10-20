@@ -218,3 +218,96 @@
 #detailView.ddv.dv3.dvt.dv7r .dv7-ifxwrap .ifx{margin:0;border-left-width:3px}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pair{display:flex;gap:8px;flex-wrap:wrap}
 #detailView.ddv.dv3.dvt.dv7r .dv7-pair>.dv7-in{flex:1 1 160px;max-width:240px;height:32px}
+
+/* ── 지금 응대 중심(2026-10-20 design_handoff_pipeline_7stage_rules · 시안 '파이프라인 상세 · 지금 응대 중심') — 끄기 G.dealRespondOff ── */
+/* 상단 단계 표시 = 견적문의 상세와 같은 칸 띠 · 6칸(5단계 + 수주 | 실주) */
+#detailView.dv7 .dv3-subrow>.dv8-steps,#detailView.ddv.dv3.dvt.dv7 .dv3-subrow>.dv8-steps{order:12;flex:1 0 100%;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:8px 0 2px;min-width:0}
+#detailView.dv7 .dv8-steps>div{border-radius:9px;padding:8px 12px;background:#f3f4f6;color:#9ca3af;display:flex;flex-direction:column;gap:1px;min-width:0}
+#detailView.dv7 .dv8-steps>div>b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView.dv7 .dv8-steps>div>span{font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#detailView.dv7 .dv8-steps>.done{color:#15171c}
+#detailView.dv7 .dv8-steps>.cur{background:#3b6ce4;color:#fff}
+/* 왼쪽 = 배경만 */
+#detailView.dv8 .dv8-left{display:flex;flex-direction:column;gap:16px;min-height:100%;box-sizing:border-box}
+#detailView.dv8 .dv8-sec{display:flex;flex-direction:column;gap:6px;min-width:0}
+#detailView.dv8 .dv8-sec+.dv8-sec{border-top:1px solid #eef0f3;padding-top:14px}
+#detailView.dv8 .dv8-k{font-size:11.5px;color:#9ca3af}
+#detailView.dv8 .dv8-n{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+#detailView.dv8 .dv8-n b{font-size:14px}
+#detailView.dv8 .dv8-n span{font-size:12px;color:#6b7280}
+#detailView.dv8 .dv8-tel{font-size:13.5px;color:#15171c}
+#detailView.dv8 .dv8-tel.none,#detailView.dv8 .dv8-none{color:#9ca3af;font-size:12.5px}
+#detailView.dv8 .dv8-chg{font-size:12px;color:#b42318}
+#detailView.dv8 .dv8-dec{display:flex;align-items:baseline;gap:6px;font-size:12.5px}
+#detailView.dv8 .dv8-dec>span:first-child{color:#6b7280}
+#detailView.dv8 .dv8-dec>span.none{color:#9ca3af}
+#detailView.dv8 .dv8-site{font-size:13px;overflow-wrap:anywhere}
+#detailView.dv8 .dv8-sub{font-size:12.5px;color:#6b7280}
+#detailView.dv8 .dv8-left .lnk{border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;box-shadow:none;font:inherit;font-size:12.5px;font-weight:600;color:#2a52b8;cursor:pointer;text-align:left}
+#detailView.dv8 .dv8-sib{border:1px solid #e3e6ec;background:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer;color:#15171c;height:auto;min-height:0;width:auto;margin:0;box-shadow:none}
+#detailView.dv8 .dv8-gap{flex:1}
+#detailView.dv8 .dv8-links{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-wrap:wrap;gap:6px 12px}
+#detailView.dv8 .dv8-links button{border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;box-shadow:none;font:inherit;font-size:12px;color:#2a52b8;cursor:pointer}
+/* 왼쪽 배경 칸에는 PC 전화 · 문자 버튼을 그리지 않는다(left8) — [연락처 · 관계자] 패널 안 버튼은 그대로(문자 창 진입 유지) */
+/* 가운데 = 고객 요청 · 연 업무 하나 · 응대 이력 */
+#detailView.dv8 .dv8-req{flex:none;padding:14px 20px;border-bottom:1px solid #eef0f3;display:flex;flex-direction:column;gap:6px;background:#fff}
+#detailView.dv8 .dv8-req .hd{display:flex;align-items:baseline;gap:8px}
+#detailView.dv8 .dv8-req .hd b{font-size:13px}
+#detailView.dv8 .dv8-req .hd i{flex:1}
+#detailView.dv8 .dv8-req .lnk{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;color:#2a52b8;cursor:pointer;height:auto;min-height:0;width:auto;margin:0;box-shadow:none}
+#detailView.dv8 .dv8-req .t{font-size:15px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
+#detailView.dv8 .dv8-req .l{font-size:12px;color:#6b7280}
+#detailView.dv8 .dv8-req .o{margin:0;max-height:160px;overflow:auto;white-space:pre-wrap;font-size:12.5px;line-height:1.55;color:#374151;background:#f8f9fb;border-radius:8px;padding:8px 10px}
+#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-drawer{position:static;flex:none;overflow:visible;background:#fcfcfd;border-bottom:1px solid #eef0f3}
+#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-phead{position:static;background:transparent;border-bottom:0}
+#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-phead>.t{padding:14px 20px 0}
+#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-phead>.t>b{font-size:14px}
+#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-drawer[data-p="people"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-drawer[data-p="site"] .dv7-pbody>.dv7-fill,#detailView.ddv.dv3.dvt.dv7r.dv8 .dv7-drawer[data-p="files"] .dv7-pbody>.dv7-fill{display:block!important}
+#detailView.dv8.dv7p #ddvComposer{display:none!important}/* 업무 · 패널이 열려 있으면 일반 응대 입력은 같이 띄우지 않는다 */
+#detailView.dv8 .dv8-pn{display:flex;flex-direction:column;gap:14px}
+#detailView.dv8 .dv8-pn>section{border:0;padding:0;margin:0}
+#detailView.dv8 .dv8-rcv{font-size:12px;color:#9ca3af;margin-left:8px}
+#detailView.dv8 .dv8-rcv::after{content:' ·';margin-right:4px}
+#detailView.dv8 .dv8-q{font-size:12.5px;font-weight:700;color:#15171c}
+#detailView.dv8 .dv8-q small{font-weight:500;color:#9ca3af;margin-left:4px}
+#detailView.dv8 .dv8-work>section{display:flex;flex-direction:column;gap:6px}
+#detailView.dv8 .dv8-cand{display:flex;align-items:center;gap:10px;border:1px solid #e3e6ec;border-radius:9px;padding:9px 12px;background:#fff;width:100%;text-align:left;font:inherit;cursor:pointer;height:auto;min-height:0;margin:0;box-shadow:none;color:#15171c}
+#detailView.dv8 .dv8-cand[aria-pressed="true"]{border-color:#3b6ce4;box-shadow:0 0 0 1px #3b6ce4 inset}
+#detailView.dv8 .dv8-cand>span{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+#detailView.dv8 .dv8-cand b{font-size:13px;font-weight:500;overflow-wrap:anywhere}
+#detailView.dv8 .dv8-cand small{font-size:11.5px;color:#6b7280}
+#detailView.dv8 .dv8-cand em{flex:none;font-style:normal;font-size:11.5px;font-weight:700;border-radius:5px;padding:2px 7px;white-space:nowrap}
+#detailView.dv8 .dv8-cand em.k-ok{color:#1f7a4d;background:#e8f6ee}
+#detailView.dv8 .dv8-cand em.k-promise{color:#6b7280;background:#f3f4f6}
+#detailView.dv8 .dv8-cand em.k-chk{color:#2a52b8;background:#eef3fe}
+#detailView.dv8 .dv8-none{margin:0}
+#detailView.dv8 .dv8-dates{display:flex;flex-direction:column;gap:4px}
+#detailView.dv8 .dv8-dates>div{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+#detailView.dv8 .dv8-dates span{color:#6b7280}
+#detailView.dv8 .dv8-dates b{font-weight:600}
+#detailView.dv8 .dv8-dates b.none{color:#9ca3af;font-weight:500}
+/* 오른쪽 = 무슨 상황인가 */
+#detailView.dv8 .dvs-task .dv8-lb{font-size:11.5px;font-weight:700;color:#6b7280}
+#detailView.dv8 .dvs-task .dv8-sit{display:block;font-size:15px;line-height:1.45;margin:2px 0 4px;color:#15171c;overflow-wrap:anywhere}
+#detailView.dv8 .dvs-task .dv8-due{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:8px 0;border-top:1px solid #eef0f3}
+#detailView.dv8 .dvs-task .dv8-due>span{color:#6b7280}
+#detailView.dv8 .dvs-task .dv8-due>b{font-weight:600;text-align:right}
+#detailView.dv8 .dvs-task .dv8-due>b.red{color:#b42318}
+#detailView.dv8 .dvs-task .dv8-due>b.blue{color:#2a52b8}
+#detailView.dv8 .dvs-task .dv8-due>b.green{color:#1f7a4d}
+#detailView.dv8 .dvs-task .dv8-due>b.gray{color:#6b7280}
+#detailView.dv8 .dvs-task .dv8-seq{display:flex;flex-direction:column;gap:6px;font-size:12.5px;padding:8px 0;border-top:1px solid #eef0f3}
+#detailView.dv8 .dvs-task .dv8-seq>div{display:flex;gap:8px;align-items:flex-start;color:#6b7280}
+#detailView.dv8 .dvs-task .dv8-seq i{flex:none;width:18px;height:18px;border-radius:50%;background:#eef0f3;color:#6b7280;font-size:11px;font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center}
+#detailView.dv8 .dvs-task .dv8-seq .cur i{background:#3b6ce4;color:#fff}
+#detailView.dv8 .dvs-task .dv8-seq .cur span{color:#15171c;font-weight:700}
+#detailView.dv8 .dvs-task .dv8-seq .done i{background:#15171c;color:#fff}
+#detailView.dv8 .dvs-task .dv8-next{display:flex;align-items:baseline;gap:8px;border-top:1px solid #eef0f3;padding-top:10px;font-size:12.5px}
+#detailView.dv8 .dvs-task .dv8-next>span{color:#6b7280;flex:none}
+#detailView.dv8 .dvs-task .dv8-next>b{flex:1;font-weight:500;text-align:right;overflow-wrap:anywhere}
+#detailView.dv8 .dvs-task .dv8-next>b.pend,#detailView.dv8 .dvs-task .dv8-next>b.none{color:#6b7280}
+#detailView.dv8 .dvs-task .dv8-next>b.red{color:#b42318}
+#detailView.dv8 .dvs-task .dv8-next .lnk{flex:none;border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;box-shadow:none;font:inherit;font-size:12px;font-weight:700;color:#2a52b8;cursor:pointer}
+#detailView.dv8 .dvs-task .dv8-open{margin-top:10px;width:100%}#detailView.dv8 .dv8-now{flex:none;padding:12px 20px;border-bottom:1px solid #eef0f3;background:#fcfcfd;display:flex;flex-direction:column;gap:3px}
+#detailView.dv8 .dv8-now>b{font-size:14px;color:#15171c;overflow-wrap:anywhere}
+#detailView.dv8 .dv8-now>span{font-size:12px;color:#6b7280;overflow-wrap:anywhere}

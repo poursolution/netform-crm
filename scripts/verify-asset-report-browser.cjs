@@ -58,7 +58,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const nums=await v.locator('.ac-num').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
   assert.deepEqual(nums.map(n=>n[0]),['누적 수주 (전 단지)','현재 영업기회','과거 검토 금액','현재 위험 금액']);
   const eok=s=>{const m=/([\d.]+)억/.exec(s);return m?Number(m[1]):/만/.test(s)?0.01:0;};
-  assert.match(nums[1][2],/^\d+건 · 파이프라인과 같은 숫자$/);assert.match(nums[2][2],/^\d+건 · 이관 · 미정리 · 위험 판정은 정리 후$/);assert.equal(nums[3][2],'현재 영업기회 중 기한 초과 · 원인 확인 필요 단지');
+  assert.match(nums[1][2],/^\d+건 · 대시보드와 (대조 · 차이 없음|\d+건 차이 · 아래 대조 목록)$/);assert.match(nums[2][2],/^\d+건 · 이관 · 미정리 · 위험 판정은 정리 후$/);assert.equal(nums[3][2],'현재 영업기회 중 기한 초과 · 원인 확인 필요 단지');
   assert.ok(eok(nums[3][1])<=eok(nums[1][1]),'현재 위험 금액 ≤ 현재 영업기회 · '+nums[3][1]+' / '+nums[1][1]);
   const sp=await v.locator('.ac-split>div').first().innerText();
   assert.match(sp.replace(/\s+/g,' '),/^반복 실주 2곳 · 원인 확인 필요 1 관계위험 · 원인 = 관계 · 소장 변경으로 입력된 곳만 1 /,'반복 실주 2곳 · 원인 미입력 1 · 관계 · 소장 변경 1: '+sp);

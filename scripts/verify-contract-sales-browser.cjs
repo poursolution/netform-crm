@@ -14,7 +14,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
    window.__contract={deal_id:event.deal_id,sales_owner:event.sales_owner,sales_owner_name:'황윤선',site:B.deals[0].site,brand:'POUR솔루션',version:1,balance:300000000,events:[event]};
    window.__requests=[];SB={rpc:async(name,p)=>{__requests.push(name);if(name==='crm_contract_sales_read_v2')return {data:{ok:true,policy:ContractSalesLedger.POLICY,items:[__contract],has_more:false}};throw new Error('unexpected write '+name)}};
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
-   G.year='2026';G.quarter=0;G.rep='전체';goPage('dash');G.insights.year='2026';G.insights.month=9;await ContractSalesData.refresh();paint();
+   G.dashVisOff=true;G.year='2026';G.quarter=0;G.rep='전체';goPage('dash');G.insights.year='2026';G.insights.month=9;await ContractSalesData.refresh();paint();
   });
   const amount=()=>page.locator('.apage.on .contract-sales-totals strong').last().innerText();
   assert.equal(await page.locator('#si-dash [data-value="contract"]').count(),2);assert.match(await page.locator('#si-dash [data-value="contract"]').first().innerText(),/매출[\s\S]*계약금액 기준/);

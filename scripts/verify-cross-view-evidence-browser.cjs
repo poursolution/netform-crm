@@ -31,8 +31,8 @@ const srv=http.createServer((req,res)=>{const p=path.resolve(root,'.'+decodeURIC
   const w=PipelineStageB.CFG.won.calc({...r,item:MAKE('won','won'),code:'won'},{},q);
   const cx={P:{a:'2026-01-01',b:'2027-01-01'},L:{rows:[]},pt:{list:[{brand:'POUR솔루션',company:'검증업체',signedCount:1,amount:100,revenue:20,revKnown:true},{brand:'POUR솔루션',company:'검증업체',signedCount:1,amount:200,revenue:0,revKnown:false}]},tf:{list:[]}};
   const matrix=DashB.lib.matrixRows(cx)[0];return {lost:l.bucket,missing:l.rs,won:w.missing,matrix};});
- assert.equal(data.lost,'nore');assert.ok(data.missing.includes('relist'));assert.deepEqual(data.won,{type:true,amount:false,company:true});
+ assert.equal(data.lost,'rec');assert.ok(!data.missing.includes('relist'));/* 2026-10-20 7stage_rules: 재영업 '미정'도 고른 값 그대로 기록 완료 */assert.deepEqual(data.won,{type:true,amount:false,company:true});
  assert.equal(data.matrix.amt,300);assert.equal(data.matrix.ratioAmount,100);assert.equal(data.matrix.ratioRevenue,20);assert.equal(data.matrix.unknown,1);
- await page.evaluate(()=>PipelineWorkspace.open('lost'));const V=page.locator('#pipeline-stage-v3');assert.match(await V.locator('.ps3-kpis').innerText(),/결과 정보 보완\s*1건/);
+ await page.evaluate(()=>PipelineWorkspace.open('lost'));const V=page.locator('#pipeline-stage-v3');assert.match(await V.locator('.ps3-kpis').innerText(),/결과 정보 보완\s*0건/);/* 미정 = 기록 완료 */
  assert.equal(await page.evaluate(()=>JSON.stringify(B)),before);assert.deepEqual(errors,[]);console.log('cross-view evidence browser ok');
 }finally{await browser.close();srv.close();}})().catch(e=>{console.error(e);process.exit(1);});

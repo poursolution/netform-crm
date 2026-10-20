@@ -20,13 +20,16 @@
  const ymd=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
  const workOf=r=>{const s=r.sourceWorkSummary||'';if(s&&!/미분류|미기록/.test(s))return s;try{const w=root.dealWorkSummary(dealOf(r));return w&&!/미분류|미기록/.test(w)?w:'';}catch(e){return '';}};
  const unclassified=r=>!workOf(r);
- const CFG={id:'expansion-b',name:'확장관리',unit:'건',stallUnit:'D+',stallName:'준공 후',stallDesc:'준공 뒤 지난 일수',listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
+ const NODATE=-99999;
+ const CFG={id:'expansion-b',name:'확장관리',unit:'건',stallUnit:'',stallName:'다음 접촉일',stallDesc:'다음 접촉일 기준',
+  stallFmt:n=>n===NODATE?'다음 접촉일 미지정':n>0?'다음 접촉 '+n+'일 지남':n===0?'다음 접촉 오늘':'다음 접촉 '+(-n)+'일 뒤',
+  kpi3:inB=>{const live=inB.filter(i=>i.bucket!=='hold'),nod=live.filter(i=>i.stall===NODATE).length;return ['다음 접촉일 미지정',nod+'건','날짜 칸 = 다음 접촉일 · 준공 후 경과는 지연 아님'];},listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
   desc:()=>'준공 고객의 다음 매출 · 준공은 끝이 아니라 사후관리 → 재영업 — D+'+rules().after+' 사후 연락(만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지) → 니즈 확인 → 견적 확인 후 새 영업건 전환 · 관계는 '+Math.round(rules().wait/30)+'개월 1회',
   axis:'사후관리 진행',
   S:[['after','사후 연락 · 관계 유지','#15171c','준공 후 사후 연락 · 주기마다 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],
   RS:{defect:['하자 먼저 · 미해결 불만',RED,'하자 확인','미해결 하자 · 불만이 있으면 재영업 연락보다 하자 처리 확인이 먼저 — 해결로 기록되면 자동 해제(decision_collab ④)','source'],
       late:['다음 접촉일 지남',RED,'연락','다음 접촉일이 지난 고객 — 오늘 통화 후 접촉 · 니즈 기록 + 다음 접촉일','note'],
-      after30:['사후 연락 기록 확인 필요',RED,'사후 연락','만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지 소개를 확인하는 사후 통화','note'],
+      after30:['사후 연락 기록 확인 필요',INK,'기록 확인','기존 연락 기록부터 확인 — 없으면 만족도 · 하자 · 내년 공사 · 추가 공종을 확인하는 사후 통화(기록 미확인 ≠ 미실행)','note'],
       wait60:['관계 연락 주기 넘김',RED,'관계 연락','모든 수주 고객은 2개월 1회 관계 연락 · 입대의 · 관리소장 교체 여부 확인','note'],
       needwait:['니즈 확인 → 전환 대기',INK,'전환','확인한 니즈는 메모가 아니라 새 영업건 — 견적 발송 확인 후 전환','convert'],
       nocontact:['접촉 기록 없음',INK,'첫 접촉','하자 점검 통화 체크리스트(누수 · 균열 · 주차장)로 첫 접촉','note'],
@@ -57,9 +60,12 @@
    if(unclassified(r))rs.push('work');
    /* 계약금액 등 실적 · 계약 정보는 확장관리에서 고치지 않는다(2026-10-06 followup4 ② → 수주 화면) */
    if(!r.nextContactAt)rs.push('nonext');
+   /* 2026-10-20 four_menus 1: 기록 확인이 먼저인 건(준공일 · 공종 · 연락 기록 없음)은 '다음 접촉일 지남 · 오늘 통화'로 세지 않는다 — 상단 '실제 기한 초과 · 기록 확인 필요'와 같은 판정 */
+   if(kindOf(rs,!!r.completionDate).kind==='fix'){const k=rs.indexOf('late');if(k>=0)rs.splice(k,1);const w=rs.indexOf('wait60');if(w>=0)rs.splice(w,1);}
   }
-  const reasonText={after30:'사후 연락 기록 미확인 · 기준 D+'+q.after+' 넘김',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};
-  return {key:r.id,site:r.site||'현장명 확인 필요',brand:d.brand||'',owner:r.owner||'미배정',amount:r.wonAmount,amountText:r.wonAmount==null?'계약금액 미입력':undefined,bucket,sub,rs,reasonText,stall:cd===null?0:Math.max(0,cd),extra:{need,r}};
+  const reasonText={after30:'연락 기록 미확인 · 준공 D+'+q.after+' 사후 연락 대상',wait60:'연락 없음 '+(ld===null?'':ld+'일')+' · 기준 '+q.wait+'일',late:nd!==null&&nd<0?'다음 접촉일 '+Math.abs(nd)+'일 지남':''};
+  /* 날짜 칸 = 지금 업무의 기한(다음 접촉일) — 준공 후 경과일은 지연이 아니다. 정렬값: 지난 날 수(양수) · 남은 날(음수) · 미지정(맨 뒤) */
+  return {key:r.id,site:r.site||'현장명 확인 필요',brand:d.brand||'',owner:r.owner||'미배정',amount:r.wonAmount,amountText:r.wonAmount==null?'계약금액 미입력':undefined,bucket,sub,rs,reasonText,stall:nd===null?NODATE:-nd,extra:{need,r}};
  }
  function topHtml(s){
   const years=['전체',String(s.current),String(s.current-1),String(s.current-2),'이전'];

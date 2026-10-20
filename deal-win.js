@@ -1,6 +1,8 @@
 /* 수주 유형 (2026-10-04 디자인 핸드오프 'design_handoff_rules' 2-1 · 수주 처리 · 수주유형.dc.html)
    단계 바꾸기 → [수주]를 누르면 먼저 유형을 고른다: 직접 수주 / 협약시공사 수주 · 기술자문 / 타사 이관 수주.
-   실적 금액 = 낙찰금액(VAT 별도). 기술자문 계약금액 · POUR 계약금액은 더하지 않고 '연결 계약'으로 따로 저장한다.
+   낙찰금액(VAT 별도) = 수주 결과로 보존. 계약실적은 계약 체결일 · 확인된 공사 계약금액 기준(계약실적 원장)으로 따로 — 두 금액을 섞지 않는다(2026-10-20 design_handoff_pipeline_7stage_rules 5).
+   기술자문 계약금액 · POUR 계약금액은 더하지 않고 '연결 계약'으로 따로 저장한다.
+   이미 수주된 건에서 열면 '수주 정보 수정'(같은 영업건의 수주 정보만 고침 · 새 수주 · 실적 · 계약 단계 창 없음) — 신규 확정과 나눈다(같은 문서 2번).
    직접 수주의 실적은 계속 계약실적 원장(계약 체결일 기준)에서 읽는다 — 여기서는 유형 · 계약 업체를 남기고 계약 단계 창으로 이어 준다.
    협약시공사 수주에서 기술자문 발생 = 예 → 서버가 기술자문 관리 건을 자동으로 만든다(crm_deal_win_register_v1 — sql/deal-win-type-v1-20261004.sql).
    타사 이관 수주는 타사 이관 흐름(deal-transfer.js: 등록 → 낙찰결과 → 관리자 실적 인정)으로 이어 준다.
@@ -94,20 +96,26 @@
   openDlg(d);return true;
  }
  /* ── 수주 처리 창 ── */
+ /* 수정 = 이미 수주로 끝난 건이거나 수주 정보가 확정된 건. 끝난 수주 건의 확정 유형은 고정(바꾸려면 관리자가 확정을 거둔 뒤 다시 확정) — 진행 중 건은 타사 이관 흐름 등으로 유형을 바꿀 수 있다 */
+ const wonAlready=d=>{try{return !!(R.isWon&&R.isWon(d));}catch(e){return false;}};
+ const editOf=d=>{const w=of(d);return wonAlready(d)||!!(w&&w.win_status==='confirmed');};
  function openDlg(d){
   d=d||cur();if(!d||!available())return;attach();const w=of(d),T=DT(),t=T?T.of(d):null,type=t&&T.stateOf(d)!=='none'?'transfer':w&&w.win_status==='confirmed'?w.won_type:'own';
-  st().dlg={deal:String(d.id),done:null,err:'',busy:false,f:{type,
+  st().dlg={deal:String(d.id),done:null,err:'',busy:false,edit:editOf(d),lock:!!(w&&w.win_status==='confirmed'&&wonAlready(d)),f:{type,
    company:{own:w&&w.won_type==='own'?w.award_company:String(d.brand||''),partner_tech:w&&w.won_type==='partner_tech'?w.award_company:'',transfer:t?String(t.award_company||t.transfer_company||''):''},
    amount:w?String(Math.round(Number(w.award_amount))):t&&t.award_amount?String(Math.round(Number(t.award_amount))):'',date:w?String(w.award_date).slice(0,10):t&&t.award_date?String(t.award_date).slice(0,10):todayKey(),
    tech:w&&w.won_type==='partner_tech'?w.tech_advisory===true:true,tech_company:w&&w.tech_advisory_company||'',tech_touched:!!(w&&w.tech_advisory_company),tech_amount:w&&w.tech_advisory_amount?String(Math.round(Number(w.tech_advisory_amount))):'',pour_amount:w&&w.pour_contract_amount?String(Math.round(Number(w.pour_contract_amount))):''}};
   renderDlg();
  }
  function closeDlg(){st().dlg=null;document.getElementById('wn-dialog')?.remove();}
- function noteOf(f){
-  const a=Number(f.amount)>0?' '+comma(f.amount)+'원':'';
-  if(f.type==='own')return '실적 금액 = 낙찰금액'+a+'. 계약 · 시공 단계로 이어집니다.';
-  if(f.type==='partner_tech')return '실적 금액 = 낙찰금액'+a+'. '+(f.tech?'기술자문'+(Number(f.tech_amount)>0?' '+comma(f.tech_amount)+'원':'')+(Number(f.pour_amount)>0?' · POUR '+comma(f.pour_amount)+'원':'')+'은 더하지 않고 연결 계약으로 따로 저장합니다. 저장하면 기술자문 관리 건이 자동으로 생깁니다.':'기술자문 계약이 없으면 낙찰금액만 실적으로 남습니다.');
-  return '실적 금액 = 낙찰금액. 사전 보고된 이관 건만, 관리자 승인 후 실적에 들어갑니다.';
+ /* 5번 문구: 낙찰금액 = 수주 결과 · 계약실적 = 계약 체결일 · 확인된 공사 계약금액(원장) — 섞지 않는다 */
+ const CONTRACT_NOTE='계약실적은 계약 체결일 · 확인된 공사 계약금액 기준으로 따로 집계합니다.';
+ function noteOf(f,edit){
+  const a=Number(f.amount)>0?' '+comma(f.amount)+'원':'',head='낙찰금액'+a+'은 수주 결과(VAT 별도)로 남습니다. ';
+  const tail=edit?' 이 영업건의 수주 정보만 고칩니다 — 새 수주 · 실적은 생기지 않습니다.':'';
+  if(f.type==='own')return head+CONTRACT_NOTE+(edit?tail:' 계약 · 시공 단계로 이어집니다.');
+  if(f.type==='partner_tech')return head+(f.tech?'기술자문'+(Number(f.tech_amount)>0?' '+comma(f.tech_amount)+'원':'')+(Number(f.pour_amount)>0?' · POUR '+comma(f.pour_amount)+'원':'')+'은 더하지 않고 연결 계약으로 따로 저장합니다. 저장하면 기술자문 관리 건이 자동으로 생깁니다.':'기술자문 계약이 없으면 낙찰금액만 수주 결과로 남습니다.')+' '+CONTRACT_NOTE+tail;
+  return '낙찰금액은 수주 결과로 남습니다. 사전 보고된 이관 건만, 관리자 승인 후 실적에 들어갑니다.';
  }
  /* 타사 이관 수주: 지금 상태에 맞는 다음 걸음 [버튼 글자, 누를 수 있나, 사전 보고 줄] */
  function transferStep(d){
@@ -130,7 +138,7 @@
    foot='<button type="button" class="wn-dark" data-wn="close">닫기</button>';
   }else{
    const tp=f.type,isT=tp==='transfer',step=isT?transferStep(d):null;
-   body='<div class="wn-types">'+TYPES.map(([k,l,s])=>'<button type="button" data-wn="type" data-v="'+k+'" aria-pressed="'+(tp===k)+'"><span><i><u></u></i><b>'+h(l)+'</b></span><small>'+h(s)+'</small></button>').join('')+'</div>'
+   body='<div class="wn-types">'+TYPES.map(([k,l,s])=>'<button type="button" data-wn="type" data-v="'+k+'" aria-pressed="'+(tp===k)+'"'+(D.lock&&tp!==k?' disabled title="확정된 유형은 여기서 바꾸지 않습니다 — 관리자가 확정을 거둔 뒤 다시 확정"':'')+'><span><i><u></u></i><b>'+h(l)+'</b></span><small>'+h(s)+'</small></button>').join('')+'</div>'
     +'<div class="wn-form"><label>'+(tp==='own'?'계약 업체':'낙찰 시공사')+' *</label><input data-wn-f="company" maxlength="80" value="'+attr(f.company[tp])+'" placeholder="'+(tp==='own'?'예: 석민이앤씨':'예: 코지건설')+'">'
     +'<label>낙찰금액 *</label><div class="wn-amt wn-big"><input data-wn-f="amount" inputmode="numeric" value="'+attr(f.amount?comma(f.amount):'')+'" placeholder="0"><span>원 · VAT 별도</span></div>'
     +'<label>낙찰일 *</label><input type="date" data-wn-f="date" max="'+todayKey()+'" value="'+attr(f.date)+'">'
@@ -139,16 +147,17 @@
       +(f.tech?'<label>기술자문 계약</label><div class="wn-two"><input class="wn-co" data-wn-f="tech_company" maxlength="80" value="'+attr(f.tech_touched?f.tech_company:f.company.partner_tech)+'" placeholder="계약 상대" aria-label="기술자문 계약 상대"><input data-wn-f="tech_amount" inputmode="numeric" value="'+attr(f.tech_amount?comma(f.tech_amount):'')+'" placeholder="기술자문 계약금액" aria-label="기술자문 계약금액"><span>원</span></div>'
        +'<label>POUR 계약</label><div class="wn-amt"><input data-wn-f="pour_amount" inputmode="numeric" value="'+attr(f.pour_amount?comma(f.pour_amount):'')+'" placeholder="0" aria-label="POUR 계약금액"><span>원 · 선택</span></div>':''):'')
     +(isT?'<label>사전 보고</label><span>'+h(step[2])+' <small>관리자 승인 후 실적 반영</small></span>':'')+'</div>'
-    +'<div class="wn-note">'+h(noteOf(f))+'</div>';
-   foot='<button type="button" data-wn="close">취소</button>'+(w&&!isT&&w.won_type===tp&&admin()?'<button type="button" data-wn="undo"'+(D.busy?' disabled':'')+'>확정 거두기</button>':'')+'<button type="button" class="wn-dark" data-wn="save"'+(D.busy||(isT&&!step[1])?' disabled':'')+'>'+(D.busy?'저장 중…':isT?h(step[0]):'수주 확정')+'</button>';
+    +'<div class="wn-note">'+h(noteOf(f,D.edit))+'</div>';
+   foot='<button type="button" data-wn="close">취소</button>'+(w&&!isT&&w.won_type===tp&&admin()?'<button type="button" data-wn="undo"'+(D.busy?' disabled':'')+'>확정 거두기</button>':'')+'<button type="button" class="wn-dark" data-wn="save"'+(D.busy||(isT&&!step[1])?' disabled':'')+'>'+(D.busy?'저장 중…':isT?h(step[0]):D.edit?'수정 저장':'수주 확정')+'</button>';
   }
-  ov.innerHTML='<section class="wn-dlg" role="dialog" aria-modal="true" aria-label="수주 처리"><header><b>수주 처리</b><span>'+(D.done?'수주 확정 후':'단계 바꾸기 → 수주 를 누르면 먼저 유형을 고릅니다')+'</span><i></i><button type="button" class="wn-x" data-wn="close" aria-label="닫기">✕</button></header>'+body+(D.err?'<div class="wn-err">'+h(D.err)+'</div>':'')+'<footer>'+foot+'</footer></section>';
+  const T0=D.edit?'수주 정보 수정':'수주 처리',S0=D.done?'수주 확정 후':D.edit?'이미 수주된 건 · 이 건의 수주 정보만 고칩니다':'단계 바꾸기 → 수주 를 누르면 먼저 유형을 고릅니다';
+  ov.innerHTML='<section class="wn-dlg'+(D.edit?' wn-edit':'')+'" role="dialog" aria-modal="true" aria-label="'+T0+'"><header><b>'+T0+'</b><span>'+S0+'</span><i></i><button type="button" class="wn-x" data-wn="close" aria-label="닫기">✕</button></header>'+body+(D.err?'<div class="wn-err">'+h(D.err)+'</div>':'')+'<footer>'+foot+'</footer></section>';
  }
  function onInput(e){
   const el=e.target,k=el.dataset&&el.dataset.wnF,D=st().dlg;if(!k||!D)return;const f=D.f;
   if(k==='amount'||k==='tech_amount'||k==='pour_amount'){const n=digits(el.value);f[k]=n;const shown=n?comma(n):'';if(el.value!==shown)el.value=shown;}
   else if(k==='company')f.company[f.type]=el.value;else{f[k]=el.value;if(k==='tech_company')f.tech_touched=true;}
-  const note=document.querySelector('#wn-dialog .wn-note');if(note)note.textContent=noteOf(f);
+  const note=document.querySelector('#wn-dialog .wn-note');if(note)note.textContent=noteOf(f,D.edit);
   if(k==='company'&&f.type==='partner_tech'&&!f.tech_touched){const tc=document.querySelector('#wn-dialog [data-wn-f="tech_company"]');if(tc)tc.value=el.value;}
  }
  async function send(payload,done){
@@ -161,7 +170,7 @@
  function onClick(e){
   const b=e.target.closest('[data-wn]');if(!b||b.disabled)return;const a=b.dataset.wn,D=st().dlg;if(!D)return;const f=D.f,id=D.deal,d=dealOf(id);
   if(a==='close')return closeDlg();
-  if(a==='type'){f.type=b.dataset.v;D.err='';return renderDlg();}
+  if(a==='type'){if(D.lock)return;f.type=b.dataset.v;D.err='';return renderDlg();}
   if(a==='tech'){f.tech=b.dataset.v==='1';D.err='';return renderDlg();}
   if(a==='undo'){if(!D.confirm){D.confirm=true;D.err='확정을 거두면 이 영업건의 수주 유형 · 실적이 빠집니다(만들어진 기술자문 관리 건은 남습니다). 한 번 더 누르면 거둡니다.';return renderDlg();}return send({deal_id:id,cancel:true},()=>{toast('수주 확정을 거뒀습니다');closeDlg();});}
   if(a!=='save'||!d)return;
@@ -180,8 +189,10 @@
    if(f.tech!==true&&f.tech!==false){D.err='기술자문 발생 여부를 골라 주세요.';return renderDlg();}
    p.tech=f.tech;
    if(f.tech){const tc=String(f.tech_touched?f.tech_company:company).trim();if(!tc){D.err='기술자문 계약 상대를 적어 주세요.';return renderDlg();}if(!(Number(f.tech_amount)>0)){D.err='기술자문 계약금액을 넣어 주세요.';return renderDlg();}p.tech_company=tc;p.tech_amount=Number(f.tech_amount);p.pour_amount=f.pour_amount||'';}
-   return send(p,r=>{if(r.win.tech_advisory){toast(r.advisory_created?'수주를 확정했습니다 — 기술자문 관리 건이 생겼습니다':'수주 정보를 저장했습니다 — 기술자문 관리 건에 반영했습니다');st().dlg.done=r.win;renderDlg();}else{toast('협약시공사 수주로 확정했습니다 — 수주실적 '+won(r.win.award_amount));closeDlg();}});
+   return send(p,r=>{if(r.win.tech_advisory){toast(r.advisory_created?(D.edit?'수주 정보를 고쳤습니다 — 기술자문 관리 건이 생겼습니다':'수주를 확정했습니다 — 기술자문 관리 건이 생겼습니다'):'수주 정보를 저장했습니다 — 기술자문 관리 건에 반영했습니다');st().dlg.done=r.win;renderDlg();}else{toast(D.edit?'수주 정보를 고쳤습니다 — 실적은 그대로입니다':'협약시공사 수주로 확정했습니다 — 수주 결과 '+won(r.win.award_amount));closeDlg();}});
   }
+  /* 수정: 계약 단계 창으로 잇지 않는다(이미 끝난 건 · 새 수주 아님) */
+  if(D.edit)return send(p,()=>{toast('수주 정보를 고쳤습니다 — 실적은 그대로입니다');closeDlg();});
   return send(p,()=>{toast('직접 수주로 확정했습니다 — 계약 · 시공 단계로 이어집니다');closeDlg();
    /* 계약 단계 앞이면 계약 창(낙찰결과 · 계약금액 · 체결일)으로 이어 준다 — 계약실적 원장은 그 경로 그대로 */
    try{const T=R.StageTransition,UI=R.StageTransitionUI;if(T.choices(R.dealStage(d)).includes('contract')&&R.PipelineStages.group(R.dealStage(d))!=='construction')UI.open(d,false,'contract');}catch(err){}});
@@ -195,5 +206,5 @@
  /* 계약 단계 창의 계약금액 미리 채움에 쓰는 낙찰금액 */
  const amountOf=d=>{const w=of(d);return w&&w.win_status==='confirmed'?Number(w.award_amount)||0:0;};
  const basePaint=R.paint;if(typeof basePaint==='function')R.paint=function(){try{attach();}catch(e){}const r=basePaint.apply(this,arguments);try{warm();}catch(e){}return r;};
- root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,advisoryOf:id=>advRows().find(t=>t&&t.decision==='confirmed'&&String(t.source_deal_id)===String(id))||null,/* 그 영업건에 연결된 확정 기술자문 줄(성과 분석 기술자문 탭) */headHtml,decorate,intercept,open:openDlg,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
+ root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,advisoryOf:id=>advRows().find(t=>t&&t.decision==='confirmed'&&String(t.source_deal_id)===String(id))||null,/* 그 영업건에 연결된 확정 기술자문 줄(성과 분석 기술자문 탭) */headHtml,decorate,intercept,open:openDlg,editOf,noteOf,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
 })(window);

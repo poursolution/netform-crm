@@ -21,7 +21,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    B={deals:[deal(D1,'[세종] 조치원자이아파트','이필선','bidding',{stage_contexts:{bidding:{fields:{bid_deadline:'2026-11-10',bid_terms:'일반'}}}}),deal(D2,'[수원] 자사 수주 현장','이필선','won',{outcome:'won',grp:'수주 성공',won_amount:5e8,closed_at:T('2026-10-10')}),
      deal('33333333-3333-4333-8333-333333333333','[인천] 실주 현장','이필선','lost',{outcome:'lost',grp:'수주 실패',closed_at:T('2026-10-12'),closed:'2026-10-12',stage_contexts:{lost:{fields:{close_reason:'가격',close_detail:'확인'}}}})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.dashVisOff=true;/* 예전 대시보드 배치 — 시각화는 verify-dash-visual-browser */ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    ContractSalesData.state=()=>({status:'ready',items:[{deal_id:D2,brand:'석민이앤씨',sales_owner_name:'이필선',events:[{kind:'signed',effective_date:'2026-10-10',amount_delta:5e8}]}]});
    /* 서버 흉내: sql/deal-transfer-v1 의 규칙(등록 → 낙찰결과 → 관리자 인정) */

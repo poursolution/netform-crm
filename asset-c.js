@@ -17,11 +17,13 @@
  const TABS=['전체','active','recontact','risk','customer','dormant'];
  const won=n=>Number(n)>0?R.fmtAmt(Number(n)):'0원';
  const arOn=()=>!!(R.AssetReport&&R.AssetReport.on());
- const label=k=>k==='전체'?'전체':(k==='risk'&&arOn())?'반복 실주':(R.SITE_HEALTH[k]||{}).label||k;/* asset_report ②: '관계위험' → 반복 실주 */
+ const label=k=>k==='전체'?'전체':(k==='risk'&&arOn())?'반복 실주':k==='active'?'진행 영업 있음':(R.SITE_HEALTH[k]||{}).label||k;/* 2026-10-20 four_menus 3: '활성' = 관계 · 담당 · 연락이 다 정상이라는 뜻이 아니다 — 현재 영업 유무만 *//* asset_report ②: '관계위험' → 반복 실주 */
  const rsName=k=>{const n=(AB().CFG.RS[k]||[k])[0];return k==='risk'&&arOn()?'반복 실주 · 진행 금액 걸림':n;};
  /* ── 금액: 단지에 쌓인 금액(누적 수주) · 지금 진행 중 ── */
  /* 한 번 그리는 동안만 기억한다(수주 유형 · 타사 이관 · 원장 자료가 바뀌면 다음 그릴 때 다시 계산) */
- let memo=new Map();
+ let memo=new Map(),cmemo=new Map();
+ /* 마지막 고객 연락 = 단지의 영업건 · 문의 응대 기록 중 연락 시도 · 실제 연결의 가장 늦은 날(ContactState) — 등록 · 이관 · 수정일(updated_at)을 쓰지 않는다 */
+ function cDays(s){if(cmemo.has(s.key))return cmemo.get(s.key);let last='';const take=(it,type)=>{try{const v=R.ContactState.of(it,type),k=String(v.lastConnectedAt||v.lastAttemptAt||'').slice(0,10);if(k>last)last=k;}catch(e){}};(s.deals||[]).forEach(d=>take(d,'deal'));(s.inquiries||s.inqs||[]).forEach(q=>take(q,'inq'));let n=null;if(/^\d{4}-\d{2}-\d{2}$/.test(last)){const v=R.daysTo?R.daysTo(last):null;n=Number.isFinite(v)?Math.max(0,-v):null;}cmemo.set(s.key,n);return n;}
  function money(s){
   const hit=memo.get(s.key);if(hit)return hit;
   let acc=0,accN=0,prog=0,progN=0,cur=0,curN=0,leg=0,legN=0,noTime=true;
@@ -39,7 +41,7 @@
  const reasonsOf=s=>{try{return AB().item(s).rs||[];}catch(e){return [];}};
  /* 이유 한 줄 — 꼬리표와 같은 말은 쓰지 않는다(금액 · 사유만) */
  function whyOf(s,m){
-  const ld=s.lastDays,lost=s.lost.length,late=ld!==null&&ld>=28?ld+'일 연락 없음':'';
+  const ld=cDays(s),lost=s.lost.length,late=ld!==null&&ld>=28?ld+'일 연락 없음':'';
   if(s.health==='risk'||s.health==='recontact'){
    if(m.prog>0)return ['진행 '+won(m.prog),lost?'실주 '+lost+'건':'',late].filter(Boolean).join(' · ');
    if(lost)return '실주 '+lost+'회 · '+(m.noReproposal?'사유 확인 후 재제안 시기 없음':'재제안 시기 등록됨')+(late&&!m.noReproposal?' · '+late:'');
@@ -47,13 +49,13 @@
   }
   if(s.health==='customer')return ld!==null&&ld>=wait()?'수주 고객 · '+Math.round(wait()/30)+'개월 관계 연락 시기':'수주 '+m.accN+'건'+(ld!==null?' · 마지막 연락 '+ld+'일 전':'');
   if(s.health==='dormant')return ld===null?'기록 없음 · 장기수선 일정 확인 대상':'1년 넘게 움직임 없음 · 장기수선 일정 확인 대상';
-  let work='';try{const d=(s.open||[]).slice().sort((a,b)=>(Number(R.oppAmt(b))||0)-(Number(R.oppAmt(a))||0))[0];if(d){const w=R.dealWorkSummary(d);work=(w&&!/미분류|미기록/.test(w)?w+' ':'')+((R.StageTransition.definitions[R.dealStage(d)]||{}).label||'진행')+' 중';}}catch(e){}
+  let work='';try{const d=(s.open||[]).slice().sort((a,b)=>(Number(R.oppAmt(b))||0)-(Number(R.oppAmt(a))||0))[0];if(d){const w=R.dealWorkSummary(d);work=(w&&!/미분류|미기록/.test(w)?w+' · ':'')+'단계 '+((R.StageTransition.definitions[R.dealStage(d)]||{}).label||'진행');}}catch(e){}
   return [m.accN?'수주 '+m.accN+'건':'',work||(m.progN?'진행 '+m.progN+'건':'')].filter(Boolean).join(' · ')||'최근 연락 '+(ld===null?'기록 없음':ld+'일 전');
  }
  const actOf=(s,m)=>(s.health==='risk'||s.health==='recontact')?(m.prog>0||!s.lost.length?'연락':'재제안'):s.health==='customer'?'안부 연락':'열기';
  /* ── 범위: 공통 필터줄(브랜드 · 담당자 · 검색) + 관계 상태 탭 + 사유 ── */
  function scoped(){
-  memo=new Map();
+  memo=new Map();cmemo=new Map();
   const G=R.G;G.siteBrand='전체';G.siteOwner='전체';G.siteAddress=G.siteAddress||'전체';G.workFilter='전체';
   const owner=R.SalesScope.state().owner||'전체',sel=R.SalesFilterState.state().brands||[];
   const found=R.siteMasterData().filter(R.siteMatches);
@@ -62,7 +64,7 @@
   let rows=scope.filter(s=>status==='전체'||s.health===status);
   if(S.why)rows=rows.filter(s=>reasonsOf(s).includes(S.why));
   /* 정렬: 관계위험 = 진행 금액이 걸린 곳 먼저 / 그 밖 = 오래 연락 안 한 순(기록 없는 곳은 뒤) */
-  const days=s=>s.lastDays===null?-1:s.lastDays;
+  const days=s=>{const v=cDays(s);return v===null?-1:v;};
   rows=rows.slice().sort(status==='risk'?(a,b)=>money(b).prog-money(a).prog||days(b)-days(a):(a,b)=>days(b)-days(a)||money(b).prog-money(a).prog);
   return {scope,status,owner,rows,ownerFree:found.filter(brandOk)};
  }
@@ -85,7 +87,7 @@
     고객 자산은 현장 단위(현장 번호 · 현장명이 없는 영업건은 빠짐) · 단지 담당 기준 필터라 차이가 날 수 있다 — 차이는 건수 · 금액 · 사유와 대조 목록으로 보인다(숫자를 맞춰 지어내지 않는다) */
  function recon(M){
   try{const SI=R.SalesInsights,PS=R.PipelineScope;if(!SI||!SI.rows)return null;const isLeg=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}},amt=d=>Number(R.oppAmt(d))||0;
-   const A=new Map(),inSite=new Set();M.forEach(m=>(m[0].deals||[]).forEach(d=>{inSite.add(String(d.id));if(R.isOpen(d)&&!isLeg(d))A.set(String(d.id),d);}));
+   const A=new Map(),inSite=new Set();M.forEach(m=>(m[0].deals||[]).forEach(d=>{inSite.add(String(d.id));let w=null;try{w=R.DealWin&&R.DealWin.enabled()?R.DealWin.resultOf(d):null;}catch(e){}if(w&&w.done)return;/* 카드(money)와 같은 규칙: 원장 · 수주 확정 건은 누적 수주 쪽 */if(R.isOpen(d)&&!isLeg(d))A.set(String(d.id),d);}));
    const D=new Map();SI.rows(false,true).deals.filter(d=>d.active&&d.item).forEach(x=>D.set(String(x.item.id),x.item));
    const sum=m=>[...m.values()].reduce((a,d)=>a+amt(d),0),siteName=d=>String(d.site||d.site_name||'현장명 미입력');
    const whyD=d=>!(d.site_id||d.siteId||d.organization_id)&&!String(d.site||'').trim()?'현장 정보 없음 · 고객 자산은 현장 단위':inSite.has(String(d.id))?'고객 자산에서는 과거 이관 · 종료로 분류':'고객 자산 필터 밖(단지 담당 · 브랜드 · 상태)';
@@ -102,13 +104,13 @@
    +(S.recon&&X.rows.length?'<div class="ac-reconlist">'+pg.rows.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><em>'+h(won(r.amt))+'</em><span title="'+attr(r.side+' · '+r.why)+'">'+h(r.side+' · '+r.why)+'</span></div>').join('')+(P&&pg.pages>1?P.html(pg,{ns:'ac',v:'recon',small:true,info:false}):'')+'</div>':'')+'</section>';
  }
  function sideHtml(x){
-  const S=st(),M=x.scope.map(s=>[s,money(s)]);
+  const S=st(),M=x.scope.map(s=>[s,money(s)]),RX=recon(M),curTxt=n=>n.toLocaleString('ko-KR')+'건 · '+(RX?(RX.rows.length?'대시보드와 '+RX.rows.length.toLocaleString('ko-KR')+'건 차이 · 아래 대조 목록':'대시보드와 대조 · 차이 없음'):'대조 전');/* 고정 문구 '파이프라인과 같은 숫자' 대신 실제 대조 결과 */
   const accSites=M.filter(m=>m[1].acc>0),acc=accSites.reduce((a,m)=>a+m[1].acc,0),prog=M.reduce((a,m)=>a+m[1].prog,0),progN=M.reduce((a,m)=>a+m[1].progN,0),progSites=M.filter(m=>m[1].progN>0).length;
   const risk=M.filter(m=>m[0].health==='risk'||m[0].health==='recontact').reduce((a,m)=>a+m[1].prog,0);
   /* decision_collab ⑧ 숫자 다시 나누기: 진행 금액 = 현재 영업기회 vs 과거 미정리 · 이관 / 관계위험 = 실주 원인별 / 주소 미입력 = 담당 있음 · 진행 중(→ 담당 오늘 업무) vs 과거 · 휴면(→ 데이터 검토) */
   const cur=M.reduce((a,m)=>a+m[1].cur,0),curN=M.reduce((a,m)=>a+m[1].curN,0),leg=M.reduce((a,m)=>a+m[1].leg,0),legN=M.reduce((a,m)=>a+m[1].legN,0);
   const AR=R.AssetReport&&R.AssetReport.on()?R.AssetReport:null,riskCur=M.filter(m=>m[0].health==='risk'||m[0].health==='recontact').reduce((a,m)=>a+m[1].cur,0);
-  const nums=AR?[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['현재 영업기회',won(cur),curN.toLocaleString('ko-KR')+'건 · 파이프라인과 같은 숫자','#1d3f99'],['과거 검토 금액',won(leg),legN.toLocaleString('ko-KR')+'건 · 이관 · 미정리 · 위험 판정은 정리 후','#6b7280'],['현재 위험 금액',won(riskCur),'현재 영업기회 중 기한 초과 · 원인 확인 필요 단지','#b42318']]:[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['지금 진행 중',won(prog),'현재 영업기회 '+curN.toLocaleString('ko-KR')+'건 · '+won(cur)+' / 과거 미정리 · 이관 '+legN.toLocaleString('ko-KR')+'건 · '+won(leg)+' · 단지 '+progSites.toLocaleString('ko-KR')+'곳','#1d3f99'],['위험한 진행 금액',won(risk),'관계위험 · 재접촉 필요 단지에 걸린 금액','#b42318']];
+  const nums=AR?[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['현재 영업기회',won(cur),curTxt(curN),'#1d3f99'],['과거 검토 금액',won(leg),legN.toLocaleString('ko-KR')+'건 · 이관 · 미정리 · 위험 판정은 정리 후','#6b7280'],['현재 위험 금액',won(riskCur),'현재 영업기회 중 기한 초과 · 원인 확인 필요 단지','#b42318']]:[['누적 수주 (전 단지)',won(acc),'수주한 단지 '+accSites.length.toLocaleString('ko-KR')+'곳'+(accSites.length?' · 평균 '+won(acc/accSites.length):''),'#15171c'],['지금 진행 중',won(prog),'현재 영업기회 '+curN.toLocaleString('ko-KR')+'건 · '+won(cur)+' / 과거 미정리 · 이관 '+legN.toLocaleString('ko-KR')+'건 · '+won(leg)+' · 단지 '+progSites.toLocaleString('ko-KR')+'곳','#1d3f99'],['위험한 진행 금액',won(risk),'관계위험 · 재접촉 필요 단지에 걸린 금액','#b42318']];
   const riskSites=M.filter(m=>m[0].health==='risk'),cat=d=>{const f=d.stage_contexts&&d.stage_contexts.lost&&d.stage_contexts.lost.fields||{};const r=String(f.close_reason||d.close_reason||d.lost_reason||'').trim();if(!r)return '원인 미입력';const m=/^(관계|공법|가격|사업)\s*·/.exec(r);if(m)return m[1]==='사업'?'공사 취소 · 연기':m[1];if(/가격|예산/.test(r))return '가격';if(/공법|기술/.test(r))return '공법';if(/취소|연기/.test(r))return '공사 취소 · 연기';if(/관계|소장|연락/.test(r))return '관계';return '기타';};
   const byCat=new Map();riskSites.forEach(m=>{const s=m[0],last=(s.lost||[]).slice().sort((a,b)=>String(b.closed_at||b.closed||'').localeCompare(String(a.closed_at||a.closed||'')))[0];const k=last?cat(last):(s.lost&&s.lost.length?'원인 미입력':'실주 없음 · 접촉 끊김');byCat.set(k,(byCat.get(k)||0)+1);});
   const noAddr=M.map(m=>m[0]).filter(s=>!s.canonicalAddress),naWork=noAddr.filter(s=>s.owners.length&&(s.open||[]).some(d=>{try{return R.PipelineScope&&R.PipelineScope.on()?R.PipelineScope.isActive(d):R.isActiveDeal(d);}catch(e){return false;}})).length;
@@ -122,20 +124,20 @@
    +'<section class="ac-why"><b>왜 멈춰 있나 <small>누르면 목록이 좁혀짐</small></b>'+(why.length?why.map(w=>'<button type="button" data-ac="why" data-v="'+w.k+'" aria-pressed="'+(S.why===w.k)+'"><b>'+h(rsName(w.k))+'</b><b class="n" style="color:'+(RS[w.k][1]==='#374151'?'#374151':w.k==='recontact'?'#c0392b':'#b42318')+'">'+w.n.toLocaleString('ko-KR')+'</b><span>'+h(note[w.k]?note[w.k](w.k):'')+'</span></button>').join(''):'<p>멈춰 있는 단지가 없습니다</p>')+'</section></aside>';
  }
  function rowHtml(s){
-  const m=money(s),brand=s.brands[0]||'',bc=BC[brand]||'#9ca3af',t=TONE[s.health]||TONE.dormant,ld=s.lastDays,p=s.primary;
+  const m=money(s),brand=s.brands[0]||'',bc=BC[brand]||'#9ca3af',t=TONE[s.health]||TONE.dormant,ld=cDays(s),p=s.primary;
   return '<div class="ac-row" role="row" tabindex="0" data-ac="open" data-key="'+attr(s.key)+'" style="border-left-color:'+bc+'"><div class="ac-site"><b title="'+attr(s.name)+'">'+h(s.name)+'</b><span><b style="color:'+bc+'">'+h(brand||'브랜드 미지정')+'</b> · '+h(s.owners.join(', ')||'미배정')+' · '+h(p?p.name+' '+(p.role||''):'관리소장 미확인')+'</span></div>'
    +'<div class="ac-amt'+(m.acc>0?'':' zero')+'"><b>'+h(won(m.acc))+'</b><span>'+(m.accN?m.accN+'건':'수주 없음')+'</span></div>'
    +'<div class="ac-amt prog'+(m.prog>0?'':' zero')+'"><b>'+h(won(m.prog))+'</b><span>'+(m.progN?m.progN+'건 진행':'진행 없음')+'</span></div>'
    +'<div class="ac-state"><span style="color:'+t[0]+';background:'+t[1]+'">'+h(label(s.health))+'</span><small title="'+attr(whyOf(s,m))+'">'+h(whyOf(s,m))+'</small></div>'
-   +'<b class="ac-days'+(ld!==null&&ld>=28?' late':'')+'">'+(ld===null?'기록 없음':ld+'일')+'</b>'
+   +'<b class="ac-days'+(ld!==null&&ld>=28?' late':'')+'">'+(ld===null?'연락 기록 없음':ld+'일')+'</b>'
    +'<button type="button" class="ac-act" data-ac="open" data-key="'+attr(s.key)+'">'+actOf(s,m)+'</button></div>';
  }
  function listHtml(x){
   const S=st(),LP=R.ListPager,pg=LP.cut(x.rows,LP.page(S)),shown=pg.rows;
-  return '<section class="ac-list" role="table" aria-label="확인할 단지"><div class="ac-head" role="row"><span>단지 · 담당 · 관리소장</span><span class="r">누적 수주</span><span class="r">진행 중</span><span>지금 상태</span><span class="r">마지막 연락</span><span></span></div>'
+  return '<section class="ac-list" role="table" aria-label="확인할 단지"><div class="ac-head" role="row"><span>단지 · 담당 · 관리소장</span><span class="r">누적 수주</span><span class="r">진행 중</span><span>지금 상태</span><span class="r">마지막 고객 연락</span><span></span></div>'
    +(shown.length?shown.map(rowHtml).join(''):'<p class="ac-empty">조건에 맞는 단지가 없습니다</p>')
    +LP.html(pg,{ns:'ac',unit:'곳'})
-   +'<div class="ac-foot">누적 수주 = 이 단지에서 지금까지 수주한 낙찰금액 합 · 진행 중 = 열려 있는 영업건 예상금액 합</div></section>';
+   +'<div class="ac-foot">누적 수주 = 이 단지에서 지금까지 수주한 낙찰금액 합 · 진행 중 = 열려 있는 영업건 예상금액 합 · 마지막 고객 연락 = 응대 기록의 연락 시도 · 연결 날짜(등록 · 이관 · 수정일 아님)</div></section>';
  }
  function paint(){
   const host=document.getElementById('site-master'),pg=document.getElementById('pg-sites');if(!host)return;

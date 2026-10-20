@@ -40,7 +40,8 @@
  }
  function lastSent(key){const rows=(root.campaignLogs?.()||[]).filter(x=>x.category_key===key).map(x=>String(x.created_at||x.createdAt||'')).sort();return rows.length?rows[rows.length-1].slice(0,10):'';}
  function model(){
-  const rows=BUNDLES.map(([group,key,name,source,when])=>{const t=targetsOf(key),s=when==='season'?season(key):null;return {group,key,name,source,when:s?s.text:when,sub:s?s.sub:'',past:!!(s&&s.past),total:t.length,ready:t.filter(x=>x.guard.ok).length,last:lastSent(key)};});
+  /* targets = 묶음 대상 그대로(동의 필요 명단 · 서로 다른 연락처 수에 쓴다 — 묶음끼리 같은 사람이 겹칠 수 있다) */
+  const rows=BUNDLES.map(([group,key,name,source,when])=>{const t=targetsOf(key),s=when==='season'?season(key):null;return {group,key,name,source,when:s?s.text:when,sub:s?s.sub:'',past:!!(s&&s.past),total:t.length,ready:t.filter(x=>x.guard.ok).length,last:lastSent(key),targets:t};});
   return {rows,all:targetsOf('all')};
  }
  function brandStats(){

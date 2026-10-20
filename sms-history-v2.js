@@ -36,12 +36,12 @@
  }
  /* 발송 뒤 7일 안의 첫 반응(통화 · 회신 · 단계 이동) — 응대 이력에서 */
  function reactionOf(r,t0){
-  if(!r.deal||!t0||r.fail)return null;const from=(r.at&&Number.isFinite(new Date(r.at).getTime())?new Date(r.at).getTime():t0),to=from+WEEK;let first=null,moved=false;
+  if(!r.deal||!t0||r.fail)return null;const from=(r.at&&Number.isFinite(new Date(r.at).getTime())?new Date(r.at).getTime():t0),to=from+WEEK;let first=null,moved=false,replied=false;
   (r.deal.activities||[]).forEach(a=>{const t=new Date(a.at||a.occurred_at||a.date||'').getTime();if(!Number.isFinite(t)||t<=from||t>to)return;const type=str(a.type),text=[type,str(a.result),str(a.note)].join(' ');
    /* 회신 = 기록에 '회신 · 답장'이 적힌 것. 우리가 보낸 문자의 '회신대기 · 미회신'과 발송 기록 자체는 반응이 아니다 */
    const move=/단계\s*(전환|변경|이동)|stage_chang/.test(type),call=/전화|통화/.test(type),reply=!campOf(a)&&/회신|답장/.test(text)&&!/회신\s*(대기|없)|미회신|무응답/.test(text);
-   if(!(move||call||reply))return;if(move)moved=true;if(!first||t<first.t)first={t,label:move?'단계 이동':call?'통화':'회신',more:(str(a.result)||str(a.note)).replace(/\s+/g,' ').trim().slice(0,16)};});
-  return first?{...first,moved}:null;
+   if(!(move||call||reply))return;if(move)moved=true;if(reply)replied=true;if(!first||t<first.t)first={t,label:move?'단계 이동':call?'통화':'회신',more:(str(a.result)||str(a.note)).replace(/\s+/g,' ').trim().slice(0,16)};});
+  return first?{...first,moved,replied}:null;
  }
  const md=t=>{const d=new Date(t);return (d.getMonth()+1)+'.'+d.getDate();};
  function inPeriod(d){if(!d)return S.p==='all';const n=new Date();if(S.p==='all')return true;if(d.getFullYear()!==n.getFullYear())return false;if(S.p==='y')return true;if(S.p==='q')return Math.floor(d.getMonth()/3)===Math.floor(n.getMonth()/3);return d.getMonth()===n.getMonth();}
@@ -49,9 +49,9 @@
   const logs=(root.campaignLogs&&root.campaignLogs())||[],deals=dealById(),sel=(root.SalesFilterState&&root.SalesFilterState.state().brands)||[],q=String(root.G.q||'').trim().toLowerCase();
   const rows=logs.map(x=>{const at=sentAt(x),recv=recipients(x,deals),kind=kindOf(x),test=isTest(x),t0=at?at.getTime():0,st=String(x.status||'queued');
    const n=num(x.recipient_count)||recv.length,counted=x.sent_count!=null||x.failed_count!=null||st==='sent',fail=num(x.failed_count),ok=counted?root.campaignDeliveredCount(x):null;
-   const rs=recv.map(r=>({...r,react:reactionOf(r,t0)})),known=rs.length>0,resp=rs.filter(r=>r.react).length,moved=rs.filter(r=>r.react&&r.react.moved).length;
+   const rs=recv.map(r=>({...r,react:reactionOf(r,t0)})),known=rs.length>0,resp=rs.filter(r=>r.react).length,moved=rs.filter(r=>r.react&&r.react.moved).length,replied=rs.filter(r=>r.react&&r.react.replied).length;
    const brands=[...new Set(rs.map(r=>r.deal&&r.deal.brand).filter(Boolean))];
-   return {x,id:idOf(x)+'|'+String(x.created_at||x.createdAt||''),at,kind,name:nameOf(x),body:String(x.body||''),who:whoOf(x),n,ok,fail,counted,st,test,direct:kind===DIRECT,recv:rs,known,resp,moved,brands};});
+   return {x,id:idOf(x)+'|'+String(x.created_at||x.createdAt||''),at,kind,name:nameOf(x),body:String(x.body||''),who:whoOf(x),n,ok,fail,counted,st,test,direct:kind===DIRECT,recv:rs,known,resp,moved,replied,brands};});
   const senders=[...new Set(rows.map(r=>r.who))].sort(root.repCompare||undefined);
   const list=rows.filter(r=>inPeriod(r.at)&&(S.who==='all'||r.who===S.who)&&(!sel.length||!r.brands.length||r.brands.some(b=>sel.includes(b)))&&(!q||[r.name,r.body,r.who].concat(r.recv.map(v=>v.name+' '+v.site)).join(' ').toLowerCase().includes(q)));
   return {rows,list,senders,sel};
@@ -87,13 +87,14 @@
   if(S.open===undefined)S.open=m.list.length?m.list[0].id:null;
   const pages=[['home','묶음 · 보내기'],['history','발송 이력'],['analysis','성과']].map(p=>'<button type="button" role="tab" data-sh2="page" data-v="'+p[0]+'" aria-selected="'+(p[0]==='history')+'">'+p[1]+'</button>').join('');
   const periods=[['month','이번 달'],['q','이번 분기'],['y',y],['all','전체']].map(p=>'<button type="button" data-sh2="period" data-v="'+p[0]+'" aria-pressed="'+(S.p===p[0])+'">'+p[1]+'</button>').join('');
-  /* 숫자: 테스트 · 직접 발송 제외, 실제로 발송을 시작한 묶음만 */
-  const real=m.list.filter(r=>!r.direct&&SENT.includes(r.st)),N=real.reduce((a,r)=>a+r.n,0),F=real.reduce((a,r)=>a+r.fail,0),OK=real.reduce((a,r)=>a+(r.ok||0),0),R=real.reduce((a,r)=>a+r.resp,0),M=real.reduce((a,r)=>a+r.moved,0);
-  const kpi=[['보낸 묶음',real.length+'건','테스트 · 직접 발송 제외',''],['받은 사람',N+'명','성공 '+OK+' · 실패 '+F,''],['7일 안 반응',N?Math.round(R/N*100)+'%':'-',R+'명 · 통화 · 회신 · 단계 이동','g'],['반응 → 단계 이동',M+'건','문자 뒤 실제 영업이 움직인 건','']].map(k=>'<div class="sh2-kpi"><span>'+k[0]+'</span><b class="'+k[3]+'">'+k[1]+'</b><span>'+k[2]+'</span></div>').join('');
+  /* 숫자: 테스트 · 직접 발송 제외, 실제로 발송을 시작한 묶음만(= 캠페인 성과 범위). 아래 목록은 테스트 · 직접 발송까지 전체 이력.
+     2026-10-20 four_menus 4: 문자에 대한 실제 반응(회신)과 그 뒤 일어난 활동(통화 · 단계 이동)을 나눈다 — 문자 덕분이라 단정하지 않음 */
+  const real=m.list.filter(r=>!r.direct&&SENT.includes(r.st)),N=real.reduce((a,r)=>a+r.n,0),F=real.reduce((a,r)=>a+r.fail,0),OK=real.reduce((a,r)=>a+(r.ok||0),0),R=real.reduce((a,r)=>a+r.resp,0),M=real.reduce((a,r)=>a+r.moved,0),RP=real.reduce((a,r)=>a+(r.replied||0),0);
+  const kpi=[['보낸 묶음',real.length+'건','캠페인 성과 범위 · 테스트 · 직접 발송 제외 (전체 이력 '+m.list.length+'건은 아래)',''],['받은 사람',N+'명','성공 '+OK+' · 실패 '+F,''],['문자 회신',N?Math.round(RP/N*100)+'%':'-',RP+'명 · 발송 뒤 7일 안 회신 · 답장 기록','g'],['7일 안 다른 활동',(R-RP)+'명','통화 · 단계 이동 (단계 이동 '+M+') · 문자 덕분이라 단정 X','']].map(k=>'<div class="sh2-kpi"><span>'+k[0]+'</span><b class="'+k[3]+'">'+k[1]+'</b><span>'+k[2]+'</span></div>').join('');
   return '<div class="sh2"><div class="sh2-top"><b>문자 · 캠페인</b><div class="sh2-pages" role="tablist" aria-label="문자 · 캠페인 화면">'+pages+'</div><i></i><div class="sh2-periods" role="group" aria-label="기간">'+periods+'</div></div>'
    +'<div class="sh2-kpis">'+kpi+'</div>'
-   +'<section class="sh2-list"><div class="sh2-head"><span>보낸 시각</span><span>묶음 · 문구</span><span>보낸 사람</span><span>받은 사람</span><span>7일 안 반응</span><span>상태</span></div>'+(m.list.map(rowHtml).join('')||'<div class="sh2-empty">이 기간에 보낸 문자가 없습니다.</div>')+'</section>'
-   +'<span class="sh2-note">\'7일 안 반응\' = 발송 뒤 7일 안에 응대 이력에 통화 · 회신 · 단계 이동이 생긴 사람 수 (같은 사람은 1번)</span></div>';
+   +'<section class="sh2-list"><div class="sh2-head"><span>보낸 시각</span><span>묶음 · 문구</span><span>보낸 사람</span><span>받은 사람</span><span>7일 안 활동</span><span>상태</span></div>'+(m.list.map(rowHtml).join('')||'<div class="sh2-empty">이 기간에 보낸 문자가 없습니다.</div>')+'</section>'
+   +'<span class="sh2-note">\'7일 안 활동\' = 발송 뒤 7일 안에 응대 이력에 통화 · 회신 · 단계 이동이 생긴 사람 수 (같은 사람은 1번) · 문자에 대한 실제 반응은 \'문자 회신\'만 · 목록은 테스트 · 직접 발송 포함 전체 이력(수신자 · 문구 · 시각 · 결과)</span></div>';
  }
  /* 공통 고정 필터줄 하나: 브랜드 · 보낸 사람 · 검색(기존 줄을 그대로 쓰고 내용만 이 화면 것으로) */
  function barHtml(m){

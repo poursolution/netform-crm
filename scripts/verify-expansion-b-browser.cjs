@@ -59,22 +59,22 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸([전체] + 막대 3칸) · 진단 숫자 3개 · 사유 · 할 일 */
   assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 6','사후 연락 · 관계 유지 4','니즈 확인 1','보류 · 전환 완료 1']);
   assert.equal(await page.locator('#expansion-b .ps3-head b').evaluate(n=>getComputedStyle(n).fontSize),'22px','제목 글자 = 파이프라인 v3');
-  assert.match(await v.locator('.ps3-kpis').innerText(),/실제 기한 초과\s*1건\s*기록 확인 필요 1건 · 대상 5건\(보류 제외\) · 날짜 기준 다음 접촉일 · 연락 주기 · 표본 판정 가능 4건[\s\S]*니즈 확인\s*1건[\s\S]*평균 준공 후\s*\d+일/);/* counting 11: 빨강 2건 = 실제 기한 초과 1 + 기록 확인 필요 1 */
+  assert.match(await v.locator('.ps3-kpis').innerText(),/실제 기한 초과\s*1건\s*기록 확인 필요 1건 · 대상 5건\(보류 제외\) · 날짜 기준 다음 접촉일 · 연락 주기 · 표본 판정 가능 4건[\s\S]*니즈 확인\s*1건[\s\S]*다음 접촉일 미지정\s*\d+건\s*날짜 칸 = 다음 접촉일 · 준공 후 경과는 지연 아님/);/* counting 11: 빨강 2건 = 실제 기한 초과 1 + 기록 확인 필요 1 */
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
-  assert.deepEqual(reasons,['다음 접촉일 지남','사후 연락 기록 확인 필요','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 '+JSON.stringify(reasons));
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*다음 접촉일 지남 1건[\s\S]*사후 연락 기록 확인 필요 1건[\s\S]*관계 연락 주기 넘김 1건/);
+  assert.deepEqual(reasons,['사후 연락 기록 확인 필요','관계 연락 주기 넘김','니즈 확인 → 전환 대기','공종 미분류'],'사유 순서 = 표 순서 · 연락 기록 없는 건은 다음 접촉일 지남으로 안 셈(2026-10-20) '+JSON.stringify(reasons));
+  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*사후 연락 기록 확인 필요 1건[\s\S]*관계 연락 주기 넘김 1건/);
   /* 현장: 빨강 사유 순(접촉일 지남 e1 → 2개월 연락 없음 e7) → 사유 수 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
-  assert.deepEqual(order.slice(0,2),['e1','e7'],'빨강 먼저 '+JSON.stringify(order));
-  assert.match(await v.locator('.psb-row[data-key="e1"]').innerText(),/이천신둔코아루[\s\S]*POUR솔루션 · 한준엽 · 500만[\s\S]*사후 연락[\s\S]*접촉 기록 없음[\s\S]*다음 접촉일 2일 지남[\s\S]*D\+60일[\s\S]*연락/);
-  assert.match(await v.locator('.psb-row[data-key="e7"]').innerText(),/연락 없음 75일 · 기준 60일[\s\S]*D\+120일[\s\S]*관계 연락/);
+  assert.deepEqual(order.slice(0,2),['e7','e1'],'실제 기한 초과(빨강) 먼저 · 기록 확인은 그다음 '+JSON.stringify(order));
+  assert.match(await v.locator('.psb-row[data-key="e1"]').innerText(),/이천신둔코아루[\s\S]*POUR솔루션 · 한준엽 · 500만[\s\S]*사후 연락[\s\S]*접촉 기록 없음[\s\S]*연락 기록 미확인 · 준공 D\+30 사후 연락 대상[\s\S]*다음 접촉 2일 지남[\s\S]*기록 확인/);
+  assert.match(await v.locator('.psb-row[data-key="e7"]').innerText(),/연락 없음 75일 · 기준 60일[\s\S]*다음 접촉 10일 뒤[\s\S]*관계 연락/);
   assert.match(await v.locator('.psb-row[data-key="e4"]').innerText(),/니즈 확인[\s\S]*니즈 지하주차장 에폭시 견적 요청[\s\S]*니즈 확인 → 전환 대기[\s\S]*전환/);
   assert.match(await v.locator('.psb-row[data-key="e5"]').innerText(),/보류 현장[\s\S]*보류[\s\S]*정상/);
   /* 줄 = 파이프라인 v11 과 같은 4칸(현장 · 담당 | 현재 상황 | 걸린 사유 · 경과 | 버튼 34px). 글자는 한 줄 */
   assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(one),['현장 · 담당','현재 상황','걸린 사유 · 경과','']);
   const geo=()=>page.locator('#expansion-b .psb-row[data-key="e1"]').evaluate(n=>{const cs=getComputedStyle(n);return {disp:cs.display,cols:cs.gridTemplateColumns.split(' ').length,h:[...n.querySelectorAll('.prv-a>b,.prv-a>span,.prv-b>span,.prv-b>small,.prv-c>b,.prv-c>small')].every(e=>e.getBoundingClientRect().height<parseFloat(getComputedStyle(e).fontSize)*1.9),leftColor:cs.borderLeftWidth,btn:Math.round(n.querySelector(':scope>button').getBoundingClientRect().height),site:getComputedStyle(n.querySelector('.prv-a>b')).fontSize};});
   {const g=await geo();assert.equal(g.disp,'grid');assert.equal(g.cols,4,'파이프라인 v11 과 같은 4칸');assert.equal(g.h,true,'글자가 쪼개지지 않는다');assert.equal(g.leftColor,'3px');assert.equal(g.btn,34,'버튼 높이 = 파이프라인');assert.equal(g.site,'14.5px','현장 글자 = 파이프라인');}
-  assert.equal(await v.locator('.psb-row[data-key="e1"] .prv-c>b').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','기준을 넘긴 사유는 빨강');
+  assert.equal(await v.locator('.psb-row[data-key="e7"] .prv-c>b').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','기준을 넘긴 사유는 빨강');assert.notEqual(await v.locator('.psb-row[data-key="e1"] .prv-c>b').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','기록 확인 필요(연락 기록 없음)는 빨강 아님');
   /* 좁으면 본문은 진단이 위로 · 줄은 4칸 그대로 */
   await page.setViewportSize({width:900,height:900});await page.waitForTimeout(250);
   {const g=await geo();assert.equal(g.cols,4);assert.equal(g.h,true);
