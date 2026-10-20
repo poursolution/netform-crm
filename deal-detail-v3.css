@@ -190,6 +190,11 @@ html:not(.crm-solo) #detailView.ddv.dv3{inset:16px max(16px,calc((100vw - 1640px
 .dv3-repl .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}.dv3-repl .row.two{grid-template-columns:minmax(0,.8fr) minmax(0,1fr)}
 #detailView.ddv.dv3 .dv3-repl input[type="text"]{font:inherit;font-size:13px;border:1px solid #d9dde4;border-radius:8px;padding:8px 10px;min-width:0;width:100%;box-sizing:border-box;min-height:0;height:auto;background:#fff;color:#15171c;box-shadow:none}
 #detailView.ddv.dv3 .dv3-repl [data-dv3="replfill"]{border:1px solid #d9dde4;background:#f5f6f8;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;padding:0 12px;min-height:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+/* 명함 촬영 · 사진 선택(2026-10-20): 연락처 패널의 [명함 촬영][사진 선택]과 같은 모양 · 작은 상태 글 */
+.dv3-repl .row.cardrow{grid-template-columns:auto minmax(0,1fr);align-items:center}.dv3-repl .cardrow>span{display:flex;gap:6px}
+#detailView.ddv.dv3 .dv3-repl .cardrow button{border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px;min-height:0;height:auto;width:auto;margin:0;box-shadow:none;cursor:pointer;white-space:nowrap}
+#detailView.ddv.dv3 .dv3-repl .cardrow button:disabled{opacity:.45;cursor:default}
+.dv3-repl .cardrow .cardst{font-size:11.5px;color:#6b7280;line-height:1.45}.dv3-repl .cardrow .cardst.bad{color:#b42318}
 #detailView.ddv.dv3 .dv3-repl .dv3-pills button{font:inherit;font-size:12.5px;font-weight:600;border-radius:999px;padding:5px 11px;border:1px solid #d9dde4;background:#fff;color:#374151;cursor:pointer;min-height:0;box-shadow:none;width:auto}
 #detailView.ddv.dv3 .dv3-repl .dv3-pills button[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}
 #detailView.ddv.dv3 .dv3-repl .dv3-save{border:0;background:#15171c;color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:10px 0;width:100%;cursor:pointer;min-height:0;box-shadow:none}

@@ -382,7 +382,9 @@
   return '<div class="dv3-repl"><header><b>새 관리소장 등록</b><i></i><button type="button" class="lnk gray" data-dv3="replcancel">취소</button></header>'
    +'<p class="warn"><b>'+h(who)+'</b>님은 지우지 않고 <b>이전 소장</b>으로 남깁니다 (오늘 날짜)</p>'
    +'<span class="q">이전 소장은 어디로?</span><div class="dv3-pills">'+WHERE.map(x=>pill('replwhere',x,R.where===x)).join('')+'</div>'
-   +'<span class="q">새 소장</span><div class="row"><input type="text" data-dv3repl="paste" value="'+attr(R.paste||'')+'" placeholder="문자 · 명함 글자 붙여넣기" aria-label="문자 · 명함 글자 붙여넣기"><button type="button" data-dv3="replfill">자동 채우기</button></div>'
+   +'<span class="q">새 소장</span><div class="row"><input type="text" data-dv3repl="paste" value="'+attr(R.paste||'')+'" placeholder="문자 · 명함 글자 붙여넣기 · 명함 캡처는 Ctrl+V" aria-label="문자 · 명함 글자 붙여넣기"><button type="button" data-dv3="replfill">자동 채우기</button></div>'
+   /* 2026-10-20 대표 "명함 캡처 인식이 사라졌다": 연락처 패널과 같은 AI 명함 인식(DealPanelsV2.readCard)을 이 상자에도 — 촬영 · 사진 선택 · 캡처 붙여넣기. 사진은 저장하지 않음 */
+   +'<div class="row cardrow"><span><button type="button" data-dv3="replcard" data-pick="camera"'+(R.cardBusy?' disabled':'')+'>명함 촬영</button><button type="button" data-dv3="replcard" data-pick="file"'+(R.cardBusy?' disabled':'')+'>사진 선택</button></span><small class="cardst'+(R.cardErr?' bad':'')+'" role="status" aria-live="polite">'+h(R.cardMsg||'명함 사진 · 캡처를 넣으면 이름 · 휴대폰을 찾아 아래 칸에 넣습니다 · 사진은 저장하지 않음')+'</small><input type="file" data-dv3card="camera" accept="image/jpeg,image/png,image/webp" capture="environment" hidden><input type="file" data-dv3card="file" accept="image/jpeg,image/png,image/webp" hidden></div>'
    +'<div class="row two"><input type="text" id="qc-name" data-dv3repl="name" value="'+attr(R.name||'')+'" placeholder="이름 *" aria-label="새 소장 이름"><input type="text" id="qc-mobile" data-dv3repl="mobile" inputmode="tel" value="'+attr(R.mobile||'')+'" placeholder="휴대폰 * 010-0000-0000" aria-label="새 소장 휴대폰"></div>'
    +'<span class="q">수신 동의</span><div class="dv3-pills">'+CONSENT.map(x=>pill('replconsent',x[0],R.consent===x[0],x[1])).join('')+'</div>'
    +'<input type="hidden" id="qc-role" value="관리소장"><input type="checkbox" id="dp-primary" checked hidden><input type="checkbox" id="qc-sms" hidden><input type="checkbox" id="qc-kakao" hidden><input type="checkbox" id="qc-block" hidden><input id="qc-consent-at" type="hidden"><input id="qc-block-reason" type="hidden"><input id="qc-decision-role" type="hidden" value=""><input id="qc-relation-tone" type="hidden" value=""><input id="qc-office" type="hidden" value="'+off+'"><input id="qc-email" type="hidden" value="">'
@@ -676,9 +678,11 @@
   const PSC=root.PipelineScope,lg=x=>!!(PSC&&PSC.on()&&PSC.isLegacy(x)),open=rel.filter(x=>root.isOpen(x)&&!lg(x)),past=rel.length-open.length;
   const addr=baseVal(d,'addr'),inflow=baseVal(d,'inflow'),site=[addr,inflow?inflow+' 유입':''].filter(Boolean).join(' · ');
   const sib=open.length?'<section class="dv8-sec"><span class="dv8-k">같은 현장 진행 '+(open.length+1)+'건</span>'+open.map(x=>{const w=root.dealWorkSummary(x);return '<button type="button" class="dv8-sib" data-dv3="rel" data-id="'+attr(x.id)+'">'+h((w&&!/미분류|미기록/.test(w)?w:root.stageLabel(root.dealStage(x)))+' · '+(root.repN(x.assignee)||'미배정'))+' ›</button>';}).join('')+'</section>':'';
+  /* 2026-10-20 대표 "해당 단지 중복 영업은 그전 것이 훨씬 낫다" — 같은 단지 영업은 예전 '이 단지 영업 이력' 상자(site-history.js: 지금 영업건 / 지난 영업 n · 수주 완료 줄 · 줄마다 날짜 · 결과 · 금액 · 공종 · 담당 · 누르면 그 건)를 왼쪽에 그대로 — 줄인 '지난 영업 n건 ›' · '같은 현장 진행' 단추는 끄기(G.dv8SiteCompact) 뒤에만 */
+  const SH=root.SiteHistory;let sh='';if(SH&&SH.enabled()&&!root.G.dv8SiteCompact){try{sh=SH.html(d,closed)||'';}catch(e){sh='';}}
   return '<div class="dv8-left"><section class="dv8-sec"><span class="dv8-k">누구와 이야기하나</span>'+who+'<div class="dv8-dec"><span>결정</span><span class="'+(decOk?'':'none')+'">'+h(decOk?dec:'미확인')+'</span></div></section>'
-   +'<section class="dv8-sec"><span class="dv8-k">이 현장</span>'+(site?'<span class="dv8-site">'+h(site)+'</span>':'')+(past?'<button type="button" class="lnk dv8-past" data-dv3="p7" data-v="site">이 단지 지난 영업 '+past+'건 ›</button>':'<span class="dv8-sub">이 단지 첫 영업</span>')+'</section>'
-   +sib+'<i class="dv8-gap"></i>'
+   +'<section class="dv8-sec"><span class="dv8-k">이 현장</span>'+(site?'<span class="dv8-site">'+h(site)+'</span>':'')+(sh?'':(past?'<button type="button" class="lnk dv8-past" data-dv3="p7" data-v="site">이 단지 지난 영업 '+past+'건 ›</button>':'<span class="dv8-sub">이 단지 첫 영업</span>'))+'</section>'
+   +(sh?'<div class="dv8-sth">'+sh+'</div>':sib)+'<i class="dv8-gap"></i>'
    +'<nav class="dv8-links" aria-label="배경 정보"><button type="button" data-dv3="p7" data-v="people">연락처 · 관계자</button><button type="button" data-dv3="p7" data-v="site">현장 정보</button><button type="button" data-dv3="p7" data-v="files">자료</button>'+(closed?'':'<button type="button" data-dv3="hadd">이력 추가</button>')+'</nav></div>';
  }
  /* 왼쪽 링크가 여는 가운데 패널 — 예전 왼쪽 구역(연락처 · 기본 정보 · 이 단지 이력 · 자료)을 그대로 옮겨 그린다(기능 · 저장 길 같음) */
@@ -1170,6 +1174,7 @@
   if(a==='reqtoggle'){const S=st(d),open=b.getAttribute('aria-expanded')==='true';S.reqOpen=!open;if(open){S.edit='';S.draft='';S.sedit='';S.sdraft='';closeIn('site');closeWork();}apply();return;}
   if(a==='replcancel'){st(d).repl=null;apply();return;}
   if(a==='replwhere'||a==='replconsent'){const R=st(d).repl;if(!R)return;if(a==='replwhere')R.where=R.where===b.dataset.v?'':b.dataset.v;else R.consent=b.dataset.v;apply();return;}
+  if(a==='replcard'){const inp=b.closest('.dv3-repl')&&b.closest('.dv3-repl').querySelector('[data-dv3card="'+(b.dataset.pick||'file')+'"]');if(inp)inp.click();return;}
   if(a==='replfill'){const R=st(d).repl;if(!R)return;const t=R.paste||'',ph=/01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}/.exec(t),nm=/([가-힣]{2,4})\s*(?:관리)?(?:소장|과장|주임|회장|대표|님)/.exec(t);if(ph)R.mobile=ph[0];if(nm)R.name=nm[1];R.ok=!!(ph||nm);R.msg=R.ok?'찾은 내용을 채웠습니다. 저장 전에 확인해 주세요.':'이름 · 휴대폰을 찾지 못했습니다. 직접 입력해 주세요.';apply();return;}
   if(a==='replsave'){saveRepl(d);return;}
   if(a==='editc'||a==='addc'||a==='replace'){
@@ -1306,6 +1311,19 @@
  document.addEventListener('focusout',e=>{const t=inField(e);if(!t)return;setTimeout(()=>{if(t.isConnected&&document.activeElement!==t)commitEl(t);},120);});
  /* 새 관리소장 등록: 적는 대로 기억 · Enter = 저장(붙여넣기 칸은 자동 채우기) · Esc = 닫기 */
  document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.dv3repl||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item,R=d&&st(d).repl;if(!R)return;R[t.dataset.dv3repl]=t.value;const sv=t.closest('.dv3-repl').querySelector('.dv3-save');if(sv)sv.classList.toggle('off',!replOk(R));});
+ /* 새 관리소장 등록 상자의 명함 사진(촬영 · 선택) · 캡처 붙여넣기 → AI 명함 인식(연락처 패널과 같은 함수) → 비어 있는 이름 · 휴대폰만 채움 */
+ async function readReplCard(d,file){
+  const R=st(d).repl;if(!R||!file||R.cardBusy)return;const P=root.DealPanelsV2;
+  if(!P||typeof P.readCard!=='function'){R.cardMsg='명함 인식 부품이 없습니다.';R.cardErr=true;apply();return;}
+  const me=root.ME,token=root.TOKEN;R.cardBusy=true;R.cardErr=false;R.cardMsg='명함을 읽고 있습니다…';apply();
+  try{const v=await P.readCard(file,d);if(root.CUR_DETAIL?.item!==d||root.ME!==me||root.TOKEN!==token||st(d).repl!==R)return;
+   let n=0,kept=0;if(v.name){if(String(R.name||'').trim())kept++;else{R.name=String(v.name);n++;}}if(v.mobile){if(String(R.mobile||'').trim())kept++;else{R.mobile=String(v.mobile);n++;}}
+   R.cardMsg=(n?'명함에서 '+n+'개 항목을 채웠습니다. 저장 전에 확인해 주세요.':'자동으로 채울 항목이 없습니다. 사진과 입력값을 확인해 주세요.')+(kept?' 기존 입력값 '+kept+'개는 유지했습니다.':'')+(v.note?' '+v.note:'');R.ok=n>0;R.msg='';
+  }catch(e){if(st(d).repl===R){R.cardErr=true;R.cardMsg=(e&&e.message)||'명함을 읽지 못했습니다. 다시 시도해 주세요.';}}
+  finally{if(st(d).repl===R){R.cardBusy=false;apply();}}
+ }
+ document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.dv3card||!t.closest('#detailView.dv3 .dv3-repl'))return;const d=root.CUR_DETAIL?.item;const f=t.files&&t.files[0];t.value='';if(d&&f)readReplCard(d,f);});
+ document.addEventListener('paste',e=>{const t=e.target;if(!t||!t.closest||!t.closest('#detailView.dv3 .dv3-repl'))return;const P=root.DealPanelsV2,f=P&&P.pastedImage?P.pastedImage(e):null;if(!f)return;e.preventDefault();const d=root.CUR_DETAIL?.item;if(d)readReplCard(d,f);});
  document.addEventListener('keydown',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.dv3repl||!t.closest('#detailView.dv3'))return;const d=root.CUR_DETAIL?.item;if(!d)return;
   if(e.key==='Enter'&&!e.isComposing){e.preventDefault();if(t.dataset.dv3repl==='paste')t.closest('.dv3-repl').querySelector('[data-dv3="replfill"]').click();else saveRepl(d);}
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();st(d).repl=null;apply();}

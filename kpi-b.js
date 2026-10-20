@@ -110,7 +110,13 @@
   const typeKind=t=>t==='inquiry'?'inq':t==='deal'?'deal':'rep';
   /* Disappearing from the selected scope is not evidence of completion. Legacy actions
      have no per-target completion receipt; keep those missing from live as unverified. */
-  const processed=[],unverified=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id))||(a.request_group_id&&!coachingReceiptCurrent(a)));
+  /* nine_fixes 1(2026-10-20): 처리 영수증이 없는 요청은 '그 건에 요청 뒤 기록이 생겼는가'로 판정한다 — 지금 할 일 목록에서 빠졌고(사유 해소) 요청 시각 뒤 활동 · 수정 기록이 있으면 처리, 기록 없이 빠졌으면 미확인(범위에서 사라진 것은 처리 근거가 아님) */
+  const evidenceAfter=a=>{const t=Date.parse(a.created_at||0);if(!Number.isFinite(t))return false;const id=String(a.target_id||''),kind=typeKind(a.target_type);let it=null;try{if(kind==='deal')it=(root.B&&root.B.deals||[]).find(d=>String(d.id)===id||String(root.dealKey(d))===id);else if(kind==='inq')it=(root.B&&root.B.inquiries||[]).find(q=>String(q.id)===id||String(root.inqKey(q))===id);}catch(e){it=null;}if(!it)return false;
+   const after=v=>{const x=Date.parse(v||'');return Number.isFinite(x)&&x>t;};let p={};try{p=root.itemPatch(it,kind==='inq'?'inquiry':'deal')||{};}catch(e){}
+   if([].concat(it.activities||[],p.activities||[]).some(x=>x&&after(x.at||x.occurred_at||x.created_at)))return true;
+   return [it.updated_at,it.updated,p.updatedAt,p.updated_at,it.lastActivity,it.last_meaningful_contact_at,it.stage_entered_at].some(after);};
+  const gone=uniq.filter(a=>!live.has(a.promise_key+'|'+todoKey(typeKind(a.target_type),a.target_id))||(a.request_group_id&&!coachingReceiptCurrent(a)));
+  const processed=gone.filter(a=>!(a.request_group_id&&!coachingReceiptCurrent(a))&&evidenceAfter(a)),unverified=gone.filter(a=>!processed.includes(a));
   const pending=uniq.filter(a=>live.has(a.promise_key+'|'+todoKind(a))&&(!a.request_group_id||coachingReceiptCurrent(a))&&now-Date.parse(a.created_at)>=864e5);
   function todoKind(a){return todoKey(typeKind(a.target_type),a.target_id);}
   /* 요청 업무(2026-10-05 design_handoff_request): 오늘 업무에서 보낸 요청도 이 처리율의 자료다 — 처리 = 회신 · 기록으로 완료. 부재 · 답 대기는 아직 미처리, 취소한 요청은 세지 않는다 */

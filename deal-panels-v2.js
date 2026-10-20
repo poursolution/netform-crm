@@ -42,13 +42,22 @@
    return {media_type:'image/jpeg',data};
   }finally{img.src='';URL.revokeObjectURL(url);}
  }
+ /* 명함 사진 → 이름 · 휴대폰 · 직책 후보(AI contact_card) — 연락처 패널과 상세의 '새 관리소장 등록' 상자가 같은 함수를 쓴다(2026-10-20 대표 "명함 캡처 인식이 사라졌다") */
+ async function readCard(file,item){
+  if(!root.OpsStore||!root.OpsStore.aiOn||!root.OpsStore.aiOn())throw Error('AI 인식 연결이 꺼져 있습니다. 관리팀 KPI의 AI 설정을 확인해 주세요.');
+  const image=await cardPhoto(file),result=await root.OpsStore.ai('contact_card','deal',item.id,{image});return (result&&result.suggestion)||{};
+ }
+ /* 붙여 넣은 그림(캡처)도 명함 사진으로 — 클립보드의 첫 이미지 항목 */
+ function pastedImage(e){try{const items=[...((e.clipboardData&&e.clipboardData.items)||[])],it=items.find(i=>/^image\/(jpeg|png|webp)$/.test(i.type));return it?it.getAsFile():null;}catch(x){return null;}}
  function bindCardScan(p,S,item){
   let busy=false;const status=p.querySelector('#dp-card-status'),fields=['qc-name','qc-mobile','qc-office','qc-email'],touched=new Set();
   p.addEventListener('input',e=>{if(busy&&fields.includes(e.target.id))touched.add(e.target.id);});
   p.addEventListener('dp:chip',e=>{if(busy&&e.detail==='role')touched.add('role');});
   p.querySelectorAll('[data-card-pick]').forEach(b=>b.addEventListener('click',()=>p.querySelector('#'+b.dataset.cardPick).click()));
-  p.querySelectorAll('[data-card-file]').forEach(f=>f.addEventListener('change',async()=>{
-   const file=f.files[0];f.value='';if(!file||busy)return;
+  p.addEventListener('paste',e=>{const f=pastedImage(e);if(!f)return;e.preventDefault();const fill=p.querySelector('#dp2-fill');if(fill&&fill.hidden){const o=p.querySelector('[data-dp="fillopen"]');if(o)o.click();}run(f);});
+  p.querySelectorAll('[data-card-file]').forEach(f=>f.addEventListener('change',()=>{const file=f.files[0];f.value='';run(file);}));
+  async function run(file){
+   if(!file||busy)return;
    if(!root.OpsStore?.aiOn()){status.textContent='AI 인식 연결이 꺼져 있습니다. 관리팀 KPI의 AI 설정을 확인해 주세요.';return;}
    const before=Object.fromEntries(fields.map(id=>[id,p.querySelector('#'+id).value])),roleBefore=S.role;
    busy=true;touched.clear();p.querySelectorAll('[data-card-pick],[data-dp="save"],[data-dp="replace"],[data-dp="fill"]').forEach(b=>b.disabled=true);status.textContent='명함을 읽고 있습니다…';
@@ -63,7 +72,7 @@
     status.textContent=(n?'명함에서 '+n+'개 항목을 채웠습니다. 저장 전에 확인해 주세요.':'자동으로 채울 항목이 없습니다. 사진과 입력값을 확인해 주세요.')+(kept?' 기존 입력값 '+kept+'개는 유지했습니다.':'')+(v.note?' '+v.note:'');
    }catch(e){if(p.isConnected)status.textContent=e.message||'명함을 읽지 못했습니다. 다시 시도해 주세요.';}
    finally{busy=false;if(p.isConnected)p.querySelectorAll('[data-card-pick],[data-dp="save"],[data-dp="replace"],[data-dp="fill"]').forEach(b=>b.disabled=false);}
-  }));
+  }
  }
  /* 연락처 수정 · 등록 v2 (2026-10-04 design_handoff_contact_edit · 연락처 수정 v2.dc.html): 흰 상자 없이 칸만(제목 아래 · 저장 위 얇은 선 2줄), 자동 채우기는 제목 줄의 버튼 하나로 접음,
     역할 · 이름 * · 휴대폰 *(+82 · 하이픈 없는 번호는 010-0000-0000 으로 바꿔 저장 — 미리 안내, 형식 오류면 빨간 테두리 + 저장 잠금) · 수신 동의(문자 · 카카오 각각 동의 | 모름 | 거부) · 대표 연락처 한 줄,
@@ -338,5 +347,5 @@
   const ck=root.closeKakaoModal;if(typeof ck==='function')root.closeKakaoModal=function(){const p=$('ddvPanel');if(p&&p.classList.contains('dp-sms')){const b=$('kakaoBody');if(msgHome&&b&&b.parentElement!==msgHome)msgHome.append(b);onClose=null;p.remove();right()?.classList.remove('ddv-covered');}return ck.apply(this,arguments);};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.DealPanelsV2={open,close,active,workMount,saveContact};
+ root.DealPanelsV2={open,close,active,workMount,saveContact,readCard,pastedImage};
 })(window);

@@ -25,7 +25,8 @@
       nofirst:['실제 연결 기록 없음',INK,'확인 요청','실담당은 정해졌지만 고객과 실제 연결된 기록이 없음 — 시도 · 연결 여부 확인','request'],
       needchk:['연결됨 · 니즈 확인 전',INK,'진행 확인','고객과 연결됐지만 공사 범위 · 시기를 아직 못 들음 — 니즈 확인 진행','open'],
       noopp:['영업기회 미등록',INK,'진행 확인','연결 후 공사 범위·시기가 확인됐으나 영업기회 없음 — 등록 필요 여부 확인','open'],
-      asked:['확인 요청 메모함 · 전달 확인 전',INK,'진행 확인','확인 요청은 메모로만 남음 — 지사 전달 · 회신은 오늘 업무 [요청]으로 확인','open']},
+      asked:['확인 요청 메모함 · 전달 확인 전',INK,'진행 확인','확인 요청은 메모로만 남음 — 지사 전달 · 회신은 오늘 업무 [요청]으로 확인','open'],
+      dealonly:['영업건 있음 · 연결 기록 없음',INK,'진행 확인','영업건은 등록됐지만 고객과 연결된 기록이 없음 — 연결 기록을 확인해야 정상(nine_fixes 7 · 2026-10-20)','open']},
   kpi2:(inB)=>{const n=inB.filter(i=>i.rs.includes('none')||i.rs.includes('nofirst')).length;const unassigned=inB.filter(i=>i.rs.includes('none')).length,first=inB.filter(i=>i.rs.includes('nofirst')).length;return ['확인 필요',n+'건','실담당 미지정 '+unassigned+'건 · 담당 지정 후 실제 연결 기록 없음 '+first+'건'];}
  };
  /* 3단계 판정: 방문 · 견적 = 영업기회가 있거나 연결 뒤 방문 · 견적 기록 / 니즈 = 연결됐고 공사 범위 · 시기를 들음(견적문의 필수 확인 9개) / 그 밖 = 고객 연결 확인 단계 */
@@ -47,7 +48,8 @@
    if(!f.rep)rs.push('none');
    if(f.rep&&!f.resp)rs.push('nofirst');
    if(asked)rs.push('asked');
-  }else if(!f.deal&&step(q,f)==='need')rs.push('noopp');
+  }else if(f.deal&&!f.resp)rs.push('dealonly');/* 영업건 하나로 '정상'이라 하지 않는다 — 연결 기록이 없으면 확인 대상 */
+  else if(!f.deal&&step(q,f)==='need')rs.push('noopp');
   else if(!f.deal&&f.resp&&step(q,f)==='conn')rs.push('needchk');/* '정상' = 연결 수준이 아니라 니즈까지 — 연결만 된 건은 니즈 확인 전으로 */
   return {key:root.inqKey(q),site:q.site||'현장명 미입력',brand:q.brand||'',owner:f.rep||'지사 미지정',amountText:stage,bucket:step(q,f),sub,rs,stall:d,extra:{q,f,noSite}};
  }

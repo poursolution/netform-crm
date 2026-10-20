@@ -70,8 +70,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const cands=await V.locator('.dv8-cand').evaluateAll(l=>l.map(b=>[b.querySelector('b').textContent,b.querySelector('em').textContent]));
   assert.deepEqual(cands.map(c=>c[1]),['보냄 · 근거 있음','약속일 뿐'],'찾은 기록 = 후보 표식');
   /* 왼쪽 = 배경만 */
-  assert.match(s.left,/^누구와 이야기하나 임석재 관리소장 · 연락 상대 010-5249-3880 결정 미확인 이 현장 경기 평택시 포승읍 포승공단 이 단지 첫 영업/);
-  assert.doesNotMatch(s.left,/지금 영업건|미입력|자료 0|다른 연락처 0|지난 영업 0/);assert.equal(s.leftCall,0,'PC 전화 · 문자 버튼 없음');assert.deepEqual(s.links,['연락처 · 관계자','현장 정보','자료','이력 추가']);
+  /* 2026-10-20 대표: 같은 단지 영업은 예전 '이 단지 영업 이력' 상자(지금 영업건 / 이 단지 지난 영업 n · 줄마다 날짜 · 결과 · 금액)를 왼쪽에 그대로 — 줄인 단추 대신 */
+  assert.match(s.left,/^누구와 이야기하나 임석재 관리소장 · 연락 상대 010-5249-3880 결정 미확인 이 현장 경기 평택시 포승읍 포승공단 지금 영업건 .*지금 이 건 .*이 단지 지난 영업 0 없음 · 첫 영업/);
+  assert.doesNotMatch(s.left,/미입력|자료 0|다른 연락처 0|같은 현장 진행/);assert.equal(await V.locator('.dv8-left .sth').count(),1,'왼쪽 = 이 단지 영업 이력 상자');assert.equal(s.leftCall,0,'PC 전화 · 문자 버튼 없음');assert.deepEqual(s.links,['연락처 · 관계자','현장 정보','자료','이력 추가']);
   assert.match(s.hist,/접수 0 · 연락 시도 2 · 실제 연결 0$/,'응대 이력 = 접수 · 연락 시도 · 실제 연결 따로');
   /* 후보만 고르면 저장 안 됨 → [보냈음] + 발송일 · 받는 분 · 자료 */
   await V.locator('.dv8-cand').first().click();await page.waitForTimeout(150);
@@ -117,7 +118,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await open(6);s=await snap();assert.equal(s.sit,'실주 기록 완료 · 재영업 미정');
   /* 계약 · 시공: 계약 정보는 있으나 계약서 없음 = 목록과 같은 '계약서 확인' */
   await open(7);s=await snap();assert.equal(s.title,'계약서 확인');assert.equal(s.sit,'계약 정보는 있으나 계약서 근거가 없음');
-  if(process.env.DR_SHOT){await open(1);await page.screenshot({path:process.env.DR_SHOT});}
+  /* 2026-10-20 대표 "명함 캡처 인식이 사라졌다": 새 관리소장 등록 상자에 명함 촬영 · 사진 선택 + 캡처 붙여넣기(연락처 패널과 같은 AI 인식) */
+  await open(1);await V.locator('[data-dv3="p7"][data-v="people"]').click();await page.waitForTimeout(400);await V.locator('[data-dv3="replace"]').first().click();await page.waitForTimeout(400);
+  assert.equal(await V.locator('.dv3-repl [data-dv3="replcard"]').count(),2,'새 관리소장 등록 = 명함 촬영 · 사진 선택');assert.equal(await V.locator('.dv3-repl input[data-dv3card]').count(),2);assert.match(await V.locator('.dv3-repl .cardst').innerText(),/명함 사진 · 캡처를 넣으면/);
+  assert.equal(await page.evaluate(()=>typeof DealPanelsV2.readCard==='function'&&typeof DealPanelsV2.pastedImage==='function'),true,'연락처 패널과 같은 인식 함수');
+  if(process.env.DR_SHOT){await open(1);await page.screenshot({path:process.env.DR_SHOT});
+   /* 가운데 패널(연락처 · 관계자 → 새 관리소장 등록) · 계약서 확인 주 버튼 — 단추 모양 확인용 */
+   await open(7);await page.screenshot({path:process.env.DR_SHOT.replace(/\.png$/,'-contract.png')});
+   await V.locator('[data-dv3="p7"][data-v="people"]').click();await page.waitForTimeout(400);const rp=V.locator('[data-dv3="replace"]');if(await rp.count())await rp.first().click();await page.waitForTimeout(400);
+   await page.screenshot({path:process.env.DR_SHOT.replace(/\.png$/,'-people.png')});
+   const ed=V.locator('[data-dv3="editc"]');if(await ed.count()){await ed.first().click();await page.waitForTimeout(500);await page.screenshot({path:process.env.DR_SHOT.replace(/\.png$/,'-edit.png')});const fo=page.locator('#detailView [data-dp="fillopen"]');if(await fo.count()){await fo.first().click();await page.waitForTimeout(300);await page.screenshot({path:process.env.DR_SHOT.replace(/\.png$/,'-edit2.png')});}console.log('edit panel: fillopen='+await fo.count()+' cardpick='+await page.locator('#detailView [data-card-pick]').count());}
+   await V.locator('[data-dv3="p7"][data-v="files"]').click();await page.waitForTimeout(400);await page.screenshot({path:process.env.DR_SHOT.replace(/\.png$/,'-files.png')});}
   /* 끄기: 예전 7칸 막대 · 예전 배치 */
   await page.evaluate(()=>{G.dealRespondOff=true;});await page.evaluate(i=>window.__open(i),1);await page.waitForSelector('#detailView.dv7r .dvs-task .dv7-lb');await page.waitForTimeout(400);
   assert.equal(await V.locator('.dv7-bar').count(),1);assert.equal(await V.locator('.dv8-steps').count(),0);assert.equal(await page.evaluate(()=>document.getElementById('detailView').classList.contains('dv8')),false);

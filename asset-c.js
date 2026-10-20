@@ -23,7 +23,10 @@
  /* 한 번 그리는 동안만 기억한다(수주 유형 · 타사 이관 · 원장 자료가 바뀌면 다음 그릴 때 다시 계산) */
  let memo=new Map(),cmemo=new Map();
  /* 마지막 고객 연락 = 단지의 영업건 · 문의 응대 기록 중 연락 시도 · 실제 연결의 가장 늦은 날(ContactState) — 등록 · 이관 · 수정일(updated_at)을 쓰지 않는다 */
- function cDays(s){if(cmemo.has(s.key))return cmemo.get(s.key);let last='';const take=(it,type)=>{try{const v=R.ContactState.of(it,type),k=String(v.lastConnectedAt||v.lastAttemptAt||'').slice(0,10);if(k>last)last=k;}catch(e){}};(s.deals||[]).forEach(d=>take(d,'deal'));(s.inquiries||s.inqs||[]).forEach(q=>take(q,'inq'));let n=null;if(/^\d{4}-\d{2}-\d{2}$/.test(last)){const v=R.daysTo?R.daysTo(last):null;n=Number.isFinite(v)?Math.max(0,-v):null;}cmemo.set(s.key,n);return n;}
+ /* nine_fixes 4(2026-10-20): 그 날짜가 응대 기록인지 이관 자료의 '마지막 연락' 칸인지 같이 기억한다(ContactState.connectedLegacyOnly) — 줄에 '이관 기록'으로 표시 */
+ const clegacy=new Map();
+ function cDays(s){if(cmemo.has(s.key))return cmemo.get(s.key);let last='',lastLegacy=false;const take=(it,type)=>{try{const v=R.ContactState.of(it,type),k=String(v.lastConnectedAt||v.lastAttemptAt||'').slice(0,10);if(k>last){last=k;lastLegacy=!!v.connectedLegacyOnly;}}catch(e){}};(s.deals||[]).forEach(d=>take(d,'deal'));(s.inquiries||s.inqs||[]).forEach(q=>take(q,'inq'));let n=null;if(/^\d{4}-\d{2}-\d{2}$/.test(last)){const v=R.daysTo?R.daysTo(last):null;n=Number.isFinite(v)?Math.max(0,-v):null;}cmemo.set(s.key,n);clegacy.set(s.key,lastLegacy);return n;}
+ const cLegacy=s=>{cDays(s);return !!clegacy.get(s.key);};
  function money(s){
   const hit=memo.get(s.key);if(hit)return hit;
   let acc=0,accN=0,prog=0,progN=0,cur=0,curN=0,leg=0,legN=0,noTime=true;
@@ -130,7 +133,7 @@
    +'<div class="ac-amt'+(m.acc>0?'':' zero')+'"><b>'+h(won(m.acc))+'</b><span>'+(m.accN?m.accN+'건':'수주 없음')+'</span></div>'
    +'<div class="ac-amt prog'+(m.prog>0?'':' zero')+'"><b>'+h(won(m.prog))+'</b><span>'+(m.progN?m.progN+'건 진행':'진행 없음')+'</span></div>'
    +'<div class="ac-state"><span style="color:'+t[0]+';background:'+t[1]+'">'+h(label(s.health))+'</span><small title="'+attr(whyOf(s,m))+'">'+h(whyOf(s,m))+'</small></div>'
-   +'<b class="ac-days'+(ld!==null&&ld>=28?' late':'')+'">'+(ld===null?'연락 기록 없음':ld+'일')+'</b>'
+   +'<b class="ac-days'+(ld!==null&&ld>=28?' late':'')+'"'+(ld!==null&&cLegacy(s)?' title="응대 기록이 아니라 이관 자료의 마지막 연락 칸 날짜"':'')+'>'+(ld===null?'연락 기록 없음':ld+'일'+(cLegacy(s)?' · 이관 기록':''))+'</b>'
    +'<button type="button" class="ac-act" data-ac="open" data-key="'+attr(s.key)+'">'+actOf(s,m)+'</button></div>';
  }
  function listHtml(x){
