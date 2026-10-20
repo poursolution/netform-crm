@@ -101,7 +101,7 @@
   rerender();
  }
  /* ── 기록 상태 4가지 ── */
- function counts(Z){return {check:Z.now.filter(needsCheck).length,wait:Z.wait.length,nowait:(Z.nowait||[]).length,stall:Z.now.filter(realStall).length};}
+ function counts(Z){return {check:[].concat(Z.now,Z.late||[]).filter(needsCheck).length,wait:Z.wait.length,nowait:(Z.nowait||[]).length,stall:[].concat(Z.now,Z.late||[]).filter(realStall).length};}
  const RS=[['check','활동 확인 필요','기록 없음 · 이관 자료 · 담당 확인 전'],['wait','회신 대기','대기 사유 + 다음 확인일 있음'],['nowait','무기한 대기','대기 사유는 있는데 확인일 없음'],['stall','실제 정체','활동이 확인됐는데 움직임 없음']];
  function stripHtml(Z,S){
   if(!on())return '';const c=counts(Z);
@@ -119,7 +119,7 @@
     if(cd.length||ta.length)done.push({key:'deal:'+d.id,text:site(d)+' · '+cut(cd.length?cd[0].text:String(ta[0].note||ta[0].type),34)});
     if(R.isOpen(d)){let a=null;try{a=R.actionObj(d,patchOf(d));}catch(e){}const due=a&&String(a.due||a.due_at||'').slice(0,10);if(a&&a.text&&due&&due>t0&&due<=nextDay)tomorrow.push({key:'deal:'+d.id,text:site(d)+' · '+cut(a.text,34)});}
    }catch(e){}});
-  const open=Z.now.filter(i=>i.x.type==='deal'&&i.rk==='promise'&&(team||i.x.owner===me)).map(i=>{let a=null;try{a=R.actionObj(i.x.item,patchOf(i.x.item));}catch(e){}return {key:i.key,i,site:site(i.x.item),task:String(a&&a.text||i.x.next||i.missTxt||'약속'),type:String(a&&a.type||'전화'),due:String(a&&(a.due||a.due_at)||'').slice(0,10)};});
+  const open=[].concat(Z.now,Z.late||[]).filter(i=>i.x.type==='deal'&&i.rk==='promise'&&(team||i.x.owner===me)).map(i=>{let a=null;try{a=R.actionObj(i.x.item,patchOf(i.x.item));}catch(e){}return {key:i.key,i,site:site(i.x.item),task:String(a&&a.text||i.x.next||i.missTxt||'약속'),type:String(a&&a.type||'전화'),due:String(a&&(a.due||a.due_at)||'').slice(0,10)};});
   return {t0,nextDay,done,open,tomorrow};
  }
  function closeText(M,S,me){
@@ -165,7 +165,7 @@
  }
  /* ── 누르기(day-zones.js 가 모르는 동작을 넘겨받는다) ── */
  function onAction(a,b,S,Z,X){
-  const key=b.dataset.key,find=()=>Z&&Z.now.find(x=>x.key===key);
+  const key=b.dataset.key,find=()=>Z&&[].concat(Z.now,Z.late||[]).find(x=>x.key===key);
   if(a==='chk'){openChk(key);rerender();return true;}
   if(a==='chkclose'){S.chk=null;rerender();return true;}
   if(a==='chksit'){if(S.chk){S.chk.sit=Number(b.dataset.v);S.chk.err='';}rerender();return true;}

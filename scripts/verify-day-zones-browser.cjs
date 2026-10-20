@@ -61,53 +61,59 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1').length),0,'팝업 확인은 요청 상태를 바꾸지 않는다');
   /* 1. 탭 4개 · 큰 숫자 = 구역 합계 */
   const tabs=await V.locator('.dz-tabs button').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent.replace(/\s+/g,' ').trim(),b.querySelector('small').textContent]));
-  assert.deepEqual(tabs.map(t=>t[0].replace(/ \d+$/,'')),['지금 처리','회신 대기','정보 보완','약속 누락']);
-  const n=tabs.map(t=>Number(t[0].match(/(\d+)$/)[1]));assert.equal(n[1],1,'회신 대기 1건(성산시영 · 대기 사유 + 확인일)');assert.equal(n[2],1,'정보 보완 1건(햇빛마을 · 결정 일정 없음)');assert.ok(n[3]>=1,'약속 누락 1건 이상(평동동남 · 사진 · 방문 약속)');assert.ok(n[0]>=3,'지금 처리: 서울체육고 · 동탄 · 천안 요청 줄');
-  const hero=Number(await V.locator('.tv3-hero .n b').evaluate(b=>b.textContent.match(/^(\d+)건/)[1]));assert.equal(hero,n[0]+n[1]+n[2]+n[3],'큰 숫자 = 4구역 합계');
-  assert.match(await V.locator('.tv3-hero .leg').innerText(),/지금 처리 \d+\s*회신 대기 1\s*정보 보완 1\s*약속 누락 \d+/);
+  assert.deepEqual(tabs.map(t=>t[0].replace(/ \d+$/,'')),['오늘 처리','기한 초과','고객 회신 대기','기록 보완'],'six_fixes ② 4구역');
+  const n=tabs.map(t=>Number(t[0].match(/(\d+)$/)[1]));assert.equal(n[2],1,'고객 회신 대기 1건(성산시영 · 대기 사유 + 확인일)');assert.ok(n[3]>=2,'기록 보완 = 정보 보완(햇빛마을) + 약속 누락(평동동남)');assert.ok(n[0]+n[1]>=3,'오늘 처리 + 기한 초과: 서울체육고 · 동탄 · 천안 요청 줄');
+  const hero=Number(await V.locator('.tv3-hero .n b').evaluate(b=>b.textContent.match(/^(\d+)건/)[1]));assert.equal(hero,n[0]+n[1],'큰 숫자 = 오늘 처리 + 기한 초과(회신 대기 · 기록 보완은 지연 · 평가 제외)');
+  assert.match(await V.locator('.tv3-hero .leg').innerText(),/오늘 처리 \d+\s*기한 초과 \d+\s*고객 회신 대기 1\s*기록 보완 \d+/);
+  if(process.env.DZ_FULL)await page.screenshot({path:process.env.DZ_FULL});
   /* 2. 지금 처리 줄: 현장 · 단계 · 요청 꼬리표 / 할 일 / 먼저 하는 이유(행동 문구) + 근거 / 버튼 1개 */
-  const rows=await V.locator('.dz-table .dz-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,stage:r.querySelector('.c1>div>span').textContent,tags:[...r.querySelectorAll('.dz-req')].map(t=>t.textContent),task:(r.querySelector('.c2').firstChild||{}).textContent.trim(),memo:(r.querySelector('.dz-reqmemo')||{}).textContent||'',why:r.querySelector('.dz-why').textContent,sub:r.querySelector('.c3 small').textContent,btn:(r.querySelector(':scope>button')||{}).textContent||''})));
-  const sg=rows.find(r=>/서울체육고/.test(r.site));assert.ok(sg,'서울체육고 줄');assert.equal(sg.why,'진행 판단 필요','진단 문구 = 할 행동(정체 기준 초과 → 진행 판단 필요)');assert.match(sg.sub,/견적 발송 후 7일 · 후속 연락 없음 · \d+일/);assert.deepEqual(sg.tags,['송보람 요청 · 오늘 17:00'],'관리자 요청 = 기존 줄의 꼬리표');assert.equal(sg.task,'견적 검토 확인');assert.equal(sg.btn,'전화');
-  const dt=rows.find(r=>/동탄/.test(r.site));assert.ok(dt);assert.equal(dt.why,'오늘 약속 · 연락');
+  const grab=()=>V.locator('.dz-table .dz-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,stage:r.querySelector('.c1>div>span').textContent,tags:[...r.querySelectorAll('.dz-req')].map(t=>t.textContent),task:(r.querySelector('.c2').firstChild||{}).textContent.trim(),memo:(r.querySelector('.dz-reqmemo')||{}).textContent||'',why:r.querySelector('.dz-why').textContent,due:(r.querySelector('.c3 .dz-due')||{}).textContent||'',btn:(r.querySelector(':scope>button')||{}).textContent||''})));
+  const rowsNow=await grab();await V.locator('.dz-tabs [data-v="late"]').click();await page.waitForTimeout(250);const rowsLate=await grab();
+  assert.equal(await V.locator('.dz-table .dz-row').evaluateAll(l=>l.every(r=>r.querySelectorAll(':scope>button,:scope>.dz-btns button').length===1)),true,'기한 초과 줄도 버튼 1개');
+  assert.ok(rowsLate.every(r=>/지남|넘김/.test(r.due)),'기한 초과 = 날짜 지난 것만: '+JSON.stringify(rowsLate.map(r=>r.due)));
+  await V.locator('.dz-tabs [data-v="now"]').click();await page.waitForTimeout(250);const rows=rowsNow.concat(rowsLate);
+  const sg=rows.find(r=>/서울체육고/.test(r.site));assert.ok(sg,'서울체육고 줄');assert.equal(sg.why,'진행 판단 필요','진단 문구 = 할 행동(정체 기준 초과 → 진행 판단 필요)');assert.ok(sg.due,'셋째 칸 = 기한');assert.deepEqual(sg.tags,['송보람 요청 · 오늘 17:00'],'관리자 요청 = 기존 줄의 꼬리표');assert.equal(sg.task,'견적 검토 확인');assert.equal(sg.btn,'전화');
+  const dt=rows.find(r=>/동탄/.test(r.site));assert.ok(dt);assert.equal(dt.why,'오늘 약속 · 연락');assert.match(dt.due,/^오늘/,'오늘 기한');assert.ok(rowsNow.some(r=>r===dt),'오늘 기한은 오늘 처리');
   const far=rows.find(r=>/천안두정/.test(r.site));assert.ok(far,'같은 업무가 없는 요청은 요청 줄 하나');assert.equal(far.why,'관리자 요청');assert.equal(far.task,'후속 연락 요청');assert.equal(far.btn,'열어서 처리');
   assert.equal(await V.locator('.dz-table .dz-row').evaluateAll(l=>l.every(r=>r.querySelectorAll(':scope>button,:scope>.dz-btns button').length===1)),true,'줄마다 버튼 1개');
   /* 3. day_zones 4-4(최종 화면 순서): 위쪽 큰 요청 카드 없음 · 먼저 처리할 곳 카드 4장 · 요청은 줄 꼬리표 + 요청 문구 한 줄 + 줄 아래 입력 · 요청이 남은 건이 맨 위 · 종 알림 */
   assert.equal(await V.locator('.wrq-top .wrq-in').count(),0,'위쪽 큰 관리자 요청 카드는 그리지 않는다');
-  assert.deepEqual(rows.slice(0,2).map(r=>r.tags.length),[1,1],'요청이 남은 줄이 목록 맨 위');assert.equal(sg.memo,'요청 · 수신 확인 후 반응을 남겨 주세요','할 일 아래 요청 문구 한 줄');
+  assert.equal(sg.memo,'요청 · 수신 확인 후 반응을 남겨 주세요','할 일 아래 요청 문구 한 줄');
   const cards=await V.locator('.dz-cards .tv3-card').evaluateAll(l=>l.map(c=>[c.querySelector('.who b').textContent,(c.querySelector('.tv3-reqtag .dz-req')||{}).textContent||'']));
-  assert.ok(cards.length>=1&&cards.length<=4,'먼저 처리할 곳 카드 1~4장: '+cards.length);assert.deepEqual(cards[0],['[서울 송파] 서울체육고등학교','송보람 요청 · 오늘 17:00'],'카드 = 목록 맨 위 줄과 같은 건 · 카드 안 요청 꼬리표');
+  assert.ok(cards.length>=1&&cards.length<=4,'먼저 처리할 곳 카드 1~4장: '+cards.length);assert.ok(cards.some(c=>c[0]==='[서울 송파] 서울체육고등학교'&&c[1]==='송보람 요청 · 오늘 17:00'),'카드 안 요청 꼬리표: '+JSON.stringify(cards));
   assert.equal(await V.evaluate(v=>{const c=v.querySelector('.dz-cards'),z=v.querySelector('.dz'),h=v.querySelector('.tv3-hero');return !!(h.compareDocumentPosition(c)&4)&&!!(c.compareDocumentPosition(z)&4);}),true,'순서: 진행 막대 → 카드 → 4구역 목록');
-  assert.equal(hero,n[0]+n[1]+n[2]+n[3],'카드는 목록과 같은 건이라 큰 숫자에 다시 더하지 않는다');
+  assert.equal(hero,n[0]+n[1],'카드는 목록과 같은 건이라 큰 숫자에 다시 더하지 않는다');
   assert.equal(one(await page.locator('.ib .wrq-belln').innerText()),'미확인 요청 2','종 알림');assert.equal(await page.evaluate(()=>{const b=document.querySelector('.ib').getBoundingClientRect(),u=document.querySelector('.sh-userwrap');if(!u)return true;const r=u.getBoundingClientRect();return b.right<=r.left+1||b.left>=r.right-1;}),true,'종 알림이 사용자 이름을 가리지 않는다');if(process.env.DZ_SHOT)await page.screenshot({path:process.env.DZ_SHOT,clip:{x:900,y:100,width:700,height:70}});
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),0,'노출 ≠ 확인');
   /* 줄 펼침 없음(2026-10-10 고침): [전화] · 줄 클릭 = 상세 창(가운데 응대 기록 입력칸) · 그때 담당 확인 */
-  const sgRow=page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'});assert.equal(await sgRow.locator('[data-dz="req"]').count(),0,'줄 아래로 펼치는 단추 없음');
+  const goTab=async r=>{await V.locator('.dz-tabs [data-v="'+(rowsLate.includes(r)?'late':'now')+'"]').click();await page.waitForTimeout(250);};
+  await goTab(sg);const sgRow=page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'});assert.equal(await sgRow.locator('[data-dz="req"]').count(),0,'줄 아래로 펼치는 단추 없음');
   await sgRow.locator(':scope>button').click();await page.waitForTimeout(300);
   assert.equal(await page.locator('#today-v2 .tv3 .dz-reqform, #today-v2 .tv3 .wrq-inline').count(),0,'줄 아래 입력칸은 그리지 않는다');
   assert.deepEqual(await page.evaluate(()=>__open.slice(-1)[0]),['deal:silent1','contact'],'[전화] = 상세 창을 응대 기록 입력으로');
   assert.equal(await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_work_request_reply_v1'&&x[1].action==='seen').length),1,'줄을 열면 그때 담당 확인');assert.equal(one(await page.locator('.ib .wrq-belln').innerText()),'미확인 요청 1');
-  await page.locator('#today-v2 .tv3 .dz-row',{hasText:'동탄푸른마을'}).locator('.c2').click();await page.waitForTimeout(200);assert.deepEqual(await page.evaluate(()=>__open.slice(-1)[0]),['deal:today1',''],'줄 클릭 = 상세 창');
-  await page.locator('#today-v2 .tv3 .dz-row',{hasText:'천안두정'}).locator(':scope>button').click();await page.waitForTimeout(300);assert.deepEqual(await page.evaluate(()=>__drw.slice(-1)),['far1'],'요청만 있는 줄 [열어서 처리] = 그 영업건 상세');
+  await goTab(dt);await page.locator('#today-v2 .tv3 .dz-row',{hasText:'동탄푸른마을'}).locator('.c2').click();await page.waitForTimeout(200);assert.deepEqual(await page.evaluate(()=>__open.slice(-1)[0]),['deal:today1',''],'줄 클릭 = 상세 창');
+  await goTab(far);await page.locator('#today-v2 .tv3 .dz-row',{hasText:'천안두정'}).locator(':scope>button').click();await page.waitForTimeout(300);assert.deepEqual(await page.evaluate(()=>__drw.slice(-1)),['far1'],'요청만 있는 줄 [열어서 처리] = 그 영업건 상세');
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#today-v2 .dz .dz-row')).cursor),'pointer');
   /* 3-1. 관리자 한마디: 맨 위 색 상자 없음 · 묶음 요청 = 진행 막대 아래 한 줄 + 정보 보완 구역(겹치는 건은 한 번) · 공지 · 코칭 = 종 알림 · 코칭은 '내 이번 주' */
-  {const info0=n[2];
+  {const info0=n[3];
    const t=await page.evaluate(()=>{let title='';KpiV7.stageGroups(new Set()).forEach(g=>g.rules.forEach(x=>{if(x.stage==='lost'&&x.targets.filter(t=>t.owner==='이필선').length===3)title=title||g.label+' · '+x.t;}));
     B.rep_manager_comments=[{rep_name:'이필선',week_start:repManagerWeekKey(0),comment:'· [KPI 요청] '+title+' — 3건: 실주 현장 1, 실주 현장 2, 실주 현장 3\n· [KPI 요청] '+title+' — 2건: 실주 현장 1, 실주 현장 2\n[공지] 단가표가 바뀌었습니다\n견적 후 3일 안에 수신 확인을 남겨 봅시다',status:'open',created_by:'송보람',updated_at:new Date().toISOString()}];
     try{localStorage.removeItem('crm.dwd.seen.v1');}catch(e){}DayWord._reset();paint();return title;});
    assert.ok(t,'실주 사유 요청 제목(관리팀 KPI 와 같은 함수): '+t);await page.waitForTimeout(500);
    assert.equal(await page.locator('#today-v2 .tv3-word').count(),0,'맨 위 관리자 한마디 상자 없음');
    const bl=page.locator('#today-v2 .tv3-hero .dwd-bulk');assert.equal(await bl.count(),1,'묶음 요청 한 줄(같은 대상은 한 묶음)');
-   assert.match(one(await bl.innerText()),new RegExp('^묶음 요청 송보람 · \\d+\\.\\d+ · '+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+' 3건 \\(요청 2건 · 같은 건은 한 번만 셈\\) → 정보 보완에서 처리 · 지연 · 평가 아님 정보 보완 열기 ›$'),one(await bl.innerText()));
+   assert.match(one(await bl.innerText()),new RegExp('^묶음 요청 송보람 · \\d+\\.\\d+ · '+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+' 3건 \\(요청 2건 · 같은 건은 한 번만 셈\\) → 기록 보완에서 처리 기록 보완 열기 ›$'),one(await bl.innerText()));
    assert.equal(await bl.evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)','색 바탕 상자 없음');
-   const tab2=Number((await V.locator('.dz-tabs button').nth(2).locator('span').innerText()).match(/(\d+)$/)[1]);assert.equal(tab2,info0+3,'정보 보완 구역에 대상 3건(겹쳐도 한 번씩)');
-   await bl.locator('button').click();await page.waitForTimeout(400);assert.equal(await V.locator('.dz').getAttribute('data-zone'),'info','[정보 보완 열기] = 정보 보완 구역');
-   const br=await V.locator('.dz-table .dz-row').evaluateAll(l=>l.filter(r=>/실주 현장/.test(r.textContent)).map(r=>[r.querySelector('.c1>b').textContent,r.querySelector('.dz-why').textContent,r.querySelector('.c3 small').textContent,r.querySelector(':scope>button').textContent]));
-   assert.equal(br.length,3);assert.match(br[0][1],/^묶음 요청 · 송보람 \d+\.\d+$/);assert.equal(br[0][2],'기록만 · 지연 · 평가 아님');assert.equal(br[0][3],'입력');
+   const tab2=Number((await V.locator('.dz-tabs button').nth(3).locator('span').innerText()).match(/(\d+)$/)[1]);assert.equal(tab2,info0+3,'기록 보완 구역에 대상 3건(겹쳐도 한 번씩)');
+   await bl.locator('button').click();await page.waitForTimeout(400);assert.equal(await V.locator('.dz').getAttribute('data-zone'),'fix','[기록 보완 열기] = 기록 보완 구역');
+   const br=await V.locator('.dz-table .dz-row').evaluateAll(l=>l.filter(r=>/실주 현장/.test(r.textContent)).map(r=>[r.querySelector('.c1>b').textContent,r.querySelector('.dz-why').textContent,r.querySelector('.c3 .dz-due').textContent,r.querySelector(':scope>button').textContent]));
+   assert.equal(br.length,3);assert.match(br[0][1],/^묶음 요청 · 송보람 \d+\.\d+$/);assert.equal(br[0][2],'—','기록 보완은 기한 없음');assert.equal(br[0][3],'입력');
    await V.locator('.dz-table .dz-row',{hasText:'실주 현장 1'}).locator(':scope>button').click();await page.waitForTimeout(300);assert.deepEqual(await page.evaluate(()=>__drw.slice(-1)),['lost1'],'묶음 요청 줄 [입력] = 그 영업건 상세(필수 정보)');
    /* 종 알림: 공지 · 코칭 — 누르면 목록 · 읽으면 숫자가 사라진다 */
    assert.equal(one(await page.locator('.ib .dwd-belln').innerText()),'새 알림 2');
    await page.locator('.ib').click();await page.waitForTimeout(200);const pp=one(await page.locator('#dwd-pop').innerText());if(process.env.DW_SHOT)await page.screenshot({path:process.env.DW_SHOT});
-   assert.match(pp,/^알림 × 묶음 요청 3건 · 정보 보완에서 처리 › 공지 단가표가 바뀌었습니다 송보람 · \d+\.\d+ 코칭 견적 후 3일 안에 수신 확인을 남겨 봅시다 송보람 · \d+\.\d+ 공지는 읽으면 끝/,pp);
+   assert.match(pp,/^알림 × 묶음 요청 3건 · 기록 보완에서 처리 › 공지 단가표가 바뀌었습니다 송보람 · \d+\.\d+ 코칭 견적 후 3일 안에 수신 확인을 남겨 봅시다 송보람 · \d+\.\d+ 공지는 읽으면 끝/,pp);
    assert.equal(await page.locator('.ib .dwd-belln').count(),0,'읽으면 새 알림 숫자가 사라진다');
    await page.keyboard.press('Escape');await page.waitForTimeout(100);assert.equal(await page.locator('#dwd-pop').count(),0);
    assert.match(one(await V.locator('.tv3-side .dwd-coach').innerText()),/^이번 주 코칭 견적 후 3일 안에 수신 확인을 남겨 봅시다 송보람 · \d+\.\d+$/,'코칭은 오른쪽 내 이번 주 칸에도');
@@ -117,22 +123,22 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 기본(줄 아래 펼침 없음)에서는 이유 글에 근거가 title 로 붙고 펼침 상자가 없다 */
   assert.equal(await page.locator('#today-v2 .tv3 .dz-ev').count(),0,'기본: 줄 아래 근거 펼침 없음');
   await page.evaluate(()=>{G.rowInlineKeep=true;paint();});await page.waitForTimeout(200);
-  await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('.dz-why').click();await page.waitForTimeout(300);
+  await goTab(sg);await page.locator('#today-v2 .tv3 .dz-row',{hasText:'서울체육고'}).locator('.dz-why').click();await page.waitForTimeout(300);
   const ev=one(await page.locator('#today-v2 .tv3 .dz-ev').innerText());
   assert.match(ev,/^진행 판단 필요 · 왜\? 적용 규칙 견적 발송 후 7일 안 후속\(실제 발송일부터\) \(기준 v\d+ · [^)]+\) 기준일 .+ 관련 기록 \d+\.\d+ 고객 접촉 · 고객 접촉 1회 빠진 것 대기 사유 진전 결정권자 확인 요청 자료 확보 방문 확정 경쟁사 파악 결정 일정 다음 단계 조건 0 \/ 5 누르면 견적 발송 후 후속/,ev);/* day_zones 4-3 진전 확인: 근거 보기 안에 다음 단계 조건 5가지 */
   await page.evaluate(()=>{G.rowInlineKeep=false;paint();});
   /* 5. 회신 대기 탭: 기다리는 것 · 다음 확인일 · 지연 아님 · [확인일 변경] */
   await page.locator('#today-v2 .tv3 .dz-tabs [data-v="wait"]').click();await page.waitForTimeout(300);
   const w=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());
-  assert.match(w,/현장 기다리는 것 먼저 하는 이유 · 다음 확인일/);/* §4 같은 이유 3번째 대기 → 재알림 대신 [결정권자에게 연락] [관리자 판단 요청] [보류로 전환] */
-  assert.match(w,/성산시영아파트[\s\S]*입대의 결과 회신 대기 같은 이유 3번째 대기 확인 \d+\.\d+ · 재알림 대신 다음 셋 중 하나 결정권자에게 연락 관리자 판단 요청 보류로 전환/);assert.match(w,/대기 중은 지연으로 안 셈 · 확인일에 지금 처리로 올라옴/);
+  assert.match(w,/현장 · 단계 기다리는 것 다음 확인/);/* §4 같은 이유 3번째 대기 → 재알림 대신 [결정권자에게 연락] [관리자 판단 요청] [보류로 전환] */
+  assert.match(w,/성산시영아파트[\s\S]*입대의 결과 회신 대기 확인 \d+\.\d+ 같은 이유 3번째 대기 결정권자에게 연락 관리자 판단 요청 보류로 전환/);
   await page.locator('#today-v2 .tv3 .dz-w3 [data-dz="open"]').click();await page.waitForTimeout(100);assert.deepEqual(await page.evaluate(()=>__open.at(-1)),['deal:wait1','contact'],'[결정권자에게 연락] = 상세의 연락');
   await page.locator('#today-v2 .tv3 .dz-w3 [data-dz="judge"]').click();await page.waitForTimeout(400);assert.deepEqual(await page.evaluate(()=>__memo.map(m=>[m[0],m[1]])),[['wait1','[지원 요청] 같은 이유로 3번째 회신 대기 · 관리자 판단 요청 — 입대의 결과 회신 대기']],'관리자 판단 요청 = 지원 요청 메모(관리자 오늘 업무의 결정 요청으로)');await page.evaluate(()=>{__memo.length=0;});
   /* 6. 정보 보완 탭 */
-  await page.locator('#today-v2 .tv3 .dz-tabs [data-v="info"]').click();await page.waitForTimeout(300);
-  const inf=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());assert.match(inf,/햇빛마을23단지[\s\S]*정보 보완 필요 CRM 필수정보 미입력/);assert.match(inf,/평가 · 지연에 안 셈/);
+  await page.locator('#today-v2 .tv3 .dz-tabs [data-v="fix"]').click();await page.waitForTimeout(300);
+  const inf=one(await page.locator('#today-v2 .tv3 .dz-table').innerText());assert.match(inf,/햇빛마을23단지[\s\S]*정보 보완 필요/);
   /* 7. 약속 누락: 약속 원문 · 업무 없음 · [업무로 만들기] [이미 함] */
-  await page.locator('#today-v2 .tv3 .dz-tabs [data-v="gaps"]').click();await page.waitForTimeout(300);
+  /* 약속 누락은 기록 보완 구역 안에 그대로(같은 탭) */
   const gaps=await page.locator('#today-v2 .tv3 .dz-gap').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,who:r.querySelector('.c1>div>span').textContent,q:r.querySelector('.c2 mark').textContent,why:r.querySelector('.dz-gapwhy').textContent,sub:r.querySelector('.c3 small').textContent,btns:[...r.querySelectorAll('.dz-btns button')].map(b=>b.textContent)})));
   assert.ok(gaps.length>=1);assert.match(gaps[0].site,/평동동남/);assert.match(gaps[0].who,/^이필선 · \d+\.\d+ 응대 완료$/);assert.match(gaps[0].q,/사진|방문/);assert.equal(gaps[0].why,'업무 없음');assert.match(gaps[0].sub,/응대 완료 ≠ 약속 완료/);assert.deepEqual(gaps[0].btns,['업무로 만들기','이미 함']);
   await page.evaluate(()=>{G.rowInlineKeep=true;paint();});
@@ -146,7 +152,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.evaluate(()=>{G.rowInlineKeep=false;paint();});
   /* 8. 필터로 숨은 내 요청 안내 → [보기] = 필터 해제 */
   await page.evaluate(()=>{SalesFilterState.selectBrand('석민이앤씨');paint();});await page.waitForTimeout(500);
-  assert.deepEqual(await page.evaluate(()=>{const Z=DayZones.last();return [].concat(Z.now,Z.wait,Z.info).map(i=>i.key).sort();}),['deal:bid0','deal:wait1'],'브랜드 필터는 구역 항목에도 똑같이(석민이앤씨 2건만)');
+  assert.deepEqual(await page.evaluate(()=>{const Z=DayZones.last();return [].concat(Z.now,Z.late,Z.wait,Z.info).map(i=>i.key).sort();}),['deal:bid0','deal:wait1'],'브랜드 필터는 구역 항목에도 똑같이(석민이앤씨 2건만)');
   assert.match(one(await page.locator('#today-v2 .tv3 .dz-hidden').innerText()),/^필터 때문에 숨은 내 요청 2건 \(석민이앤씨 필터 중\) 보기$/);
   await page.locator('#today-v2 .tv3 .dz-hidden button').click();await page.waitForTimeout(500);
   assert.equal(await page.locator('#today-v2 .tv3 .dz-hidden').count(),0);assert.deepEqual(await page.evaluate(()=>[G.brand,SalesFilterState.state().brands]),['전체',[]]);

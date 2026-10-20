@@ -53,17 +53,19 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const strip=()=>V.locator('.dx-rs button').evaluateAll(l=>l.map(b=>b.textContent.replace(/\s+/g,' ').trim()));
   const rows=()=>V.locator('.dz-table .dz-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1>b').textContent,why:r.querySelector('.dz-why').textContent,btn:(r.querySelector(':scope>button')||{}).textContent||''})));
   const rowOf=t=>V.locator('.dz-table .dz-row',{hasText:t}),chk=()=>V.locator('.dz-chk');
+  /* six_fixes ②: 기한 지난 건은 기한 초과 구역 — 그 줄이 있는 구역을 열고 찾는다 */
+  const openRow=async t=>{for(const z of ['now','late']){await V.locator('.dz-tabs [data-v="'+z+'"]').click();await page.waitForTimeout(200);if(await rowOf(t).count())return rowOf(t);}return rowOf(t);};
   const clip=sel=>V.evaluate((v,sel)=>[...v.querySelectorAll(sel+' *')].filter(n=>n.children.length===0&&n.scrollWidth>n.clientWidth+1&&getComputedStyle(n).textOverflow!=='ellipsis'&&getComputedStyle(n).whiteSpace==='nowrap').map(n=>n.textContent),sel);
 
   /* 1. 기록 상태 4가지: 기록 없는 3건 = 활동 확인 필요 · 기록 있는 정체 1건만 '실제 정체' */
   assert.deepEqual(await strip(),['활동 확인 필요 3','회신 대기 1','무기한 대기 1','실제 정체 1']);
   assert.match(one(await V.locator('.dx-rs').innerText()),/지연 · 평가 = 실제 정체만$/);
-  const r0=await rows();
+  const r0=(await rows()).concat(await (async()=>{await V.locator('.dz-tabs [data-v="late"]').click();await page.waitForTimeout(250);const x=await rows();await V.locator('.dz-tabs [data-v="now"]').click();await page.waitForTimeout(250);return x;})());/* six_fixes ②: 기한 지난 건은 기한 초과 구역 */
   for(const s of ['동부산훼미리타운4차','강북이진캐스빌','한강반도유보라']){const r=r0.find(x=>x.site.includes(s)&&x.btn==='활동 확인');assert.ok(r,s+' 줄');assert.equal(r.why,'활동 여부 확인 필요','기록 없음 → 지연으로 단정하지 않는다');}
   const sr=r0.find(x=>x.site.includes('서울체육고'));assert.equal(sr.why,'진행 판단 필요');assert.equal(sr.btn,'전화','기록이 있는 건은 예전 그대로');
 
   /* 2. [활동 확인] → 상황 4가지 · 고르기 전에는 저장 버튼이 없다 */
-  await rowOf('강북이진캐스빌').locator('[data-dz="chk"]').click();await page.waitForTimeout(250);
+  await (await openRow('강북이진캐스빌')).locator('[data-dz="chk"]').click();await page.waitForTimeout(250);
   assert.equal(await chk().count(),1);assert.deepEqual(await chk().locator('.dx-sits button b').allInnerTexts(),['담당이 통화했는데 기록을 안 했음','고객이 나중에 연락 달라고 함','담당도 진행 상황을 모름','이미 다른 영업건으로 진행 중']);
   assert.equal(await chk().locator('[data-dz="chksave"]').count(),0,'상황을 고른 뒤에만 저장');
   assert.deepEqual(await page.evaluate(()=>[__memo.length,__next.length,__rec.length,__open.length]),[0,0,0,0],'누른 것만으로 연락 요청 · 업무를 만들지 않는다');
@@ -79,7 +81,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(await chk().count(),0);assert.deepEqual(await strip(),['활동 확인 필요 2','회신 대기 2','무기한 대기 1','실제 정체 1'],'회신 대기로 옮겨지고 지연에서 빠진다');
   assert.equal(await page.evaluate(()=>B.deals.find(d=>d.id==='norec2').stage_code),'sent','단계는 바꾸지 않는다');
   /* ① 통화했는데 기록 안 함 → 그 날짜로 통화 결과 등록 · 기록이 생기면 '실제 정체' 판단으로 */
-  await rowOf('한강반도유보라').locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="0"]').click();await page.waitForTimeout(120);
+  await (await openRow('한강반도유보라')).locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="0"]').click();await page.waitForTimeout(120);
   await chk().locator('input[data-dx="date"]').fill(D.y);await chk().locator('[data-dz="chksave"]').click();await page.waitForTimeout(120);assert.match(one(await chk().locator('em').innerText()),/통화 결과를 골라 주세요/);
   await chk().locator('[data-dz="chkres"][data-v="연결됨"]').click();await page.waitForTimeout(100);
   await page.evaluate(()=>{window.__fail=1;});await chk().locator('[data-dz="chksave"]').click();await page.waitForTimeout(350);
@@ -88,11 +90,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>__rec),[['norec3','전화','연결됨',D.y,'뒤늦게 등록(활동 확인)']],'다시 눌러도 통화 결과를 두 번 넣지 않는다');
   assert.equal(await page.evaluate(()=>__memo[__memo.length-1][1]),'[활동 확인] 통화했는데 미기록 → '+md(D.y)+' 통화 결과 등록 · 연결됨');
   /* ③ 담당도 모름 → 이때만 고객 연락 업무 */
-  await rowOf('동부산훼미리타운4차').locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="2"]').click();await page.waitForTimeout(120);
+  await (await openRow('동부산훼미리타운4차')).locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="2"]').click();await page.waitForTimeout(120);
   const due3=await chk().locator('input[data-dx="due"]').inputValue();await chk().locator('[data-dz="chkclose"]').click();await page.waitForTimeout(150);
   assert.equal(await page.evaluate(()=>__next.length),1,'닫으면 아무것도 만들지 않는다');
   /* ④ 다른 영업건으로 진행 중 → 연결을 남기고 이 건은 상세에서 한 건씩 정리 */
-  await rowOf('동부산훼미리타운4차').locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="3"]').click();await page.waitForTimeout(120);
+  await (await openRow('동부산훼미리타운4차')).locator('[data-dz="chk"]').click();await page.waitForTimeout(200);await chk().locator('[data-dz="chksit"][data-v="3"]').click();await page.waitForTimeout(120);
   assert.equal(await chk().locator('[data-dz="chksib"]').count(),1,'같은 현장의 다른 영업건');
   await chk().locator('[data-dz="chksave"]').click();await page.waitForTimeout(120);assert.match(one(await chk().locator('em').innerText()),/진행 중인 영업건을 골라 주세요/);
   await chk().locator('[data-dz="chksib"]').click();await page.waitForTimeout(100);await chk().locator('[data-dz="chksave"]').click();await page.waitForTimeout(400);
@@ -106,7 +108,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const st=await rows();assert.ok(st.length>=1&&st.every(r=>r.why==='진행 판단 필요'),'실제 정체만: '+JSON.stringify(st));
   await V.locator('.dx-rs [data-v="nowait"]').click();await page.waitForTimeout(300);
   assert.deepEqual(await rows(),[{site:'[경기 고덕] 고덕아이파크',why:'무기한 대기',btn:'확인일 정하기'}]);
-  assert.match(one(await V.locator('.dz-note').innerText()),/확인일을 정하면 회신 대기로 옮겨집니다/);
+  assert.match(one(await V.locator('.dz-note').innerText()),/확인일을 정하면 회신 대기로/);
   await V.locator('.dx-rs [data-v="wait"]').click();await page.waitForTimeout(300);assert.equal(await V.locator('.dz-tabs [aria-selected="true"]').evaluate(b=>b.dataset.v),'wait','회신 대기 = 그 구역으로');
   await V.locator('.dz-tabs [data-v="now"]').click();await page.waitForTimeout(300);
 

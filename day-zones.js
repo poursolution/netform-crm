@@ -17,7 +17,8 @@
  const action=i=>{if(i.rk==='promise'&&i.x&&i.x.dueDays===0)return '오늘 약속 · 연락';const a=ACTION[i.rk];return a?a[0]:String(i.missTxt||'확인 필요');};
  const opens=i=>{const a=ACTION[i.rk];return a?a[1]:'';};
  /* 정보 보완(기록만 · 지연 · 평가 제외) */
- const INFO=new Set(['data','contract','fix','tfapprove']);
+ /* six_fixes ②: '다음 할 일 · 날짜 없음(stall)'도 기록이 빠진 것 → 기록 보완 */
+ const INFO=new Set(['data','contract','fix','tfapprove','stall']);
  /* ── 회신 대기: 대기 사유 + 다음 확인일이 있는 영업건(확인일에 지금 처리로) ── */
  function waitDate(d){const v=d.expected_resume_at||d.wake_up_at||d.relationship_hold_until||'';const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:'';}
  function waitingOf(d){let reason=String(d.waiting_reason||'').trim(),due=waitDate(d);if(!reason&&!due){try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null,m=a&&/^고객 회신 대기:\s*(.+)$/.exec(String(a.text||''));if(m){reason=m[1].trim();const k=String(a.due||a.due_at||'').slice(0,10);due=/^\d{4}-\d{2}-\d{2}$/.test(k)?k:'';}}catch(e){}}if(!reason&&!due)return null;const today=KST();return {reason:reason||'대기 사유 미기록',due,future:!!due&&due>=today,indefinite:!!reason&&!due};}
@@ -51,14 +52,31 @@
  const reqMemo=r=>String(r&&(r.memo||(r.asks||[]).join(' · ')||r.label)||'').replace(/\s+/g,' ').trim();
  /* 공통 필터(브랜드 = SalesFilterState · 담당 = G.todayQueueOwner · 검색 = G.todayQueueSearch)를 항목에도 똑같이 — 관제탑이 보탠 열린 영업건은 필터를 거치지 않아 여기서 한 번 더 */
  function scopeOk(item,owner){try{const G=R.G||{};const brand=item.brand||(R.inquiryBrandOf?R.inquiryBrandOf(item):'')||'';if(R.SalesFilterState&&!R.SalesFilterState.matchesBrand(brand))return false;const o=G.todayQueueOwner&&G.todayQueueOwner!=='전체'?G.todayQueueOwner:'';if(o&&owner&&owner!==o)return false;const q=String(G.todayQueueSearch||'').trim().toLowerCase();if(q&&![item.site,item.site_name,owner,item.contact_name,item.phone].join(' ').toLowerCase().includes(q))return false;return true;}catch(e){return true;}}
+ const isLate=i=>!!(i.x&&(i.x.overdue||(typeof i.x.dueDays==='number'&&i.x.dueDays<0)))||(!!i.reqOnly&&(i.reqs||[]).some(reqLate));
+ const promised=i=>i.rk==='promise'||!!(i.x&&i.x.promise);
+ /* 줄의 기한 칸(상태 / 할 일 / 기한 중 기한) */
+ function dueOf(i,zone){
+  if(zone==='wait')return {t:i.wait&&i.wait.due?'확인 '+md(i.wait.due):'확인일 없음',red:false};
+  if(zone==='nowait')return {t:'확인일 없음',red:false};
+  if(zone==='info')return {t:'—',red:false};
+  const x=i.x||{},dd=typeof x.dueDays==='number'?x.dueDays:null;
+  if(dd!=null&&dd<0)return {t:(-dd)+'일 지남',red:true};
+  if(i.reqOnly&&(i.reqs||[]).length){const r=i.reqs[0];return {t:reqLate(r)?reqTag(r).replace(/^.*요청 · /,''):(r.due_label||md(r.due_at)||'기한 없음'),red:reqLate(r)};}
+  if(x.overdue)return {t:'기준 넘김',red:true};
+  if(dd===0)return {t:promised(i)?'오늘 · 약속':'오늘',red:false};
+  if(i.rk==='first'||i.rk==='assign'||(x.type==='inq'&&dd==null))return {t:i.rk==='assign'?'배정':'첫 연락',red:false};
+  if(dd!=null)return {t:md(x.due)||dd+'일 남음',red:false};
+  if(i.rk==='deadline'&&i.deadline&&i.deadline.date)return {t:'마감 '+md(i.deadline.date),red:false};
+  return {t:'날짜 없음',red:false};
+ }
  /* ── 구역 나누기: 관제탑 항목(V.groups) + 회신 대기 + 약속 누락 ── */
  function build(V,X){
   const me=V.me,team=V.team,items=V.groups.filter(g=>!g.aux).flatMap(g=>g.items),RQ=reqMap();
-  const keyOf=i=>i.x.type==='deal'?'deal:'+String(i.x.item.id):i.x.type==='inq'?'inq:'+String(i.x.item.id):i.key;
-  const now=[],wait=[],info=[],seen=new Set();
-  items.forEach(i=>{seen.add(keyOf(i));if(!scopeOk(i.x.item,i.x.owner))return;i.reqs=RQ.get(keyOf(i))||[];const w=i.x.type==='deal'?waitingOf(i.x.item):null;
+  const keyOf=i=>i.x.type==='deal'?'deal:'+String(i.x.item.id):(i.x.type==='inq'||i.x.type==='manager')?'inq:'+String(i.x.item.id):i.key;
+  const now=[],wait=[],info=[],seen=new Set(),mgr=[];
+  items.forEach(i=>{if(i.x.type==='manager'){mgr.push(i);return;}seen.add(keyOf(i));if(!scopeOk(i.x.item,i.x.owner))return;i.reqs=RQ.get(keyOf(i))||[];const w=i.x.type==='deal'?waitingOf(i.x.item):null;
    if(w&&w.future&&!['deadline','decide','contract','assign','tfapprove','transfer'].includes(i.rk)){i.wait=w;wait.push(i);}
-   else if(INFO.has(i.rk))info.push(i);else now.push(i);});
+   else if(INFO.has(i.rk)&&!(i.rk==='stall'&&i.x.type!=='deal'))info.push(i);else now.push(i);});
   /* 회신 대기 중 관제탑 항목이 아닌 영업건(대기 사유 + 확인일이 있어 지연으로 세지 않는 것) */
   (X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const k='deal:'+String(d.id);if(seen.has(k))return;const w=waitingOf(d);if(!w||!w.future)return;seen.add(k);if(!scopeOk(d,owner))return;
    wait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'wait',missTxt:'고객 회신 대기',short:'',act:'확인일 변경',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
@@ -67,10 +85,20 @@
    now.push({key:k,x:{type:k.startsWith('inq:')?'inq':'deal',item,owner:me},i:{site:r.site||item.site||item.site_name||'',brand:r.brand||item.brand||''},st:'',sName:'',rk:'req',missTxt:(rs[0].asks||[]).join(' · ')||r.label,short:'',act:'열어서 처리',done:'',reqs:rs,brand:r.brand||item.brand||'',reqOnly:true});});
   /* 무기한 대기(4-3 기록 상태): 대기 사유는 있는데 확인일이 없는 건 — 따로 보여 주고 확인일을 정하게 한다 */
   const nowait=[];(X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const w=waitingOf(d);if(!w||!w.indefinite||!scopeOk(d,owner))return;const k='deal:'+String(d.id);nowait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'nowait',missTxt:'무기한 대기',short:'',act:'확인일 정하기',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
-  {const w=i=>(i.reqs&&i.reqs.length)?(i.reqs.some(reqLate)?2:1):0;const idx=new Map(now.map((x,n)=>[x,n]));now.sort((a,b)=>w(b)-w(a)||idx.get(a)-idx.get(b));}
+  /* 예전 문의 요청 줄(관리자 요청 · manager:) — 같은 문의 줄이 있으면 그 줄의 꼬리표로만(따로 줄 X), 없을 때만 한 줄 */
+  mgr.forEach(i=>{const k=keyOf(i),r=i.x.request||{},tag={id:'m:'+String(r.id||i.key),legacy:true,requested_by:r.requested_by||'관리자',due_at:r.due_at||'',label:String(r.instruction||'관리자 요청'),memo:String(r.instruction||''),asks:[]},hit=[].concat(now,wait,info).find(x=>x.key===k||keyOf(x)===k);
+   if(hit){hit.reqs=(hit.reqs||[]).concat([tag]);return;}if(seen.has(k)||!scopeOk(i.x.item,i.x.owner))return;seen.add(k);i.reqs=(RQ.get(k)||[]).concat([tag]);i.reqOnly=true;i.missTxt=tag.label;i.act='열어서 처리';now.push(i);});
+  /* 2026-10-20 design_handoff_six_fixes ②: 지금 처리 → 오늘 처리 + 기한 초과(날짜 지난 것 · 기한 지난 요청만 있는 줄) */
+  const late=[],today=[];now.forEach(i=>(isLate(i)?late:today).push(i));
+  {const idx=new Map(today.map((x,n)=>[x,n])),w=i=>(i.reqs&&i.reqs.length)?(i.reqs.some(reqLate)?2:1):0,rank=i=>i.x&&i.x.dueDays===0?0:promised(i)?1:2;today.sort((a,b)=>rank(a)-rank(b)||w(b)-w(a)||idx.get(a)-idx.get(b));}
+  {const idx=new Map(late.map((x,n)=>[x,n])),dd=i=>i.x&&typeof i.x.dueDays==='number'?i.x.dueDays:0;late.sort((a,b)=>dd(a)-dd(b)||idx.get(a)-idx.get(b));}
   try{const DW=R.DayWord;if(DW&&DW.on())DW.infoRows(me,seen,scopeOk).forEach(r=>info.push(r));}catch(e){}
   const gaps=promiseGaps(X.D||[],me,team).filter(g=>scopeOk(g.d,g.owner));
-  return {now,wait,info,gaps,nowait,me,team,total:now.length+wait.length+info.length+gaps.length};
+  /* 기록 보완 = 빠진 정보 · 기록 + 무기한 대기 + 업무로 안 만든 약속 — 지연 · 평가 제외 */
+  info.forEach(i=>{i._fz='info';});nowait.forEach(i=>{i._fz='nowait';});gaps.forEach(g=>{g._fz='gap';});
+  const fix=[].concat(info,nowait,gaps);
+  /* 큰 숫자 = 오늘 처리 + 기한 초과(내가 오늘 할 일). 회신 대기 · 기록 보완은 지연 · 평가에서 뺀다 */
+  return {now:today,late,wait,info,gaps,nowait,fix,me,team,total:today.length+late.length};
  }
  /* ── 근거 보기(4-3 ⑤): 적용 규칙(기준 버전) · 기준일 · 관련 기록(고객 접촉 / 내부 메모) · 빠진 것 ── */
  function evidence(i){
@@ -89,7 +117,7 @@
  function ackAssign(id){try{const a=acked();a[String(id)]=Date.now();R.localStorage.setItem(ACK_KEY,JSON.stringify(a));}catch(e){}}
  function newAssigns(me){try{const a=acked(),since=Date.now()-7*864e5;return (R.B&&R.B.inquiries||[]).filter(q=>{try{if(a[String(q.id)])return false;if(R.repN(R.inquiryRoutedOwner(q))!==me)return false;const at=Date.parse(R.inqCtlAssignedAt(q)||'');if(!Number.isFinite(at)||at<since)return false;if(R.inqCtlFirstResponseAt(q))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(q))return false;return true;}catch(e){return false;}}).sort((x,y)=>String(y.assigned_at||'').localeCompare(String(x.assigned_at||'')));}catch(e){return [];}}
  /* 줄에 붙은 요청 번호(위쪽 큰 카드를 그리지 않아도 되는 요청) */
- function reqRowIds(){const s=new Set();if(!LAST)return s;/* 지금 처리 줄에 붙은 요청만(그 줄 아래에서 입력할 수 있는 것) */LAST.now.forEach(i=>(i.reqs||[]).forEach(r=>s.add(r.id)));return s;}
+ function reqRowIds(){const s=new Set();if(!LAST)return s;/* 지금 처리 줄에 붙은 요청만(그 줄 아래에서 입력할 수 있는 것) */[].concat(LAST.now,LAST.late||[]).forEach(i=>(i.reqs||[]).forEach(r=>s.add(r.id)));return s;}
  /* §2 도착 팝업(처음 한 번): 중요 요청 — 아직 담당 확인(seen) 전이고 이 PC 에서 팝업을 본 적 없는 것 */
  function newRequests(){try{const W=R.WorkRequest;if(!W||!W.enabled()||!W.incoming)return [];const a=acked();return W.incoming().filter(r=>r.status==='sent'&&W.isImportant(r)&&!W.isSpecial(r)&&!a['rq:'+r.id]);/* 인계 · 지사 확인은 위쪽 카드가 그대로 보이므로 팝업을 겹쳐 띄우지 않는다 */}catch(e){return [];}}
  function popupHtml(me){
@@ -101,20 +129,21 @@
   return '<div class="dz-pop" role="dialog" aria-label="새 배정"><div class="dz-pop-box"><header><b>새 배정 '+L.length+'건</b><span>첫 연락은 배정 후 '+H+'시간 안 · 팝업은 새 배정 · 긴급 기한 변경 · 중요 요청에만</span>'+(L.length>1?'<button type="button" data-dz="popall">모두 확인</button>':'')+'</header>'+L.slice(0,5).map(row).join('')+(L.length>5?'<p>외 '+(L.length-5)+'건은 오늘 업무 목록에서</p>':'')+'</div></div>';
  }
  /* ── 그리기 ── */
- const ZONES=[['now','지금 처리','오늘 연락 · 마감 · 방문 · 약속','할 일','기한','처리 후 다음 건 · 지연 · 평가 포함'],['wait','회신 대기','내가 할 일 없음 · 확인일만','기다리는 것','다음 확인일','대기 중은 지연으로 안 셈 · 확인일에 지금 처리로 올라옴'],['info','정보 보완','고객 연락 아님 · 기록만','빠진 것','이유','평가 · 지연에 안 셈 · 하루 몇 건씩 나눠 처리'],['gaps','약속 누락','약속은 있는데 업무 없음','약속 원문','응대일','[업무로 만들기] 또는 [이미 함] · 응대 완료 ≠ 약속 완료']];
+ /* 2026-10-20 design_handoff_six_fixes ②: 4구역 = 오늘 처리 / 기한 초과 / 고객 회신 대기 / 기록 보완. 기준 문구는 탭 아래 한 줄 · 반복 설명 없음 */
+ const ZONES=[['now','오늘 처리','오늘 해야 하는 것','할 일','기한'],['late','기한 초과','날짜 지난 것','할 일','기한'],['wait','고객 회신 대기','확인일만 · 지연 아님','기다리는 것','다음 확인'],['fix','기록 보완','기록만 · 평가 제외','빠진 것','기한']];
  const BRAND={'석민이앤씨':'#e8590c','POUR솔루션':'#1f9d55','POUR공법':'#7048e8','아파트스퀘어':'#3b6ce4'};
  const PER=20;
  const INLINE=()=>!!(R.G&&R.G.rowInlineKeep);
  /* 줄 · 단추 → 상세 창. 오늘 업무 대기열에 있는 건은 그 길(필터 · 스크롤 복귀 포함), 없는 건(묶음 요청으로 보탠 종료 건 등)은 바로 연다 */
  function openItem(i,act){
-  (i.reqs||[]).forEach(r=>{try{R.WorkRequest.markSeen(r.id);}catch(e){}});
+  (i.reqs||[]).forEach(r=>{if(r.legacy)return;try{R.WorkRequest.markSeen(r.id);}catch(e){}});
   let inQ=false;try{const D=R.TodayWorkQueue.data();inQ=D.rows.some(r=>r.key===i.key)||(D.backlog||[]).some(r=>r.key===i.key);}catch(e){}
   const later=()=>{if(act&&i.x.type==='deal')setTimeout(()=>{try{R.DealDetailV3&&R.DealDetailV3.openFrom&&R.DealDetailV3.openFrom(act);}catch(e){}},300);};
   if(inQ){try{R.TodayWorkQueue.open(i.key,act==='activity'?'contact':undefined);}catch(e){}if(act==='stagefields')later();return;}
   if(i.x.type==='deal'){try{R.G._detailPopup=true;R.drwDeal(JSON.stringify(i.x.item));}catch(e){}later();return;}
   try{R.TodayWorkQueue.open(i.key,act==='activity'?'contact':undefined);}catch(e){}
  }
- const findItem=key=>LAST?[].concat(LAST.now,LAST.wait,LAST.info,LAST.nowait||[]).find(x=>x.key===key)||null:null;
+ const findItem=key=>LAST?[].concat(LAST.now,LAST.late||[],LAST.wait,LAST.info,LAST.nowait||[]).find(x=>x.key===key)||null:null;
  function rowHtml(i,zone,S){
   const k=attr(i.key),bc=BRAND[i.brand||(i.i&&i.i.brand)]||'#9aa0ab',tags=(i.reqs||[]).slice(0,2).map(reqTagHtml).join(''),rq0=(i.reqs||[])[0]||null,WRQ=R.WorkRequest;
   let task,why,sub,wc,btn;
@@ -123,11 +152,11 @@
   else if(zone==='info'){task=String(i.done||i.missTxt||'');why=action(i);sub=String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:'');wc='#6b7280';btn=i.act||'입력';if(i.bulk){why=i.bulk.why;sub=i.bulk.sub;wc='#2a52b8';}}
   else{task=i.reqOnly?String(i.missTxt||''):String((i.x&&i.x.next)||i.done||i.missTxt||'');why=i.reqOnly?'관리자 요청':action(i);sub=i.reqOnly?((i.reqs[0]&&i.reqs[0].memo)||''):(i.rk==='deadline'&&i.deadline?i.deadline.what+' '+md(i.deadline.date):String(i.missTxt||'')+(i.short&&!/^(0일|오늘|-|—)$/.test(i.short)?' · '+i.short:''));wc=/now|today/.test(i.urg||'')||i.rk==='deadline'?'#b42318':i.rk==='promise'?'#8a5a00':'#15171c';btn=i.reqOnly?'열어서 처리':(i.act||'전화');}
   /* 4-3: CRM 에 접촉 기록이 없는 건은 '지연'으로 단정하지 않는다 — 활동 여부부터 확인(상황 4가지) */
-  const DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;let chk=false;if(DX&&zone==='now'&&!i.reqOnly&&DX.needsCheck(i)){why=DX.WORD;btn='활동 확인';wc='#15171c';chk=true;}
+  const DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;let chk=false;if(DX&&(zone==='now'||zone==='late')&&!i.reqOnly&&DX.needsCheck(i)){why=DX.WORD;btn='활동 확인';wc='#15171c';chk=true;}
   const whyBtn=INLINE()?'<button type="button" class="dz-why" data-dz="why" data-key="'+k+'" style="color:'+wc+'" aria-expanded="'+(S.why===i.key)+'">'+h(why)+'</button>':(()=>{let tt='';try{const e=evidence(i);tt=[e.rule,e.base,e.records].filter(Boolean).join(' · ');}catch(x){}return '<button type="button" class="dz-why" data-dz="go" data-key="'+k+'" style="color:'+wc+'" title="'+attr(tt)+'">'+h(why)+'</button>';})();
   const ev=INLINE()&&S.why===i.key?(()=>{const e=evidence(i);return '<div class="dz-ev"><span>'+h(why)+' · 왜?</span><div><i>적용 규칙</i><b>'+h(e.rule)+'</b><i>기준일</i><b>'+h(e.base)+'</b><i>관련 기록</i><b>'+h(e.records)+'</b><i>빠진 것</i><b class="'+(e.missing==='없음'?'':'amb')+'">'+h(e.missing)+'</b>'+(DX&&i.x.type==='deal'?DX.progressHtml(i.x.item,e.contact||0):'')+(opens(i)?'<i>누르면</i><b>'+h(opens(i))+'</b>':'')+'</div></div>';})():'';
-  return '<div class="dz-row" data-key="'+k+'" style="border-left-color:'+bc+'"><div class="c1"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><div><span>'+h(i.sName||'')+'</span>'+tags+'</div></div><span class="c2" title="'+attr(task)+'">'+h(task)+(rq0&&!i.reqOnly&&reqMemo(rq0)?'<small class="dz-reqmemo" title="'+attr(reqMemo(rq0))+'">요청 · '+h(cut(reqMemo(rq0),46))+'</small>':'')+'</span><div class="c3">'+whyBtn+'<small title="'+attr(sub)+'">'+h(sub)+'</small></div>'
-   +(i.bulk?'<button type="button" data-dz="go" data-key="'+k+'" data-act="stagefields">'+h(btn)+'</button>':INLINE()&&rq0&&WRQ&&WRQ.inlineHtml&&!WRQ.isSpecial(rq0)&&!(R.G&&R.G.reqCardKeep)&&zone==='now'?'<button type="button" data-dz="req" data-key="'+k+'" aria-expanded="'+(S.reqOpen===i.key)+'">'+h(i.reqOnly?'처리하기':btn)+'</button>':i.reqOnly?'<button type="button" data-dz="go" data-key="'+k+'" data-act="activity">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':(zone==='wait'||zone==='nowait')?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':chk?(INLINE()?'<button type="button" data-dz="chk" data-key="'+k+'" aria-expanded="'+!!(S.chk&&S.chk.key===i.key)+'">'+h(btn)+'</button>':'<button type="button" data-dz="go" data-key="'+k+'" data-act="activity">'+h(btn)+'</button>'):'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev+(DX&&INLINE()?DX.chkHtml(i,S):'')+(INLINE()&&rq0&&S.reqOpen===i.key&&WRQ&&WRQ.inlineHtml&&zone==='now'?'<div class="dz-reqform">'+(i.reqs||[]).map(r=>WRQ.inlineHtml(r.id)).join('')+'</div>':'');
+  return '<div class="dz-row" data-key="'+k+'" style="border-left-color:'+bc+'"><div class="c1"><b title="'+attr(i.i.site)+'">'+h(i.i.site)+'</b><div><span>'+h(i.sName||'')+'</span>'+tags+'</div></div><span class="c2" title="'+attr(task)+'">'+h(task)+(rq0&&!i.reqOnly&&reqMemo(rq0)?'<small class="dz-reqmemo" title="'+attr(reqMemo(rq0))+'">요청 · '+h(cut(reqMemo(rq0),46))+'</small>':'')+'</span><div class="c3">'+(()=>{const du=dueOf(i,zone);return '<b class="dz-due'+(du.red?' late':'')+'">'+h(du.t)+'</b>';})()+whyBtn+'</div>'
+   +(i.bulk?'<button type="button" data-dz="go" data-key="'+k+'" data-act="stagefields">'+h(btn)+'</button>':INLINE()&&rq0&&WRQ&&WRQ.inlineHtml&&!WRQ.isSpecial(rq0)&&!(R.G&&R.G.reqCardKeep)&&(zone==='now'||zone==='late')?'<button type="button" data-dz="req" data-key="'+k+'" aria-expanded="'+(S.reqOpen===i.key)+'">'+h(i.reqOnly?'처리하기':btn)+'</button>':i.reqOnly?'<button type="button" data-dz="go" data-key="'+k+'" data-act="activity">'+h(btn)+'</button>':zone==='wait'&&i.wait3?'<span class="dz-btns dz-w3"><button type="button" data-dz="open" data-key="'+k+'" data-act="contact">결정권자에게 연락</button><button type="button" data-dz="judge" data-key="'+k+'">관리자 판단 요청</button><button type="button" data-dz="hold" data-key="'+k+'">보류로 전환</button></span>':(zone==='wait'||zone==='nowait')?'<button type="button" data-dz="open" data-key="'+k+'" data-act="next">'+h(btn)+'</button>':chk?(INLINE()?'<button type="button" data-dz="chk" data-key="'+k+'" aria-expanded="'+!!(S.chk&&S.chk.key===i.key)+'">'+h(btn)+'</button>':'<button type="button" data-dz="go" data-key="'+k+'" data-act="activity">'+h(btn)+'</button>'):'<button type="button" data-t3="act" data-key="'+k+'" data-act="'+attr(i.act||'전화')+'"'+(i.i&&i.i.digits?' data-tel="'+attr(i.i.digits)+'"':'')+'>'+h(btn)+'</button>')+'</div>'+ev+(DX&&INLINE()?DX.chkHtml(i,S):'')+(INLINE()&&rq0&&S.reqOpen===i.key&&WRQ&&WRQ.inlineHtml&&(zone==='now'||zone==='late')?'<div class="dz-reqform">'+(i.reqs||[]).map(r=>WRQ.inlineHtml(r.id)).join('')+'</div>':'');
  }
  function gapHtml(g,S){
   const k=attr(g.key),bc=BRAND[g.d.brand]||'#9aa0ab',busy=S.busy===g.key,ask=S.ask===g.key;
@@ -142,13 +171,13 @@
  }
  function html(Z,_S,pass){const S=st();/* 상태(구역 · 근거 보기 · 쪽)는 이 모듈 것 하나만 쓴다 */
   const P=R.ListPager;
-  const lists={now:Z.now.filter(pass),wait:Z.wait.filter(pass),info:Z.info.filter(pass),gaps:Z.gaps},DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;if(!DX){S.rs='';S.closing=false;}
-  if(!lists[S.zone]&&S.zone!=='now')S.zone='now';
-  const tabs='<div class="dz-tabs" role="tablist">'+ZONES.map(z=>'<button type="button" role="tab" data-dz="zone" data-v="'+z[0]+'" aria-selected="'+(S.zone===z[0])+'"><span>'+h(z[1])+' <b'+(z[0]==='now'&&lists.now.length?' class="r"':'')+'>'+lists[z[0]].length+'</b></span><small>'+h(z[2])+'</small></button>').join('')+'</div>';
-  const z=ZONES.find(x=>x[0]===S.zone)||ZONES[0],rz=z[0]==='now'&&DX&&S.rs==='nowait'?'nowait':z[0],list=rz==='nowait'?(Z.nowait||[]).filter(pass):z[0]==='now'&&DX&&S.rs?lists.now.filter(i=>DX.passRs(i,S)):lists[z[0]],pg=P?P.cut(list,P.page(S,'z'+z[0]),PER):{rows:list.slice(0,PER)};
-  const head='<div class="dz-head"><span>현장</span><span>'+h(z[3])+'</span><span>먼저 하는 이유 · '+h(z[4])+'</span><span></span></div>';
-  const rows=pg.rows.length?pg.rows.map(i=>z[0]==='gaps'?gapHtml(i,S):rowHtml(i,rz,S)).join(''):'<p class="dz-empty">'+(z[0]==='now'?'지금 처리할 건이 없습니다.':z[0]==='wait'?'회신을 기다리는 건이 없습니다.':z[0]==='info'?'보완할 기록이 없습니다.':'연결된 업무가 없는 약속이 없습니다.')+'</p>';
-  return popupHtml(Z.me)+hiddenHtml(Z)+'<section class="dz" data-zone="'+z[0]+'">'+tabs+(DX?'<div class="dx-bar">'+DX.stripHtml(Z,S)+'<i></i><button type="button" class="dx-closebtn" data-dz="close" aria-pressed="'+!!S.closing+'">오늘 마감</button></div>':'')+(DX&&S.closing?DX.closeHtml(Z,LASTX,S):'<div class="dz-table">'+head+rows+(P&&pg.pages>1?P.html(pg,{ns:'dz',v:'z'+z[0],small:true}):'')+'<div class="dz-note">'+h(rz==='nowait'?'대기 사유만 있고 확인일이 없는 건 · 확인일을 정하면 회신 대기로 옮겨집니다':z[5])+'</div></div>')+'</section>';
+  const lists={now:Z.now.filter(pass),late:(Z.late||[]).filter(pass),wait:Z.wait.filter(pass),fix:(Z.fix||[]).filter(x=>x._fz==='gap'||pass(x))},DX=R.DayExtra&&R.DayExtra.on()?R.DayExtra:null;if(!DX){S.rs='';S.closing=false;}
+  if(S.zone==='info'||S.zone==='gaps')S.zone='fix';if(!lists[S.zone])S.zone='now';
+  const tabs='<div class="dz-tabs" role="tablist">'+ZONES.map(z=>'<button type="button" role="tab" data-dz="zone" data-v="'+z[0]+'" aria-selected="'+(S.zone===z[0])+'"><span>'+h(z[1])+' <b'+(z[0]==='late'&&lists.late.length?' class="r"':'')+'>'+lists[z[0]].length+'</b></span><small>'+h(z[2])+'</small></button>').join('')+'</div>';
+  const z=ZONES.find(x=>x[0]===S.zone)||ZONES[0],rz=z[0]==='now'&&DX&&S.rs==='nowait'?'nowait':z[0],list=rz==='nowait'?(Z.nowait||[]).filter(pass):z[0]==='now'&&DX&&S.rs?[].concat(lists.late,lists.now).filter(i=>DX.passRs(i,S)):lists[z[0]],pg=P?P.cut(list,P.page(S,'z'+z[0]),PER):{rows:list.slice(0,PER)};
+  const head='<div class="dz-head"><span>현장 · 단계</span><span>'+h(z[3])+'</span><span>'+h(z[4])+'</span><span></span></div>';
+  const rows=pg.rows.length?pg.rows.map(i=>z[0]==='fix'?(i._fz==='gap'?gapHtml(i,S):rowHtml(i,i._fz,S)):rowHtml(i,rz,S)).join(''):'<p class="dz-empty">'+({now:'오늘 처리할 건이 없습니다.',late:'기한이 지난 건이 없습니다.',wait:'회신을 기다리는 건이 없습니다.',fix:'보완할 기록이 없습니다.'}[z[0]]||'')+'</p>';
+  return popupHtml(Z.me)+hiddenHtml(Z)+'<section class="dz" data-zone="'+z[0]+'">'+tabs+(DX?'<div class="dx-bar">'+DX.stripHtml(Z,S)+'<i></i><button type="button" class="dx-closebtn" data-dz="close" aria-pressed="'+!!S.closing+'">오늘 마감</button></div>':'')+(DX&&S.closing?DX.closeHtml(Z,LASTX,S):'<div class="dz-table">'+head+rows+(P&&pg.pages>1?P.html(pg,{ns:'dz',v:'z'+z[0],small:true}):'')+(rz==='nowait'?'<div class="dz-note">대기 사유만 있고 확인일이 없는 건 · 확인일을 정하면 회신 대기로</div>':'')+'</div>')+'</section>';
  }
  /* ── 누르기 ── */
  const toast=(m,k)=>{if(typeof R.toast==='function')R.toast(m,k);};

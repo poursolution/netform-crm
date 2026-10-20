@@ -116,3 +116,5 @@
 /* 줄 클릭 = 상세 창(줄 아래 펼침 없음) */
 #today-v2 .dz .dz-row{cursor:pointer}
 #today-v2 .dz .dz-row:hover{background:#fafbfc}
+/* 2026-10-20 six_fixes ②: 셋째 칸 = 기한(굵게) · 아래 줄 = 할 행동(누르면 근거) */
+#today-v2 .dz-row .c3 .dz-due{font-size:13px;font-weight:700;color:#15171c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#today-v2 .dz-row .c3 .dz-due.late{color:#b42318}#today-v2 .dz-row .c3 .dz-why{font-size:11.5px;font-weight:600}

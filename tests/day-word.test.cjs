@@ -21,7 +21,7 @@ test('대상이 겹치는 두 묶음 요청은 한 묶음 · 영업건 단위로
  const B=D.bulks('이필선');assert.equal(B.length,1);
  assert.deepEqual([B[0].n,B[0].m,B[0].dup,B[0].resolved,B[0].by,B[0].at],[4,2,2,true,'송보람','10.9'],'합친 4건 · 요청 2건 · 겹치는 2건 · 남의 건은 빠진다');
  const h=D.lineHtml('이필선').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
- assert.equal(h,'묶음 요청 송보람 · 10.9 · 실주 · 사유 미입력 외 1 4건 (요청 2건 · 겹치는 2건 합침) → 정보 보완에서 처리 · 지연 · 평가 아님 정보 보완 열기 ›');
+ assert.equal(h,'묶음 요청 송보람 · 10.9 · 실주 · 사유 미입력 외 1 4건 (요청 2건 · 겹치는 2건 합침) → 기록 보완에서 처리 기록 보완 열기 ›');
  const rows=D.infoRows('이필선',new Set(['deal:d1']),null);
  assert.deepEqual(rows.map(r=>[r.key,r.missTxt]),[['deal:d2','사유 미입력'],['deal:d3','사유 미입력 · 재영업 여부 미정'],['deal:d4','사유 미입력 · 재영업 여부 미정']],'이미 다른 줄에 있는 건(d1)은 다시 넣지 않고, 겹친 건은 한 줄에 요청 내용을 모은다');
  assert.equal(rows[0].bulk.why,'묶음 요청 · 송보람 10.9');assert.equal(rows[0].rk,'bulk');
