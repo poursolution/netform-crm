@@ -169,7 +169,9 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',TASK='bbbbbbbb-2222-4222-8222-b
   assert.equal(await D.isVisible(),false);
   const previewAfter=await page.evaluate(()=>({results:[...__review.inquiry.fixture.logs.values()].map(l=>l.result),rows:__review.inquiry.fixture.rows.length,responses:__review.inquiry.fixture.responses.size,status:__review.inquiry.raw.status,example:typeof __approvedAExample,done:G.done,calls:__review.inquiry.fixture.calls.filter(c=>c.name==='crm_inquiry_command_v1').length}));
   assert.deepEqual(previewAfter,{results:['부재'],rows:0,responses:0,status:'배정완료',example:'undefined',done:{},calls:1});
-  assert.equal(await page.locator('.approved-a [data-gs="task"][data-kind="inquiry"][data-id="'+previewId+'"]').count(),1,'An absent customer remains an unresolved first-contact task in the actual review link');
+  /* six_fixes ③: 첫 연락 기준(배정 후 2시간)을 넘긴 문의는 기한 초과 구역 — 오늘 처리 · 기한 초과 어느 쪽이든 할 일로 남아 있어야 한다 */
+  const taskSel='.approved-a [data-gs="task"][data-kind="inquiry"][data-id="'+previewId+'"]';let inToday=await page.locator(taskSel).count();if(!inToday&&await page.locator('.approved-a [data-gs="area"][data-value="late"]').count()){await page.locator('.approved-a [data-gs="area"][data-value="late"]').click();await page.locator('.approved-a').waitFor();inToday=await page.locator(taskSel).count();await page.locator('.approved-a [data-gs="area"][data-value="now"]').click();await page.locator('.approved-a').waitFor();}
+  assert.equal(inToday,1,'An absent customer remains an unresolved first-contact task in the actual review link');
   assert.equal(await page.locator('#tabbar button,#scr .mi-open,#scr .mh-hub,#scr .flow-strip').count(),0);
   checks.push('Unmodified user preview ?screen=A: real inquiry card → original D → result-only absence save → actual A counts, no false completion');
   assert.deepEqual(errors,[],'No browser errors');assert.deepEqual(networkWrites,[],'No external or production writes');

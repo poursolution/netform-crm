@@ -20,7 +20,9 @@ const CASES=[
  ['p07','합성 회신 대기',{wait:'입대의 결과 회신 대기',until:3,due:3,text:'입대의 결과 확인'}],
  ['p08','합성 무기한 대기',{wait:'관리소장 휴가'}]
 ];
-const EXPECT={now:['합성 오늘 실측','합성 오늘 약속'],late:['합성 기한 지남 3일','합성 기한 지남 1일'],wait:['합성 회신 대기'],fix:['합성 다음 할 일 없음','합성 무기한 대기']};
+/* 견적문의 2건: 배정 3시간 전(첫 연락 기준 2시간 넘김 → 기한 초과) · 배정 30분 전(오늘 처리) */
+const INQ=[['i01','합성 문의 기준 넘김',3],['i02','합성 문의 새 배정',0.5]];
+const EXPECT={now:['합성 오늘 실측','합성 오늘 약속','합성 문의 새 배정'],late:['합성 기한 지남 3일','합성 기한 지남 1일','합성 문의 기준 넘김'],wait:['합성 회신 대기'],fix:['합성 다음 할 일 없음','합성 무기한 대기']};
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));await new Promise(r=>pcSrv.listen(0,'127.0.0.1',r));
  const origin='http://127.0.0.1:'+server.address().port,pcOrigin='http://127.0.0.1:'+pcSrv.address().port;let browser;const errors=[];
@@ -30,22 +32,22 @@ const EXPECT={now:['합성 오늘 실측','합성 오늘 약속'],late:['합성 
   /* ── PC ── */
   const pc=await ctx(1600);
   await pc.goto(pcOrigin+'/crm.html');await pc.waitForFunction(()=>window.TodayV2&&window.DayZones&&window.DayZoneRules&&window.TodayWorkQueue);
-  await pc.evaluate(CASES=>{
+  await pc.evaluate(([CASES,INQ])=>{
    const day=n=>DayZoneRules.kst(Date.now()+n*864e5),at=n=>new Date(Date.now()-n*864e5).toISOString();
    B={deals:CASES.map(([id,site,c])=>({id,site,assignee:'이필선',brand:'POUR솔루션',created:day(-10),created_at:at(10),code:c.wait?'waiting':'consulting',stage_code:c.wait?'waiting':'consulting',grp:'영업·관리',amt:1e8,manager_name:'합성 관리소장',manager_mobile:'01000000000',last_activity_at:at(1),activities:[{id:id+'a',type:'전화',note:'통화 연결',at:at(1),occurred_at:at(1),actor:'이필선',meaningful:true}],
-    waiting_reason:c.wait||'',expected_resume_at:c.until!=null?day(c.until):'',next_action:c.text?{id:id+'n',type:c.type||'전화',text:c.text,due:day(c.due),status:'open'}:null})),inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
+    waiting_reason:c.wait||'',expected_resume_at:c.until!=null?day(c.until):'',next_action:c.text?{id:id+'n',type:c.type||'전화',text:c.text,due:day(c.due),status:'open'}:null})),inquiries:INQ.map(([k,site,h],n)=>({id:'aaaaaaaa-1111-4111-8111-00000000000'+(n+1),site,status:'배정완료',at:new Date(Date.now()-(h+0.1)*36e5).toISOString(),created_at:new Date(Date.now()-(h+0.1)*36e5).toISOString(),brand:'POUR솔루션',phone:'010-0000-000'+n,contact_name:'합성 고객',assignee:'이필선',assigned_to:'이필선',assigned_at:new Date(Date.now()-h*36e5).toISOString(),memo:'옥상 방수 견적 문의',raw:{'문의내용':'견적 문의'}})),activities:[],inquiryTrash:[],expansion_pool:[]};
    LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.dayZones=null;G.workReq=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    SB={rpc:async()=>({data:{ok:true,requests:[],tasks:[],entries:[],rows:[],units:[],events:[],comments:[],advisory:[]}})};OpsStore.aiOn=()=>false;
    goPage('today');
-  },CASES);
+  },[CASES,INQ]);
   await pc.waitForSelector('#today-v2 .dz');await pc.waitForTimeout(800);
   const pcZones=await pc.evaluate(()=>{const Z=DayZones.last(),site=i=>(i.i&&i.i.site)||(i.d&&(i.d.site||i.d.site_name))||'';return {now:Z.now.map(site),late:(Z.late||[]).map(site),wait:Z.wait.map(site),fix:(Z.fix||[]).map(site)};});
   const pcTabs=await pc.locator('#today-v2 .dz-tabs button span').allInnerTexts();
   /* ── 모바일 ── */
   const mo=await ctx(390);
   await mo.goto(origin+'/mobile.html?demo=1&review=hub&screen=B',{waitUntil:'domcontentloaded'});await mo.locator('.approved-b').waitFor();
-  await mo.evaluate(CASES=>{
+  await mo.evaluate(([CASES,INQ])=>{
    closeSheet();delete window.__approvedAExample;delete window.__approvedBCExample;delete window.__approvedHExample;delete window.__approvedScheduleNow;
    const day=n=>DayZoneRules.kst(Date.now()+n*864e5),actor=Phase1.profile.user_id;
    G.user={...G.user,id:actor};G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};G.brandF='전체';
@@ -53,13 +55,14 @@ const EXPECT={now:['합성 오늘 실측','합성 오늘 약속'],late:['합성 
    DEALS=CASES.map(([id,nm,c])=>({id,site_id:id+'s',nm,code:c.wait?'waiting':'consulting',sub:'방수',rep:G.user.nm,owner_id:actor,brand:'POUR솔루션',version:0,amt:1e8,manager_name:'합성 관리소장',manager_mobile:'',
     created_at:new Date().toISOString(),stageAt:new Date().toISOString(),lastAt:new Date().toISOString(),contactAt:new Date().toISOString(),activities:[],tl:[],waiting_reason:c.wait||'',expected_resume_at:c.until!=null?day(c.until):'',
     nextAction:c.text?{id:id+'n',type:c.type||'전화',text:c.text,due:day(c.due),due_at:day(c.due),status:'open'}:null}));
-   ADMIN.inquiries=[];Object.assign(MobileRequests.state(),{list:[],loaded:true,busy:false,off:false,at:Date.now()});render();
-  },CASES);
+   ADMIN.inquiries=INQ.map(([k,nm,h],n)=>{const raw={id:'aaaaaaaa-1111-4111-8111-00000000000'+(n+1),site:nm,status:'배정완료',at:new Date(Date.now()-(h+0.1)*36e5).toISOString(),assignee:G.user.nm,assigned_at:new Date(Date.now()-h*36e5).toISOString(),phone:'0100000000'+n};return Object.assign(inquiryViewM(raw),{raw,done:true,rep:G.user.nm,status:'배정완료'});});
+   Object.assign(MobileRequests.state(),{list:[],loaded:true,busy:false,off:false,at:Date.now()});render();
+  },[CASES,INQ]);
   await mo.locator('.approved-a').waitFor();
   const moAreas=await mo.evaluate(()=>[...document.querySelectorAll('.approved-a [data-gs="area"]')].map(n=>n.textContent.replace(/\s+/g,' ').trim()));
   const moZones={};
   for(const k of ['now','late','wait','fix']){await mo.locator('.approved-a [data-gs="area"][data-value="'+k+'"]').click();await mo.locator('.approved-a').waitFor();
-   moZones[k]=await mo.evaluate(()=>[...document.querySelectorAll('.approved-a [data-gs="task"]')].map(b=>{const d=DEALS.find(x=>String(x.id)===String(b.dataset.id));return d?d.nm:'';}));}
+   moZones[k]=await mo.evaluate(()=>[...document.querySelectorAll('.approved-a [data-gs="task"]')].map(b=>{const d=DEALS.find(x=>String(x.id)===String(b.dataset.id));if(d)return d.nm;const q=(ADMIN.inquiries||[]).find(x=>String(x.key)===String(b.dataset.id));return q?q.nm:'';}));}
   /* ── 비교 ── */
   const nm=s=>String(s).replace(/^\[[^\]]*\]\s*/,'');
   const sorted=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v.map(nm).sort()]));
