@@ -466,7 +466,7 @@ html.emb .ctl{display:none}
   }
   raf=requestAnimationFrame(tick);
  }
- function show(i){cancelAnimationFrame(raf);run=false;done=true;st.classList.remove('paused');if(i>0)setCls(i-1,99,'instant');else st.className='stage sc0 instant';void st.offsetWidth;cur=i;t=0;applied=0;ui(i);setCls(i,0);void st.offsetWidth;requestAnimationFrame(()=>setCls(i,99));pbs.forEach((p,j)=>p.style.width=j<=i?'100%':'0');btn()}
+ function show(i){cancelAnimationFrame(raf);run=false;done=true;st.classList.remove('paused');if(i>0)setCls(i-1,99,'instant');else st.className='stage sc0 instant';void st.offsetWidth;cur=i;t=0;applied=0;ui(i);setCls(i,0);void st.offsetWidth;{let dn=false;const go=()=>{if(dn)return;dn=true;setCls(i,99)};requestAnimationFrame(go);setTimeout(go,30)}pbs.forEach((p,j)=>p.style.width=j<=i?'100%':'0');btn()}
  function pause(){if(!run)return;run=false;cancelAnimationFrame(raf);st.classList.add('paused');btn()}
  function resume(){run=true;last=performance.now();st.classList.remove('paused');raf=requestAnimationFrame(tick);btn()}
  function toggle(){if(run)pause();else if(t>0&&!done)resume();else{all=true;jump(0,true)}}
