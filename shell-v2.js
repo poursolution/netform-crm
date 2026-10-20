@@ -19,6 +19,9 @@
  }
  /* ── 상태 알약 ── */
  function ago(){if(!lastOk)return '';const m=Math.floor((Date.now()-lastOk)/6e4);return m<1?'방금':m<60?m+'분 전':Math.floor(m/60)+'시간 전';}
+ const hm=t=>{const d=new Date(t);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+ const readFail=()=>Array.isArray(root.LAST_OPERATIONAL_READ_ERROR)&&root.LAST_OPERATIONAL_READ_ERROR.length?root.LAST_OPERATIONAL_READ_ERROR:null;
+ const rpcFail=()=>{try{const E=root.PCErrorState;return E&&typeof E.errors==='function'?E.errors().filter(e=>Date.now()-(e.at||0)<10*60*1000).length:0;}catch(e){return 0;}};
  function status(){
   const el=$('shStatus'),sync=$('syncBadge'),live=$('live');if(!el)return;
   const cls=sync?sync.className:'',text=sync?sync.textContent.replace(/^[^\w가-힣]+/,'').trim():'';
@@ -26,12 +29,17 @@
   if(/\bbad\b/.test(cls)){tone='bad';label=text.replace(/\s*[·—].*$/,'');title=text+' — 누르면 내역을 확인하고 다시 저장할 수 있습니다';}
   else if(/\bwait\b/.test(cls)){tone='wait';label=text;title='저장한 내용을 서버에 반영하는 중입니다';}
   else if(/확인한 실패/.test(text)){tone='ok';label=(text.match(/확인한 실패 \d+건/)||[text])[0];title='확인을 마친 저장 실패 내역 — 누르면 다시 볼 수 있습니다';}
+  /* pipeline_list ①(2026-10-20 검토서 3-2): 일부 조회 실패인데 '최신 · 방금'으로 보이지 않게 — 실패가 남아 있으면 'HH:MM에 받은 값 표시 중'(누르면 다시 불러오기). 다른 서버 함수 오류가 있을 때도 '최신'이라 쓰지 않는다 */
+  else if(readFail()){const at=root.LAST_OPERATIONAL_OK_AT||lastOk;tone='bad';label='일부 조회 실패 · '+(at?hm(at)+'에 받은 값':'이전 값')+' 표시 중';title=readFail().map(x=>x.message||'조회 실패').join('\n')+' — 누르면 다시 불러오기';}
+  else if(rpcFail()){const ready=!!live&&live.classList.contains('on');if(ready&&!lastOk)lastOk=Date.now();tone='bad';label='일부 기능 오류 · 영업 · 문의 자료 '+(ago()||'확인 중');title='서버 함수 오류 '+rpcFail()+'건(본문 위 띠 참고) — 영업 · 문의 자료는 '+(ago()||'확인 중')+' · 누르면 다시 불러오기';}
   else{const ready=!!live&&live.classList.contains('on');if(ready&&!lastOk)lastOk=Date.now();label=ready?'최신 · '+ago():(live?live.textContent.trim():'연결 중…');tone=ready?'ok':'idle';title=(live&&live.title||label)+' — 누르면 새로고침';}
   el.className='sh-status '+tone;el.title=title;el.innerHTML='<i></i>'+h(label);
  }
  function statusClick(){
   const sync=$('syncBadge');
-  if(sync&&typeof sync.onclick==='function'){sync.onclick();return;}/* 저장 실패 · 결과 미확인 · 확인한 실패 내역 = 기존 동작 그대로 */
+  if(sync&&/\b(bad|wait)\b/.test(sync.className)&&typeof sync.onclick==='function'){sync.onclick();return;}/* 저장 실패 · 결과 미확인 = 기존 동작 그대로 */
+  if(readFail()||rpcFail()){lastOk=0;if(typeof root.loadData==='function')root.loadData();return;}/* 조회 실패 · 기능 오류 = 다시 불러오기 */
+  if(sync&&typeof sync.onclick==='function'){sync.onclick();return;}/* 확인한 실패 내역 */
   lastOk=0;if(typeof root.loadData==='function')root.loadData();
  }
  /* ── 사용자 메뉴 ── */

@@ -31,7 +31,7 @@
  /* 예전 화면의 브랜드 선택(G.brand)·공종 선택은 이 화면에 조작부가 없다 — 숨은 조건이 남지 않게 공통 브랜드 선택으로 옮기고 비운다 */
  function adoptLegacyFilters(){
   const b=root.G.brand;if(b&&b!=='전체'){try{if(!(root.SalesFilterState.state().brands||[]).includes(b))root.SalesFilterState.selectBrand(b);}catch(e){}root.G.brand='전체';}
-  if(root.G.workFilter&&root.G.workFilter!=='전체')root.G.workFilter='전체';
+  /* pipeline_list ①-3(2026-10-20): 공종 · 연도는 지우지 않는다 — 전체에서 고른 조건을 단계에서도 같은 대상으로 유지하고, 단계 머리에 '조건 유지 · …'로 보여 준다(PipelineStageV3.keptLine) */
  }
  /* 담당자 선택만 뺀 같은 조건의 행(브랜드·검색 유지) — 담당자별 칩 숫자용 */
  function ownerFreeRows(key){

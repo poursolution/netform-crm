@@ -57,7 +57,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ① 상태 6칸: 이름 · 기준 한 줄 · 근거(작은 글) · 건수. 전체 = 합. 미확인 숫자는 주황(amb) · 빨강 아님 */
   const tabs=await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>{const x=s=>{const n=t.querySelector(s);return n?n.textContent.replace(/\s+/g,' ').trim():'';};return [x('.l'),x('span'),x('small.src'),Number(x('.n')),t.querySelector('.n').classList.contains('amb'),t.querySelector('.n').classList.contains('r')];}));
   assert.deepEqual(tabs,[
-   ['전체','이 단계 모든 현장','',8,false,false],
+   ['전체','진행 상태 합 = 8 · 서로 안 겹침'/* pipeline_list ③ */,'',8,false,false],
    ['집중관리','견적 후 1개월 · 7일 안 후속 통화','7일 = 회의 결정 · 1개월 = 잠정(설정)',3,false,true]/* 기한 지난 건이 있는 칸만 숫자 빨강 */,
    ['일반관리','집중 이후 ~ 발송일부터 3개월 · 최소 월 1회','월 1회 = 회의 결정 · 기간 = 해석 미확정(설정)',2,false,false],
    ['대기','향후 추진 가능 · 60일 1회','회의 기준 2개월 1회 · 현재 60일 환산은 미확정',1,false,false],

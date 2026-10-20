@@ -79,7 +79,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const s=await snap();if(dump)console.log('=====',key,'\n'+JSON.stringify(s,null,1));
    assert.equal(s.stage,key);assert.equal(s.head,E.name);assert.ok(s.desc.length>10,key+': 설명 한 줄');
    /* 상태 탭: [전체] + 상태 3개(stage7: 발송 · 경쟁은 4개) · 기본 선택 = 전체 · 첫 상태만 빨강 */
-   assert.deepEqual(s.tabs.map(t=>[t[1],t[2]]),[['전체','이 단계 모든 현장']].concat(E.tabs),key+': 탭 이름 · 기준');
+   assert.deepEqual(s.tabs.map(t=>[t[1],t[2]]),[['전체','진행 상태 합 = '+E.n[0]+' · 서로 안 겹침']/* pipeline_list ③: 첫 줄 = 진행 상태 */].concat(E.tabs),key+': 탭 이름 · 기준');
    assert.deepEqual(s.tabs.map(t=>Number(t[0])),E.n,key+': 탭 건수');assert.deepEqual(s.tabs.map(t=>t[3]),[true].concat(E.tabs.map(()=>false)),key+': 기본 = 전체');
    assert.deepEqual(s.tabs.map(t=>t[4]),[false,E.n[1]>0].concat(E.tabs.slice(1).map(()=>false)),key+': 빨강은 첫 상태 숫자만');
    assert.equal(E.n.slice(1).reduce((a,b)=>a+b,0),E.n[0],key+': 탭 합 = 전체');
@@ -94,12 +94,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     else if(key==='competition')assert.deepEqual([J.label,J.ok,J.rows,J.smalls],['제안서 공유 · 마감 D-7',5,[['판정 불가 · 일정 미등록','1건'],['기한 전 · 결과 대기','3건'],['D-7 이내 · 공유 확인 필요','2건']],['다음 업무 · 입찰 · PT 일정 등록 → 공유 여부 판정','후속 업무 지연 0건 · 입찰 일정 없음 1 · 다음 행동일 없음 6 · 판정 불가 0']]);
     else if(key==='construction')assert.deepEqual([J.label,J.ok,J.rows,J.smalls[0]],['착공일 · 인계서 · 방문 · 준공',3,[['판정 불가 · 계약 정보 없음','1건'],['확인 완료 · 해당 없음(착공 전)','0건'],['확인 필요','3건']],'다음 업무 · 계약 정보 확인 → 착공 · 인계 판정']);
     else{const T=await page.evaluate(k=>{const J=PipelineJudge,T=J.tally(PipelineWorkspace.rows({}).filter(r=>PipelineStages.group(r.code)===k).map(r=>r.item));return T;},key);
-     assert.equal(J.label,'기한 초과');assert.equal(J.ok,T.late+T.ok,key+': 판정 가능 = 판정 함수의 기한 초과 + 기한 안');assert.deepEqual(J.rows,[['판정 불가 · 일정 · 기록 미확인',(T.nodate+T.norecord)+'건'],['기한 안 · 해당 없음',(T.ok+T.na)>0||J.ok>0?(T.ok+T.na)+'건':'–'],['실제 기한 초과',J.ok>0?T.late+'건':'–']],key+': 판정 함수와 같은 수');}}
+     assert.match(J.label,/^기한 초과 · /,key+': 어떤 기한인지 이름에(pipeline_list ③)');assert.equal(J.ok,T.late+T.ok,key+': 판정 가능 = 판정 함수의 기한 초과 + 기한 안');assert.deepEqual(J.rows,[['판정 불가 · 일정 · 기록 미확인',(T.nodate+T.norecord)+'건'],['기한 안 · 해당 없음',(T.ok+T.na)>0||J.ok>0?(T.ok+T.na)+'건':'–'],['실제 기한 초과',J.ok>0?T.late+'건':'–']],key+': 판정 함수와 같은 수');}}
    assert.doesNotMatch(s.kpis[0]+s.diag+s.todo,/기준 넘김/,key+': 기준 넘김 단어 없음');assert.match(s.kpis[1],key==='sent'?/^평균 체류 ?\d+일 ?체류 진단 기준 14일$/:key==='competition'?/^평균 체류 ?\d+일 ?진입일 입력 6 \/ 6건$/:new RegExp('^평균 체류 ?\\d+일 ?기준 '+E.goal+'일$'));
-   /* 왜 멈춰 있나: 사유(4~5개) · 첫 사유 = 빨강 상태 건수 */
-   assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),E.reasons,key+': 사유 건수');assert.equal(Number(s.reasons[0][1]),E.n[1],key+': 첫 사유 = 빨강 상태');
-   assert.deepEqual(s.reasons.map(r=>r[2]),E.reasons.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');
-   assert.ok(s.todo.length>15&&/[.]$/.test(s.todo),key+': 뭘 해야 하나 한 문장');
+   /* pipeline_list ②③(2026-10-20): '먼저 볼 이유' 상자 = 기한 묶음(어떤 기한인지 이름에) → 기록 보완 묶음(점선 · 합하지 않음). 사유 · 건수 · 막대는 그대로(순서만 기한 먼저) · '그래서 뭘 해야 하나' 상자 없음 */
+   const DUE={consulting:['물량 산출 기한 넘김','30일 넘게 머묾'],sent:['발송 후 7일 · 후속 없음','30일 넘게 머묾 · 진단 기준'],competition:[],construction:['시공 중 주 1회 방문 없음']}[key]||[];
+   const ordered=E.reasons.filter(r=>DUE.includes(r[0])).concat(E.reasons.filter(r=>!DUE.includes(r[0])));
+   assert.deepEqual(s.reasons.map(r=>[r[0],Number(r[1])]),ordered,key+': 사유 건수(기한 → 기록 보완)');assert.equal(Number((s.reasons.find(r=>r[0]===E.reasons[0][0])||[])[1]),E.n[1],key+': 빨강 사유 = 빨강 상태');
+   assert.deepEqual(s.reasons.map(r=>r[2]),ordered.map(r=>Math.min(100,Math.round(r[1]/E.n[0]*100))+'%'),key+': 막대 = 건수 ÷ 전체');
+   assert.equal(s.todo,'',key+": '그래서 뭘 해야 하나' 문장 없음");
+   assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-why .ps3-grp').allInnerTexts().then(a=>a.map(t=>t.replace(/ · .*$/,''))),DUE.length?['기한','기록 보완']:['기록 보완'],key+': 두 묶음 이름');
+   assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-diag>.ps3-box>header>b').allInnerTexts().then(a=>a.filter(t=>/왜 멈춰|그래서/.test(t))),[],key+': 반복 안내 상자 없음');
    /* 리스트: 전체 탭에서는 줄마다 그 현장 상태의 사유 · 버튼. 빨강 상태만 사유 빨강 · 체류는 기준 넘으면 빨강 */
    assert.equal(s.lhead,'확인할 현장 '+E.n[0]+'곳');assert.equal(s.rows.length,E.n[0]);
    if(E.order)assert.deepEqual(s.rows.map(r=>r[0]),E.order,key+': 빨강 상태 먼저 → 체류 긴 순');
@@ -118,7 +122,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await V.locator('.ps3-tab').nth(1).locator('.n').evaluate(n=>getComputedStyle(n).color),'rgb(180, 35, 24)','빨강 상태는 숫자 빨강');
   assert.equal(await V.locator('.ps3-tabs').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),4,'상태 탭 4칸');
   assert.deepEqual(await css('.ps3-box header b',['fontSize']),['16px']);assert.deepEqual(await css('.ps3-kpis .over',['backgroundColor']),['rgb(253, 243, 242)']);assert.deepEqual(await css('.ps3-kpis .ps3-jd>b',['fontSize','color']),['17px','rgb(21, 23, 28)']);/* 판정 가능 n / 전체 = 검은 글(문제 숫자가 아니다) · 문제 줄만 빨강 */
-  assert.deepEqual(await css('.ps3-reason span b',['fontSize','fontWeight']),['14px','600']);assert.deepEqual(await css('.ps3-todo',['fontSize','color']),['14px','rgb(55, 65, 81)']);
+  assert.deepEqual(await css('.ps3-reason span b',['fontSize','fontWeight']),['14px','600']);/* pipeline_list ②: '.ps3-todo' 문장 상자 없음 */
   assert.deepEqual(await css('.ps3-a>b',['fontSize','whiteSpace']),['15.5px','nowrap']);assert.deepEqual(await css('.ps3-a>span',['fontSize']),['13px']);assert.deepEqual(await css('.ps3-b>b',['fontSize','fontWeight','color']),['14px','700','rgb(180, 35, 24)']);
   assert.deepEqual(await css('.ps3-row button',['width','backgroundColor','borderTopColor','color','fontSize','fontWeight','borderTopLeftRadius']),['96px','rgb(245, 248, 255)','rgb(213, 224, 251)','rgb(42, 82, 184)','13px','600','8px'],'버튼 96px 고정 · 연파랑');
   assert.deepEqual(await V.locator('.ps3-row').evaluateAll(l=>l.map(r=>getComputedStyle(r).borderLeftColor)),['rgb(232, 89, 12)','rgb(31, 157, 85)','rgb(31, 157, 85)','rgb(227, 230, 236)'],'왼쪽 브랜드 색 띠(없으면 회색)');
@@ -178,9 +182,12 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.equal(await page.locator('#pipeline-stage-v3[data-stage="'+k+'"]').count(),1,k+': 공통 틀 v3');assert.equal(await page.locator('#pipeline-stage-b').count(),0,k+': 예전 화면 없음');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-tab .l').allInnerTexts(),tabs,k+' 탭');
    assert.deepEqual(await page.locator('#pipeline-stage-v3 .ps3-reason.first>span>b:first-child').allInnerTexts(),[reason0],k+' 빨강 사유 = B안 표의 빨강');
-   assert.match(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),k==='won'?/실적 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*결과 기록 완성률\s*[\d.]+%\s*\d+ \/ \d+/:/결과 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*결과 기록 완성률\s*[\d.]+%\s*\d+ \/ \d+/,k+': stage7 ⑥⑦ 끝 상태 제목 숫자');
-   if(k==='won')assert.match(await page.locator('#pipeline-stage-v3 .ps3-diag .ps3-box header span').first().innerText(),/^1건 · 1\.4억 · 낙찰금액 입력 1건 기준$/,'수주 금액 옆 근거 건수');
-   assert.equal(await page.locator('#pipeline-stage-v3 .ps3-diag>.ps3-box').nth(2).locator('.psb-act,.ps3-none').count()>0,true,k+' 그래서 뭘 해야 하나 = 사유별 할 일');
+   /* pipeline_list ④-8(2026-10-20): 결과(수주 · 실주 n건)와 기록 완성률 분리 — 완성률은 '보완할 것' 줄에 작게(성과 아님) · 금액 이름 = 수주 낙찰금액 합 · 실주 예상금액 합 */
+   assert.match(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),k==='won'?/실적 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*수주 결과\s*1건\s*낙찰금액 입력 1건/:/결과 정보 보완\s*\d+건\s*기한 초과 0 · 지연 아님 · 끝 상태[\s\S]*실주 결과\s*1건\s*예상금액 기준 · 손실액 아님/,k+': 끝 상태 제목 숫자 · 결과');
+   assert.doesNotMatch(await page.locator('#pipeline-stage-v3 .ps3-kpis').innerText(),/완성률/,k+': 완성률은 큰 숫자 아님');
+   assert.match(await page.locator('#pipeline-stage-v3 .ps3-diag .ps3-box header span').first().innerText(),k==='won'?/^1건 · 낙찰금액 합 1\.4억$/:/^1건 · 예상금액 합 2억$/,k+': 금액 이름');
+   assert.match(await page.locator('#pipeline-stage-v3 .ps3-why header').innerText(),/보완할 것 \d+건\s*기록 완성률 [\d.]+% · 성과 아님/,k+': 완성률은 보완할 것 줄에 작게');
+   assert.equal(await page.locator('#pipeline-stage-v3 .ps3-diag>.ps3-box').count(),2,k+": '그래서 뭘 해야 하나' 상자 없음");
   }
   /* 관계관리: v12 를 끄면(G.relV12Off) 예전 탭 3개(다음 연락일 지남 · 이번 주 연락 · 장기 대기) · 켜면 상태 5칸 — 자세한 것은 scripts/verify-relationship-v12-browser.cjs */
   await page.evaluate(()=>{G.relV12Off=true;PipelineWorkspace.open('relationship');});await page.waitForTimeout(300);
