@@ -197,7 +197,11 @@
   if(!['now','wait','fix'].includes(S.area))S.area='now';
   let zoneRows='';
   if(S.area!=='now'){const list=Z[S.area],P=w.ListPager,pg=P?P.cut(list,S.areaPage||1):{rows:list.slice(0,20),pages:1};zoneRows=pg.rows.map(x=>V.zoneRow(zoneRow(S.area,x))).join('')||'<p class="mv5-empty">'+(S.area==='wait'?'회신을 기다리는 건이 없습니다.':'보완할 기록이 없습니다.')+'</p>';if(P&&pg.pages>1)zoneRows+=P.html(pg,{ns:'gs',unit:'건',small:true}).replace(/data-gs="page"/g,'data-gs="areapage"');}
+  /* 관리자: [내 오늘 | 팀] — 팀 = 기획 B(mobile-v5-team.js) */
+  const T=w.MobileV5Team&&w.MobileV5Team.on()?w.MobileV5Team:null;
+  if(T&&S.v5team){const tb=w.document.createElement('div');tb.innerHTML=T.render(T.model({prim:zonePrim}),S);return tb.innerHTML;}
   const box=w.document.createElement('div');box.innerHTML=V.render(M,S,{zoneRows});
+  if(T)box.querySelector('.mv5-body')?.insertAdjacentHTML('afterbegin','<div class="mv5-seg" role="tablist"><span data-gs="v5team" data-value="0" role="tab" tabindex="0" aria-selected="true">내 오늘</span><span data-gs="v5team" data-value="1" role="tab" tabindex="0" aria-selected="false">팀</span></div>');
   if(S.area==='now')w.MobileRoute?.decorateApproved(box.firstElementChild);
   const snapshot=pendingSnapshot();
   if(!(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0))box.firstElementChild.firstElementChild.insertAdjacentHTML('afterend',w.MobilePendingView.banner(snapshot));
@@ -373,6 +377,10 @@
     if(g.kind==='pc_inquiry'){w.G.deal=null;run();w.MobileInquiryEntry.restore(g.target_id);}else{w.G.deal=g.target_id;run();w.MobileEntry.open();}
    }
    else if(k==='v5task'){if(!resetDetail())return;S.returnTab='today';v5task(b,taskClick);}
+   else if(k==='v5team'){S.v5team=b.dataset.value==='1';S.v5rep='';S.v5teamPage={};run();}
+   else if(k==='v5rep'){S.v5rep=b.dataset.value||'';S.v5teamPage=Object.assign({},S.v5teamPage,{rep:1});run();}
+   else if(k==='v5teampage'){S.v5teamPage=Object.assign({},S.v5teamPage,{[b.dataset.key]:Number(b.dataset.page)||1});run();}
+   else if(k==='v5reask'){const T=w.MobileV5Team,R=w.MobileRequests,r=R?.state?.().list.find(x=>x.id===b.dataset.id);if(!T||!R||!r)return w.toast('요청을 다시 확인해 주세요.');b.setAttribute('aria-disabled','true');R.reask(r.id,T.reaskDue(r)).then(x=>{w.toast((r.to_name||'담당')+'에게 다시 요청했습니다 · 기한 '+(x.due_label||''));run();}).catch(e=>{w.toast('다시 요청하지 못했습니다: '+String(e&&e.message||e));run();});}
    else if(k==='v5more'){S.v5more=b.dataset.value==='1';S.v5page=1;run();}
    else if(k==='v5page'){S.v5page=Number(b.dataset.page)||1;run();}
    else if(k==='v5perf'){/* 성과 = PC 성과 분석과 같은 화면 · 같은 숫자(모바일 전용 집계 없음) */if(w.DEMO)return w.toast('예시 화면에서는 PC 성과 분석으로 이동하지 않습니다.');try{(w.top||w).location.assign('./?view=pc#p=perf');}catch(e){w.location.assign('./?view=pc#p=perf');}}
