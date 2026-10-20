@@ -76,10 +76,10 @@
   return x.type==='inq'?(responded(i)?'첫 응대 기록됨 · 상세 내용 없음':'접수만 · 연락 기록 없음'):(root.ContactState?root.ContactState.NONE:'CRM 연락 기록 없음');
  }
  const reqTxt=i=>{const r=(i.reqs||[])[0];if(!r)return '';return (r.requested_by||'관리자')+' 요청';};
- const tagLine=i=>'<span class="sub"><em class="kd">'+kindOf(i)+'</em><b style="color:'+colorOf(i)+'">'+h(brandOf(i)||'브랜드 미입력')+'</b>'+(stageOf(i)?' · '+h(stageOf(i)):'')+'</span>';
+ /* 팀 화면(영업관리 · 팀장 · 상무 · 대표)은 줄마다 담당자 이름 */const tagLine=(i,ctx)=>'<span class="sub"><em class="kd">'+kindOf(i)+'</em><b style="color:'+colorOf(i)+'">'+h(brandOf(i)||'브랜드 미입력')+'</b>'+(stageOf(i)?' · '+h(stageOf(i)):'')+(ctx&&ctx.team?' · 담당 '+h((i.x&&i.x.owner)||'미배정'):'')+'</span>';
  const openAttr=(i,ctx)=>' data-t6="open" data-key="'+h(i.key)+'" data-far="'+(ctx.team&&i.x&&i.x.owner!==ctx.me?1:0)+'"';
  function row(i,zone,ctx){const e=elapsed(i,zone),rq=reqTxt(i);
-  return '<div class="tv6-row" role="button" tabindex="0"'+openAttr(i,ctx)+' data-zone="'+zone+'" style="border-left-color:'+colorOf(i)+'"><div class="c1"><span class="t"><b>'+h(i.i&&i.i.site||'현장명 미입력')+'</b><b class="d '+e.k+'">'+h(e.t)+'</b></span>'+tagLine(i)+'</div><div class="c2"><b>'+h(taskOf(i,zone))+'</b></div><div class="c3"><span>'+h(nowOf(i,zone))+'</span>'+(rq?'<em class="rq">'+h(rq)+'</em>':'')+'</div><button type="button" class="go"'+openAttr(i,ctx)+'>결과 기록</button></div>';}
+  return '<div class="tv6-row" role="button" tabindex="0"'+openAttr(i,ctx)+' data-zone="'+zone+'" style="border-left-color:'+colorOf(i)+'"><div class="c1"><span class="t"><b>'+h(i.i&&i.i.site||'현장명 미입력')+'</b><b class="d '+e.k+'">'+h(e.t)+'</b></span>'+tagLine(i,ctx)+'</div><div class="c2"><b>'+h(taskOf(i,zone))+'</b></div><div class="c3"><span>'+h(nowOf(i,zone))+'</span>'+(rq?'<em class="rq">'+h(rq)+'</em>':'')+'</div><button type="button" class="go"'+openAttr(i,ctx)+'>결과 기록</button></div>';}
  const TABS=[['act','오늘 업무','기한 지남 + 오늘 처리'],['late','기한 지남','확인된 기한이 지났고 미완료'],['now','오늘 처리','오늘 일정 · 약속이 있고 미완료'],['wait','회신 대기','고객 회신 기다림 · 확인일에 후속'],['fix','기록 보완','과거 진행 · 날짜 · 근거 확인 · 지연 평가 아님']];
  const HEAD={act:['기한 기준','기한 지남(넘긴 날 많은 순) → 오늘 처리(약속 · 시각 순)'],late:['기한 기준','넘긴 날 많은 순'],now:['기한 기준','약속 · 시각 순'],wait:['확인일','확인일이 오면 후속 업무로'],fix:['','기록 보완은 연락 지연으로 세지 않음']};
  /* 그리기 — ctx = {Z,S,role,team,me,pass,back,word} */
