@@ -770,7 +770,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const C=core();try{if(SI().advisoryLoad)SI().advisoryLoad();}catch(e){}
   /* 2026-10-20 design_handoff_dashboard_visual: 세 화면을 시각화 화면(dash-visual.js)으로 — 상단(공통 필터줄 + toolbar)은 그대로 같게. 끄기 G.dashVisOff */
   const VIS=R.DashVisual&&R.DashVisual.on()?R.DashVisual:null;
-  host.innerHTML='<div class="db-shell'+(VIS?' dv-on':'')+'" data-page="'+page+'">'+toolbar(page,C)+(VIS?VIS.html(page,C,{people,ctlModel,weekActs,actKind,brandRows,stageEvents,inquiryFate,mk,won,eok}):page==='dash'?dash(C):page==='control'?ctl(C):R.PerfV3&&R.PerfV3.enabled()?R.PerfV3.html(C):perf(C))/* 성과 분석 v3(perf-v3.js) · 끄면 예전 화면 */+'</div>';
+  host.innerHTML='<div class="db-shell'+(VIS?' dv-on':'')+'" data-page="'+page+'">'+toolbar(page,C)+(VIS?VIS.html(page,C,{people,ctlModel,weekActs,actKind,brandRows,stageEvents,inquiryFate,nearList,pendingStats,channelOf,mk,won,eok}):page==='dash'?dash(C):page==='control'?ctl(C):R.PerfV3&&R.PerfV3.enabled()?R.PerfV3.html(C):perf(C))/* 성과 분석 v3(perf-v3.js) · 끄면 예전 화면 */+'</div>';
   host.onclick=VIS?e=>{if(!VIS.onClick(e))onClick(e);}:onClick;host.onchange=onChange;host.onkeydown=null;
  }
  function evRows(list){return list.map(SI().evRow);}
