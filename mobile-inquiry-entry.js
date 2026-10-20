@@ -3,9 +3,14 @@
  'use strict';
  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,LIFE=30*60*1000,SOURCE='approved-inquiry-d-v1';
  const clone=x=>JSON.parse(JSON.stringify(x)),serial=x=>JSON.stringify(x),fail=m=>{throw Error(m);},message=e=>String(e?.message||e),journal=()=>root.MobileSaveJournal;
- const keys=['res','memo','mode','purpose','date','reason','plan','touchedNext'];
+ const keys=['res','memo','mode','purpose','date','reason','plan','touchedNext','v5chk','retry','v5retry'];
+ /* 모바일 v5(2026-10-20 · 같은 끄기 G.mobileV5Off): 확인할 것(견적문의 기준) 체크 · 부재 다시 연락 칩 · 확정 전/확정 · 한 줄 미리보기 · 저장 뒤 정리됨 — 저장 엔진(PCInquirySave)은 그대로 */
+ const V5=()=>root.MobileV5Result&&root.MobileV5Result.on()?root.MobileV5Result:null;
+ const v5d=a=>({nm:a.q.nm,id:a.id,code:'inquiry',kind:'inquiry'});
+ /* 저장할 글: 상담 내용 + [확인] · [아직] 한 줄. 연락 시도(부재 · 번호 오류)는 '다시 연락 …'만 */
+ function textOf(a){const s=a.input,ce=root.ContactEntry;if(!ce.showNote(s.res))return V5()&&s.retry?'다시 연락 '+String(s.retry).slice(0,20):'';return V5()?String(V5().memoOf(s,v5d(a),[],null)||''):s.memo;}
  const clean=s=>Object.fromEntries(keys.map(k=>[k,s[k]]));
- function validInput(s){return !!s&&typeof s==='object'&&typeof s.res==='string'&&(!s.res||root.ContactEntry.VALUES.includes(s.res))&&root.ContactEntry.MODES.some(x=>x[0]===s.mode)&&['memo','purpose','date','reason'].every(k=>typeof s[k]==='string'&&s[k].length<=({memo:300,purpose:60,date:10,reason:80}[k]))&&['internal','customer'].includes(s.plan)&&typeof s.touchedNext==='boolean';}
+ function validInput(s){return !!s&&typeof s==='object'&&(s.v5chk==null||typeof s.v5chk==='object'&&!Array.isArray(s.v5chk)&&Object.values(s.v5chk).every(v=>typeof v==='boolean'))&&(s.retry==null||typeof s.retry==='string'&&s.retry.length<=20)&&(s.v5retry==null||['','2h','am','pick'].includes(s.v5retry))&&typeof s.res==='string'&&(!s.res||root.ContactEntry.VALUES.includes(s.res))&&root.ContactEntry.MODES.some(x=>x[0]===s.mode)&&['memo','purpose','date','reason'].every(k=>typeof s[k]==='string'&&s[k].length<=({memo:300,purpose:60,date:10,reason:80}[k]))&&['internal','customer'].includes(s.plan)&&typeof s.touchedNext==='boolean';}
  const idOf=q=>String(q?.raw?.id||q?.raw?.inquiry_id||q?.id||q?.inquiry_id||q?.key||'');
  const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
  const dateOK=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&Number.isFinite(Date.parse(v+'T00:00:00Z'))&&new Date(v+'T00:00:00Z').toISOString().slice(0,10)===v;
@@ -47,7 +52,10 @@
  function plan(a=active){
   if(!a)return {ok:false,error:'열려 있는 문의 입력을 확인해 주세요.'};
   try{assertActive(a);if(a.submitted){if(serial(clean(a.input))!==a.submitted.signature)fail('저장 확인 중 입력값이 바뀌었습니다. 원래 입력으로 재시도해 주세요.');return clone(a.submitted.plan);}
-   return root.ContactEntry.plan({...clean(a.input),ch:'전화',requests:[]},{...ctx(a),scheduleV1:root.ScheduleContract?.enabled?.()===true});
+   const pl=root.ContactEntry.plan({...clean(a.input),memo:root.ContactEntry.showNote(a.input.res)?textOf(a):a.input.memo,ch:'전화',requests:[]},{...ctx(a),scheduleV1:root.ScheduleContract?.enabled?.()===true});
+   /* v5 다시 연락(연락 시도에만): 시각은 업무에 저장하지 않으므로 기록 글 끝에 */
+   if(pl.ok&&pl.attempt&&V5()&&a.input.retry)pl.note+=' · 다시 연락 '+String(a.input.retry).slice(0,20);
+   return pl;
   }catch(e){return {ok:false,error:message(e)};}
  }
  function durable(a=active){
@@ -62,7 +70,7 @@
  function model(){
   const a=active;if(!a)return null;let pl=plan(a),why=blockReason(a);if(why)pl={...pl,ok:false,error:why};
   const q=a.q,detail=q.detail||{},contact={name:q.contact_name||detail.contact_name||detail.contactName||'',role:q.contact_role||detail.contact_role||''};
-  return {s:a.input,d:{nm:q.nm,work_type:q.work_type||detail.workType||a.view.gj||'',construction_year:q.construction_year||'',contactAt:q.first_connected_at||''},ex:ctx(a).existing,plan:pl,ce:root.ContactEntry,contact,requests:[],requestApi:null,busy:a.busy,frozen:frozen(a),fields:null,currentPlan:'',dateOptions:dates(),today:today()};
+  return {s:a.input,d:{nm:q.nm,id:a.id,code:'inquiry',kind:'inquiry',work_type:q.work_type||detail.workType||a.view.gj||'',construction_year:q.construction_year||'',contactAt:q.first_connected_at||''},ex:ctx(a).existing,plan:pl,ce:root.ContactEntry,contact,requests:[],requestApi:null,v5:!!V5(),busy:a.busy,frozen:frozen(a),fields:null,currentPlan:'',dateOptions:dates(),today:today()};
  }
  function card(){return root.document?.getElementById('sheetcard');}
  function paint(){
@@ -71,7 +79,7 @@
   root.document.getElementById('sheetwrap')?.classList.add('ce-page-wrap');const bg=root.document.getElementById('scr');if(bg)bg.inert=true;
   c.innerHTML=root.MobileContactView.render(model());c.scrollTop=top;
  }
- function refreshFooter(){const c=card(),m=model();if(!c||!m)return;const p=c.querySelector('.ce-prev'),b=c.querySelector('[data-ce="save"]');if(p)p.textContent=m.plan?.ok?m.plan.preview:m.plan?.error||'';if(b)b.disabled=m.busy||!m.plan?.ok;}
+ function refreshFooter(){const c=card(),m=model();if(!c||!m)return;const p=c.querySelector('.ce-prev'),b=c.querySelector('[data-ce="save"]');if(p)p.textContent=m.v5&&V5()?V5().preview(m.plan,m.s,m.d,m.ex,[],null):m.plan?.ok?m.plan.preview:m.plan?.error||'';if(b)b.disabled=m.busy||!m.plan?.ok;}
  function showError(e){if(active){active.input.err=message(e);paint();}return {ok:false,error:message(e)};}
  function close(options={}){
   const a=active;if(!a)return {ok:true};if(a.busy&&!options.force)return showError('서버 저장 확인 중입니다. 잠시 기다려 주세요.');
@@ -120,8 +128,11 @@
   if(action==='close')return close();const a=active;if(!a||a.busy||frozen(a)&&action!=='save')return {ok:false};
   try{assertActive(a);if(action==='save')return save();
    if(['input-mic','mic','info','edit-work','edit-contact'].includes(action)){root.toast?.(action.includes('mic')?'문의 음성 입력 연결은 아직 확인되지 않았습니다. 상담 내용을 직접 적어 주세요.':'고객 정보 변경 화면은 Claude 원본 연결 작업 중입니다.');return {ok:false};}
-   if(action==='res'){
-    if(!root.ContactEntry.VALUES.includes(value))return {ok:false};a.input.res=value;
+   if(action==='v5chk'&&V5()){if(!/^rule:\d$/.test(String(value)))return {ok:false};a.input.v5chk=Object.assign({},a.input.v5chk,{[value]:!(a.input.v5chk&&a.input.v5chk[value])});}
+   else if(action==='v5retry'&&V5()){if(!['2h','am','pick'].includes(value))return {ok:false};V5().retry(a.input,value,ctx(a).existing);}
+   else if(action==='v5plan'&&V5()){a.input.plan=value==='customer'?'customer':'internal';a.input.touchedNext=true;}
+   else if(action==='res'){
+    if(!root.ContactEntry.VALUES.includes(value))return {ok:false};a.input.res=value;if(!root.ContactEntry.isAttempt(value)){a.input.retry='';a.input.v5retry='';}
     if(!a.input.touchedNext){const d=root.ContactEntry.defaults(value,a.context.existing,today());Object.assign(a.input,{mode:d.mode,purpose:d.purpose,date:d.date});}
     if(root.ContactEntry.isBadfit(value))a.input.mode='none';
    }else if(action==='mode'){if(!root.ContactEntry.MODES.some(m=>m[0]===value))return {ok:false};a.input.mode=value;a.input.touchedNext=true;}
@@ -141,11 +152,16 @@
    const result=root.InquiryFlow.TWO.of(a.input.res,'관심 있음');if(!result?.contact_result||!root.InquiryFlow.kindOf(result.contact_result))fail('문의 연락 결과를 확인하지 못했습니다.');
    a.saveState='submitting';if(!remember(a))fail(a.input.err);
    a.busy=true;a.input.err='';paint();
-   const options={ch:'전화',result:result.res,text:root.ContactEntry.showNote(a.input.res)?a.input.memo:'',contact_result:result.contact_result,customer_reaction:'',plan:pl,existing:ctx(a).existing};
+   const options={ch:'전화',result:result.res,text:textOf(a),contact_result:result.contact_result,customer_reaction:'',plan:pl,existing:ctx(a).existing};
    const form={...clean(a.input),_inquiryContext:ctx(a)};
    await root.PCInquirySave.save(a.q,options,form,'mobile-d');assertActive(a);
    for(const k of ['status','first_response_at','responded_at','updated_at','lastActivity','openNextActions','nextActionObj','nextAction','nextActionText','next_action_date','nextActionDate'])if(Object.hasOwn(a.q,k))a.view[k]=a.q[k];
-   a.busy=false;a.saved=true;a.saveState='confirmed';durable(a);eraseDraft(a);close({force:true});root.toast?.('응대 기록을 저장했습니다.');return {ok:true};
+   a.busy=false;a.saved=true;a.saveState='confirmed';durable(a);eraseDraft(a);
+   const done=V5()?{d:v5d(a),pl,rows:root.ContactEntry.summary(pl,{...ctx(a),openRequests:[]}),s:clone(a.input),requests:[],requestResults:{},api:null}:null;
+   close({force:true});root.toast?.('응대 기록을 저장했습니다.');
+   /* v5 정리됨: 끝난 일 / 남은 일 / 다음 할 일 + [다음 건으로] */
+   if(done){root.openSheet('','');const c=card();if(c){c.classList.add('ce-card','ce-page');root.document.getElementById('sheetwrap')?.classList.add('ce-page-wrap');V5().after(c,done);}}
+   return {ok:true};
   }catch(e){
    a.busy=false;if(active!==a)return {ok:false,error:message(e)};
    try{const p=pending(a);if(p?.input?.plan&&p.surface==='mobile-d')a.submitted={signature:serial(clean(p.form)),plan:clone(p.input.plan)};else if(!a.saved){a.saveState='draft';remember(a);}}catch(ignore){}

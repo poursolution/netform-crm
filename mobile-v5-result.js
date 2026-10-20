@@ -17,7 +17,7 @@
  const kstNow=()=>new Date(Date.now()+9*36e5);
  /* 확인할 것: 요청마다 항목(첫 연락 자체는 빼고), 요청에 항목이 없으면 단계별 카드 기준(StageCardRules) — AI 생성 없음 */
  function items(d,requests,api){
-  const SR=w.StageCardRules,split=x=>x&&x.check?x.check.split(/\s*·\s*/).filter(Boolean):[],out=[],ruleItems=split(SR?SR.of(d.code,d.outcome):null),firstItems=split(SR?SR.RULES.inquiry:null);
+  const SR=w.StageCardRules,split=x=>x&&x.check?x.check.split(/\s*·\s*/).filter(Boolean):[],out=[],firstItems=split(SR?SR.RULES.inquiry:null),ruleItems=d.kind==='inquiry'?firstItems:split(SR?SR.of(d.code,d.outcome):null);/* 견적문의 응대 = 견적문의 기준 */
   (requests||[]).forEach(r=>{
    const asks=(Array.isArray(r.asks)?r.asks:[]).map(String).filter(a=>a&&!GENERIC.test(a.trim()));
    /* 첫 연락 요청 = 견적문의 기준(견적 요청 범위 · 방문이 필요한지), 그 밖은 지금 단계 기준 */
@@ -169,7 +169,7 @@
  let A=null;
  const DAY=/^\d{4}-\d{2}-\d{2}$/;
  const sheet=()=>document.getElementById('sheetcard');
- const page=(title,body,foot)=>'<div class="approved-v5a"><div class="v5a-head"><button type="button" class="v5a-back" data-ce="close" aria-label="닫기">‹</button><b>'+h(title)+'</b></div><div class="v5a-body">'+body+'</div>'+(foot?'<div class="v5a-foot">'+foot+'</div>':'')+'</div>';
+ const page=(title,body,foot)=>'<div class="approved-v5a"><div class="v5a-head"><button type="button" class="v5a-back" data-v5a="close" aria-label="닫기">‹</button><b>'+h(title)+'</b></div><div class="v5a-body">'+body+'</div>'+(foot?'<div class="v5a-foot">'+foot+'</div>':'')+'</div>';
  const blk=(k,a,cls,b)=>'<div class="v5a-blk'+(cls?' '+cls:'')+'"><span>'+h(k)+'</span><b>'+h(a)+'</b>'+(b?'<small>'+h(b)+'</small>':'')+'</div>';
  const fieldsOf=d=>((d.stage_contexts||d.stageContexts||{}).consulting||{}).fields||{};
  function after(card,info){
@@ -217,12 +217,12 @@
    Q.busy=false;paintDone();
   }catch(e){Q.busy=false;Q.err=String(e&&e.message||e);paintQuote();}
  }
- function nextItem(d){try{const L=w.MobileGuideShell&&w.MobileGuideShell.todayItems?w.MobileGuideShell.todayItems():[];return L.find(i=>!(i.kind==='deal'&&String(i.id)===String(d.id)))||null;}catch(e){return null;}}
+ function nextItem(d){try{const L=w.MobileGuideShell&&w.MobileGuideShell.todayItems?w.MobileGuideShell.todayItems():[];return L.find(i=>String(i.id)!==String(d.id))||null;}catch(e){return null;}}
  function paintDone(){
   const c=sheet();if(!c||!A)return;const {info,quote}=A,d=info.d,pl=info.pl||{},s=info.s||{},rows=info.rows||[],api=info.api,f=fieldsOf(d);
   const reqs=info.requests||[],res=info.requestResults||{},title=r=>api?api.labelOf(r):'관리자 요청';
   const done=[],left=[];
-  done.push(d.nm+' · '+(s.ch==='방문'?(pl.meaningful?'방문':'방문 · 담당 부재'):pl.attempt?'연락 시도 1회':'연락'));
+  done.push(d.nm+' · '+(d.kind==='inquiry'&&!pl.attempt?'첫 연락':s.ch==='방문'?(pl.meaningful?'방문':'방문 · 담당 부재'):pl.attempt?'연락 시도 1회':'연락'));
   reqs.forEach(r=>{const x=res[r.id];if(x&&x.status==='done')done.push(title(r)+' 완료 · '+(r.requested_by||'요청자')+'에게 알림');else if(x&&x.note)left.push(title(r)+' · '+x.note+(pl.attempt&&dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));else if(r.status!=='done')left.push(title(r)+(pl.attempt?' · 연결 필요':' · 진행 중')+(dueHm(r)?' · '+dueHm(r)+' 마감 그대로':''));});
   if(quote&&quote.fieldsDone)done.push('견적 요청 1 · 이 방문에 연결');
   if(info.visitDone)done.push('방문 업무 완료');
@@ -246,6 +246,7 @@
    else if(k==='qsend')sendQuote();
    else if(k==='qlater'&&A.quote&&!A.quote.busy){A.quote=null;paintDone();}
    else if(k==='next')goNext();
+   else if(k==='close'){A=null;try{w.closeSheet&&w.closeSheet();}catch(x){}const c=sheet();if(c)c.innerHTML='';try{w.render&&w.render();}catch(x){}}
   });
   document.addEventListener('input',e=>{const t=e.target.closest&&e.target.closest('#sheetcard [data-v5a-in]');if(!t||!A||!A.quote||A.quote.busy)return;if(t.dataset.v5aIn==='req')A.quote.req=t.value;else if(t.dataset.v5aIn==='wish'){A.quote.wish=t.value;if(!t.value)A.quote.accept=false;paintQuote();}});
  }
