@@ -83,6 +83,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const wk2=await d.locator('.db-wk').evaluate(n=>{const c=[...n.children].slice(6).map(x=>x.textContent.replace(/\s+/g,' ').trim()),rows=[];for(let i=0;i<c.length;i+=6)rows.push(c.slice(i,i+6));return rows;});
   assert.equal(wk2[2][2],'1 ▲1','자료 발송완료 → 다음 단계로 1');assert.equal(wk2[4][1],'1 ▲1','경쟁 · 입찰에 새로 들어옴 1');
   await page.evaluate(()=>{delete B.deals.find(x=>x.id==='o1').stageHistory;paint();});await page.waitForTimeout(250);
+  /* six_fixes ④ 첫 화면: 관리자 = 팀 오늘 업무 · 막힌 곳(담당자 × 문제) · 내가 보낸 요청 / 담당자 = 내 업무 4구역 · 고객 약속 · 후속 일정 · 사원별 표는 둘 다 봄 */
+  {const rt=()=>page.locator('#si-dash .db-rt');assert.equal(await rt().count(),1,'첫 화면 띠');
+   assert.deepEqual(await rt().locator('.db-rt-c header b').allInnerTexts(),['팀 오늘 업무 · 막힌 곳','내가 보낸 요청'],'관리자 첫 화면');
+   assert.deepEqual(await rt().locator('.db-rt-t thead th').allInnerTexts(),['담당','오늘 처리','기한 초과','회신 대기','기록 보완','연락 끊김','멈춤']);assert.ok(await rt().locator('.db-rt-t tbody tr').count()>=2,'담당자 줄 + 합계');
+   if(shot)await page.screenshot({path:shot+'-dash-role-admin.png'});
+   await page.evaluate(()=>{window.__meR=ME;ME={id:'rep1',name:'이필선',role:'rep'};paint();});await page.waitForTimeout(300);
+   assert.deepEqual(await rt().locator('.db-rt-c header b').allInnerTexts(),['내 업무','고객 약속','후속 일정'],'담당자 첫 화면');
+   assert.deepEqual(await rt().locator('.db-rt-z button span').allInnerTexts(),['오늘 처리','기한 초과','고객 회신 대기','기록 보완'],'오늘 업무와 같은 4구역');
+   if(shot)await page.screenshot({path:shot+'-dash-role-rep.png'});
+   await page.locator('#si-dash [data-db="sec"][data-v="people"]').click();await page.waitForTimeout(250);assert.equal(await page.locator('#si-dash [data-db="sec"][data-v="people"]').getAttribute('aria-selected'),'true','사원별(사람) 탭은 담당자도 봄');
+   await page.locator('#si-dash [data-db="sec"][data-v="perf"]').click();await page.waitForTimeout(200);
+   await page.evaluate(()=>{ME=window.__meR;paint();});await page.waitForTimeout(300);}
   if(shot)await page.screenshot({path:shot+'-dash-funnel.png',fullPage:true});
   /* 예전 흐름(스위치를 켜면): 흐름 5칸 · 비율 4개 · 배드핏/실주 두 상자 */
   await page.evaluate(()=>{G.dashFunnelOff=true;paint();});await page.waitForTimeout(250);

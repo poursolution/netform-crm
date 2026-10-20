@@ -315,7 +315,20 @@
     const MT=[['영업 행동',()=>extra('beh')],['실주 분석',()=>extra('lost')],['브랜드별 문의 → 수주',()=>funnel],['단계별 선행 → 결과',()=>leadSec],['접수 월별 전환',()=>'<div class="pf3-tb0">'+tCohort()+'</div>'],['유입경로',()=>'<div class="pf3-tb0">'+tChannel()+'</div>']];
     const mt=Math.max(0,Math.min(MT.length-1,Number(S.mt)||0));
     const moreSec='<div class="pf3-h2" id="pf3-more"><b>더 보기</b><span>하나씩 골라서</span></div><section class="pf3-more"><div class="hd"><b>추가 분석</b>'+MT.map((x,i)=>'<button type="button" data-pf3="more" data-v="'+i+'" aria-pressed="'+(mt===i)+'">'+x[0]+'</button>').join('')+'<i></i><span>하나씩 보기</span></div><div class="bd">'+MT[mt][1]()+'</div></section>';
-    return '<div class="pf3 v3">'+ceoSec+judges+pending+crit+pplSec+moneySec+moreSec+'</div>';
+    /* six_fixes ⑤: 같은 기간 · 사원별 한 줄 — 얼마나 했고(연락 실제 연결 · 방문 · 견적 발송) → 어떤 결과로(영업 진전 · 계약실적). 계산은 대시보드와 같은 함수(DashB.actKind · BriefB.quoteIn · ExecWording.advanceStats · people) */
+    const actSec=(()=>{try{
+     const D=R.DashB,EW=R.ExecWording,P0=C.P,pad2=n=>String(n).padStart(2,'0'),pd=s=>Number(s.slice(5,7))+'.'+Number(s.slice(8,10));
+     const lastK=(()=>{const x=new Date(P0.b+'T00:00:00');x.setDate(x.getDate()-1);return x.getFullYear()+'-'+pad2(x.getMonth()+1)+'-'+pad2(x.getDate());})(),end=lastK<P0.today?lastK:P0.today;
+     const PP=D.people(C),rows=C.names.map(n=>{const a=C.A.filter(x=>x.owner===n&&x.k>=P0.a&&x.k<=end),k=x=>D.actKind(x),my=(C.AD||[]).filter(d=>R.repN(d.assignee)===n);
+      const q=my.filter(d=>{try{return !!C.B.quoteIn(d,P0.a,P0.b);}catch(e){return false;}}).length,adv=EW&&EW.advanceStats?EW.advanceStats(my,{mon:P0.a,fri:end}).n:null,pp=PP.find(x=>x.n===n)||{yr:0};
+      return {n,call:a.filter(x=>k(x)==='call').length,tr:a.filter(x=>k(x)==='try').length,visit:a.filter(x=>k(x)==='visit').length,q,adv,yr:pp.yr||0};}).filter(r=>r.call||r.tr||r.visit||r.q||r.adv||r.yr);
+     rows.sort((x,y)=>y.yr-x.yr||y.call-x.call);
+     const cell=v=>v?'<b>'+v+'</b>':'<span class="mut">0</span>';
+     return '<div class="pf3-h2" id="pf3-ar"><b>얼마나 했고 → 어떤 결과로</b><span>같은 기간 · '+P0.y+'.'+pd(P0.a)+' – '+pd(end)+' · 사원별 한 줄</span></div><section class="pf3-ar">'
+      +'<div class="pf3-arr hd"><span>담당</span><span class="r">연락 (실제 연결)</span><span class="r">방문</span><span class="r">견적 발송</span><span class="ar"></span><span class="r">영업 진전</span><span class="r">계약실적</span></div>'
+      +(rows.length?rows.map(r=>'<div class="pf3-arr"><b class="n">'+h(r.n)+'</b><span class="r">'+cell(r.call)+(r.tr?' <small>(시도 '+r.tr+')</small>':'')+'</span><span class="r">'+cell(r.visit)+'</span><span class="r">'+cell(r.q)+'</span><span class="ar">→</span><span class="r">'+(r.adv==null?'<span class="mut">—</span>':cell(r.adv))+'</span><span class="r">'+(r.yr>0?'<b>'+h(eok(r.yr))+'</b>':'<span class="mut">아직 없음</span>')+'</span></div>').join(''):'<p class="pf3-empty">이 기간에 기록이 없습니다.</p>')
+      +'<p class="pf3-pn">연락 = 실제 연결(부재 · 통화불가는 시도) · 견적 발송 = 발송일 · 영업 진전 = 단계가 앞으로 간 영업건(근거 있음 · 종결 제외) · 계약실적 = 낙찰금액(VAT 별도) · 활동은 영업건 담당 기준</p></section>';
+    }catch(e){return '';}})();    return '<div class="pf3 v3">'+ceoSec+judges+pending+crit+actSec+pplSec+moneySec+moreSec+'</div>';
    }
   return '<div class="pf3">'+head+'<div class="pf3-mid">'+peopleSec+funnel+'</div>'+tabs+extraSec+leadSec+pending+'</div>';/* 새 구역은 기존 아래(탭 · 표 다음 · '아직 판단 못 하는 것' 앞) */
  }
