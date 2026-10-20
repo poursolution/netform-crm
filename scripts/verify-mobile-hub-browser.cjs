@@ -177,7 +177,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   assert.equal(await page.evaluate(()=>DEALS.find(d=>d.id===G.deal).activities.length),beforeSave.activityCount);
   assert.deepEqual(await page.evaluate(()=>DEALS.find(d=>d.id===G.deal).nextAction),beforeSave.task);
   await page.evaluate(()=>{Phase1.queue.flush=__hubFlush;});await page.locator('[data-ce="save"]').click();
-  await page.waitForFunction(()=>document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨');
+  await page.waitForFunction(()=>(document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'||!!document.querySelector('#sheetcard .approved-v5a')));
   assert.equal(await page.evaluate(()=>__review.rows.length),1,'Retry reuses the queued request ID');
   assert.equal(await page.evaluate(()=>DEALS.find(d=>d.id===G.deal).activities.length),beforeSave.activityCount+1);
   assert.deepEqual(await page.evaluate(()=>DEALS.find(d=>d.id===G.deal).nextAction),beforeSave.task,'Keeping an existing task neither duplicates nor completes it');
