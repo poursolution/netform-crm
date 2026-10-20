@@ -13,7 +13,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
   const view=page.locator('.approved-d'),read=()=>page.evaluate(()=>structuredClone({rows:__review.rows,replies:__review.replies,request:__review.request,deal:DEALS[0],state:MobileEntry.state(),journal:MobileSaveJournal.read('contact',DEALS[0].id)}));
   async function fill(result='연결됨',selected=true){await view.locator('[data-ce="res"][data-v="'+result+'"]').click();if(['연결됨','회신 받음'].includes(result))await view.locator('[data-ce-in="memo"]').fill('합성 상담: 고객 회의 후 회신 예정');if(selected)await view.locator('[data-ce-in="req"]').check();}
-  const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'),failure=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
+  const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&(document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'||!!document.querySelector('#sheetcard .approved-v5a'))),failure=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
   try{
    await page.goto(origin+'/mobile.html?demo=1&review='+scenario+'&reset=1',{waitUntil:'domcontentloaded'});await view.waitFor();
    /* 예전 D(요청 체크 상자) = 끄기 경로. v5 결과 화면(확인 항목 체크)은 verify-mobile-v5-result */

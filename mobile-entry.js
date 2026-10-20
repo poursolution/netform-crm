@@ -129,9 +129,11 @@
    if(a==='close'){root.closeSheet();root.render();return;}
    if(busy||card._ceMode==='entry'&&(!S||progress.signature&&a!=='save'))return;
    if(card._ceMode==='rs'){if(a==='rs-date'){RS.date=v;RS.err='';paintRs(dd);}else if(a==='rs-save')saveRs(dd);else if(a==='close'){root.closeSheet();root.render();}return;}
-   if(a==='res'){pickResult(dd,v);S.err='';if(V5()){if(!root.ContactEntry.isAttempt(v)){S.v5retry='';S.retry='';}V5().syncRequests(S,dd,reqsOf(dd),MR());}paint(dd);}
+   if(a==='res'){pickResult(dd,v);S.err='';if(V5()){S.v5cancel=false;if(!root.ContactEntry.isAttempt(v)){S.v5retry='';S.retry='';}V5().syncRequests(S,dd,reqsOf(dd),MR());}paint(dd);}
    else if(a==='v5chk'&&V5()){S.v5chk=Object.assign({},S.v5chk,{[v]:!(S.v5chk&&S.v5chk[v])});V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
    else if(a==='v5retry'&&V5()){V5().retry(S,v,existingFor(dd));V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
+   else if(a==='v5quote'&&V5()){S.v5quote=v;S.err='';paint(dd);}
+   else if(a==='v5cancel'&&V5()){/* 방문 취소 · 연기 = 고객에게 들은 연기(회신 받음) + 기존 방문 날짜만 변경 — 승인 셸은 따로 여는 일정 바꾸기 화면을 쓰지 않는다 */S.res='회신 받음';S.v5cancel=true;S.v5quote='';S.mode='change';S.reason=S.reason||'방문 취소 · 연기';S.touchedNext=true;S.datePanel=true;S.err='';V5().syncRequests(S,dd,reqsOf(dd),MR());paint(dd);}
    else if(a==='v5plan'&&V5()){S.plan=v==='customer'?'customer':'internal';S.touchedNext=true;S.err='';paint(dd);}
    else if(a==='mode'){S.mode=v;S.touchedNext=true;S.err='';if(v==='new'&&!S.date){S.date=CE.addDays(kst(),1);}paint(dd);}
    else if(a==='date'){S.date=v;S.datePanel=false;S.touchedNext=true;S.err='';paint(dd);}
@@ -288,6 +290,8 @@
     }
    }
    assertSession();
+   /* v5 '정리됨' · 방문 → 견적 요청에 넘길 것(입력 · 요청 · 방문 기록 번호) — 지우기 전에 복사 */
+   const v5done=V5()?{s:JSON.parse(JSON.stringify(S)),requests:JSON.parse(JSON.stringify(progress.requestSnapshot||[])),requestResults:Object.assign({},progress.requestResults||{}),activityId:rec.ack.activity_id,memo:input.memo}:null;
    const ch0=S.ch;lastMemo=String(S.memo||'');last={pl,ctx,deal_id:String(d.id),owner,sessionToken};clearDraft();busy=false;S=null;progress={};
    const rows=CE.summary(pl,Object.assign({},ctx,{openRequests:[]}));if(infoErr)rows.push(['남음','공사 시기는 저장하지 못했습니다: '+infoErr]);
    const quoteOk=ch0==='방문'&&pl.meaningful&&!d.outcome&&String(d.code)==='consulting'&&root.MobileFields&&root.MobileFields.ready();
@@ -299,6 +303,7 @@
     const sb=c.querySelector('.ce-save');if(sb)sb.textContent='저장됨';
     const pv=c.querySelector('.ce-prev');if(pv)pv.textContent=rows.map(r=>r[1]).join(' · ');
     root.toast?.('저장됨 · '+rows.map(r=>r[1]).join(' · '));
+    if(v5done)V5().after(c,Object.assign(v5done,{d,pl,rows,api:MR()}));
    }else if(c.contains(savingView))c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div>'+(quoteOk?'<button type="button" class="btn btn-line" data-ce="quote" style="margin-top:8px">견적 요청 등록</button>':'')+'</div>';
    try{root.saveLocal&&root.saveLocal();}catch(e){}
   }catch(e){busy=false;if(pl.scheduleV1&&!progress.activity&&!progress.schedule?.prepared){progress={};saveDraft(activeID,S);}S.err=String(e&&e.message||e);if(card.contains(savingView))paint(d);}
