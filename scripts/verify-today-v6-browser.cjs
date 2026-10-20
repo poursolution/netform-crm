@@ -43,33 +43,33 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   await page.waitForSelector('#today-v2 .tv6 .tv6-tabs');await page.waitForTimeout(900);
   const V=page.locator('#today-v2 .tv6');
   const tabs=await V.locator('.tv6-tabs button').evaluateAll(l=>l.map(b=>[b.dataset.v,Number(b.querySelector('.n').textContent),b.querySelector('b:nth-child(2)').textContent,getComputedStyle(b.querySelector('.n')).color]));
-  assert.deepEqual(tabs.map(t=>t[2]),['오늘 업무','기한 지남','오늘 처리','회신 대기','기록 보완'],'탭: 첫 칸 = 오늘 업무(실행 업무)');
+  assert.deepEqual(tabs.map(t=>t[2]),['전체','기한 지남','오늘 처리','회신 대기','기록 보완'],'탭 5칸 = 시안 그대로');
   const n=Object.fromEntries(tabs.map(t=>[t[0],t[1]]));
-  assert.equal(n.act,n.late+n.now,'오늘 업무 = 기한 지남 + 오늘 처리(회신 대기 · 기록 보완 제외)');
+  assert.equal(n.all,n.late+n.now+n.wait+n.fix,'전체 = 네 구역 합');
   const Z=await page.evaluate(()=>{const z=DayZones.last();return {now:z.now.length,late:(z.late||[]).length,wait:z.wait.length,fix:(z.fix||[]).length,total:z.total};});
   assert.deepEqual({late:n.late,now:n.now,wait:n.wait,fix:n.fix},{late:Z.late,now:Z.now,wait:Z.wait,fix:Z.fix},'탭 숫자 = 4구역 판정 그대로');
-  assert.equal(Number(await page.locator('#todayBadge').textContent()),n.act,'왼쪽 메뉴 배지 = 오늘 업무 숫자');
-  assert.match(one(await V.locator('.tv6-title').innerText()),new RegExp('^오늘 업무 '+n.act+'건 기한 지남 '+n.late+' \\+ 오늘 처리 '+n.now+' · 회신 대기 · 기록 보완은 따로'),'제목도 같은 숫자');
-  assert.equal(tabs.find(t=>t[0]==='late')[3],'rgb(180, 35, 24)');assert.equal(tabs.find(t=>t[0]==='act')[3],'rgb(21, 23, 28)');
+  assert.equal(Number(await page.locator('#todayBadge').textContent()),n.late+n.now,'왼쪽 메뉴 배지 = 기한 지남 + 오늘 처리');
+  assert.match(one(await V.locator('.tv6-title').innerText()),/^오늘 업무 오늘 할 일 · 기한 지난 일 · 회신 기다리는 일 · 기록만 채울 일 · /,'제목 = 시안');
+  assert.equal(tabs.find(t=>t[0]==='late')[3],'rgb(180, 35, 24)');assert.equal(tabs.find(t=>t[0]==='all')[3],'rgb(21, 23, 28)');
   /* 중복 · 설명 칸 없음 */
-  assert.equal(await V.locator('.tv6-card,.tv6-top,.tv6-left').count(),0,'위 카드 복제 · 진단 · 기록 없음 칸 없음');
-  assert.doesNotMatch(await V.innerText(),/오늘 진단|기록 없음 3가지|먼저 처리할 곳|뽑힌 이유|첫마디|놓치면/);
+  /* 2026-10-20 대표 '시안 제대로': 왼쪽 오늘 진단 · 기록 없음 3가지 / 먼저 처리할 곳 카드(기한 지남 · 오늘 처리, 최대 6) / 처리할 업무 */assert.equal(await V.locator('.tv6-left').count(),1);assert.match(one(await V.locator('.tv6-left').innerText()),/^오늘 진단 \d+건 지금 먼저 기한 지남 \d+ · 오늘 처리 \d+ 관리자 요청 붙은 것 \d+건 고객 약속 오늘 \d+건 기한 미확인 \d+건/);assert.match(one(await V.locator('.tv6-left').innerText()),/기록 없음 3가지 현재 업무 미수행 \d+ .* 과거 자료 미확인 \d+ .* 해당 없음 \d+/);
+  assert.equal(await V.locator('.tv6-top .tv6-card').count(),Math.min(6,n.late+n.now),'먼저 처리할 곳 = 기한 지남 · 오늘 처리');assert.ok((await V.locator('.tv6-top .tv6-card').evaluateAll(l=>l.map(c=>c.dataset.zone))).every(z=>z==='late'||z==='now'));assert.doesNotMatch(await V.innerText(),/뽑힌 이유|첫마디|놓치면/);
   /* 기본 목록 = 오늘 업무만 · 순서 · 숫자 */
   const rows=()=>V.locator('.tv6-row').evaluateAll(l=>l.map(r=>({site:r.querySelector('.c1 .t b').textContent,d:r.querySelector('.c1 .d').textContent,dc:getComputedStyle(r.querySelector('.c1 .d')).color,sub:r.querySelector('.sub').textContent.replace(/\s+/g,' ').trim(),task:r.querySelector('.c2 b').textContent,now:r.querySelector('.c3 span').textContent,rq:(r.querySelector('.c3 .rq')||{}).textContent||'',zone:r.dataset.zone,go:[getComputedStyle(r.querySelector('.go')).backgroundColor,getComputedStyle(r.querySelector('.go')).color]})));
   let R=await rows();
-  assert.equal(R.length,n.act,'기본 목록 = 오늘 업무 숫자');assert.ok(R.every(r=>r.zone==='late'||r.zone==='now'),'기본 목록에 회신 대기 · 기록 보완 없음');
+  assert.equal(R.length,n.all,'기본 목록 = 전체');
   assert.equal(new Set(R.map(r=>r.site)).size,R.length,'같은 현장 한 번');
-  assert.deepEqual(R.map(r=>[r.site,r.d]),[['[합성] 기한 3일 지남','3일 지남'],['[합성] 응대 중 문의','1일 지남'],['[합성] 첫 연락 전 문의','오늘 지남'],['[합성] 오늘 14시 실측','14:00까지'],['[합성] 오늘 약속 시각 없음','오늘 중']],'순서 · 넘긴 날: '+JSON.stringify(R.map(r=>[r.site,r.d])));
+  assert.deepEqual(R.slice(0,n.late+n.now).map(r=>[r.site,r.d]),[['[합성] 기한 3일 지남','3일 지남'],['[합성] 응대 중 문의','1일 지남'],['[합성] 첫 연락 전 문의','오늘 지남'],['[합성] 오늘 14시 실측','14:00까지'],['[합성] 오늘 약속 시각 없음','오늘 중']],'순서 · 넘긴 날: '+JSON.stringify(R.map(r=>[r.site,r.d])));assert.ok(R.slice(n.late+n.now).every(r=>r.zone==='wait'||r.zone==='fix'),'회신 대기 · 기록 보완은 뒤');
   assert.ok(R.filter(r=>r.zone==='late').every(r=>r.dc==='rgb(180, 35, 24)'),'넘긴 날 = 빨강');assert.ok(R.filter(r=>r.zone==='now').every(r=>r.dc==='rgb(21, 23, 28)'),'오늘 처리 = 검정');
   const resp=R.find(r=>/응대 중 문의/.test(r.site));assert.equal(resp.sub,'견적문의POUR솔루션 · 응대 중','첫 응대가 된 문의 = 응대 중(첫 연락 아님)');assert.equal(resp.task,'견적 범위 · 금액 확인','응대 중 문의 = 그 문의의 다음 업무');
   assert.equal(R.find(r=>/첫 연락 전/.test(r.site)).sub,'견적문의POUR솔루션 · 첫 연락');
   assert.equal(R.find(r=>/기한 3일/.test(r.site)).rq,'송보람 요청','요청 꼬리표에 시각을 또 쓰지 않음');
   assert.deepEqual(R[0].go,['rgb(255, 255, 255)','rgb(21, 23, 28)'],'[결과 기록] 흰 바탕 · 검정 글씨');
-  assert.match(one(await V.locator('.tv6-lh').innerText()),/기한 기준 = 확인된 업무 기한\(고객 약속 · 요청 마감 · 다음 업무 날짜\) · 접수 · 배정 경과는 세지 않음/,'기준은 목록 머리에 한 번 · 숫자에도 지남 · 까지');
+  assert.match(one(await V.locator('.tv6-lh').innerText()),/기한 기준 = 확인된 업무 기한\(고객 약속 · 요청 마감 · 다음 업무 날짜\)/,'기준은 목록 머리에 한 번 · 숫자에도 지남 · 까지');
   /* 다른 탭 */
   await V.locator('.tv6-tabs [data-v="wait"]').click();await page.waitForTimeout(200);R=await rows();assert.equal(R.length,n.wait);assert.ok(R.every(r=>r.zone==='wait'));assert.match(R[0].d,/^\d+\.\d+ 확인$/,'회신 대기 = 확인일');
   await V.locator('.tv6-tabs [data-v="fix"]').click();await page.waitForTimeout(200);R=await rows();assert.equal(R.length,n.fix);assert.ok(R.every(r=>r.zone==='fix'));
-  await page.locator('#today-v2 .tv6 .tv6-tabs [data-v="act"]').click();await page.waitForTimeout(200);
+  await page.locator('#today-v2 .tv6 .tv6-tabs [data-v="all"]').click();await page.waitForTimeout(200);
   /* 클릭 = 상세 창 응대 기록 */
   await page.locator('#today-v2 .tv6-row',{hasText:'첫 연락 전 문의'}).locator('.c2').click();
   assert.deepEqual(await page.evaluate(()=>__open[__open.length-1]),['inq:aaaaaaaa-1111-4111-8111-111111111111','contact']);
