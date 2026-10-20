@@ -84,11 +84,11 @@
  const guideOn=(d,x,i)=>x.auto?!!w.stageGuideAutoM(d,x.auto):!!((d.stage_checklist||{})[d.code]||{})[i];
  function dayData(){
   const rows=w.G._today||w.buildToday(),mk=x=>({nm:x.nm,what:x.why||x.sub||''});
-  const tom=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  const tom=w.DayZoneRules?w.DayZoneRules.kst(Date.now()+864e5):new Date(Date.now()+864e5).toISOString().slice(0,10);/* 한국 날짜(00~09시에 하루 밀리던 것) */
   return {done:rows.filter(x=>w.isDone(x)).map(x=>({nm:x.nm,what:w.doneLabel(x)||'처리 완료'})),open:rows.filter(x=>!w.isDone(x)).map(mk),tomorrow:mine().filter(d=>String(next(d)?.due||next(d)?.due_at||'').slice(0,10)===tom).map(d=>({nm:d.nm,what:next(d).text||'다음 업무'}))};
  }
  function dayText(){
-  const t=dayData(),md=w.ContactEntry.md(new Date().toISOString().slice(0,10)),ln=(h,a)=>h+' '+a.length+'건'+a.map(x=>'\n- '+x.nm+' · '+x.what).join('');
+  const t=dayData(),md=w.ContactEntry.md(w.DayZoneRules?w.DayZoneRules.kst():new Date().toISOString().slice(0,10)),ln=(h,a)=>h+' '+a.length+'건'+a.map(x=>'\n- '+x.nm+' · '+x.what).join('');
   return '['+md+' 오늘 마감] '+w.G.user.nm+'\n'+ln('완료',t.done)+'\n'+ln('미완료',t.open)+'\n'+ln('내일',t.tomorrow);
  }
  async function closeDay(){
@@ -153,9 +153,42 @@
   if(w.MobileQuoteFlow?.reset(options)?.ok===false&&!options.force){run();w.toast('임시 보관을 확인하지 못해 현재 견적 입력을 유지합니다.');return false;}
   S.detailView='';S.evidencePage=1;w.MobileStageReview?.reset();return true;
  }
+ /* six_fixes ③: 오늘 화면 4구역 = PC 와 같은 판정 함수(DayZoneRules) · 같은 이름(오늘 처리 · 기한 초과 · 고객 회신 대기 · 기록 보완) · 한국 날짜.
+    예전에는 12건에서 자르고 정규식으로 '회신 대기 · 약속'을 따로 골라 PC 와 숫자가 달랐다. 구역마다 한 쪽 20건 + 쪽 번호 */
+ const ZK=['now','late','wait','fix'],ZOLD={waiting:'wait',info:'fix',promise:'now'};
+ function zonePrim(d){const x=next(d);return {type:'deal',due:x?String(x.due||x.due_at||''):'',text:x?String(x.text||''):'',actType:x?String(x.type||''):'',waitReason:String(d.waiting_reason||''),waitUntil:String(d.expected_resume_at||d.wake_up_at||d.relationship_hold_until||'')};}
+ function zones(){
+  const RU=w.DayZoneRules,day=RU.kst(),Z={now:[],late:[],wait:[],fix:[]},R=w.MobileRequests;
+  const reqOf=d=>R?.forDeal?.(d.id)?.[0]||null,reqLate=r=>{const t=Date.parse(r&&r.due_at||'');return Number.isFinite(t)&&t<Date.now();};
+  (w.buildToday()||[]).filter(t=>t.kind!=='deal').forEach(t=>Z.now.push({inq:t}));
+  mine().filter(d=>w.isOpen?.(d)).forEach(d=>{const p=zonePrim(d),r=reqOf(d);let z=RU.zone(p,day);if(!z&&r)z=reqLate(r)?'late':'now';if(z)Z[z].push({d,p,r,w:z==='wait'||z==='fix'?RU.waiting(p,day):null});});
+  Z.late.sort((a,b)=>RU.rank('late',a.p,day)-RU.rank('late',b.p,day));Z.now.sort((a,b)=>(a.inq?-1:RU.rank('now',a.p,day))-(b.inq?-1:RU.rank('now',b.p,day)));
+  return Z;
+ }
+ function zoneRow(z,x){
+  const RU=w.DayZoneRules;
+  if(x.inq){const t=x.inq;return {id:t.ref,kind:t.kind,name:t.nm,brand:'견적문의',color:'#15171c',stage:'견적문의',due:'첫 연락',dueColor:'#15171c',task:t.why,why:t.sub||'',button:t.call?'전화':'열기'};}
+  const d=x.d,p=x.p,n=RU.diff(RU.dayOf(p.due)),r=x.r;
+  const due=z==='late'?(n==null?'기한 지남':(-n)+'일 지남'):z==='now'?(RU.isPromise(p)?'오늘 · 약속':'오늘'):z==='wait'?'확인 '+(x.w&&x.w.until?w.ContactEntry.md(x.w.until):''):'—';
+  const task=z==='wait'?(x.w&&x.w.reason)||p.text:z==='fix'?(p.text?(x.w&&x.w.indefinite?'대기 확인일 정하기':'다음 할 일 날짜 정하기'):'다음 할 일 등록'):(p.text||'다음 업무 확인');
+  const reqTxt=r?[(r.requested_by||'관리자')+' 요청',w.MobileRequests.labelOf(r),w.MobileRequests.dueTxt(r)].filter(Boolean).join(' · '):'';
+  return {id:d.id,kind:'deal',name:d.nm,brand:brand(d),color:color(d),stage:label(d),due,dueColor:z==='late'?'#b42318':'#15171c',task,why:reqTxt||(z==='fix'?'기록만 · 평가 제외':z==='wait'?'지연 아님':''),button:z==='wait'?'확인일 변경':z==='fix'?'입력':'처리',requestId:r?r.id:undefined};
+ }
  function today(){
+  if(!w.DayZoneRules||w.__approvedAExample)return todayOld();/* 승인 시안 예시 화면(검토용)은 예전 그대로 */
   const rows=w.buildToday();w.G._today=rows;
-  const inNow=new Set(rows.filter(t=>t.kind==='deal').map(t=>String(t.ref)));
+  const Z=zones(),area=ZOLD[S.area]||(ZK.includes(S.area)?S.area:'now'),list=Z[area],P=w.ListPager,pg=P?P.cut(list,S.areaPage||1):{rows:list.slice(0,20),pages:1},done=rows.filter(t=>w.isDone(t)).length,act=Z.now.length+Z.late.length;
+  const model={title:w.G.user.nm+'님, 오늘 먼저 '+act+'건',progress:Z.late.length?'기한 초과 '+Z.late.length+'건':done+' / '+(done+act),progressPercent:done+act?done/(done+act)*100:0,areas:ZK.map(k=>w.DayZoneRules.LABEL[k]+' '+Z[k].length),areaKeys:ZK,area,redArea:'late',rows:pg.rows.map(x=>zoneRow(area,x)),message:list.length?'':({now:'오늘 처리할 건이 없습니다.',late:'기한이 지난 건이 없습니다.',wait:'회신을 기다리는 건이 없습니다.',fix:'보완할 기록이 없습니다.'}[area])};
+  let html=w.MobileApprovedA.render(model);
+  if(P&&pg.pages>1){const box=w.document.createElement('div');box.innerHTML=html;const body=box.firstElementChild.children[1];if(body)body.insertAdjacentHTML('beforeend',P.html(pg,{ns:'gs',unit:'건',small:true}).replace(/data-gs="page"/g,'data-gs="areapage"'));html=box.innerHTML;}
+  const snapshot=pendingSnapshot();
+  if(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0)return html;
+  const box=w.document.createElement('div');box.innerHTML=html;
+  box.firstElementChild.firstElementChild.insertAdjacentHTML('afterend',w.MobilePendingView.banner(snapshot));
+  return box.innerHTML;
+ }
+ function todayOld(){
+  const rows=w.buildToday();w.G._today=rows;  const inNow=new Set(rows.filter(t=>t.kind==='deal').map(t=>String(t.ref)));
   const openDeals=mine().filter(d=>w.isOpen?.(d)&&!inNow.has(String(d.id)));
   const row=(d,why,button)=>({id:d.id,kind:'deal',name:d.nm,brand:brand(d),color:color(d),stage:label(d),due:due(d),dueColor:dueColor(d),task:next(d)?.text||'다음 업무 확인',why,button});
   const md=d=>{const x=next(d);return x?w.ContactEntry.md(x.due||x.due_at):'';};
@@ -282,7 +315,8 @@
    else if(k==='schedule-day'){if(!w.MobileScheduleModel?.dateOnly(b.dataset.date))return;S.scheduleDay=b.dataset.date;S.schedulePage=1;run();}
    else if(k==='day-close')closeDay();
    else if(k==='day-close-page'){if(!Object.hasOwn(S.closePages,b.dataset.group))return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.closePages[b.dataset.group]=n;run();}}
-   else if(k==='stage'||k==='area'){S[k]=b.dataset.value;S.page=1;S.scroll=0;run();}
+   else if(k==='stage'||k==='area'){S[k]=b.dataset.value;S.page=1;S.areaPage=1;S.scroll=0;run();}
+   else if(k==='areapage'){S.areaPage=Number(b.dataset.page)||1;run();}
    else if(k==='page'){w.ListPager.set(S,null,b.dataset.page);S.scroll=0;run();}
    else if(k==='contact')openContact();
    else if(k==='contact-card')openContactCard();

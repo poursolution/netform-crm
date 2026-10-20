@@ -31,6 +31,8 @@
  function dueTxt(r){const t=new Date(r&&r.due_at||'');if(!Number.isFinite(t.getTime()))return r&&r.due_label||'';const left=t.getTime()-Date.now(),hrs=Math.round(Math.abs(left)/36e5),rel=left>=0?(hrs<1?'1시간 안':hrs<48?hrs+'시간 남음':Math.round(hrs/24)+'일 남음'):(hrs<1?'방금 지남':hrs<48?hrs+'시간 지남':Math.round(hrs/24)+'일 지남');return (t.getMonth()+1)+'.'+t.getDate()+' ('+WD[t.getDay()]+') '+pad(t.getHours())+':'+pad(t.getMinutes())+' · '+rel;}
  const overdue=r=>Date.parse(r&&r.due_at)<Date.now();
  const put=r=>{syncOwner();if(!r||!r.id)return;revision++;const i=S.list.findIndex(x=>x.id===r.id);if(i>=0)S.list[i]=r;else S.list.unshift(r);};
+ /* six_fixes ③: PC 에서 요청을 처리 · 보내면 서버 신호(work_requests)로 바로 다시 읽는다 */
+ if(root.addEventListener)root.addEventListener('crm:realtime-signal',e=>{try{if(e.detail&&e.detail.table==='work_requests')Promise.resolve(load(true)).then(()=>{try{root.render&&root.render();}catch(x){}}).catch(()=>{});}catch(x){}});
  async function load(force){
   if(!enabled()||!ready()||S.busy)return;if(!force&&Date.now()-S.at<60000)return;
   const owner=syncOwner(),generation=epoch,startedRevision=revision;S.busy=true;

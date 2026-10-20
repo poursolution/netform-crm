@@ -21,7 +21,7 @@
  const INFO=new Set(['data','contract','fix','tfapprove','stall']);
  /* ── 회신 대기: 대기 사유 + 다음 확인일이 있는 영업건(확인일에 지금 처리로) ── */
  function waitDate(d){const v=d.expected_resume_at||d.wake_up_at||d.relationship_hold_until||'';const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:'';}
- function waitingOf(d){let reason=String(d.waiting_reason||'').trim(),due=waitDate(d);if(!reason&&!due){try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null,m=a&&/^고객 회신 대기:\s*(.+)$/.exec(String(a.text||''));if(m){reason=m[1].trim();const k=String(a.due||a.due_at||'').slice(0,10);due=/^\d{4}-\d{2}-\d{2}$/.test(k)?k:'';}}catch(e){}}if(!reason&&!due)return null;const today=KST();return {reason:reason||'대기 사유 미기록',due,future:!!due&&due>=today,indefinite:!!reason&&!due};}
+ function waitingOf(d){const RU=R.DayZoneRules;if(RU){try{const w=RU.waiting(primDeal(d));return w?{reason:w.reason,due:w.until,future:w.future,indefinite:w.indefinite}:null;}catch(e){}}let reason=String(d.waiting_reason||'').trim(),due=waitDate(d);if(!reason&&!due){try{const a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null,m=a&&/^고객 회신 대기:\s*(.+)$/.exec(String(a.text||''));if(m){reason=m[1].trim();const k=String(a.due||a.due_at||'').slice(0,10);due=/^\d{4}-\d{2}-\d{2}$/.test(k)?k:'';}}catch(e){}}if(!reason&&!due)return null;const today=KST();return {reason:reason||'대기 사유 미기록',due,future:!!due&&due>=today,indefinite:!!reason&&!due};}
  /* 같은 이유로 몇 번째 대기인가: 최근 60일 응대 기록 중 회신 대기(결과 · 글) 횟수 */
  function waitCount(d){try{const since=Date.now()-DAYS_BACK*864e5;return [].concat(d.activities||[],(R.itemPatch(d,'deal')||{}).activities||[]).filter(a=>Date.parse(a.at||a.occurred_at||'')>=since&&/회신\s*대기|회신대기/.test(String(a.result||'')+' '+String(a.note||''))).length;}catch(e){return 0;}}
  /* ── 약속 누락(promise_gap ①): 응대 기록 속 고객 약속(InquiryMemo.parse)인데 그 뒤 연결된 다음 행동이 없는 건 ── */
@@ -52,14 +52,23 @@
  const reqMemo=r=>String(r&&(r.memo||(r.asks||[]).join(' · ')||r.label)||'').replace(/\s+/g,' ').trim();
  /* 공통 필터(브랜드 = SalesFilterState · 담당 = G.todayQueueOwner · 검색 = G.todayQueueSearch)를 항목에도 똑같이 — 관제탑이 보탠 열린 영업건은 필터를 거치지 않아 여기서 한 번 더 */
  function scopeOk(item,owner){try{const G=R.G||{};const brand=item.brand||(R.inquiryBrandOf?R.inquiryBrandOf(item):'')||'';if(R.SalesFilterState&&!R.SalesFilterState.matchesBrand(brand))return false;const o=G.todayQueueOwner&&G.todayQueueOwner!=='전체'?G.todayQueueOwner:'';if(o&&owner&&owner!==o)return false;const q=String(G.todayQueueSearch||'').trim().toLowerCase();if(q&&![item.site,item.site_name,owner,item.contact_name,item.phone].join(' ').toLowerCase().includes(q))return false;return true;}catch(e){return true;}}
- const isLate=i=>!!(i.x&&(i.x.overdue||(typeof i.x.dueDays==='number'&&i.x.dueDays<0)))||(!!i.reqOnly&&(i.reqs||[]).some(reqLate));
+ /* six_fixes ③: 구역 판정은 PC · 모바일 같은 함수(DayZoneRules) — 여기서는 화면의 영업건을 그 함수가 받는 한 모양으로 바꿀 뿐 */
+ function primDeal(d){let a=null;try{a=R.actionObj?R.actionObj(d,R.itemPatch(d,'deal')):null;}catch(e){}return {type:'deal',due:a?String(a.due||a.due_at||''):'',text:a?String(a.text||''):'',actType:a?String(a.type||''):'',waitReason:String(d.waiting_reason||''),waitUntil:waitDate(d)};}
+ function primOf(i){const x=i.x||{};if(x.type==='deal')return primDeal(x.item);let first=false;try{first=i.rk==='first'||i.rk==='assign'||!(R.inqCtlFirstResponseAt&&R.inqCtlFirstResponseAt(x.item));}catch(e){}return {type:'inq',due:String(x.due||''),text:String(x.next||''),overdue:!!x.overdue,firstContact:first};}
+ /* 날짜와 상관없이 오늘 화면에 남기는 관리 항목(마감 준비 · 결정 요청 · 배정 · 낙찰결과 · 요청) */
+ const SPECIAL=new Set(['deadline','decide','assign','transfer','req']);
+ function zoneFor(i){const RU=R.DayZoneRules;if(!RU)return null;if(INFO.has(i.rk)&&i.rk!=='stall')return 'fix';let z=null;try{z=RU.zone(primOf(i));}catch(e){z=null;}
+  if(SPECIAL.has(i.rk)||i.reqOnly)z=z==='late'||z==='wait'?z:'now';
+  if(!z&&(i.reqs||[]).length)z=(i.reqs||[]).some(reqLate)?'late':'now';/* 할 일은 내일 이후라도 관리자 요청이 열려 있으면 오늘 화면에 */
+  return z;}
+ const isLate=i=>i._z?i._z==='late':(!!(i.x&&(i.x.overdue||(typeof i.x.dueDays==='number'&&i.x.dueDays<0)))||(!!i.reqOnly&&(i.reqs||[]).some(reqLate)));
  const promised=i=>i.rk==='promise'||!!(i.x&&i.x.promise);
  /* 줄의 기한 칸(상태 / 할 일 / 기한 중 기한) */
  function dueOf(i,zone){
   if(zone==='wait')return {t:i.wait&&i.wait.due?'확인 '+md(i.wait.due):'확인일 없음',red:false};
   if(zone==='nowait')return {t:'확인일 없음',red:false};
   if(zone==='info')return {t:'—',red:false};
-  const x=i.x||{},dd=typeof x.dueDays==='number'?x.dueDays:null;
+  const x=i.x||{},RU=R.DayZoneRules;let dd=typeof x.dueDays==='number'?x.dueDays:null;if(RU&&x.item){try{const v=RU.diff(RU.dayOf(primOf(i).due));if(v!=null)dd=v;}catch(e){}}
   if(dd!=null&&dd<0)return {t:(-dd)+'일 지남',red:true};
   if(i.reqOnly&&(i.reqs||[]).length){const r=i.reqs[0];return {t:reqLate(r)?reqTag(r).replace(/^.*요청 · /,''):(r.due_label||md(r.due_at)||'기한 없음'),red:reqLate(r)};}
   if(x.overdue)return {t:'기준 넘김',red:true};
@@ -74,7 +83,10 @@
   const me=V.me,team=V.team,items=V.groups.filter(g=>!g.aux).flatMap(g=>g.items),RQ=reqMap();
   const keyOf=i=>i.x.type==='deal'?'deal:'+String(i.x.item.id):(i.x.type==='inq'||i.x.type==='manager')?'inq:'+String(i.x.item.id):i.key;
   const now=[],wait=[],info=[],seen=new Set(),mgr=[];
-  items.forEach(i=>{if(i.x.type==='manager'){mgr.push(i);return;}seen.add(keyOf(i));if(!scopeOk(i.x.item,i.x.owner))return;i.reqs=RQ.get(keyOf(i))||[];const w=i.x.type==='deal'?waitingOf(i.x.item):null;
+  const RU=R.DayZoneRules;
+  items.forEach(i=>{if(i.x.type==='manager'){mgr.push(i);return;}seen.add(keyOf(i));if(!scopeOk(i.x.item,i.x.owner))return;i.reqs=RQ.get(keyOf(i))||[];
+   if(RU){const z=zoneFor(i);i._z=z;if(!z)return;if(z==='wait'){i.wait=waitingOf(i.x.item);wait.push(i);return;}if(z==='fix'){const w0=i.x.type==='deal'?waitingOf(i.x.item):null;if(w0&&w0.indefinite)return;/* 무기한 대기는 아래 한 줄로 */info.push(i);return;}now.push(i);return;}
+   const w=i.x.type==='deal'?waitingOf(i.x.item):null;
    if(w&&w.future&&!['deadline','decide','contract','assign','tfapprove','transfer'].includes(i.rk)){i.wait=w;wait.push(i);}
    else if(INFO.has(i.rk)&&!(i.rk==='stall'&&i.x.type!=='deal'))info.push(i);else now.push(i);});
   /* 회신 대기 중 관제탑 항목이 아닌 영업건(대기 사유 + 확인일이 있어 지연으로 세지 않는 것) */
@@ -82,16 +94,16 @@
    wait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'wait',missTxt:'고객 회신 대기',short:'',act:'확인일 변경',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
   /* 관리자 요청인데 같은 행동 업무가 없는 건 → 지금 처리에 요청 줄 하나 */
   RQ.forEach((rs,k)=>{if(seen.has(k))return;const r=rs[0];let item=null;try{item=k.startsWith('inq:')?R.inqCtlFind(String(r.target_id),false):((R.B&&R.B.deals)||[]).find(d=>String(d.id)===String(r.target_id));}catch(e){}if(!item)return;seen.add(k);if(!scopeOk(item,me))return;
-   now.push({key:k,x:{type:k.startsWith('inq:')?'inq':'deal',item,owner:me},i:{site:r.site||item.site||item.site_name||'',brand:r.brand||item.brand||''},st:'',sName:'',rk:'req',missTxt:(rs[0].asks||[]).join(' · ')||r.label,short:'',act:'열어서 처리',done:'',reqs:rs,brand:r.brand||item.brand||'',reqOnly:true});});
+   now.push({key:k,x:{type:k.startsWith('inq:')?'inq':'deal',item,owner:me},i:{site:r.site||item.site||item.site_name||'',brand:r.brand||item.brand||''},st:'',sName:'',rk:'req',missTxt:(rs[0].asks||[]).join(' · ')||r.label,short:'',act:'열어서 처리',done:'',reqs:rs,brand:r.brand||item.brand||'',reqOnly:true,_z:rs.some(reqLate)?'late':'now'});});
   /* 무기한 대기(4-3 기록 상태): 대기 사유는 있는데 확인일이 없는 건 — 따로 보여 주고 확인일을 정하게 한다 */
-  const nowait=[];(X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const w=waitingOf(d);if(!w||!w.indefinite||!scopeOk(d,owner))return;const k='deal:'+String(d.id);nowait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'nowait',missTxt:'무기한 대기',short:'',act:'확인일 정하기',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
+  const nowait=[];(X.D||[]).forEach(d=>{try{if(!R.isOpen(d))return;const owner=R.repN(d.assignee)||'';if(!team&&owner!==me)return;const w=waitingOf(d);if(!w||!w.indefinite||!scopeOk(d,owner))return;const k='deal:'+String(d.id);if(info.some(x=>x.key===k))return;nowait.push({key:k,x:{type:'deal',item:d,owner},i:{site:d.site||d.site_name||'현장명 미입력',brand:d.brand||''},st:'',sName:(()=>{try{return R.stageLabel(R.dealStage(d));}catch(e){return '';}})(),rk:'nowait',missTxt:'무기한 대기',short:'',act:'확인일 정하기',done:'',reqs:RQ.get(k)||[],wait:w,brand:d.brand||''});}catch(e){}});
   /* 예전 문의 요청 줄(관리자 요청 · manager:) — 같은 문의 줄이 있으면 그 줄의 꼬리표로만(따로 줄 X), 없을 때만 한 줄 */
   mgr.forEach(i=>{const k=keyOf(i),r=i.x.request||{},tag={id:'m:'+String(r.id||i.key),legacy:true,requested_by:r.requested_by||'관리자',due_at:r.due_at||'',label:String(r.instruction||'관리자 요청'),memo:String(r.instruction||''),asks:[]},hit=[].concat(now,wait,info).find(x=>x.key===k||keyOf(x)===k);
-   if(hit){hit.reqs=(hit.reqs||[]).concat([tag]);return;}if(seen.has(k)||!scopeOk(i.x.item,i.x.owner))return;seen.add(k);i.reqs=(RQ.get(k)||[]).concat([tag]);i.reqOnly=true;i.missTxt=tag.label;i.act='열어서 처리';now.push(i);});
+   if(hit){hit.reqs=(hit.reqs||[]).concat([tag]);return;}if(seen.has(k)||!scopeOk(i.x.item,i.x.owner))return;seen.add(k);i.reqs=(RQ.get(k)||[]).concat([tag]);i.reqOnly=true;i.missTxt=tag.label;i.act='열어서 처리';i._z=reqLate(tag)?'late':'now';now.push(i);});
   /* 2026-10-20 design_handoff_six_fixes ②: 지금 처리 → 오늘 처리 + 기한 초과(날짜 지난 것 · 기한 지난 요청만 있는 줄) */
   const late=[],today=[];now.forEach(i=>(isLate(i)?late:today).push(i));
   {const idx=new Map(today.map((x,n)=>[x,n])),w=i=>(i.reqs&&i.reqs.length)?(i.reqs.some(reqLate)?2:1):0,rank=i=>i.x&&i.x.dueDays===0?0:promised(i)?1:2;today.sort((a,b)=>rank(a)-rank(b)||w(b)-w(a)||idx.get(a)-idx.get(b));}
-  {const idx=new Map(late.map((x,n)=>[x,n])),dd=i=>i.x&&typeof i.x.dueDays==='number'?i.x.dueDays:0;late.sort((a,b)=>dd(a)-dd(b)||idx.get(a)-idx.get(b));}
+  {const idx=new Map(late.map((x,n)=>[x,n])),dd=i=>{if(R.DayZoneRules&&i.x){const p=primOf(i),v=R.DayZoneRules.diff(R.DayZoneRules.dayOf(p.due));if(v!=null)return v;}return i.x&&typeof i.x.dueDays==='number'?i.x.dueDays:0;};late.sort((a,b)=>dd(a)-dd(b)||idx.get(a)-idx.get(b));}
   try{const DW=R.DayWord;if(DW&&DW.on())DW.infoRows(me,seen,scopeOk).forEach(r=>info.push(r));}catch(e){}
   const gaps=promiseGaps(X.D||[],me,team).filter(g=>scopeOk(g.d,g.owner));
   /* 기록 보완 = 빠진 정보 · 기록 + 무기한 대기 + 업무로 안 만든 약속 — 지연 · 평가 제외 */

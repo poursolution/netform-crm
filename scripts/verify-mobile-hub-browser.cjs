@@ -50,7 +50,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
    DEALS.push(make(46,{nm:'합성 현장 46',owner_id:undefined}));
    DEALS.push(make(91,{nm:'제외 · 다른 담당',owner_id:undefined,rep:'다른 합성 담당자'}));
    ADMIN.inquiries=[];Object.assign(MobileRequests.state(),{list:[],loaded:true,busy:false,off:false,at:Date.now()});
-   window.__hubIds={all:Array.from({length:46},(_,i)=>id(i+1)),today:[1,3,2,5].map(id),visit:id(2),call:id(3),tomorrow:id(4),foreign:[id(90),id(91)]};
+   window.__hubIds={all:Array.from({length:46},(_,i)=>id(i+1)),today:[2,3].map(id),late:[1].map(id),fix:id(5),visit:id(2),call:id(3),tomorrow:id(4),foreign:[id(90),id(91)]};
    render();return {...__hubIds,todayDate:day(0),tomorrowDate:day(1),yesterdayDate:day(-1)};
   });
   const ids=selector=>page.locator(selector).evaluateAll(nodes=>nodes.map(node=>node.dataset.id));
@@ -67,7 +67,12 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   // 1. The actual shared today projection supplies counts and IDs, not approved-example totals.
   await page.locator('.approved-a').waitFor();
   assert.deepEqual(await ids('.approved-a [data-gs="task"]'),data.today);
-  assert.match(one(await page.locator('.approved-a').innerText()),/오늘 할 일 4개.*0 \/ 4/);
+  /* six_fixes ③: PC 와 같은 4구역 · 같은 판정(DayZoneRules) — 오늘 기한 2(현장 02 · 03) · 기한 초과 1(현장 01) · 다음 할 일 없음 = 기록 보완(현장 05) · 내일(현장 04)은 오늘 화면에 없음 */
+  assert.match(one(await page.locator('.approved-a').innerText()),/오늘 먼저 3건.*기한 초과 1건/);
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('.approved-a [data-gs="area"]')].map(n=>n.textContent.replace(/\s+/g,' ').trim())),['오늘 처리 2','기한 초과 1','고객 회신 대기 0','기록 보완 1']);
+  await page.locator('.approved-a [data-gs="area"][data-value="late"]').click();await page.locator('.approved-a').waitFor();assert.deepEqual(await ids('.approved-a [data-gs="task"]'),data.late,'기한 초과 = 현장 01');
+  await page.locator('.approved-a [data-gs="area"][data-value="fix"]').click();await page.locator('.approved-a').waitFor();assert.ok((await ids('.approved-a [data-gs="task"]')).includes(data.fix),'다음 할 일 없음 = 기록 보완');
+  await page.locator('.approved-a [data-gs="area"][data-value="now"]').click();await page.locator('.approved-a').waitFor();
   assert.deepEqual(await page.locator('.approved-a [data-gs="tab"]').allTextContents().then(rows=>rows.map(one)),['오늘','내 현장','기록 · 등록','일정']);
   assert.deepEqual(await page.evaluate(()=>myDeals().map(d=>d.id)),data.all);
   await page.locator('.approved-a [data-gs="task"][data-id="'+data.call+'"]').click();await page.locator('.approved-c').waitFor();
