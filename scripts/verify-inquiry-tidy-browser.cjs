@@ -50,7 +50,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const left=one(await D.locator('.idv3-c1').innerText());
   assert.doesNotMatch(left,/고객이 남긴 말|채울 정보/,'원문 큰 칸 · 채울 정보 칸 따로 없음');
   assert.match(left,/문의 정보 한 곳 · 누르면 수정/);
-  assert.match(left,/공종 옥상\(아스콘\)\? · 원문은 경사로 도장 · 확인/,'3 ① 공종 확인(값은 그대로): '+left);
+  assert.match(left,/공종 기타\(아스콘\)\? · 원문은 경사로 도장 · 확인/,'3 ① 공종 확인(값은 그대로): '+left);
   /* 오른쪽: 첫마디 · 전화 · 문자 없음 · 모바일 안내 · 다음 단계 이름 */
   const right=one(await D.locator('.idv3-c3').innerText());
   assert.doesNotMatch(right,/첫마디/);assert.equal(await D.locator('.idv3-c3 [data-idv="dial"],.idv3-c3 [data-idv="sms-open"]').count(),0,'전화 · 문자 버튼 없음');

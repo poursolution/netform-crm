@@ -56,7 +56,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await H.locator('.isd-card.lost .t').innerText()),'옥상(우레탄) 실주 열기');assert.equal(one(await H.locator('.isd-card.lost .m').innerText()),'2025.4 – 2025.8 · 이필선 · 석민이앤씨 · #000a12');
   assert.deepEqual((await H.locator('.isd-card.lost dl > *').allInnerTexts()).map(one),['실주 사유','가격 · 경쟁사 8% 낮음','낙찰사','A건설','견적','V2 1.5억 (2025.7.2)','그때 소장','박영호']);
   assert.deepEqual(await H.locator('.isd-card.lost dd.r').evaluate(n=>[getComputedStyle(n).color,getComputedStyle(n.closest('.isd-card')).borderTopColor]),['rgb(180, 35, 24)','rgb(243, 201, 199)']);
-  assert.match(one(await H.locator('.isd-card.now').innerText()),/^옥상\(도로 보수\) 지금 문의 2026\.1\.13 접수 · 이필선 · 석민이앤씨$/);
+  assert.match(one(await H.locator('.isd-card.now').innerText()),/^기타\(도로 보수\) 지금 문의 2026\.1\.13 접수 · 이필선 · 석민이앤씨$/);
   assert.match(one(await H.locator('.isd-ai').innerText()),/^AI ?2025년 옥상\(우레탄\) 건은 가격 사유로 실주했습니다\(경쟁사 A건설\)\. 이번 문의가 같은 공종이면 실주 건을 다시 열어 이력을 이어 가고, 다른 공종이면 새 공사로 보되/);
   assert.deepEqual([await d.locator('.idv3-need.fold').count(),await d.locator('.idv3-need .idv3-row').count(),one(await d.locator('.idv3-need [data-idv="need-toggle"]').innerText())],[1,0,'펼치기']);
   await d.locator('.idv3-need [data-idv="need-toggle"]').click();await page.waitForTimeout(150);assert.ok(await d.locator('.idv3-need .idv3-row').count()>=5,'펼치면 채울 정보 줄');
@@ -70,7 +70,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.match(one(await d.locator('.idv3-chead > span').innerText()),/^\d+건 · 시도 \d+ · 연결 \d+$/);
   await d.locator('.isd-scope [data-v="now"]').click();await page.waitForTimeout(150);assert.equal(await d.locator('.idv3-ev.st').count(),0);
   /* 오른쪽: 첫마디에 지난 이력 · 기존 건과 관계 · 근처에서 영업했던 현장(지도는 준비 중 — 사실대로 적는다) */
-  assert.match(one(await d.locator('.idv3-opener').innerText()),/^첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 작년 옥상 건 이후 다시 연락 주셔서 감사합니다\. 이번 옥상\(도로 보수\) 건으로 연락드렸습니다\. 지금 통화 괜찮으실까요\?"/);
+  assert.match(one(await d.locator('.idv3-opener').innerText()),/^첫마디 ?"안녕하세요, 넷폼 이필선입니다\. 작년 옥상 건 이후 다시 연락 주셔서 감사합니다\. 이번 기타\(도로 보수\) 건으로 연락드렸습니다\. 지금 통화 괜찮으실까요\?"/);
   assert.deepEqual(await d.locator('.isd-rel .two button').evaluateAll(l=>l.map(b=>[b.textContent,b.disabled])),[['새 공사로 진행',true],['실주 건 다시 열기',true]],'서버 확인 전에는 잠금');
   assert.deepEqual(await page.evaluate(()=>{const t=window.TOKEN;try{const off=InquirySite.reopenReady();TOKEN='t';return [off,InquirySite.reopenReady(),CRM_RPC_ALLOW.includes('crm_deal_reopen_v1')];}finally{try{TOKEN=t;}catch(e){}}}),[false,true,true],'다시 열기는 로그인 + 화면이 부를 수 있는 함수일 때만 열린다');
   assert.equal(one(await d.locator('.isd-rel small').innerText()),'공종이 다르면 새 공사 · 같은 공종이면 실주 건을 다시 열어 이력을 이어 갑니다');

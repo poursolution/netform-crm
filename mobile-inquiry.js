@@ -204,10 +204,17 @@
  }
  /* 예전 결과 창 대신 새 창: 오늘 업무의 문의 통화 결과 · 문의 상세의 연락 결과 */
  const baseFlow=root.callFlow;
-  if(typeof baseFlow==='function')root.callFlow=function(i){const q=typeof root.todayInquiry==='function'?root.todayInquiry(i):null;if(q&&(root.MobileGuideShell||enabled()))return open(q,i);return baseFlow.apply(this,arguments);};
+  /* 2026-10-20 대표 "진행해"(예전 결과 버튼 끊기): 예전 3가지(진행됨 · 다음주 다시 · 못 받으심)는 연락 기록 없이 최초 응대 시각만 찍었다(운영 10.10 '다음주 다시' 1건 · '진행됨' 3건).
+     승인 화면에서는 영업건 통화 결과도 PC 와 같은 결과 화면(MobileEntry)으로, 예전 칩이 남은 화면에서 눌러도 새 창으로 */
+  const toEntry=i=>{const q=typeof root.todayInquiry==='function'?root.todayInquiry(i):null;if(q&&(root.MobileGuideShell||enabled())){open(q,i);return true;}
+   const d=root.MobileGuideShell&&typeof root.todayDeal==='function'?root.todayDeal(i):null;if(d&&root.MobileEntry&&typeof root.MobileEntry.open==='function'){root.closeSheet&&root.closeSheet();root.G.deal=d.id;root.G.sub=null;root.render();root.MobileEntry.open();return true;}return false;};
+  if(typeof baseFlow==='function')root.callFlow=function(i){if(toEntry(i))return;return baseFlow.apply(this,arguments);};
+  const basePick=root.pickToday;
+  if(typeof basePick==='function')root.pickToday=function(i){if(toEntry(i))return;return basePick.apply(this,arguments);};
+  const baseRec=root.recordInquiryResponse;
+  if(typeof baseRec==='function')root.recordInquiryResponse=function(key){const q=((root.ADMIN&&root.ADMIN.inquiries)||[]).find(x=>String(x.key)===String(key));if(q&&(root.MobileGuideShell||enabled())){root.closeSheet&&root.closeSheet();open(q,null);return false;}return baseRec.apply(this,arguments);};
   function decorate(){
-   if(root.MobileGuideShell)return;
-  if(!enabled())return;const G=root.G,s=G&&G.sub;if(!s||s.t!=='inqAssigned')return;
+  if(!enabled()&&!root.MobileGuideShell)return;const G=root.G,s=G&&G.sub;if(!s||s.t!=='inqAssigned')return;
   const scr=root.document.getElementById('scr'),body=scr&&scr.querySelector('.body');if(!body||body.querySelector('.mi-open'))return;
   const q=((root.ADMIN&&root.ADMIN.inquiries)||[]).find(x=>String(x.key)===String(s.key));if(!q)return;
   const btns=[...body.querySelectorAll('button.cchip[onclick*="recordInquiryResponse"]')];if(!btns.length)return;
