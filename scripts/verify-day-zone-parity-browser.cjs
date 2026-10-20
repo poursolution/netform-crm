@@ -50,7 +50,7 @@ const EXPECT={now:['합성 오늘 실측','합성 오늘 약속','합성 문의 
   await mo.evaluate(([CASES,INQ])=>{
    closeSheet();delete window.__approvedAExample;delete window.__approvedBCExample;delete window.__approvedHExample;delete window.__approvedScheduleNow;
    const day=n=>DayZoneRules.kst(Date.now()+n*864e5),actor=Phase1.profile.user_id;
-   G.user={...G.user,id:actor};G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};G.brandF='전체';
+   G.user={...G.user,id:actor};G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};G.brandF='전체';G.mobileV5Off=true;/* 4구역 목록끼리 비교(v5 오늘 순서 · 카드는 verify-mobile-v5-today) */
    Object.assign(MobileGuideShell.state,{q:'',stage:'',page:1,scroll:0,area:'now',areaPage:1,detailView:''});
    DEALS=CASES.map(([id,nm,c])=>({id,site_id:id+'s',nm,code:c.wait?'waiting':'consulting',sub:'방수',rep:G.user.nm,owner_id:actor,brand:'POUR솔루션',version:0,amt:1e8,manager_name:'합성 관리소장',manager_mobile:'',
     created_at:new Date().toISOString(),stageAt:new Date().toISOString(),lastAt:new Date().toISOString(),contactAt:new Date().toISOString(),activities:[],tl:[],waiting_reason:c.wait||'',expected_resume_at:c.until!=null?day(c.until):'',

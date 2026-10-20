@@ -33,7 +33,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
    const day=n=>new Date(Date.parse(today+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
    const actor=Phase1.profile.user_id,other='88888888-8888-4888-8888-888888888888';
-   G.user={...G.user,id:actor};G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};G.brandF='전체';
+   G.user={...G.user,id:actor};G.mode='rep';G.tab='today';G.mobileV5Off=true;/* 예전 4구역 오늘(끄기 경로) — v5 오늘은 verify-mobile-v5-today */G.deal=null;G.sub=null;G.done={};G.brandF='전체';
    Object.assign(MobileGuideShell.state,{q:'',stage:'',page:1,scroll:0,area:'now',detailView:'',scheduleDay:'',schedulePage:1});
    window.__hubToasts=[];window.toast=text=>__hubToasts.push(String(text));
    const make=(n,extra={})=>({id:id(n),site_id:id(n+1000),nm:'합성 현장 '+String(n).padStart(2,'0'),code:'consulting',sub:'방수',work_type:'옥상 방수',rep:G.user.nm,owner_id:actor,

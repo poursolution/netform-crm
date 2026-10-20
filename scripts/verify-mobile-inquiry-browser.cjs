@@ -30,7 +30,7 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',TASK='bbbbbbbb-2222-4222-8222-b
     window.pushWrite=(...args)=>{__legacyWrites.push(args);throw Error('Legacy mobile write must not run');};
     Phase1.queue={list:()=>[],flush:async()=>{},enqueue:()=>{throw Error('Legacy queue must not run');}};
     Phase1.profile.name='합성 문의 담당자';Phase1.profile.allowed_modes=['rep'];
-    G.user={...G.user,id:f.uid,nm:'합성 문의 담당자'};REPS=[G.user];G.mode='rep';G.tab='today';G.deal=null;G.sub=null;G.done={};DEALS=[];
+    G.user={...G.user,id:f.uid,nm:'합성 문의 담당자'};REPS=[G.user];G.mode='rep';G.tab='today';G.mobileV5Off=true;/* 예전 4구역 오늘(끄기 경로) — v5 오늘은 verify-mobile-v5-today */G.deal=null;G.sub=null;G.done={};DEALS=[];
     const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date());
     const due=ContactEntry.addDays(today,5),raw={id:QID,status:'배정완료',site_name:'[합성] 문의 응대 검증',site:'[합성] 문의 응대 검증',assignee:G.user.nm,assigned_to:f.uid,assigned_at:new Date().toISOString(),phone:'01000000000',contact_name:'합성 고객',work_type:'옥상 방수',created_at:new Date().toISOString(),activities:[]};
     if(options.existing){const task={id:TASK,inquiry_id:QID,title:'기존 방문 약속',action_type:'방문',status:'open',due_on:due,due_at:due+'T14:00:00+09:00',date_basis:'customer_agreed',completed_at:null};f.rows.push(task);raw.nextActionObj={...task,text:task.title,type:task.action_type,due};}
@@ -170,7 +170,9 @@ const QID='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',TASK='bbbbbbbb-2222-4222-8222-b
   const previewAfter=await page.evaluate(()=>({results:[...__review.inquiry.fixture.logs.values()].map(l=>l.result),rows:__review.inquiry.fixture.rows.length,responses:__review.inquiry.fixture.responses.size,status:__review.inquiry.raw.status,example:typeof __approvedAExample,done:G.done,calls:__review.inquiry.fixture.calls.filter(c=>c.name==='crm_inquiry_command_v1').length}));
   assert.deepEqual(previewAfter,{results:['부재'],rows:0,responses:0,status:'배정완료',example:'undefined',done:{},calls:1});
   /* six_fixes ③: 첫 연락 기준(배정 후 2시간)을 넘긴 문의는 기한 초과 구역 — 오늘 처리 · 기한 초과 어느 쪽이든 할 일로 남아 있어야 한다 */
-  const taskSel='.approved-a [data-gs="task"][data-kind="inquiry"][data-id="'+previewId+'"]';let inToday=await page.locator(taskSel).count();if(!inToday&&await page.locator('.approved-a [data-gs="area"][data-value="late"]').count()){await page.locator('.approved-a [data-gs="area"][data-value="late"]').click();await page.locator('.approved-a').waitFor();inToday=await page.locator(taskSel).count();await page.locator('.approved-a [data-gs="area"][data-value="now"]').click();await page.locator('.approved-a').waitFor();}
+  /* 모바일 v5 오늘(기본): 맨 위 카드 · 다음 한 건 · '그다음 n건' 목록 어디든 같은 문의 카드가 남아 있어야 한다 */
+  if(await page.locator('.approved-a.mv5').count()){const more=page.locator('.mv5 [data-gs="v5more"][data-value="1"]');if(await more.count()){await more.click();await page.locator('.approved-a.mv5').waitFor();}}
+  const taskSel='.approved-a [data-gs="task"][data-kind="inquiry"][data-id="'+previewId+'"],.approved-a.mv5 [data-gs="v5task"][data-kind="inquiry"][data-id="'+previewId+'"]';let inToday=await page.locator(taskSel).count();if(!inToday&&await page.locator('.approved-a [data-gs="area"][data-value="late"]').count()){await page.locator('.approved-a [data-gs="area"][data-value="late"]').click();await page.locator('.approved-a').waitFor();inToday=await page.locator(taskSel).count();await page.locator('.approved-a [data-gs="area"][data-value="now"]').click();await page.locator('.approved-a').waitFor();}
   assert.equal(inToday,1,'An absent customer remains an unresolved first-contact task in the actual review link');
   assert.equal(await page.locator('#tabbar button,#scr .mi-open,#scr .mh-hub,#scr .flow-strip').count(),0);
   checks.push('Unmodified user preview ?screen=A: real inquiry card → original D → result-only absence save → actual A counts, no false completion');

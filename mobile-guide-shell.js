@@ -1,7 +1,7 @@
 /* Approved Claude A/B/C markup + existing account scope. No retired UI fallback. */
 (function(w){
  'use strict';
- const S={q:'',stage:'',page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1},detailView:'',evidencePage:1};
+ const S={q:'',stage:'',page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1},detailView:'',evidencePage:1,v5more:false,v5page:1};
  const mine=()=>w.myDeals?w.myDeals():[];
  const inquiries=()=>Array.isArray(w.ADMIN?.inquiries)?w.ADMIN.inquiries:[];
  const inquiry=id=>inquiries().find(q=>String(q.key||q.id||q.inquiry_id||'')===String(id));
@@ -178,6 +178,7 @@
  }
  function today(){
   if(!w.DayZoneRules||w.__approvedAExample)return todayOld();/* 승인 시안 예시 화면(검토용)은 예전 그대로 */
+  if(w.MobileV5Today&&w.MobileV5Today.on())return todayV5();
   const rows=w.buildToday();w.G._today=rows;
   const Z=zones(),area=ZOLD[S.area]||(ZK.includes(S.area)?S.area:'now'),list=Z[area],P=w.ListPager,pg=P?P.cut(list,S.areaPage||1):{rows:list.slice(0,20),pages:1},done=rows.filter(t=>w.isDone(t)).length,act=Z.now.length+Z.late.length;
   const model={title:w.G.user.nm+'님, 오늘 먼저 '+act+'건',progress:Z.late.length?'기한 초과 '+Z.late.length+'건':done+' / '+(done+act),progressPercent:done+act?done/(done+act)*100:0,areas:ZK.map(k=>w.DayZoneRules.LABEL[k]+' '+Z[k].length),areaKeys:ZK,area,redArea:'late',rows:pg.rows.map(x=>zoneRow(area,x)),message:list.length?'':({now:'오늘 처리할 건이 없습니다.',late:'기한이 지난 건이 없습니다.',wait:'회신을 기다리는 건이 없습니다.',fix:'보완할 기록이 없습니다.'}[area])};
@@ -188,6 +189,32 @@
   const box=w.document.createElement('div');box.innerHTML=html;
   box.firstElementChild.firstElementChild.insertAdjacentHTML('afterend',w.MobilePendingView.banner(snapshot));
   return box.innerHTML;
+ }
+ /* 모바일 v5 오늘(mobile-v5-today.js): 같은 4구역 판정(zones) → 한 줄 · 맨 위 카드 한 장 · 끝나는 조건 · 다음 한 건. 회신 대기 · 기록 보완은 숫자만, 누르면 그 목록(한 쪽 20건) */
+ function todayV5(){
+  const V=w.MobileV5Today,rows=w.buildToday();w.G._today=rows;
+  const Z=zones(),M=V.model(Z,{next,label,brand,color,inquiry});
+  if(!['now','wait','fix'].includes(S.area))S.area='now';
+  let zoneRows='';
+  if(S.area!=='now'){const list=Z[S.area],P=w.ListPager,pg=P?P.cut(list,S.areaPage||1):{rows:list.slice(0,20),pages:1};zoneRows=pg.rows.map(x=>V.zoneRow(zoneRow(S.area,x))).join('')||'<p class="mv5-empty">'+(S.area==='wait'?'회신을 기다리는 건이 없습니다.':'보완할 기록이 없습니다.')+'</p>';if(P&&pg.pages>1)zoneRows+=P.html(pg,{ns:'gs',unit:'건',small:true}).replace(/data-gs="page"/g,'data-gs="areapage"');}
+  const box=w.document.createElement('div');box.innerHTML=V.render(M,S,{zoneRows});
+  if(S.area==='now')w.MobileRoute?.decorateApproved(box.firstElementChild);
+  const snapshot=pendingSnapshot();
+  if(!(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0))box.firstElementChild.firstElementChild.insertAdjacentHTML('afterend',w.MobilePendingView.banner(snapshot));
+  return box.innerHTML;
+ }
+ /* 전화 앱 열기(예시 화면에서는 열지 않음) */
+ function dial(v){const p=String(v||'').replace(/[^\d+]/g,'');if(!p)return false;if(w.DEMO){w.toast('예시 화면에서는 외부 앱을 실행하지 않습니다.');return false;}w.location.href='tel:'+p;return true;}
+ /* v5 카드 버튼: 전화하기 = 전화 앱 → 돌아오면 그 현장 결과 화면 · 방문 결과 남기기 = 방문 결과 · 기록하기 = 결과 화면. 요청이 걸린 건은 먼저 '담당 확인'(seen) */
+ async function v5task(b,click){
+  const id=b.dataset.id,mode=b.dataset.mode,rq=b.dataset.requestId||'';
+  if(b.dataset.kind==='inquiry'){const q=inquiry(id);if(mode==='call')dial(q&&q.phone);const r=w.MobileInquiryEntry?.open(q);if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');return;}
+  const d=mine().find(x=>String(x.id)===id);if(!d)return w.toast('현재 조회 범위의 영업건을 다시 선택해 주세요.');
+  if(mode==='call'){const c=w.contactInfoM?.(d)||{};dial(c.mobile||c.officeTel);}
+  if(rq)await openRequestedTask(id,rq,click);else{w.G.deal=id;run();}
+  if(click!==taskClick||String(w.G.deal)!==id)return;
+  if(mode==='visit'){if(!openVisit(d,b.dataset.taskId))w.toast('방문 일정을 다시 확인해 주세요.');return;}
+  openContact();
  }
  function todayOld(){
   const rows=w.buildToday();w.G._today=rows;  const inNow=new Set(rows.filter(t=>t.kind==='deal').map(t=>String(t.ref)));
@@ -345,6 +372,10 @@
     if(!resetDetail())return;S.returnTab='pending';w.G.tab='pending';w.G.sub=null;
     if(g.kind==='pc_inquiry'){w.G.deal=null;run();w.MobileInquiryEntry.restore(g.target_id);}else{w.G.deal=g.target_id;run();w.MobileEntry.open();}
    }
+   else if(k==='v5task'){if(!resetDetail())return;S.returnTab='today';v5task(b,taskClick);}
+   else if(k==='v5more'){S.v5more=b.dataset.value==='1';S.v5page=1;run();}
+   else if(k==='v5page'){S.v5page=Number(b.dataset.page)||1;run();}
+   else if(k==='v5perf'){/* 성과 = PC 성과 분석과 같은 화면 · 같은 숫자(모바일 전용 집계 없음) */if(w.DEMO)return w.toast('예시 화면에서는 PC 성과 분석으로 이동하지 않습니다.');try{(w.top||w).location.assign('./?view=pc#p=perf');}catch(e){w.location.assign('./?view=pc#p=perf');}}
    else if(k==='task'){if(!resetDetail())return;S.returnTab='today';if(b.dataset.kind==='deal'){if(b.dataset.requestId)openRequestedTask(b.dataset.id,b.dataset.requestId,taskClick);else{w.G.deal=b.dataset.id;run();openVisit(mine().find(d=>String(d.id)===b.dataset.id));}}else if(b.dataset.kind==='inquiry'){const r=w.MobileInquiryEntry?.open(inquiry(b.dataset.id));if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');}else unavailable();}
    else if(k==='phone'||k==='sms'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),c=w.contactInfoM(d),phone=w.phoneN(c.mobile||c.officeTel);
