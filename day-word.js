@@ -52,7 +52,7 @@
   if(!on())return '';const G=bulks(me);if(!G.length)return '';
   return G.map((g,i)=>{
    const extra=[g.m>1?'요청 '+g.m+'건':'',g.dup?'겹치는 '+g.dup+'건 합침':g.m>1&&g.resolved?'같은 건은 한 번만 셈':'',!g.resolved?'보낸 건수 기준':'',g.resolved&&Math.max.apply(null,g.sent)>g.n?'보낸 '+g.sent.join(' · ')+'건 중 남은 것':''].filter(Boolean).join(' · ');
-   return '<div class="dwd-bulk" data-n="'+g.n+'"><em>묶음 요청</em><span class="w"><b>'+h(g.by+(g.at?' · '+g.at:''))+'</b> · '+h(g.title)+(g.titles.length>1?' 외 '+(g.titles.length-1):'')+' <b>'+g.n+'건</b>'+(extra?' <small>('+h(extra)+')</small>':'')+'</span><span class="to">→ 정보 보완에서 처리 · 지연 · 평가 아님</span><i></i>'+(i===0?'<button type="button" data-dwd="info">정보 보완 열기 ›</button>':'')+'</div>';}).join('');
+   return '<div class="dwd-bulk" data-n="'+g.n+'"><em>묶음 요청</em><span class="w"><b>'+h(g.by+(g.at?' · '+g.at:''))+'</b> · '+h(g.title)+(g.titles.length>1?' 외 '+(g.titles.length-1):'')+' <b>'+g.n+'건</b>'+(extra?' <small>('+h(extra)+')</small>':'')+'</span><span class="to">→ 기록 보완에서 처리</span><i></i>'+(i===0?'<button type="button" data-dwd="info">기록 보완 열기 ›</button>':'')+'</div>';}).join('');
  }
  /* 정보 보완 구역에 보탤 줄(이미 다른 구역에 있는 건은 그 줄에 맡긴다) */
  function infoRows(me,seen,scopeOk){
@@ -85,7 +85,7 @@
   const row=n=>'<div class="dwd-n'+(n.seen?'':' new')+'"><em style="color:'+KC[n.kind]+'">'+h(n.kind)+'</em><span>'+h(n.text)+'</span><small>'+h(n.by+(n.at?' · '+n.at:''))+'</small></div>';
   return '<header><b>알림</b><button type="button" data-dwd="close" aria-label="닫기">×</button></header>'
    +(rq?'<button type="button" class="dwd-go" data-dwd="today">미확인 요청 '+rq+'건 · 오늘 업무 줄에서 처리 ›</button>':'')
-   +(B.length?'<button type="button" class="dwd-go" data-dwd="info">묶음 요청 '+B.reduce((s,g)=>s+g.n,0)+'건 · 정보 보완에서 처리 ›</button>':'')
+   +(B.length?'<button type="button" class="dwd-go" data-dwd="info">묶음 요청 '+B.reduce((s,g)=>s+g.n,0)+'건 · 기록 보완에서 처리 ›</button>':'')
    +(N.length?N.map(row).join(''):(rq||B.length?'':'<p class="dwd-none">새 알림이 없습니다</p>'))
    +'<footer>공지는 읽으면 끝 · 코칭은 오늘 업무 오른쪽 \'내 이번 주\'에도 남습니다</footer>';
  }
