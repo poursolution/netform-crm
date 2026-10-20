@@ -60,6 +60,8 @@
   const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(custom||''));if(!m)return null;return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),23,59,0,0);
  }
  /* ── 저장소 읽기 ── */
+ /* six_fixes ③: 다른 기기(모바일 · 다른 PC)에서 요청 상태가 바뀌면 서버 신호(work_requests)로 바로 다시 읽는다 — 60초 기다리지 않음 */
+ if(R.addEventListener)R.addEventListener('crm:realtime-signal',e=>{try{if(e.detail&&e.detail.table==='work_requests'&&ready())load(true);}catch(x){}});
  function load(force){
   const S=st();if(!ready())return;
   if(S.busy){if(force)S.again=true;return;}

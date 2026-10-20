@@ -11,8 +11,8 @@
   summary.firstElementChild.textContent=model.title;
   const progress=summary.children[1];progress.lastElementChild.textContent=model.progress;
   progress.firstElementChild.firstElementChild.style.width=model.progressPercent+'%';
-  if(model.batch){batch.firstChild.textContent=model.batch+' → ';batch.querySelector('a').dataset.gs='area';batch.querySelector('a').dataset.value='info';}else batch.remove();
-  [...areas.children].forEach((el,i)=>{const values=['now','waiting','info','promise'];el.innerHTML='';const text=model.areas[i],match=i===0&&text.match(/^(.*?)(\d+)$/);if(match){el.textContent=match[1];const count=document.createElement('span');count.textContent=match[2];count.style.color='#b42318';el.append(count);}else el.textContent=text;el.dataset.gs='area';el.dataset.value=values[i];el.setAttribute('role','button');el.tabIndex=0;});
+  if(model.batch){batch.firstChild.textContent=model.batch+' → ';batch.querySelector('a').dataset.gs='area';batch.querySelector('a').dataset.value=model.areaKeys?'fix':'info';}else batch.remove();
+  [...areas.children].forEach((el,i)=>{const values=model.areaKeys||['now','waiting','info','promise'];el.innerHTML='';const text=model.areas[i],red=model.areaKeys?values[i]===model.redArea&&!/ 0$/.test(text):i===0,match=red&&text.match(/^(.*?)(\d+)$/);if(model.area)el.setAttribute('aria-pressed',String(values[i]===model.area));if(match){el.textContent=match[1];const count=document.createElement('span');count.textContent=match[2];count.style.color='#b42318';el.append(count);}else el.textContent=text;el.dataset.gs='area';el.dataset.value=values[i];el.setAttribute('role','button');el.tabIndex=0;});
   const card=body.lastElementChild.cloneNode(true);
   [...body.children].filter(n=>n.style.borderLeft).forEach(n=>n.remove());
   model.rows.forEach(t=>{
