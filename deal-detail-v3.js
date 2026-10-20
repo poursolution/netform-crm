@@ -1245,7 +1245,7 @@
   const S=st(d),show=sel=>{const n=v.querySelector(sel);if(n)try{n.scrollIntoView({block:'nearest'});}catch(e){}return n;};
   if(act==='next'||act==='activity'){
    /* 지금 응대 중심: 연락 업무 화면이 있는 단계(관계관리)는 그 화면으로, 아니면 열린 업무를 닫고 가운데 입력칸 하나로 */
-   if(dv8(d)){if(root.DealFrame7.workRow(d)==='contact'){openP7('work');return true;}if(S.p7)closeP7();}
+   if(typeof dv8==='function'&&dv8(d)){if(root.DealFrame7.workRow(d)==='contact'){openP7('work');return true;}if(S.p7)closeP7();}
    if(!v.querySelector('.nc-cta .nc-call'))return !!show('.dw-right');/* 종결된 건: 카드만 보여 준다 */
    if(tidy()){if(!S.calling)startCall(d,true);show('#ddvComposer');return true;}/* 정돈안: 연락 입구는 가운데 입력칸 하나 */
    if(!S.rec)S.rec=contactDraft(d);S.nextOpen=false;apply();show('.dv3-form');return true;
