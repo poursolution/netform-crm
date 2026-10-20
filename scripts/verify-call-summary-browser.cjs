@@ -42,7 +42,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   });
   const V=page.locator('#detailView');
   const md=n=>page.evaluate(n=>window.__md(n),n);
-  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView.dv7r .dvs-task .dv7-lb');await page.waitForTimeout(700);};
+  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView.dv7r .dvs-task :is(.dv7-lb,.dv8-lb)');await page.waitForTimeout(700);if(await page.locator('#detailView.dv8 .dv7-drawer:not([hidden])').count()){await page.locator('#detailView [data-dv3="hadd"]').click();await page.waitForTimeout(300);}/* 지금 응대 중심: 열면 단계 업무 화면 → [이력 추가] = 응대 입력칸 */};
   await open(0);
   const btn=page.locator('#detailView #ddvComposer .cs-open');await btn.waitFor();assert.equal((await btn.innerText()).trim(),'통화 녹음 요약','입력칸 머리에 단추');
   await page.evaluate(()=>{window.__memo=[];DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);};window.__w0=window.__writes=0;const pw=window.pushWrite;window.pushWrite=(...a)=>{window.__writes++;return pw(...a);};});

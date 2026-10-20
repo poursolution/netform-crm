@@ -248,7 +248,7 @@
 #detailView.dv8 .dv8-gap{flex:1}
 #detailView.dv8 .dv8-links{border-top:1px solid #eef0f3;padding-top:12px;display:flex;flex-wrap:wrap;gap:6px 12px}
 #detailView.dv8 .dv8-links button{border:0;background:none;padding:0;margin:0;height:auto;min-height:0;width:auto;box-shadow:none;font:inherit;font-size:12px;color:#2a52b8;cursor:pointer}
-#detailView.dv8 [data-dv3="call"],#detailView.dv8 [data-dv3="sms"]{display:none!important}/* PC 전화 · 문자 버튼 없음(모바일은 그대로) */
+/* 왼쪽 배경 칸에는 PC 전화 · 문자 버튼을 그리지 않는다(left8) — [연락처 · 관계자] 패널 안 버튼은 그대로(문자 창 진입 유지) */
 /* 가운데 = 고객 요청 · 연 업무 하나 · 응대 이력 */
 #detailView.dv8 .dv8-req{flex:none;padding:14px 20px;border-bottom:1px solid #eef0f3;display:flex;flex-direction:column;gap:6px;background:#fff}
 #detailView.dv8 .dv8-req .hd{display:flex;align-items:baseline;gap:8px}
