@@ -69,7 +69,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    await page.evaluate(()=>{G.repsBOff=false;paintRepManagement();});
   }
   await page.evaluate(()=>{B.repManagerComments=[];paintRepManagement();});
-  assert.match(await v.locator('.ps3-diag>.ps3-box').nth(2).innerText(),/그래서 뭘 해야 하나[\s\S]*첫 연락 전 3건 이상 1명[\s\S]*밀린 첫 연락 정리 · 금요일까지/);
+  /* nine_menus 보통(2026-10-20): '그래서 뭘 해야 하나' 상자 없음 — 할 일 설명은 사유 단추 title 로 · '첫 연락 전 있음'(1~2건)은 사유로 안 셈 */
+  assert.match(await v.locator('.ps3-why .ps3-reason').evaluateAll(l=>l.map(b=>b.textContent.replace(/\s+/g,' ').trim()+' | '+b.title).join('\n')),/첫 연락 전 3건 이상\s*1 \| .*밀린 첫 연락 정리 · 금요일까지/);assert.doesNotMatch(await v.locator('.ps3-why').innerText(),/첫 연락 전 있음/);assert.equal(await v.locator('.ps3-diag>.ps3-box').count(),2);
   assert.match(await v.locator('.rb-load').innerText(),/누가 일이 몰렸나[\s\S]*이필선 · 12억[\s\S]*진행 2건[\s\S]*황윤선 · 5억/);
   assert.match(await v.locator('.rb-week').innerText(),/이번 주 진전[\s\S]*신규 기회 \d+/);
   /* 정렬: 이필선(빨강 2개) 먼저 */
