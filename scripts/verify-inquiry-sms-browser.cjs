@@ -24,7 +24,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      {id:'d-no',site:'거부 현장',assignee:'이필선',brand:'POUR솔루션',code:'rapport',stage_code:'rapport',contacts:[{manager_mobile:'01077770000',opt_out_at:at(100),send_blocked:true}]},
      {id:'d-yes',site:'동의 현장',assignee:'이필선',brand:'POUR솔루션',code:'rapport',stage_code:'rapport',contacts:[{manager_mobile:'01088880000',sms_consent:true}]}],
     inquiries:[inq('11111111-1111-4111-8111-111111111111','[경기 시흥] 시흥신천삼환나우빌','010-4200-8204'),inq('22222222-2222-4222-8222-222222222222','[서울] 거부 고객 단지','010-7777-0000'),inq('33333333-3333-4333-8333-333333333333','[서울] 동의 고객 단지','010-8888-0000')],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'u1',name:'이필선',role:'admin'};G.inqTossDetailOff=true;G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'u1',name:'이필선',role:'admin'};G.inqTossDetailOff=true;G.inqTidyOff=true;/* 예전 상세 배치(문자 버튼) — 정리된 상세는 verify-inquiry-tidy-browser */G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(...args)=>{__writes.push(JSON.parse(JSON.stringify(args)));return 'req-'+__writes.length;};
    window.__copies=[];window.__copyFail=false;Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{if(__copyFail)throw Error('clipboard denied');__copies.push(text);}}});
    window.__rpc=[];window.CRMRelease=Object.assign(window.CRMRelease||{},{has:()=>true,noteMissing(){}});

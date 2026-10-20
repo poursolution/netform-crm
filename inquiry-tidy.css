@@ -1,0 +1,26 @@
+/* 견적문의 상세 정리 (design_handoff_pc_today_inquiry 2) — 시안 값 */
+#inq-inbox-dialog.idv3 .idv3-c2{display:flex;flex-direction:column;min-height:0}
+#inq-inbox-dialog.idv3 .idv3-sum{position:sticky;top:0;z-index:2;flex:none;padding:12px 18px;border-bottom:1px solid #eef0f3;background:#fff;display:flex;flex-direction:column;gap:6px}
+#inq-inbox-dialog.idv3 .idv3-sum .hd{display:flex;align-items:baseline;gap:8px}
+#inq-inbox-dialog.idv3 .idv3-sum .hd b{font-size:13px}#inq-inbox-dialog.idv3 .idv3-sum .hd>span{font-size:11px;color:#9ca3af}#inq-inbox-dialog.idv3 .idv3-sum .hd i{flex:1}
+#inq-inbox-dialog.idv3 .idv3-sum .lnk{border:0;background:none;padding:0;font:inherit;font-size:12px;font-weight:600;color:#2a52b8;cursor:pointer}
+#inq-inbox-dialog.idv3 .idv3-sum .g{display:grid;grid-template-columns:58px minmax(0,1fr);gap:4px 10px;font-size:12.5px;line-height:1.5}
+#inq-inbox-dialog.idv3 .idv3-sum .g>span:nth-child(odd){color:#6b7280}
+#inq-inbox-dialog.idv3 .idv3-sum .g b{font-weight:600}
+#inq-inbox-dialog.idv3 .idv3-sum .g .lt{color:#374151}
+#inq-inbox-dialog.idv3 .idv3-sum .orig{margin:2px 0 0;max-height:160px;overflow:auto;white-space:pre-wrap;font-size:12.5px;line-height:1.55;color:#374151;background:#f8f9fb;border-radius:8px;padding:8px 10px}
+#inq-inbox-dialog.idv3 .idv3-sum .none{margin:0;font-size:12.5px;color:#9ca3af}
+#inq-inbox-dialog.idv3 .idv3-composer.idv3-top-rec{border-top:0;border-bottom:1px solid #eef0f3;background:#fcfcfd}
+#inq-inbox-dialog.idv3 .idv3-rectitle{font-size:13.5px}
+#inq-inbox-dialog.idv3 .idv3-one>header{display:flex;align-items:baseline;gap:6px}
+#inq-inbox-dialog.idv3 .idv3-one>header small{font-size:11.5px;color:#9ca3af;font-weight:500}
+#inq-inbox-dialog.idv3 .idv3-onenote{display:block;margin-top:6px;font-size:11.5px;color:#9ca3af}
+#inq-inbox-dialog.idv3 .idv3-info.chk .idv3-row:nth-child(2) b{color:#8a5a00}
+#inq-inbox-dialog.idv3 .idv3-due{font-size:12px;color:#6b7280}
+#inq-inbox-dialog.idv3 .idv3-due.r{color:#b42318}
+#inq-inbox-dialog.idv3 .idv3-mob{border-top:1px solid #eef0f3;padding-top:11px;margin-top:4px;display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+#inq-inbox-dialog.idv3 .idv3-mob span{font-size:11.5px;font-weight:700;color:#6b7280}
+#inq-inbox-dialog.idv3 .idv3-mob b{font-weight:500}
+#inq-inbox-dialog.idv3 .idv3-conwarn{margin-right:6px}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-sum{padding:16px 22px 12px;border-bottom:1px solid #f2f4f6}
+html.tq-on #inq-inbox-dialog.idv3 .idv3-composer.idv3-top-rec{border-top:0;border-bottom:1px solid #f2f4f6;background:#fff}

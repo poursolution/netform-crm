@@ -268,6 +268,9 @@
    +'<section><header><b>'+weekT+'</b></header>'+wk.map(w=>{const red=w.bad&&w.pct<50;return '<div class="tv3-wk"><div><span>'+h(w.label)+'</span><b'+(red?' class="r"':'')+'>'+h(w.v)+'</b></div><u><i style="width:'+Math.max(1,Math.round(w.pct))+'%;background:'+(red?'#d14a3f':'#15171c')+'"></i></u><small>'+h(w.goal)+'</small></div>';}).join('')+(root.DayWord&&role!=='mgr'?root.DayWord.coachHtml(V.me):'')+'</section></aside>';
   const badge=document.getElementById('todayBadge');if(badge){badge.textContent=total||'';badge.style.display=total?'':'none';}
   try{root.DayWord&&root.DayWord.bell();}catch(e){}
+  /* design_handoff_pc_today_v6: 4구역 화면(영업사원 · 팀장 · 상무 · 대표)은 파이프라인 단계 화면과 같은 틀(today-v6.js) — 끄기 G.todayV6Off 면 아래 v3 */
+  if(Z&&root.TodayV6&&root.TodayV6.on()){let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}
+   return '<div class="tv3 tv6'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+root.TodayV6.html({Z,S,role,team,me,pass,week,back:backHtml,word:root.DayWord&&role!=='mgr'?root.DayWord.lineHtml(V.me):''})+'</div>';}
   return '<div class="tv3'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';
  }
  /* ── 동작: 전부 기존 경로 ── */

@@ -37,7 +37,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* C: 예전 방식으로 부재가 최초응대가 된 문의(상태는 전화응대 완료 · 그 시각의 기록이 부재) */
     {id:C,site:'[인천] 송도더샵',status:'전화응대 완료',at:at(4),created_at:at(4),brand:'POUR솔루션',phone:'032-000-1111',contact_name:'박소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(3.9),first_response_at:at(3),raw:{'문의내용':'옥상 방수'},activities:[{id:'iq-1',type:'단계전환',note:'고객 응대 기록',result:'[전화 · 부재] 두 번 전화했으나 받지 않음',at:at(3),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]});
-   B=__seed();LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
+   B=__seed();LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqTidyOff=true;/* 예전 상세 배치(첫마디 · 전화 · 문자) — 정리된 상세는 verify-inquiry-tidy-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    /* 서버 흉내: 저장 명령 · 읽기 함수 */
    window.__srv={};window.__rpc=[];

@@ -1,0 +1,55 @@
+/* PC 오늘 업무 v6 (design_handoff_pc_today_v6) — 크기는 시안 값. 색은 브랜드(띠 · 이름)와 빨강(기한 지난 숫자)만, 나머지는 회색 계열 */
+#today-v2 .tv6{display:flex;flex-direction:column;gap:14px;color:#15171c;word-break:keep-all}
+#today-v2 .tv6-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+#today-v2 .tv6-title b{font-size:21px;letter-spacing:-0.02em}
+#today-v2 .tv6-title span{font-size:13px;color:#4b5563}
+#today-v2 .tv6-tabs{background:#fff;border:1px solid #e8eaef;border-radius:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));overflow:hidden}
+#today-v2 .tv6-tabs button{border:0;border-left:1px solid #eef0f3;border-bottom:3px solid transparent;background:#fff;text-align:left;padding:14px 18px 12px;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer;font:inherit;color:#15171c}
+#today-v2 .tv6-tabs button:first-child{border-left:0}
+#today-v2 .tv6-tabs button[aria-selected="true"]{border-bottom-color:#15171c}
+#today-v2 .tv6-tabs .n{font-size:24px;color:#15171c}#today-v2 .tv6-tabs .n.r{color:#b42318}
+#today-v2 .tv6-tabs b:nth-child(2){font-size:14px}
+#today-v2 .tv6-tabs span{font-size:12px;color:#6b7280;line-height:1.4}
+#today-v2 .tv6-body{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+#today-v2 .tv6-left{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:12px}
+#today-v2 .tv6-right{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:10px}
+#today-v2 .tv6-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+#today-v2 .tv6-box>header{display:flex;align-items:baseline;gap:8px}
+#today-v2 .tv6-box>header b{font-size:15px}#today-v2 .tv6-box>header span{font-size:12px;color:#9ca3af}
+#today-v2 .tv6-now{background:#f8f9fb;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+#today-v2 .tv6-now>span{font-size:12px;color:#6b7280}#today-v2 .tv6-now>b{font-size:16px}
+#today-v2 .tv6-now dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;font-size:12.5px;color:#4b5563}
+#today-v2 .tv6-now dd{margin:0;font-weight:700;color:#374151}
+#today-v2 .tv6 .lnk{border:0;background:none;padding:0;font:inherit;font-size:12px;color:#4b5563;text-decoration:underline;text-underline-offset:2px;cursor:pointer;align-self:flex-start}
+#today-v2 .tv6-wk{background:#f8f9fb;border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+#today-v2 .tv6-wk span{font-size:12px;color:#6b7280}#today-v2 .tv6-wk b{font-size:18px}#today-v2 .tv6-wk small{font-size:12px;color:#9ca3af;flex-basis:100%}
+#today-v2 .tv6-miss{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid #eef0f3}
+#today-v2 .tv6-miss:first-of-type{border-top:0}
+#today-v2 .tv6-miss b{font-size:13.5px}#today-v2 .tv6-miss span{font-size:12px;color:#6b7280}
+#today-v2 .tv6-top{padding:14px 16px}
+#today-v2 .tv6-top>header b{font-size:14px}#today-v2 .tv6-top>header span{color:#6b7280}
+#today-v2 .tv6-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+#today-v2 .tv6-card{text-align:left;background:#fff;border:1px solid #e8eaef;border-left:3px solid #9aa0ab;border-radius:9px;padding:9px 11px;display:flex;flex-direction:column;gap:4px;min-width:0;cursor:pointer;font:inherit;color:#15171c}
+#today-v2 .tv6-card:hover,#today-v2 .tv6-row:hover{background:#fafbfc}
+#today-v2 .tv6 .t{display:flex;align-items:baseline;gap:6px;min-width:0}
+#today-v2 .tv6 .t b:first-child{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#today-v2 .tv6 .d{flex:none;font-size:13px;color:#15171c;white-space:nowrap}
+#today-v2 .tv6 .d.r{color:#b42318}#today-v2 .tv6 .d.g{color:#6b7280;font-weight:600}
+#today-v2 .tv6-card .k{font-size:12.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .tv6 .sub{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#today-v2 .tv6 .sub b{font-weight:600}
+#today-v2 .tv6 .kd,#today-v2 .tv6 .rq{font-style:normal;font-size:11px;font-weight:700;color:#4b5563;background:#f1f2f5;border-radius:4px;padding:1px 6px;margin-right:5px}
+#today-v2 .tv6-lh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+#today-v2 .tv6-lh b{font-size:15px}#today-v2 .tv6-lh b span{font-weight:500;color:#6b7280}#today-v2 .tv6-lh small{font-size:12px;color:#9ca3af}
+#today-v2 .tv6-list{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden}
+#today-v2 .tv6-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.1fr) minmax(0,1.2fr) auto;gap:14px;align-items:center;padding:13px 16px;border-bottom:1px solid #f0f1f4;border-left:3px solid #9aa0ab;cursor:pointer}
+#today-v2 .tv6-row:last-child{border-bottom:0}
+#today-v2 .tv6-row .c1,#today-v2 .tv6-row .c2,#today-v2 .tv6-row .c3{display:flex;flex-direction:column;gap:3px;min-width:0}
+#today-v2 .tv6-row .c1 .t b:first-child{font-size:14px}
+#today-v2 .tv6-row .c2 b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .tv6-row .c3 span{font-size:12.5px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#today-v2 .tv6-row .c3 .rq{align-self:flex-start;white-space:nowrap;margin:0}
+#today-v2 .tv6-row .go{height:34px;padding:0 14px;border:1px solid #d9dde4;background:#fff;color:#15171c;font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;white-space:nowrap;cursor:pointer}
+#today-v2 .tv6-empty{margin:0;padding:18px 16px;font-size:13px;color:#6b7280}
+#today-v2 .tv6 nav.lpg{margin-top:4px}
+@media(max-width:900px){#today-v2 .tv6-row{grid-template-columns:minmax(0,1fr) auto;gap:6px 10px}#today-v2 .tv6-row .c2,#today-v2 .tv6-row .c3{grid-column:1}#today-v2 .tv6-row .go{grid-column:2;grid-row:1/4;align-self:center}}
