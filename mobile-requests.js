@@ -85,6 +85,16 @@
   if(!x||x.ok!==true||x.request_id!==r.id||!x.request||x.request.id!==r.id)throw Error('요청 처리 결과를 확인하지 못했습니다. 응대 기록은 유지됩니다.');
   put(x.request);return x;
  }
+ /* 모바일 v5 오늘 · 팀: 보낸 요청 다시 요청(PC WorkRequest.reask 와 같은 서버 함수 · 관리자만 · 기한 지난 열린 요청만 — 서버가 다시 확인) */
+ async function reask(id,due){
+  if(!enabled()||!ready())throw Error('요청 연결을 확인해 주세요.');const owner=syncOwner(),generation=epoch;
+  const r=S.list.find(x=>x.id===id);if(!r||!r.by_me||!isOpen(r)||!(Date.parse(r.due_at)<Date.now()))throw Error('기한이 지난 열린 요청만 다시 요청할 수 있습니다.');
+  if(r.status==='working')throw Error('고객 답을 기다리는 요청은 다시 요청하지 않습니다.');
+  const x=await rpc('crm_work_request_reask_v1',{id,due_at:due.due_at,due_label:due.due_label});
+  if(!currentSession(owner,generation))throw Error('계정이 바뀌었습니다.');
+  if(!x||x.ok!==true||!x.request||x.request.id!==id)throw Error('다시 요청 결과를 확인하지 못했습니다.');
+  put(x.request);return x.request;
+ }
  async function complete(r,o){
   if(!r||!isContact(r)||r.to_me!==true||!ready())throw Error('이 요청은 PC 에서 처리합니다.');
   const owner=syncOwner(),generation=epoch,checkOwner=()=>{if(!currentSession(owner,generation))throw Error('계정이 바뀌었습니다. 저장된 응대는 유지하고 요청 처리를 다시 확인해 주세요.');};
@@ -130,5 +140,5 @@
  root.document.addEventListener('click',e=>{const b=e.target.closest('#scr [data-mq]');if(!b||!enabled())return;if(b.dataset.mq==='open')open(b.dataset.id);});
  root.addEventListener?.('phase1:identity-cleared',()=>reset(''));
  root.addEventListener?.('phase1:profile',syncOwner);
- root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,acknowledge,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put,itemReady,itemized,completeItems});
+ root.MobileRequests=Object.freeze({enabled,load,incoming,forDeal,isContact,labelOf,dueTxt,complete,acknowledge,decorate,html,state:()=>{syncOwner();return S;},COND,KIND_LABEL,_put:put,itemReady,itemized,completeItems,reask});
 })(window);
