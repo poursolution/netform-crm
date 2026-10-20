@@ -60,8 +60,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await v.locator('.sh2-periods button').evaluateAll(l=>l.map(n=>[n.textContent,n.getAttribute('aria-pressed')])),[['이번 달','false'],['이번 분기','true'],['2026','false'],['전체','false']]);
   /* 4. 이번 분기(10~12월): c5 예약 · c1 — 숫자는 실제로 보낸 묶음만(c1), 응대 이력에서 센 반응 2명(서버 response_count 99 를 쓰지 않는다) */
   const kpi=()=>v.locator('.sh2-kpi').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent)));
-  assert.deepEqual(await kpi(),[['보낸 묶음','1건','테스트 · 직접 발송 제외'],['받은 사람','3명','성공 2 · 실패 1'],['7일 안 반응','67%','2명 · 통화 · 회신 · 단계 이동'],['반응 → 단계 이동','1건','문자 뒤 실제 영업이 움직인 건']]);
-  assert.deepEqual(await v.locator('.sh2-head span').allInnerTexts(),['보낸 시각','묶음 · 문구','보낸 사람','받은 사람','7일 안 반응','상태']);
+  assert.deepEqual(await kpi(),[['보낸 묶음','1건','캠페인 성과 범위 · 테스트 · 직접 발송 제외 (전체 이력 2건은 아래)'],['받은 사람','3명','성공 2 · 실패 1'],['문자 회신','33%','1명 · 발송 뒤 7일 안 회신 · 답장 기록'],['7일 안 다른 활동','1명','통화 · 단계 이동 (단계 이동 1) · 문자 덕분이라 단정 X']]/* 2026-10-20 four_menus 4: 문자 회신 ≠ 그 뒤 활동 */);
+  assert.deepEqual(await v.locator('.sh2-head span').allInnerTexts(),['보낸 시각','묶음 · 문구','보낸 사람','받은 사람','7일 안 활동','상태']);
   const rows=()=>v.locator('.sh2-row').evaluateAll(l=>l.map(n=>[n.querySelector('.sh2-when b').textContent,n.querySelector('.sh2-when span').textContent,n.querySelector('.sh2-kind').textContent,n.querySelector('.sh2-main b').textContent,n.querySelector('.sh2-who').textContent,n.querySelector('.sh2-n').innerText.replace(/\n/g,'|'),n.querySelector('.sh2-resp>span').innerText.trim(),n.querySelector('.sh2-st em').textContent]));
   assert.deepEqual(await rows(),[['2026.10.3','09:00','재활성','실주 고객 — 재제안','송보람','5명|결과 확인 전','- 받은 사람 목록 없음','예약'],['2026.10.2','10:20','병목','견적 발송 후 7일 · 수신 확인','이필선','3명|성공 2 · 실패 1','2명 · 67% 단계 이동 1','일부 실패']]);
   assert.equal(await v.locator('.sh2-row').nth(1).locator('.sh2-bar i').evaluate(n=>n.style.width),'100%');
@@ -80,7 +80,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 6. 기간 = 목록 + 숫자 같이: 올해 → 9월 추석(반응 1명: 7일 넘은 통화 · 같은 사람 두 번은 1번) · 7월 안부(받은 사람 목록 없음) · 테스트는 숫자 제외 */
   await v.locator('.sh2-periods button',{hasText:'2026'}).click();await page.waitForTimeout(150);
   assert.deepEqual((await rows()).map(r=>[r[0],r[2],r[3],r[5],r[6],r[7]]),[['2026.10.3','재활성','실주 고객 — 재제안','5명|결과 확인 전','- 받은 사람 목록 없음','예약'],['2026.10.2','병목','견적 발송 후 7일 · 수신 확인','3명|성공 2 · 실패 1','2명 · 67% 단계 이동 1','일부 실패'],['2026.9.26','시즌','추석 인사 · 수주 고객','2명|모두 성공','1명 · 50%','발송 완료'],['2026.9.19','직접 발송','묶음 없이 보냄','1명|모두 성공','-','테스트'],['2026.7.10','장기 관계','견적 후 3개월 · 안부','38명|모두 성공','- 받은 사람 목록 없음','발송 완료']]);
-  assert.deepEqual(await kpi(),[['보낸 묶음','3건','테스트 · 직접 발송 제외'],['받은 사람','43명','성공 42 · 실패 1'],['7일 안 반응','7%','3명 · 통화 · 회신 · 단계 이동'],['반응 → 단계 이동','1건','문자 뒤 실제 영업이 움직인 건']]);
+  assert.deepEqual(await kpi(),[['보낸 묶음','3건','캠페인 성과 범위 · 테스트 · 직접 발송 제외 (전체 이력 5건은 아래)'],['받은 사람','43명','성공 42 · 실패 1'],['문자 회신','2%','1명 · 발송 뒤 7일 안 회신 · 답장 기록'],['7일 안 다른 활동','2명','통화 · 단계 이동 (단계 이동 1) · 문자 덕분이라 단정 X']]);
   await v.locator('.sh2-row').nth(4).click();await page.waitForTimeout(120);
   assert.equal(await v.locator('.sh2-item.on .sh2-rf>span').innerText(),'받은 사람 목록이 남아 있지 않은 발송입니다 · 건수만 표시합니다');assert.equal(await v.locator('.sh2-item.on [data-sh2="resend"]').count(),0);
   await v.locator('.sh2-periods button',{hasText:'전체'}).click();await page.waitForTimeout(120);assert.equal(await v.locator('.sh2-row').count(),6);
@@ -88,7 +88,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 7. 보낸 사람 · 브랜드 · 검색도 목록과 숫자를 같이 거른다 */
   await v.locator('.sh2-periods button',{hasText:'2026'}).click();await page.waitForTimeout(120);
   await bar.locator('[data-sh2-who]',{hasText:'송보람'}).click();await page.waitForTimeout(150);
-  assert.deepEqual((await rows()).map(r=>r[3]),['실주 고객 — 재제안','추석 인사 · 수주 고객','묶음 없이 보냄']);assert.deepEqual((await kpi()).map(k=>k[1]),['1건','2명','50%','0건']);
+  assert.deepEqual((await rows()).map(r=>r[3]),['실주 고객 — 재제안','추석 인사 · 수주 고객','묶음 없이 보냄']);assert.deepEqual((await kpi()).map(k=>k[1]),['1건','2명','0%','1명']);/* 반응 1명은 통화(문자 회신 아님) */
   await bar.locator('[data-sh2-who]',{hasText:'전체'}).click();await page.waitForTimeout(150);
   await bar.locator('[data-sf-brand="석민이앤씨"]').click();await page.waitForTimeout(250);
   assert.ok((await rows()).some(r=>r[3]==='추석 인사 · 수주 고객')&&!(await rows()).some(r=>r[3]==='견적 발송 후 7일 · 수신 확인'),'브랜드로 거른다(받은 사람의 현장 브랜드)');

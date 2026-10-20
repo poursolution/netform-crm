@@ -50,19 +50,19 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 확인 창: 견적문의 상세 모달 + 진행 막대 5칸 + 오른쪽 '지사 진행 확인' */
   await v.locator('.plv-row').first().locator('.plv-site').click();await page.waitForTimeout(400);
   const d=page.locator('#inq-inbox-dialog.idv');assert.equal(await d.count(),1,'확인 창');
-  assert.match(await d.locator('.idv-pill').innerText(),/^지사 미착수 · 18일$/);
-  assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['본사 → 지사','지금 · 지사 실담당','지사 첫 연락','영업기회','수주']);
+  assert.match(await d.locator('.idv-pill').innerText(),/^지사 실담당 미지정 · 18일$/);
+  assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['본사 → 지사','지금 · 지사 실담당','고객 실제 연결','영업기회','수주']);
   assert.match(await d.locator('.idv-quote').innerText(),/견적 문의 1/);
-  {const ev=(await d.locator('.idv-thread .idv-evtext').allInnerTexts()).slice(0,2);assert.match(ev[0]||'',/견적문의 접수$/);assert.equal(ev[1],'본사 → 경남지사 인계');}
+  {const ev=(await d.locator('.idv-thread .idv-evtext').allInnerTexts()).slice(0,2);assert.match(ev[0]||'',/견적문의 접수$/);assert.equal(ev[1],'본사 → 경남지사 인계 (최초)');}
   const c3=d.locator('.idv-c3');
-  assert.match(await c3.innerText(),/지사 진행 확인[\s\S]*본사 확인용 · 처리는 지사에서[\s\S]*넘긴 후\s*18일[\s\S]*지사 실담당\s*미지정[\s\S]*지사 연락 기록\s*없음[\s\S]*현재 단계\s*문의[\s\S]*넘긴 지 18일 동안 지사에서 움직임이 없어요[\s\S]*지사에 확인 요청[\s\S]*본사 회수 검토[\s\S]*경남지사 담당 현황/);
+  assert.match(await c3.innerText(),/지사 진행 확인[\s\S]*본사 확인용 · 처리는 지사에서[\s\S]*최초 인계[\s\S]*현재 배정[\s\S]*18일째[\s\S]*확인 요청\s*없음[\s\S]*고객 연결\s*기록 없음[\s\S]*현재 단계\s*문의[\s\S]*남은 업무\s*지사 실담당 지정 확인[\s\S]*미응대로 단정 아님[\s\S]*확인 요청 메모 남기기[\s\S]*본사 회수 검토 표시[\s\S]*지사에 자동으로 전달되지 않습니다/);
   assert.equal(await c3.locator('.idv-assign,.idv-rep').count(),0,'배정 칸 없음');
   if(shot)await page.screenshot({path:shot+'-confirm.png'});
   /* 지사에 확인 요청 = 기존 내부 메모 저장 경로로 기록 → 초록 표시 */
   await c3.locator('[data-gnc="request"]').click();await page.waitForTimeout(600);
   const memo=await page.evaluate(()=>{const q=B.inquiries[0],p=itemPatch(q,'inq')||{};return [...(q.activities||[]),...(p.activities||[])].map(a=>String(a.note||'')).filter(n=>n.startsWith('[지사 확인 요청]'));});
-  assert.equal(memo.length,1,'메모 기록 1건');assert.match(memo[0],/넘긴 지 18일[\s\S]*요청 송보람/);
-  assert.match(await page.locator('#inq-inbox-dialog .idv-c3').innerText(),/지사에 확인 요청함 · 지사장 응답 대기/);
+  assert.equal(memo.length,1,'메모 기록 1건');assert.match(memo[0],/현재 배정 18일째[\s\S]*내부 메모 · 송보람/);
+  assert.match(await page.locator('#inq-inbox-dialog .idv-c3').innerText(),/확인 요청 메모 기록함 · 지사 전달 · 회신은 확인 전/);
   assert.equal(await page.locator('#inq-inbox-dialog .idv-c3 [data-gnc="request"]').count(),0);
   /* 닫으면 경남지사 화면으로 돌아오고 목록에 표시 */
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(300);
@@ -70,8 +70,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await page.locator('#gyeongnam-v2 .plv-row').first().innerText(),/확인 요청함/);
   /* 진행 중인 건: 막대·상태 */
   await page.locator('#gyeongnam-v2 .plv-ghead[data-plv-group="ok"] + .plv-row .plv-site').click();await page.waitForTimeout(400);
-  assert.match(await d.locator('.idv-pill').innerText(),/^영업 진행 확인됨 · 9일$/);
-  assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['본사 → 지사','지사 실담당','지사 첫 연락','지금 · 영업기회','수주']);
+  assert.match(await d.locator('.idv-pill').innerText(),/^고객 연결 확인됨 · 9일$/);
+  assert.deepEqual(await d.locator('.idv-steps span').allInnerTexts(),['본사 → 지사','지사 실담당','고객 실제 연결','지금 · 영업기회','수주']);
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(300);
   /* 좁은 화면 · 끄기 */
   await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);

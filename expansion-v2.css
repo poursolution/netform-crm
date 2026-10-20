@@ -102,3 +102,7 @@
 body.shell-v2 .dash:has(#pg-expansion.on){grid-template-columns:228px minmax(0,1fr);overflow-x:clip}
 @media(min-width:941px) and (max-width:1500px){body.shell-v2 .dash:has(#pg-expansion.on){grid-template-columns:200px minmax(0,1fr)}}
 body.shell-v2 .dash:has(#pg-expansion.on)>.side{min-width:0;flex:none}
+/* 2026-10-20 four_menus 1: 기록이 적용될 계약 범위 */
+#expansionV2 .xdv-scope{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:8px 0 6px;font-size:12.5px;color:#374151}
+#expansionV2 .xdv-scope>b{flex:1 0 100%;font-size:12.5px;color:#15171c}
+#expansionV2 .xdv-scope>span{background:#f3f4f6;border-radius:6px;padding:2px 8px}

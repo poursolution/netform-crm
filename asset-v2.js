@@ -89,7 +89,16 @@
   if(openKey)renderDetail();
  }
  /* ── 상세: 3단 모달 ── */
- let openKey=null,returnFocus=null,draft='';
+ let openKey=null,returnFocus=null,draft='',tgt='';
+ /* 2026-10-20 four_menus 3: 메모를 남길 영업건 = 담당이 고른다(진행 건이 둘 이상이면 공종 · 연도 · 금액 · 담당으로 구분해 고르기 전엔 저장 X — 금액 큰 건에 자동으로 붙이지 않는다) */
+ const oppLabel=d=>{const w=d.work_name||d.work||root.dealWorkSummary(d)||'';return [(w&&!/미분류|미기록/.test(w)?w:'공종 미분류'),year(d.created||d.created_at)||'연도 미상',amt(root.oppAmt(d))||'금액 미입력',root.repN(d.assignee)||'미배정'].join(' · ');};
+ const tgtOf=s=>{const o=s.open||[];if(o.length===1)return o[0];return o.find(d=>root.dealKey(d)===tgt)||null;};
+ /* 같은 휴대폰 번호 = 동일인 후보(자동 병합 안 함) · 과거 메모 속 주소 = 후보(확인 후 반영) */
+ const phoneKey=c=>String(root.phoneN?root.phoneN(c&&(c.mobile||c.officeTel)||''):'').replace(/\D/g,'');
+ const ADDR_RE=/([가-힣]{2,}(?:특별시|광역시|특별자치시|도|시)\s*[가-힣]{1,}(?:시|군|구)(?:\s*[가-힣]{1,}(?:구|읍|면|동))?\s*[가-힣0-9]+(?:로|길)\s*\d+(?:-\d+)?)/;
+ function addrCand(s){const texts=[];(s.deals||[]).forEach(d=>{(d.legacy_notes||[]).forEach(n=>texts.push(String(n&&n.body||'')));(d.activities||[]).forEach(a=>texts.push(String(a&&a.note||'')));});for(const x of texts){const m=ADDR_RE.exec(x);if(m)return m[1].replace(/\s+/g,' ').trim();}return '';}
+ /* 마지막 고객 연락 = 응대 기록의 연락 시도 · 연결(ContactState) — 등록 · 이관 · 수정일 아님 */
+ function lastContact(s){let last='';[...(s.deals||[]).map(d=>[d,'deal']),...(s.inquiries||s.inqs||[]).map(q=>[q,'inq'])].forEach(([it,ty])=>{try{const v=root.ContactState.of(it,ty),k=String(v.lastConnectedAt||v.lastAttemptAt||'').slice(0,10);if(k>last)last=k;}catch(e){}});return last;}
  const find=key=>root.siteMasterData().find(s=>s.key===key);
  function node(){
   let m=document.getElementById('assetV2');if(m)return m;
@@ -104,15 +113,16 @@
  function detailHtml(s){
   const t=TAG[s.health]||TAG.dormant,p=s.primary,address=s.canonicalAddress||s.addresses[0]||'',opp=s.open.slice().sort((a,b)=>root.oppAmt(b)-root.oppAmt(a));
   const flow=['첫 관계 '+(root.fmtD(s.started)||'미기록'),'영업기회 '+s.deals.length+'건',s.lost.length?'<b class="xdv-red">실주 '+s.lost.length+'건'+(s.lostAmount>0?' · '+h(root.fmtAmt(s.lostAmount)):'')+'</b>':'실주 0건',s.open.length?'<b class="av-blue">진행 '+s.open.length+'건'+(s.openAmount>0?' · '+h(root.fmtAmt(s.openAmount)):'')+'</b>':'진행 0건','<b class="av-green">수주 '+h(root.siteWonAmountLabel(s))+'</b>'].join(' → ');
-  const people=s.contacts.filter(c=>c!==p).slice(0,4).map(c=>{const moved=!c.current&&!!c.currentSite;return '<div class="av-person"><b>'+h(c.name)+' · '+h(c.role)+'</b><span>'+h(root.phoneFmt(c.mobile||c.officeTel)||'연락처 없음')+(c.current?'':' · 과거')+'</span>'+(moved?'<em>근무지 이동 → '+h(c.currentSite)+'</em>':'')+'</div>';}).join('');
+  const seenPh=new Set(p&&phoneKey(p)?[phoneKey(p)]:[]);
+  const people=s.contacts.filter(c=>c!==p).slice(0,4).map(c=>{const moved=!c.current&&!!c.currentSite,pk=phoneKey(c),dup=!!pk&&seenPh.has(pk);if(pk)seenPh.add(pk);return '<div class="av-person"><b>'+h(c.name)+' · '+h(c.role)+'</b><span>'+h(root.phoneFmt(c.mobile||c.officeTel)||'연락처 없음')+(c.current?'':' · 과거')+'</span>'+(moved?'<em>근무지 이동 → '+h(c.currentSite)+'</em>':'')+(dup?'<em class="amber">같은 번호 · 동일인 후보 — 확인 후 정리(자동 병합 안 함)</em>':'')+'</div>';}).join('');
   const key=p?'<b>'+h(p.name)+' · '+h(p.role)+'</b><span>'+h(root.phoneFmt(p.mobile||p.officeTel)||'연락처 미입력')+'</span><div class="av-tags"><em>'+(p.current?'핵심담당자':'과거 담당')+'</em>'+(!p.current&&p.currentSite?'<em class="amber">근무지 이동</em>':'')+'</div>'+(p.mobile?'<div class="xdv-three"><a class="fill" href="tel:'+attr(root.phoneN(p.mobile))+'">전화</a><a href="sms:'+attr(root.phoneN(p.mobile))+'">문자</a><button type="button" data-ad="kakao">카카오</button></div>':''):'<b class="xdv-warn">핵심 인물 미등록</b><span>영업건 상세에서 연락처를 추가하세요</span>';
-  const facts=[['관계 시작',root.fmtD(s.started)],['현재 담당',s.owners.join(', ')],['최초 관계',[s.firstInquiry?'문의 '+root.fmtD(s.firstInquiry):'',s.firstDeal?'영업 '+root.fmtD(s.firstDeal):''].filter(Boolean).join(' · ')],['주소',address],['관리사무소',p&&p.officeTel?root.phoneFmt(p.officeTel):''],['최근 기록',s.lastDays===null?'':lastLabel(s)]];
+  const facts=[['관계 시작',root.fmtD(s.started)],['현재 담당',s.owners.join(', ')],['최초 관계',[s.firstInquiry?'문의 '+root.fmtD(s.firstInquiry):'',s.firstDeal?'영업 '+root.fmtD(s.firstDeal):''].filter(Boolean).join(' · ')],['주소',address],['관리사무소',p&&p.officeTel?root.phoneFmt(p.officeTel):''],['마지막 고객 연락',(()=>{const k=lastContact(s);return k?root.fmtD(k):'';})()]];const ac=address?'':addrCand(s);
   const left='<div class="xdv-card"><span class="xdv-label">핵심 인물</span>'+key+'</div>'+(people?'<div class="xdv-card"><b>다른 인물 '+(s.contacts.length-1)+'명</b>'+people+'</div>':'')
-   +'<div class="xdv-card"><b>기본 정보</b><dl class="xdv-facts">'+facts.map(([k,v])=>'<div><dt>'+h(k)+'</dt>'+(!v&&k==='주소'?'<dd><button type="button" class="xdv-edit" data-ad="address">미입력 · 입력하기</button></dd>':'<dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+'</dd>')+'</div>').join('')+'</dl><button type="button" class="xdv-link" data-ad="address">주소 입력 · 수정 (변경 사유 기록) →</button></div>';
+   +'<div class="xdv-card"><b>기본 정보</b><dl class="xdv-facts">'+facts.map(([k,v])=>'<div><dt>'+h(k)+'</dt>'+(!v&&k==='주소'?'<dd><button type="button" class="xdv-edit" data-ad="address">미입력 · 입력하기</button>'+(ac?'<small class="av-acand">과거 메모의 주소 후보: '+h(ac)+' — 확인 후 입력</small>':'')+'</dd>':'<dd'+(v?'':' class="xdv-warn"')+'>'+h(v||'미입력')+'</dd>')+'</div>').join('')+'</dl><button type="button" class="xdv-link" data-ad="address">주소 입력 · 수정 (변경 사유 기록) →</button></div>';
   const events=root.siteTimeline(s).slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||'')));
   const kind=e=>/과거 메모|메모/.test(e.title)?'memo':/전화|문자|방문|메일/.test(e.title)?'out':/견적문의 접수/.test(e.title)?'in':'sys';
   const thread=events.length?events.map(e=>'<div class="idv-msg '+kind(e)+'"><div class="idv-meta"><em>'+h(e.title)+'</em>'+(e.tag?'<i class="dvu-tag">'+h(e.tag)+'</i>':'')+'<span>'+h(root.fmtD(e.at)||'날짜 미기록')+'</span></div>'+(e.sub?'<div class="idv-bubble">'+h(e.sub)+'</div>':'')+'</div>').join(''):'<p class="ddv-nothing">관계 이력이 없습니다</p>';
-  const target=opp[0],composer=target?'<div class="idv-composer"><div class="idv-ctabs"><div role="tablist"><button type="button" role="tab" aria-selected="true">메모 남기기</button></div><span class="av-target">진행 중 영업건 «'+h(target.work_name||target.work||root.dealWorkSummary(target)||'영업기회')+'»에 기록됩니다</span></div><div class="idv-input"><textarea rows="1" aria-label="메모" placeholder="예: 관리소장 교체 예정 — 11월 재방문">'+h(draft)+'</textarea><button type="button" class="idv-save'+(draft.trim()?' on':'')+'" data-ad="save">저장</button></div><div class="idv-err" role="alert"></div></div>':'<div class="idv-composer idv-locked">진행 중인 영업건이 없습니다 — 새 기록은 영업건을 만든 뒤 남길 수 있습니다</div>';
+  const target=tgtOf(s),pick=opp.length>1?'<div class="av-pick"><span>메모를 남길 영업건 · 진행 '+opp.length+'건 중 하나</span>'+opp.map(d=>'<button type="button" data-ad="tgt" data-value="'+attr(root.dealKey(d))+'" aria-pressed="'+(target===d)+'">'+h(oppLabel(d))+'</button>').join('')+'</div>':'',composer=opp.length?'<div class="idv-composer">'+pick+'<div class="idv-ctabs"><div role="tablist"><button type="button" role="tab" aria-selected="true">메모 남기기</button></div><span class="av-target">'+(target?'«'+h(oppLabel(target))+'»에 기록됩니다':'위에서 영업건을 고르면 저장할 수 있습니다')+'</span></div><div class="idv-input"><textarea rows="1" aria-label="메모" placeholder="예: 관리소장 교체 예정 — 11월 재방문">'+h(draft)+'</textarea><button type="button" class="idv-save'+(draft.trim()?' on':'')+'" data-ad="save">저장</button></div><div class="idv-err" role="alert"></div></div>':'<div class="idv-composer idv-locked">진행 중인 영업건이 없습니다 — 새 기록은 영업건을 만든 뒤 남길 수 있습니다</div>';
   const center='<div class="idv-chead"><b>관계 타임라인</b><span>'+events.length+'건</span><em>문의 → 영업 → 활동 → 수주 · 종료</em></div><div class="idv-thread">'+thread+'</div>'+composer;
   const brands={};s.deals.forEach(d=>{const b=d.brand||'미지정';brands[b]=(brands[b]||0)+root.oppAmt(d);});
   const book='<div class="xdv-card"><b>누적 거래</b><div class="av-four"><div><span>전체 영업기회</span><b>'+s.deals.length+'건</b><small>'+h(amt(s.totalAmount)||'–')+'</small></div><div class="g"><span>수주</span><b>'+s.won.length+'건</b><small>'+h(root.siteWonAmountLabel(s))+'</small></div><div class="r"><span>실주 · 종료</span><b>'+s.lost.length+'건</b><small>'+h(amt(s.lostAmount)||'–')+'</small></div><div class="b"><span>진행 중</span><b>'+s.open.length+'건</b><small>'+h(amt(s.openAmount)||'–')+'</small></div></div><div class="av-brands">'+(Object.keys(brands).sort((a,b)=>brands[b]-brands[a]).map(b=>'<span>'+h(b)+' '+h(amt(brands[b])||'0원')+'</span>').join('')||'<span>사업유형 기록 없음</span>')+'</div></div>';
@@ -128,12 +138,13 @@
   if(!openKey)return;const s=find(openKey);if(!s){close();return;}
   const box=node().querySelector('.xdv');box.innerHTML=detailHtml(s);const th=box.querySelector('.idv-thread');if(th)th.scrollTop=th.scrollHeight;
  }
- function open(key){const s=find(key);if(!s)return;const m=node();if(openKey!==key)draft='';openKey=key;returnFocus=document.activeElement;renderDetail();m.classList.add('on');m.setAttribute('aria-hidden','false');m.querySelector('.xdv-close')?.focus();}
+ function open(key){const s=find(key);if(!s)return;const m=node();if(openKey!==key){draft='';tgt='';}openKey=key;returnFocus=document.activeElement;renderDetail();m.classList.add('on');m.setAttribute('aria-hidden','false');m.querySelector('.xdv-close')?.focus();}
  function close(restore){const m=document.getElementById('assetV2');if(m){m.classList.remove('on');m.setAttribute('aria-hidden','true');}const f=returnFocus;openKey=null;returnFocus=null;draft='';if(restore!==false&&f&&f.isConnected)f.focus?.({preventScroll:true});}
  /* 메모 = 진행 중 영업건의 기존 연락 기록 경로 */
  async function saveNote(){
   const s=find(openKey),m=node(),ta=m.querySelector('.idv-input textarea'),err=m.querySelector('.idv-err'),save=m.querySelector('.idv-save');if(!s||!ta||save.disabled)return;
-  const d=s.open.slice().sort((a,b)=>root.oppAmt(b)-root.oppAmt(a))[0],note=ta.value.trim();err.textContent='';
+  const d=tgtOf(s),note=ta.value.trim();err.textContent='';
+  if(!d&&(s.open||[]).length>1){err.textContent='메모를 남길 영업건을 먼저 골라 주세요.';return;}
   if(!note){err.textContent='기록할 내용을 적어 주세요.';return;}
   if(!d||!root.Phase1?.queue||typeof root.queueDetailContactOperation!=='function'){err.textContent='로그인 상태에서만 저장할 수 있습니다.';return;}
   save.disabled=true;save.textContent='확인 중…';
@@ -149,6 +160,7 @@
   const b=e.target.closest('[data-ad]');if(!b||!openKey)return;const a=b.dataset.ad,s=find(openKey);if(!s)return;
   if(a==='close')close();
   if(a==='save')saveNote();
+  if(a==='tgt'){tgt=b.dataset.value||'';const ta=node().querySelector('.idv-input textarea');if(ta)draft=ta.value;renderDetail();return;}
   if(a==='deal'){const d=s.deals.find(x=>root.dealKey(x)===b.dataset.value);if(d){close(false);root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}
   if(a==='address'){close(false);root.SITE_MASTER_CACHE=[s];root.openSiteMaster(0);}
   if(a==='kakao'){const d=s.open[0]||s.deals[0];if(d){close(false);root.CUR_DETAIL={kind:'deal',key:root.dealKey(d),item:d};root.openRelationshipMessage?.('kakao');}}

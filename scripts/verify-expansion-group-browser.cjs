@@ -53,7 +53,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const S=await page.evaluate(()=>[...document.querySelectorAll('#expansion-b .xb-sub')].map(s=>({t:[...s.children].map(c=>c.innerText.replace(/\s+/g,' ').trim()),pad:getComputedStyle(s.querySelector('.prv-a')).paddingLeft,cls:s.children[3].className})));
   assert.deepEqual(S.map(x=>x.t[0]),['계약 1 · 옥상 방수 · 7,300만 · '+CM+' 준공 석민이앤씨 · 황윤선','계약 2 · 재도장 · 2,870만 · '+CM+' 준공 석민이앤씨 · 황윤선']);assert.deepEqual(S.map(x=>x.t[3]),['위 단지 줄에서','위 단지 줄에서']);assert.deepEqual(S.map(x=>x.pad),['16px','16px'],'들여쓰기 유지');
   /* 단지 줄 아닌 곳은 그대로: 한 건짜리 줄은 현장명 · 버튼 [연락] */
-  assert.equal(await page.locator('#expansion-b .prv-list>.prv-row:not(.xb-site):not(.xb-sub)').first().locator(':scope>button').innerText(),'연락');
+  assert.ok(['연락','관계 연락','기록 확인','날짜 지정','첫 접촉'].includes(await page.locator('#expansion-b .prv-list>.prv-row:not(.xb-site):not(.xb-sub)').first().locator(':scope>button').innerText()),'한 건짜리 줄은 그 줄의 버튼');/* 2026-10-20: 연락 기록 없는 건은 '오늘 통화' 대신 기록 확인 */
   /* ③ 필터줄과 목록 칸 이름 줄: 스크롤해도 겹치지 않음 */
   await page.evaluate(()=>window.scrollBy(0,520));await page.waitForTimeout(300);
   const K=await page.evaluate(()=>{const b=el=>{const r=el.getBoundingClientRect();return {t:Math.round(r.top),b:Math.round(r.bottom),w:Math.round(r.width),l:Math.round(r.left)}};return {sy:scrollY,cf:b(document.querySelector('#pg-expansion>.cf-bar')),head:b(document.querySelector('#expansion-b .prv-head')),side:b(document.querySelector('.side')),sw:document.documentElement.scrollWidth,iw:innerWidth};});

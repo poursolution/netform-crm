@@ -14,18 +14,19 @@
  const notes=q=>{const p=root.itemPatch(q,'inq')||{};return [...(q.activities||[]),...(p.activities||[])].map(a=>String(a.note||''));};
  const requested=q=>notes(q).some(n=>n.startsWith(REQ)),recallMarked=q=>notes(q).some(n=>n.startsWith(RECALL));
  const ymd=v=>{const s=String(v||'').slice(0,10),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);return m?Number(m[2])+'/'+Number(m[3]):'';};
- const CFG={id:'gyeongnam-b',name:'경남지사',unit:'건',stallUnit:'',stallName:'넘긴 후',stallDesc:'본사가 넘긴 뒤 지난 일수',stallRed:RECALL_DAYS,listTitle:'확인할 건',openLabel:'진행 확인',diagTitle:'지사 진행 진단',noAmount:true,
-  desc:()=>'본사가 지사에 넘긴 건이 실제로 영업되고 있는지 확인하는 곳 — 처리는 지사가, 확인은 본사가 · 넘김 → 지사 실담당 → 지사 첫 연락 → 영업기회 · '+SILENT+'일 무응답이면 확인 요청, '+RECALL_DAYS+'일 넘으면 회수 검토',
+ const CFG={id:'gyeongnam-b',name:'경남지사',unit:'건',stallUnit:'',stallName:'현재 배정 후',stallDesc:'현재 담당 배정일부터 지난 일수(최초 인계일은 줄에 따로)',stallRed:RECALL_DAYS,listTitle:'확인할 건',openLabel:'진행 확인',diagTitle:'지사 진행 진단',noAmount:true,
+  desc:()=>'본사가 지사에 넘긴 건이 실제로 영업되고 있는지 확인하는 곳 — 처리는 지사가, 확인은 본사가 · 넘김 → 지사 실담당 → 지사 첫 연락 → 영업기회 · '+SILENT+'일 연결 기록이 없으면 확인 요청, '+RECALL_DAYS+'일 넘으면 회수 검토(운영 제안 · 자동 회수 없음)',
   axis:'지사 진행',
   /* 진행 상태 3단계(contact_link ②): 고객 연결 확인(실제 통화 · 회신) / 니즈 확인(공종 · 범위 · 시기) / 방문 · 견적 진행(→ 영업기회). 연락 시도만으로 진척으로 세지 않는다 · 연락 전은 1단계 안의 빨강 사유 */
   S:[['conn','연결 확인 필요','#9aa0ab','첫 연락·실제 연결 여부 확인 · 완료를 의미하지 않음'],['need','니즈 확인','#3b6ce4','공종 · 범위 · 시기 들음'],['visit','방문·견적 진행','#1f9d55','방문 일정 또는 견적 요청 → 영업기회']],
-  RS:{recall:['넘긴 지 16일 · 움직임 없음',RED,'회수 검토','16일 넘게 지사 실담당 지정 · 연락이 없는 건은 본사 회수 또는 본사 직접 응대 검토','recall'],
-      silent:['넘긴 후 7일 · 지사 응대 없음',RED,'확인 요청','7일 넘게 지사 연락 기록이 없으면 확인 창에서 [지사에 확인 요청]으로 기록','request'],
+  RS:{recall:['배정 16일 · 연결 기록 없음',RED,'회수 검토','현재 배정 16일 넘게 지사 실담당 · 고객 연결 기록이 없는 건은 본사 회수 또는 본사 직접 응대 검토(기록 없음 ≠ 미응대 — 먼저 확인)','recall'],
+      silent:['배정 7일 · 연결 기록 없음',RED,'확인 요청','7일 넘게 지사의 고객 연결 기록이 없으면 연락 시도만 했는지 · 기록을 안 남겼는지 지사에 확인','request'],
       none:['지사 실담당 미지정',INK,'확인 요청','지사장에게 실담당 지정을 확인 요청(이 화면에서 직접 배정하지 않음)','request'],
-      nofirst:['지사 첫 연락 없음',INK,'확인 요청','실담당은 정해졌지만 고객 연락 기록이 없음 — 첫 연락 진행 확인','request'],
+      nofirst:['실제 연결 기록 없음',INK,'확인 요청','실담당은 정해졌지만 고객과 실제 연결된 기록이 없음 — 시도 · 연결 여부 확인','request'],
+      needchk:['연결됨 · 니즈 확인 전',INK,'진행 확인','고객과 연결됐지만 공사 범위 · 시기를 아직 못 들음 — 니즈 확인 진행','open'],
       noopp:['영업기회 미등록',INK,'진행 확인','연결 후 공사 범위·시기가 확인됐으나 영업기회 없음 — 등록 필요 여부 확인','open'],
-      asked:['확인 요청함 · 응답 대기',INK,'진행 확인','지사장 응답을 기다리는 건 — 응답 없으면 회수 검토','open']},
-  kpi2:(inB)=>{const n=inB.filter(i=>i.rs.includes('none')||i.rs.includes('nofirst')).length;const unassigned=inB.filter(i=>i.rs.includes('none')).length,first=inB.filter(i=>i.rs.includes('nofirst')).length;return ['확인 필요',n+'건','실담당 미지정 '+unassigned+'건 · 담당 지정 후 첫 연락 기록 미확인 '+first+'건'];}
+      asked:['확인 요청 메모함 · 전달 확인 전',INK,'진행 확인','확인 요청은 메모로만 남음 — 지사 전달 · 회신은 오늘 업무 [요청]으로 확인','open']},
+  kpi2:(inB)=>{const n=inB.filter(i=>i.rs.includes('none')||i.rs.includes('nofirst')).length;const unassigned=inB.filter(i=>i.rs.includes('none')).length,first=inB.filter(i=>i.rs.includes('nofirst')).length;return ['확인 필요',n+'건','실담당 미지정 '+unassigned+'건 · 담당 지정 후 실제 연결 기록 없음 '+first+'건'];}
  };
  /* 3단계 판정: 방문 · 견적 = 영업기회가 있거나 연결 뒤 방문 · 견적 기록 / 니즈 = 연결됐고 공사 범위 · 시기를 들음(견적문의 필수 확인 9개) / 그 밖 = 고객 연결 확인 단계 */
  function step(q,f){
@@ -38,7 +39,7 @@
   const q=x.q,f=x.f,d=f.days==null?0:f.days,asked=requested(q),recall=recallMarked(q);
   const stage=f.deal?root.stageLabel(root.dealStage(f.deal)):'문의';
   const noSite=!String(q.site||'').trim(),ident=noSite?'문의 '+String(root.inqKey(q)||'').slice(-6)+' · '+h0(q.region||q.area||q.addr||q.address||'지역 미입력')+' · '+h0(q.work||q.gongjong||q.workType||'공종 미입력')+' · 접수 '+(ymd(root.inquiryDate(q))||'미기록')+' · ':'';
-  const sub=ident+(handedAt(q)?'넘김 '+ymd(handedAt(q)):'넘긴 날 미기록')+(f.resp?' · 지사 연락 있음':' · 지사 연락 없음')+' · '+stage+(asked?' · 확인 요청함':'')+(recall?' · 회수 검토':'');
+  const sub=ident+gnDates(q)+(f.resp?' · 고객 연결됨':' · 고객 연결 기록 없음')+' · '+stage+(asked?' · 확인 요청함':'')+(recall?' · 회수 검토':'');
   const rs=[];
   if(f.group!=='ok'){
    if(d>=RECALL_DAYS)rs.push('recall');
@@ -47,9 +48,12 @@
    if(f.rep&&!f.resp)rs.push('nofirst');
    if(asked)rs.push('asked');
   }else if(!f.deal&&step(q,f)==='need')rs.push('noopp');
+  else if(!f.deal&&f.resp&&step(q,f)==='conn')rs.push('needchk');/* '정상' = 연결 수준이 아니라 니즈까지 — 연결만 된 건은 니즈 확인 전으로 */
   return {key:root.inqKey(q),site:q.site||'현장명 미입력',brand:q.brand||'',owner:f.rep||'지사 미지정',amountText:stage,bucket:step(q,f),sub,rs,stall:d,extra:{q,f,noSite}};
  }
  const h0=v=>String(v==null?'':v).replace(/\s+/g,' ').trim();
+ /* 최초 인계 · 현재 배정 날짜를 나눠 쓴다(경과일 기산점 = 현재 배정일) */
+ const gnDates=q=>{let D=null;try{D=V().dates?V().dates(q):null;}catch(e){}const cur=D&&D.cur||String(handedAt(q)||'').slice(0,10),first=D&&D.first||'';return (first&&cur&&first<cur?'최초 인계 '+ymd(first)+' · ':'')+(cur?'현재 배정 '+ymd(cur)+'부터':'배정일 미기록');};
  function scoped(){
   const X=root.gnData(),owner=root.G.gnOwner||'전체';
   const base=X.Q.filter(q=>root.SalesFilterState.matchesBrand(q.brand)).map(q=>({q,f:V().facts(q)}));
