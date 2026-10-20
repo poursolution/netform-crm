@@ -43,7 +43,7 @@ function initPC(c){
 }
 function initMobile(c){
  closeSheet();sessionStorage.clear();const d=DEALS[0],today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),day=n=>ContactEntry.addDays(today,n);window.__caseDate=day(c.after||0);window.__existingDue=c.ex===null?'':day(c.ex);window.__flushReject=!!c.failOnce;
- d.nm='합성 일치 검증 현장';d.activities=[];d.tl=[];d.version=0;d.contactAt='';d.outcome='';d.nextAction=c.ex===null?null:{id:'99999999-9999-4999-8999-999999999999',type:'전화',text:'대표회의 결과 확인',due:day(c.ex),due_at:day(c.ex),status:'open'};d.nextActionObj=d.nextAction;Object.assign(MobileRequests.state(),{list:[],at:Date.now(),loaded:true,off:false});G.deal=d.id;G.sub=null;render();MobileEntry.open();
+ d.nm='합성 일치 검증 현장';d.activities=[];d.tl=[];d.version=0;d.contactAt='';d.outcome='';d.nextAction=c.ex===null?null:{id:'99999999-9999-4999-8999-999999999999',type:'전화',text:'대표회의 결과 확인',due:day(c.ex),due_at:day(c.ex),status:'open'};d.nextActionObj=d.nextAction;Object.assign(MobileRequests.state(),{list:[],at:Date.now(),loaded:true,off:false});G.deal=d.id;G.sub=null;G.mobileV5Off=true;/* 같은 저장 명령 비교 = 예전 D 입력(끄기 경로) · v5 결과 화면은 verify-mobile-v5-result */render();MobileEntry.open();
 }
 const normalized=rows=>rows.map(r=>({operation:r.operation,object_id:r.object_id,type:r.payload.type||'',note:r.payload.note||'',text:r.payload.text||'',intent:r.payload.intent||'',due:r.payload.due_at||'',actionId:r.payload.action_id||''}));
 (async()=>{
