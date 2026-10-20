@@ -180,6 +180,8 @@
   if(r.status==='replied')return who+' 회신 · '+(r.result||'')+(r.result_owner?' · '+r.result_owner:'')+(r.reply_note?' — '+r.reply_note:'');
   if(r.status==='done')return who+' · 처리 완료'+(r.result?' · '+r.result:'')+(r.next_text?' → 다음 행동: '+r.next_text+(r.next_due?' · '+mdK(r.next_due):''):'');
   if(r.status==='absent')return who+' · 전화 시도 · 부재'+(r.next_due?' → 다음 연락 '+mdK(r.next_due):'')+' (실제 연결 아님 · 최초 응대 미완료)';
+  /* 영업건 요청 항목별 처리(crm_work_request_deal_contact_v1): 진행 중이어도 '연락 시도 n회 · 미연결' · '일부 처리 k/m · 확인 · 남음'을 보여 준다 */
+  if(r.status==='working'&&r.reply_note)return who+' · '+r.reply_note;
   if(r.status==='cancelled'){const n=String(r.reply_note||'');const m=/^\[(통합|대상 오류|취소)\]\s*(.*)$/.exec(n);return m?(m[1]==='통합'?'다른 요청에 통합':m[1]==='대상 오류'?'대상 오류':'요청 취소')+(m[2]?' · '+m[2]:''):'요청 취소'+(n?' · '+n:'');}
   return '';
  }

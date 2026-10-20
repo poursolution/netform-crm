@@ -14,10 +14,20 @@
  DEALS=[{id,nm:'[테스트] 합성 상담 현장',code:'consulting',sub:'방수',rep:rep.nm,activities:[],tl:[],version:0,manager_name:'합성 담당자',manager_mobile:'',nextAction:{id:aid,type:'전화',text:'회의 결과 확인',due,due_at:due,status:'open'}}];
  if(window.ADMIN)ADMIN.inquiries=[];
  const request={id:rid,target_type:'deal',target_id:id,kind:'first',label:'첫 연락 요청',asks:scenario==='compound'?['고객 첫 연락','현장방문 필요 여부 확인']:['고객 첫 연락'],to_me:true,status:'sent',open:true,closed_at:null};
- const rows=[],replies=[];let failOnce=scenario==='retry';
+ const rows=[],replies=[],items=[];let failOnce=scenario==='retry';
  const unsupported=()=>{throw Error('합성 검토 화면에서 지원하지 않는 작업입니다. 운영 저장은 차단되어 있습니다.');};
  window.Phase1={...Phase1,profile:{auth_uid:id,user_id:id,name:rep.nm,allowed_modes:['rep']},rpc:async(name,{p}={})=>{
   if(name==='crm_work_request_list_v1')return {ok:true,requests:[structuredClone(request)]};
+  /* 영업건 요청 항목별 처리(crm_work_request_deal_contact_v1) — 서버(sql/work-request-deal-contact-v1-20261020.sql)와 같은 판정의 합성 응답 */
+  if(name==='crm_work_request_deal_contact_v1'){
+   const again=items.find(x=>x.operation_id===p.operation_id);if(again)return {...again._ack,replayed:true};
+   const asks=(request.asks||[]).filter(a=>a!=='고객 첫 연락'),conf=p.confirmed||[],att=['부재','번호 오류'].includes(p.result),left=asks.filter(a=>!conf.includes(a)),complete=!att&&!left.length&&!!p.next_text&&!!p.next_due;
+   const tries=items.filter(x=>['부재','번호 오류'].includes(x.result)).length+(att?1:0);
+   const note=att?'연락 시도 '+tries+'회 · 미연결 ('+p.result+')':complete?'확인 완료'+(asks.length?' · '+asks.join(' · '):''):!left.length?'연결 · 다음 행동 · 날짜 필요':'일부 처리 '+conf.length+'/'+asks.length+' · 확인: '+(conf.join(' · ')||'없음')+' · 남음: '+left.join(' · ');
+   Object.assign(request,{status:complete?'done':'working',open:!complete,closed_at:complete?new Date().toISOString():null,reply_note:note},att?{}:{result:p.result,next_text:p.next_text||request.next_text,next_due:p.next_due||request.next_due});
+   const ack={ok:true,contract_version:1,kind:'deal-contact',operation_id:p.operation_id,request_id:request.id,attempt:att,request_complete:complete,remaining:left,request:structuredClone(request)};
+   items.push({...structuredClone(p),_ack:ack});return ack;
+  }
   if(name!=='crm_work_request_reply_v1')return unsupported();
   if(failOnce){failOnce=false;throw Error('합성 요청 저장 실패 — 같은 입력으로 재시도할 수 있습니다.');}
   replies.push(structuredClone(p));
@@ -31,19 +41,20 @@
    if(row.status==='done')continue;const at=new Date().toISOString();
    row.ack={contract_version:1,ok:true,request_id:row.request_id,operation:row.operation,object_id:row.object_id,replayed:false,actor_auth_uid:id,actor_user_id:id,previous_version:0,version:1,activity_id:crypto.randomUUID(),audit_event_id:crypto.randomUUID(),meaningful_contact:!/부재|번호 오류/.test(row.payload.note),occurred_at:at,server_at:at};
    if(row.operation==='next_action')Object.assign(row.ack,{next_action_id:crypto.randomUUID(),cancelled_action_ids:[],due_at:row.payload.due_at,assignee_name:rep.nm});
+   if(row.operation==='next_action_complete')Object.assign(row.ack,{next_action_id:row.payload.action_id,completed_at:at});
    if(row.payload.intent==='postpone')Object.assign(row.ack,{intent:'postpone',next_action_id:row.payload.action_id,previous_due_at:due,postpone_count:1,postpone_event_id:crypto.randomUUID()});
    OperationalAdapter.validateAck(row.ack,row);row.status='done';
   }
  }}};
  window.queueMobileContactOperation=(operation,payload,actionId)=>{
-  if(!['activity','next_action'].includes(operation)||!DEALS.some(d=>String(d.id)===String(payload.opportunity_id)))return unsupported();
-  const cmd=OperationalAdapter.normalize(operation,String(payload.opportunity_id),0,{intent:'standalone',...payload,...(actionId?{action_id:actionId}:{})});
+  if(!['activity','next_action','next_action_complete'].includes(operation)||!DEALS.some(d=>String(d.id)===String(payload.opportunity_id)))return unsupported();
+  const cmd=OperationalAdapter.normalize(operation,String(payload.opportunity_id),0,{...(operation==='next_action_complete'?{}:{intent:'standalone'}),...payload,...(actionId?{action_id:actionId}:{})});
   const row={...cmd,auth_uid:id,user_id:id,request_id:crypto.randomUUID(),status:'pending'};rows.push(row);return row.request_id;
  };
  window.CRM_SCHEDULE_V1=false;
  Object.assign(MobileRequests.state(),{list:[structuredClone(request)],at:Date.now(),off:false,busy:false,loaded:true});
  // Test observability only, not an alternative product API.
- window.__review={scenario,rows,replies,request,productionWrites:0};
+ window.__review={scenario,rows,replies,items,request,productionWrites:0};
  document.addEventListener('click',event=>{const a=event.target.closest('a[href]');if(a&&new URL(a.href,location.href).origin!==location.origin){event.preventDefault();event.stopImmediatePropagation();toast('합성 검토 화면에서는 외부 앱 이동을 실행하지 않습니다.');}},true);
  if(params.get('screen')==='A'){
   document.title='Claude A 원본 적용 · 예시 데이터 · 운영 아님';
