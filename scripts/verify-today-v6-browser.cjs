@@ -59,15 +59,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   let R=await rows();
   assert.equal(R.length,n.act,'기본 목록 = 오늘 업무 숫자');assert.ok(R.every(r=>r.zone==='late'||r.zone==='now'),'기본 목록에 회신 대기 · 기록 보완 없음');
   assert.equal(new Set(R.map(r=>r.site)).size,R.length,'같은 현장 한 번');
-  assert.deepEqual(R.map(r=>[r.site,r.d]),[['[합성] 기한 3일 지남','3일'],['[합성] 응대 중 문의','1일'],['[합성] 첫 연락 전 문의','오늘'],['[합성] 오늘 14시 실측','14:00'],['[합성] 오늘 약속 시각 없음','오늘']],'순서 · 넘긴 날: '+JSON.stringify(R.map(r=>[r.site,r.d])));
+  assert.deepEqual(R.map(r=>[r.site,r.d]),[['[합성] 기한 3일 지남','3일 지남'],['[합성] 응대 중 문의','1일 지남'],['[합성] 첫 연락 전 문의','오늘 지남'],['[합성] 오늘 14시 실측','14:00까지'],['[합성] 오늘 약속 시각 없음','오늘 중']],'순서 · 넘긴 날: '+JSON.stringify(R.map(r=>[r.site,r.d])));
   assert.ok(R.filter(r=>r.zone==='late').every(r=>r.dc==='rgb(180, 35, 24)'),'넘긴 날 = 빨강');assert.ok(R.filter(r=>r.zone==='now').every(r=>r.dc==='rgb(21, 23, 28)'),'오늘 처리 = 검정');
   const resp=R.find(r=>/응대 중 문의/.test(r.site));assert.equal(resp.sub,'견적문의POUR솔루션 · 응대 중','첫 응대가 된 문의 = 응대 중(첫 연락 아님)');assert.equal(resp.task,'견적 범위 · 금액 확인','응대 중 문의 = 그 문의의 다음 업무');
   assert.equal(R.find(r=>/첫 연락 전/.test(r.site)).sub,'견적문의POUR솔루션 · 첫 연락');
   assert.equal(R.find(r=>/기한 3일/.test(r.site)).rq,'송보람 요청','요청 꼬리표에 시각을 또 쓰지 않음');
   assert.deepEqual(R[0].go,['rgb(255, 255, 255)','rgb(21, 23, 28)'],'[결과 기록] 흰 바탕 · 검정 글씨');
-  assert.match(one(await V.locator('.tv6-lh').innerText()),/넘긴 날 = 확인된 업무 기한을 넘긴 날 수\(같은 날 넘김 = 오늘\)/,'기준은 목록 머리에 한 번');
+  assert.match(one(await V.locator('.tv6-lh').innerText()),/기한 기준 = 확인된 업무 기한\(고객 약속 · 요청 마감 · 다음 업무 날짜\) · 접수 · 배정 경과는 세지 않음/,'기준은 목록 머리에 한 번 · 숫자에도 지남 · 까지');
   /* 다른 탭 */
-  await V.locator('.tv6-tabs [data-v="wait"]').click();await page.waitForTimeout(200);R=await rows();assert.equal(R.length,n.wait);assert.ok(R.every(r=>r.zone==='wait'));assert.match(R[0].d,/^\d+\.\d+$/,'회신 대기 = 확인일');
+  await V.locator('.tv6-tabs [data-v="wait"]').click();await page.waitForTimeout(200);R=await rows();assert.equal(R.length,n.wait);assert.ok(R.every(r=>r.zone==='wait'));assert.match(R[0].d,/^\d+\.\d+ 확인$/,'회신 대기 = 확인일');
   await V.locator('.tv6-tabs [data-v="fix"]').click();await page.waitForTimeout(200);R=await rows();assert.equal(R.length,n.fix);assert.ok(R.every(r=>r.zone==='fix'));
   await page.locator('#today-v2 .tv6 .tv6-tabs [data-v="act"]').click();await page.waitForTimeout(200);
   /* 클릭 = 상세 창 응대 기록 */

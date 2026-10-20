@@ -41,13 +41,14 @@
   const td=D.filter(d=>d.day===T).sort((a,b)=>(a.at==null?Infinity:a.at)-(b.at==null?Infinity:b.at));return td[0]||null;
  }
  /* 숫자 한 가지 뜻 */
+ /* 숫자에 기준 글자를 붙인다(2026-10-20 대표 "기준도 없고"): 기한 지남 = 'n일 지남'(확인된 업무 기한부터) · 오늘 처리 = 'HH:MM까지' / '오늘 중' · 기한 없음 = '기한 미확인' — 접수 · 배정 경과는 쓰지 않는다 */
  function elapsed(i,zone){
-  if(zone==='wait')return {t:i.wait&&i.wait.due?md(i.wait.due):'확인일 ?',k:'g'};
+  if(zone==='wait')return {t:i.wait&&i.wait.due?md(i.wait.due)+' 확인':'확인일 미정',k:'g'};
   if(zone==='fix')return {t:'—',k:'g'};
   const b=basis(i,zone);
-  if(zone==='late'){if(!b)return {t:'기한 ?',k:'g'};const n=daysPast(b.day);return {t:n>=1?n+'일':'오늘',k:'r',n:Math.max(0,n),at:b.at};}
-  if(!b)return {t:'기한 ?',k:'g'};
-  return {t:b.at!=null?hm(b.at):'오늘',k:'',at:b.at};
+  if(zone==='late'){if(!b)return {t:'기한 미확인',k:'g'};const n=daysPast(b.day);return {t:n>=1?n+'일 지남':'오늘 지남',k:'r',n:Math.max(0,n),at:b.at};}
+  if(!b)return {t:'기한 미확인',k:'g'};
+  return {t:b.at!=null?hm(b.at)+'까지':'오늘 중',k:'',at:b.at};
  }
  const promised=i=>i.rk==='promise'||!!(i.x&&i.x.promise)||/^\s*고객\s*약속/.test(String(((dealAction((i.x||{}).item)||{}).text)||''));
  const arrived=i=>{const q=(i.x||{}).item||{},t=Date.parse(q.assigned_at||q.created_at||q.at||q.created||'');return Number.isFinite(t)?t:Infinity;};
@@ -80,7 +81,7 @@
  function row(i,zone,ctx){const e=elapsed(i,zone),rq=reqTxt(i);
   return '<div class="tv6-row" role="button" tabindex="0"'+openAttr(i,ctx)+' data-zone="'+zone+'" style="border-left-color:'+colorOf(i)+'"><div class="c1"><span class="t"><b>'+h(i.i&&i.i.site||'현장명 미입력')+'</b><b class="d '+e.k+'">'+h(e.t)+'</b></span>'+tagLine(i)+'</div><div class="c2"><b>'+h(taskOf(i,zone))+'</b></div><div class="c3"><span>'+h(nowOf(i,zone))+'</span>'+(rq?'<em class="rq">'+h(rq)+'</em>':'')+'</div><button type="button" class="go"'+openAttr(i,ctx)+'>결과 기록</button></div>';}
  const TABS=[['act','오늘 업무','기한 지남 + 오늘 처리'],['late','기한 지남','확인된 기한이 지났고 미완료'],['now','오늘 처리','오늘 일정 · 약속이 있고 미완료'],['wait','회신 대기','고객 회신 기다림 · 확인일에 후속'],['fix','기록 보완','과거 진행 · 날짜 · 근거 확인 · 지연 평가 아님']];
- const HEAD={act:['넘긴 날 · 오늘 시각','기한 지남(넘긴 날 많은 순) → 오늘 처리(약속 · 시각 순)'],late:['넘긴 날','넘긴 날 많은 순'],now:['오늘 시각','약속 · 시각 순'],wait:['확인일','확인일이 오면 후속 업무로'],fix:['','기록 보완은 연락 지연으로 세지 않음']};
+ const HEAD={act:['기한 기준','기한 지남(넘긴 날 많은 순) → 오늘 처리(약속 · 시각 순)'],late:['기한 기준','넘긴 날 많은 순'],now:['기한 기준','약속 · 시각 순'],wait:['확인일','확인일이 오면 후속 업무로'],fix:['','기록 보완은 연락 지연으로 세지 않음']};
  /* 그리기 — ctx = {Z,S,role,team,me,pass,back,word} */
  function html(ctx){
   const Z=ctx.Z,S=ctx.S,pass=ctx.pass||(()=>true);
@@ -94,8 +95,9 @@
   const list=S.t6tab==='act'?order(pairs('late').concat(pairs('now'))):S.t6tab==='late'||S.t6tab==='now'?order(pairs(S.t6tab)):pairs(S.t6tab);
   const P=root.ListPager,pg=P?P.cut(list,S.t6page||1,PER):{rows:list.slice(0,PER),pages:1};
   const empty={act:'오늘 처리할 업무가 없습니다.',late:'기한이 지난 업무가 없습니다.',now:'오늘 처리할 업무가 없습니다.',wait:'회신을 기다리는 건이 없습니다.',fix:'보완할 기록이 없습니다.'}[S.t6tab],hd=HEAD[S.t6tab];
-  const rows='<div class="tv6-lh"><b>'+h(TABS.find(x=>x[0]===S.t6tab)[1])+' <span>'+list.length+'건</span></b><small>순서 · '+h(hd[1])+(S.t6tab==='act'||S.t6tab==='late'?' · 넘긴 날 = 확인된 업무 기한을 넘긴 날 수(같은 날 넘김 = 오늘)':'')+'</small></div>'
-   +'<div class="tv6-list"><div class="tv6-colh" aria-hidden="true"><span>현장'+(hd[0]?' · '+h(hd[0]):'')+'</span><span>이번 할 일</span><span>지금 상황</span><span></span></div>'+(pg.rows.length?pg.rows.map(([i,z])=>row(i,z,ctx)).join(''):'<p class="tv6-empty">'+empty+'</p>')+'</div>'
+  /* 목록 제목 · 순서 · 기준은 흰 목록 틀 안 첫 줄(틀 밖 왼쪽 끝에 붙지 않게) */
+  const rows='<div class="tv6-list"><div class="tv6-lh"><b>'+h(TABS.find(x=>x[0]===S.t6tab)[1])+' <span>'+list.length+'건</span></b><small>순서 · '+h(hd[1])+(S.t6tab==='act'||S.t6tab==='late'||S.t6tab==='now'?' · 기한 기준 = 확인된 업무 기한(고객 약속 · 요청 마감 · 다음 업무 날짜) · 접수 · 배정 경과는 세지 않음':'')+'</small></div>'
+   +'<div class="tv6-colh" aria-hidden="true"><span>현장'+(hd[0]?' · '+h(hd[0]):'')+'</span><span>이번 할 일</span><span>마지막 기록 · 요청</span><span></span></div>'+(pg.rows.length?pg.rows.map(([i,z])=>row(i,z,ctx)).join(''):'<p class="tv6-empty">'+empty+'</p>')+'</div>'
    +(P&&pg.pages>1?P.html(pg,{ns:'t6',small:true}):'');
   return title+tabs+'<div class="tv6-main">'+rows+(ctx.back||'')+'</div>';
  }
