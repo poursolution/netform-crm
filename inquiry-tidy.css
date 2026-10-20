@@ -24,3 +24,14 @@
 #inq-inbox-dialog.idv3 .idv3-conwarn{margin-right:6px}
 html.tq-on #inq-inbox-dialog.idv3 .idv3-sum{padding:16px 22px 12px;border-bottom:1px solid #f2f4f6}
 html.tq-on #inq-inbox-dialog.idv3 .idv3-composer.idv3-top-rec{border-top:0;border-bottom:1px solid #f2f4f6;background:#fff}
+/* 응대 입력(design_handoff_inquiry_respond) */
+#inq-inbox-dialog.idv3 .idv3-ceta{min-height:60px;resize:vertical;font:inherit;font-size:13px;line-height:1.5;padding:10px 12px;box-sizing:border-box;width:100%}
+#inq-inbox-dialog.idv3 .idv3-cerow{display:flex;gap:8px;flex-wrap:wrap}
+#inq-inbox-dialog.idv3 .idv3-cerow input{font:inherit;font-size:13px;border:1px solid #e3e6ec;border-radius:9px;padding:8px 11px;min-width:0;flex:1 1 160px;box-sizing:border-box;background:#fff;color:#15171c}
+#inq-inbox-dialog.idv3 .idv3-cerow input[type="date"]{flex:0 0 160px}
+#inq-inbox-dialog.idv3 .idv3-ceprev{flex:1;font-size:12px;color:#374151;line-height:1.45}
+#inq-inbox-dialog.idv3 .idv3-ceprev.off{color:#b42318}
+#inq-inbox-dialog.idv3 .idv-save:disabled{opacity:.45;cursor:default}
+#inq-inbox-dialog.idv3 .idv3-rc:disabled{opacity:.45;cursor:not-allowed}
+#inq-inbox-dialog.idv3 .idv3-more{margin-top:8px;border:0;background:none;padding:4px 0;font:inherit;font-size:12px;color:#6b7280;cursor:pointer;text-align:left}
+#inq-inbox-dialog.idv3 .idv3-pill.gray{background:#f3f4f6;color:#6b7280}
