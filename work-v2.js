@@ -37,7 +37,7 @@
   const byGroup=new Map();let basis='확정 공종 기준';
   if(rate>=70){data.open.forEach(d=>{const k=root.workAnalysisGroup(root.workAnalysisPrimary(d));byGroup.set(k,(byGroup.get(k)||0)+amt(d));});}
   else{basis='키워드 추정 기준 · 분류 전';m.rows.filter(r=>data.open.includes(r.d)).forEach(r=>{const k=r.scope==='unclassified'?(r.guess?r.guess.groups[0]:'근거 부족'):root.workAnalysisGroup(root.workAnalysisPrimary(r.d));byGroup.set(k,(byGroup.get(k)||0)+amt(r.d));});}
-  const money=[...byGroup].filter(x=>x[1]>0).sort((a,b)=>(a[0]==='근거 부족')-(b[0]==='근거 부족')||b[1]-a[1]).slice(0,5).map(([k,v])=>[k,Math.round(v/1e7)/10,'']);
+  const money=[...byGroup].filter(x=>x[1]>0).sort((a,b)=>(a[0]==='AI 추정 없음')-(b[0]==='AI 추정 없음')||b[1]-a[1]).slice(0,5).map(([k,v])=>[k,Math.round(v/1e7)/10,'']);
   const wonAmtList=won.filter(d=>root.hasWonAmt(d)&&root.wonAmt(d)>0),avg=l=>l.length?Math.round(l.reduce((a,d)=>a+root.wonAmt(d),0)/l.length/1e4).toLocaleString('ko-KR')+'만':'–';
   const per=new Map();wonAmtList.forEach(d=>{const k=root.workAnalysisGroup(root.workAnalysisPrimary(d));(per.get(k)||per.set(k,[]).get(k)).push(d);});
   const avgRows=[['전체 평균',avg(wonAmtList),wonAmtList.length+'건 · 금액 입력 건만']].concat([...per].filter(x=>x[0]!=='확인 필요').sort((a,b)=>b[1].length-a[1].length).slice(0,3).map(([k,l])=>[k,avg(l),l.length+'건']));
@@ -160,7 +160,7 @@
  const month=d=>String(d.created||d.created_at||'').slice(0,7)||'등록일 미기록';
  const stage=d=>root.stageLabel(root.dealStage(d)),owner=d=>root.repN(d.assignee)||'미배정';
  const S={tab:'need',edit:null,detail:null,draft:[],primary:'',other:'',version:null,overlap:false,busy:false,error:'',ai:new Map(),links:[],loaded:false,loading:false,linkError:'',request:null,writePending:null,actor:''};
- const tabs=[['need','분류 필요'],['guess','AI 추정 있음'],['missing','근거 부족'],['siblings','같은 현장 여러 건'],['done','분류됨']];
+ const tabs=[['need','분류 필요'],['guess','AI 추정 있음'],['missing','AI 추정 없음'],['siblings','같은 현장 여러 건'],['done','분류됨']];
  /* 기록 원문에 섞인 태그(<p> · <li> …)는 보여 줄 때만 정리한다(2026-10-04 대표) — AI 추천에 넘기는 기록과 저장된 원문은 그대로 */
  const tidy=t=>typeof root.tidyNoteHtml==='function'?root.tidyNoteHtml(t):String(t==null?'':t);
  function records(d){
@@ -208,14 +208,14 @@
  }
  function diagnosis(m){
   const sums=new Map(),averages=new Map();
-  m.open.forEach(d=>{const confirmed=classified(d),g=prediction(d),group=confirmed?(root.dealPrimaryWork(d)||works(d)[0]).split('>')[0]:g?.groups[0]||'근거 부족';const v=sums.get(group)||[0,0];v[confirmed?0:1]+=money(d);sums.set(group,v);});
+  m.open.forEach(d=>{const confirmed=classified(d),g=prediction(d),group=confirmed?(root.dealPrimaryWork(d)||works(d)[0]).split('>')[0]:g?.groups[0]||'AI 추정 없음';const v=sums.get(group)||[0,0];v[confirmed?0:1]+=money(d);sums.set(group,v);});
   m.confirmed.filter(d=>money(d)>0).forEach(d=>{const group=(root.dealPrimaryWork(d)||works(d)[0]).split('>')[0];const v=averages.get(group)||[];v.push(money(d));averages.set(group,v);});
-  const sorted=[...sums].sort((x,y)=>(x[0]==='근거 부족')-(y[0]==='근거 부족')||(y[1][0]+y[1][1])-(x[1][0]+x[1][1])),max=Math.max(1,...sorted.map(x=>x[1][0]+x[1][1]));
+  const sorted=[...sums].sort((x,y)=>(x[0]==='AI 추정 없음')-(y[0]==='AI 추정 없음')||(y[1][0]+y[1][1])-(x[1][0]+x[1][1])),max=Math.max(1,...sorted.map(x=>x[1][0]+x[1][1]));
   /* nine_menus(검토서 9절): 같은 대상에 과제를 두 번 만들지 않는다 — AI 추정이 하나도 없으면 '미분류 = AI 추정 없음'이라 과제 하나로, 0건 과제는 안 보임 */
   const unN=m.rows.length-m.confirmed.length,sameSet=m.missing.length===unN;
   const tasks=[{label:'공종 분류',basis:'미분류 '+unN+'건'+(sameSet&&unN?' (= AI 추정 없음 · 기록 확인 후 직접 분류)':''),todo:'금액이 큰 미분류 건부터 공종 확정',who:'관리팀 · 이번 주',count:unN}].concat(sameSet?[]:[{label:'공종 근거 보완',basis:'AI 추정 없음 '+m.missing.length+'건',todo:'상담 기록과 견적서에서 공사 범위 확인',who:'영업팀',count:m.missing.length}]).concat([{label:'같은 현장 확인',basis:'같은 현장 여러 건 '+m.multi.length+'곳',todo:'같은 공사인지 확인하고 견적 버전으로 정리',who:'담당자',count:m.multi.length}]).filter(t=>t.count>0);
   const openN=m.open.length,openSum=m.open.reduce((s,d)=>s+money(d),0),openUnk=m.open.filter(d=>!money(d)).length;
-  return '<aside class="gj-diagnosis"><section><h3>어디에 돈이 쌓였나</h3><p>진행 중 '+openN+'건만(수주 · 실주 · 종결 제외) · 예상금액 합 '+h(openSum?fmt(openSum):'없음')+(openUnk?' · 금액 미확인 '+openUnk+'건 제외':'')+' · 진한 = 확정, 연한 = AI 추정 · 위 분류 대상과 다른 집합</p>'+ (sorted.length?sorted.map(([g,v])=>'<div class="gj-money"><div><b>'+h(g)+'</b><span>'+h(fmt(v[0]+v[1]))+'</span></div><div class="gj-moneybar '+(g==='근거 부족'?'unknown':'')+'"><i style="width:'+v[0]*100/max+'%"></i><i style="width:'+v[1]*100/max+'%"></i></div></div>').join(''):'<p>진행 중인 금액이 없습니다.</p>')+'</section><section><h3>얼마짜리인가</h3><p>공종 확정된 건만 · 예상금액 평균(계약금액 아님 · 수주 · 실주 포함)</p>'+([...averages].length?[...averages].map(([g,v])=>'<div class="gj-average"><span>'+h(g)+' <small>'+v.length+'건</small></span><b>'+h(fmt(v.reduce((x,y)=>x+y,0)/v.length))+'</b></div>').join(''):'<div class="gj-empty">공종을 확정하면 평균 금액을 볼 수 있습니다.</div>')+'</section><section><h3>그래서 뭘 해야 하나</h3>'+tasks.map((t,i)=>'<article class="gj-task"><small>0'+(i+1)+' · '+h(t.basis)+'</small><b>'+h(t.todo)+'</b><span>'+h(t.who)+'</span>'+(root.ImprovementTasks?.buttonHtml('work',t)||'')+'</article>').join('')+'</section></aside>';
+  return '<aside class="gj-diagnosis"><section><h3>어디에 돈이 쌓였나</h3><p>진행 중 '+openN+'건만(수주 · 실주 · 종결 제외) · 예상금액 합 '+h(openSum?fmt(openSum):'없음')+(openUnk?' · 금액 미확인 '+openUnk+'건 제외':'')+' · 진한 = 확정, 연한 = AI 추정 · 위 분류 대상과 다른 집합</p>'+ (sorted.length?sorted.map(([g,v])=>'<div class="gj-money"><div><b>'+h(g)+'</b><span>'+h(fmt(v[0]+v[1]))+'</span></div><div class="gj-moneybar '+(g==='AI 추정 없음'?'unknown':'')+'"><i style="width:'+v[0]*100/max+'%"></i><i style="width:'+v[1]*100/max+'%"></i></div></div>').join(''):'<p>진행 중인 금액이 없습니다.</p>')+'</section><section><h3>얼마짜리인가</h3><p>공종 확정된 건만 · 예상금액 평균(계약금액 아님 · 수주 · 실주 포함)</p>'+([...averages].length?[...averages].map(([g,v])=>'<div class="gj-average"><span>'+h(g)+' <small>'+v.length+'건</small></span><b>'+h(fmt(v.reduce((x,y)=>x+y,0)/v.length))+'</b></div>').join(''):'<div class="gj-empty">공종을 확정하면 평균 금액을 볼 수 있습니다.</div>')+'</section><section><h3>그래서 뭘 해야 하나</h3>'+tasks.map((t,i)=>'<article class="gj-task"><small>0'+(i+1)+' · '+h(t.basis)+'</small><b>'+h(t.todo)+'</b><span>'+h(t.who)+'</span>'+(root.ImprovementTasks?.buttonHtml('work',t)||'')+'</article>').join('')+'</section></aside>';
  }
  function row(d,grouped){
   const done=classified(d),g=prediction(d),same=inferredOverlap(d,g),selected=S.edit===key(d),merged=S.links.filter(l=>String(l.target_id)===id(d));
