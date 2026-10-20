@@ -73,7 +73,10 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await v.locator('.rb-ask').first().locator('button',{hasText:'기존 조건 유지'}).click();await page.waitForTimeout(350);
   assert.deepEqual(await page.evaluate(()=>__saves.map(s=>[s.kind,s.period_key,s.payload.decisions,s.payload.asks.length])),[['monthly',P.ym,{mgrchg:1},3]],'선택 = 월간 스냅샷 저장');
   assert.equal(await page.locator('#report-b .rb-ask').first().locator('button[aria-pressed="true"]').innerText(),'기존 조건 유지');
-  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 계약금액 \(회계 매출 아님\)\s*종결 = 영업건이 되지 않고 닫힌 문의\(그중 우리와 맞지 않는 것 = Bad Fit\) · 파이프라인 실주 = 영업기회 상실\s*확정 전환율 = 해당 월 접수 문의 중 현재까지 계약 비율/);
+  /* nine_menus 11절: 수주 합계는 종류가 다른 금액의 참고값 · '확정 전환율' 이름 없음 · 종결 · 실주 정의는 2절에 한 번만 */
+  assert.match(await v.locator('.rb-foot').innerText(),/계약실적 = 계약 체결일 기준 검증된 공사 계약금액\(회계 매출 · 낙찰 결과 · 수금 아님\) · 수주 합계는 5절 설명대로 종류가 다른 금액의 참고값\s*전환율 두 칸은 '지금까지' 값\(작성일 기준 · 확정 아님\)/);
+  assert.doesNotMatch(await v.innerText(),/확정 전환율|수주실적 = 낙찰금액/,'확정 · 낙찰금액 정의 문구 없음');assert.match(await v.innerText(),/지금까지 전환율 \(\d+월 문의 · 확정 아님\)/);
+  assert.match(await v.locator('.rb-table + .rb-note').innerText(),/^수주 = 직접 계약\(원장 · 계약 체결일\) \+ 협약 · 기술자문\(원장 계약 금액\) \+ 인정된 타사 이관\(낙찰금액 · 낙찰일\) — 종류 · 기준일이 다른 금액이라 합계는 참고값/);
   assert.equal(/\p{Extended_Pictographic}/u.test((await v.innerText()).replace(/[✓▲▼]/g,'')),false,'이모지 없음');
   if(shot){await page.locator('#report-b .rb-bar0').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#report-b .rb-foot').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
   /* 편집 · 보내기 · 상세 표 */

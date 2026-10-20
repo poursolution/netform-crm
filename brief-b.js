@@ -235,7 +235,7 @@
   out.push(line,'다음 주 반드시 끝낼 것');
   if(regd.length)regd.forEach(p=>out.push('· '+p.t+' — '+(p.owner||'담당 미정')+' · '+(p.due||'기한 미정')));else out.push('· (회의에서 등록하면 담당 · 기한과 함께 들어갑니다)');
   if(x.ce.length)out.push('계약 예상 '+x.ce.length+'건 · '+amt(x.ceAmt));
-  out.push(line,'전체: '+scopeLine(x)+(con?' · 수주 '+x.yCon.count+' · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
+  out.push(line,'전체: '+scopeLine(x)+(con?' · 수주 '+x.yCon.count+' · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180);
   return out.join('\n');
  }
  /* ── 그리기 ── */
@@ -327,7 +327,7 @@
      return '<div class="bb-next'+(r?' done':'')+'"><span class="no">'+(i+1)+'</span><div class="tx"><b>'+h(c.t)+'</b><span>'+h(c.why)+'</span></div><div class="ctl"><div class="own">'+(c.owners.length?c.owners.map(o=>'<button type="button" data-bb="own" data-k="'+c.kind+'" data-v="'+attr(o)+'" aria-pressed="'+(own===o)+'"'+(r?' disabled':'')+'>'+h(o)+'</button>').join(''):'<small>담당 미정</small>')+'</div><div class="due">'+DUES.map(o=>'<button type="button" data-bb="due" data-k="'+c.kind+'" data-v="'+o+'" aria-pressed="'+(due===o)+'"'+(r?' disabled':'')+'>'+o+'</button>').join('')+'</div><button type="button" class="reg" data-bb="reg" data-k="'+c.kind+'"'+(admin?'':' disabled title="관리자만 등록할 수 있습니다"')+'>'+(r?'등록됨 ✓':'등록')+'</button></div></div>';}).join('')
     :'<p class="bb-empty">규칙에 걸린 항목이 없습니다 — 입찰 임박 · 견적 지연 · 미응대 · 장기 미접촉 · 다음 행동 미등록 · 계약 예상이 생기면 여기에 뜹니다.</p>')+'</section>';
   /* 7. 전체 현황(참고) */
-  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 승률 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
+  const s7='<section class="bb-ref"><div><b>전체 현황 (참고)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 방치 '+x.stale180+'건</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
   const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
   /* 화면 머리의 발송 안내는 실제 설정값 그대로(2026-10-05 정합성 ⑤) — 꺼져 있는데 '잔디로 발송됩니다'라고 적지 않는다 */

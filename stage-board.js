@@ -61,7 +61,7 @@
   const k=reason||it.first,rs=k?C.RS[k]:null,bc=BRAND[it.brand]||'',S=C.S.find(s=>s[0]===it.bucket)||C.S[0],hot=C.stallRed!=null&&it.stall>C.stallRed,red=!!(rs&&rs[1]===RED),why=rs?(it.reasonText&&it.reasonText[k]||rs[0]):'정상';
   return '<div class="prv-row psb-row" role="row" tabindex="0" data-sb="open" data-key="'+attr(it.key)+'" style="border-left-color:'+(bc||'#e3e6ec')+'">'
    +'<div class="prv-a"><b title="'+attr(it.site)+'">'+h(it.site)+(it.badge||'')+'</b><span><em style="color:'+(bc||'#9ca3af')+'">'+h(it.brandText||it.brand||'브랜드 미지정')+'</em> · '+h(it.owner||'미배정')+' · '+h(it.amountText||money(it.amount))+'</span></div>'
-   +'<div class="prv-b"><span title="'+attr(S[1])+'">'+h(S[1].split(' · ')[0])+'</span><small title="'+attr(it.sub)+'">'+h(it.sub)+'</small></div>'
+   +'<div class="prv-b"><span title="'+attr(S[1])+'">'+h(it.bucketLabel||S[1].split(' · ')[0])+'</span><small title="'+attr(it.sub)+'">'+h(it.sub)+'</small></div>'/* nine_menus: 한 막대 칸에 두 종류가 들어가면(문자 시즌 · 정기 관계) 줄은 자기 종류 이름으로 */
    +'<div class="prv-c"><b'+(red?' class="r"':rs?'':' class="none"')+' title="'+attr(why)+'">'+h(why)+'</b><small'+(hot?' class="r"':'')+'>'+h(dayLabel(C,it.stall))+'</small></div>'
    +'<button type="button" data-sb="act" data-key="'+attr(it.key)+'" data-v="'+attr(k||'')+'">'+h(rs?rs[2]:(C.openLabel||'열기'))+'</button></div>';
  }

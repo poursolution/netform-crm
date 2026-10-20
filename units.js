@@ -102,11 +102,13 @@
  /* ── 집계 대조(④): 영업건 단위 — 진행 중 영업건 n · 현장 m(같은 현장 2건 이상 k곳) · 같은 영업건에 붙인 재문의 j(영업건을 만들지 않아 신규 수에 안 셈) · 수주 = 영업건 1번 ── */
  function siteKeyOf(d){const sid=String(d.cleanup_site_id||d.site_id||d.siteId||'');if(sid)return 'id:'+sid;try{return 'nm:'+R.normSite(d.site||'');}catch(e){return 'nm:'+String(d.site||'');}}
  function audit(deals,inquiries){
-  const D=(deals||[]).filter(d=>{try{return R.isOpen(d);}catch(e){return false;}}),by=new Map();D.forEach(d=>{const k=siteKeyOf(d);by.set(k,(by.get(k)||0)+1);});
+  /* nine_menus(2026-10-20 검토서 8절): '진행 중'은 파이프라인 · KPI 다음 할 일 분모와 같은 범위 — 과거 이관(분류 전)은 뺀다(PipelineScope) */
+  const PS=R.PipelineScope&&R.PipelineScope.on&&R.PipelineScope.on()?R.PipelineScope:null;
+  const D=(deals||[]).filter(d=>{try{return R.isOpen(d)&&!(PS&&PS.isLegacy(d));}catch(e){return false;}}),by=new Map();D.forEach(d=>{const k=siteKeyOf(d);by.set(k,(by.get(k)||0)+1);});
   const multi=[...by.values()].filter(n=>n>=2).length;
   const attached=(inquiries||[]).filter(q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return r['기존 현장 판단']==='같은 공사'&&r['기존 영업건'];}).length;
   const co=companySum(deals||[]);
-  return {open:D.length,sites:by.size,multi,attached,won:co.n,wonSum:co.sum,line:'집계 단위 = 영업건: 진행 중 '+D.length+'건 · 현장 '+by.size+'곳(같은 현장 2건 이상 '+multi+'곳은 각각 센다) · 같은 영업건에 붙인 재문의 '+attached+'건은 신규로 안 셈 · 수주실적은 영업건마다 1번(주담당 귀속 · 지원자 금액 합산 없음)'};
+  return {open:D.length,sites:by.size,multi,attached,won:co.n,wonSum:co.sum,line:'집계 단위 = 영업건: 진행 중 '+D.length+'건(과거 이관 제외) · 현장 '+by.size+'곳(같은 현장 2건 이상 '+multi+'곳은 각각 센다) · 같은 영업건에 붙인 재문의 '+attached+'건은 신규로 안 셈 · 수주실적은 영업건마다 1번(주담당 귀속 · 지원자 금액 합산 없음)'};
  }
  /* ── 회사 = 영업건 단위 1번 · 개인 = 주담당만 · 지원자 = 기여 표시만 ── */
  function companySum(deals){let n=0,sum=0;(deals||[]).forEach(d=>{try{const r=R.CRMRules.dealResult(d);if(!/^won_/.test(r))return;n++;sum+=Number(R.CRMRules.amounts(d).incentive)||0;}catch(e){}});return {n,sum};}

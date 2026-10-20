@@ -36,14 +36,14 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 공용 틀(2026-10-06 "리스트에서 이질감 없이"): 파이프라인 v3 와 같은 틀 — 상태 탭 4칸 · 진단 숫자 3개 · 사유 · 할 일 · 왜 못 보내나 */
   assert.deepEqual(await v.locator('.ps3-tabs .ps3-tab').evaluateAll(l=>l.map(b=>b.querySelector('.l').textContent+' '+b.querySelector('.n').textContent)),['전체 13','지금 보낼 때 · 병목 4','시즌 · 정기 관계 6','재활성 3']);
   assert.match(await v.locator('.ps3-kpis').innerText(),/기준 넘김\s*\d+묶음[\s\S]*발송 가능 \(서로 다른 연락처\)\s*\d+명[\s\S]*이번 달 발송\s*0건\s*예약 0 · 실패·확인 0/);
-  assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['현장 · 담당','현재 상황','걸린 사유 · 경과',''],'줄 = 파이프라인 v11 4칸');
+  assert.deepEqual((await v.locator('.prv-head span').allInnerTexts()).map(t=>t.trim()),['묶음 · 출처','발송 준비 상태','걸린 사유 · 마지막 발송',''],'줄 = 파이프라인 v11 4칸 · 칸 이름은 묶음 단위(nine_menus 6절)');
   const reasons=await v.locator('.ps3-reason>span>b:first-child').allInnerTexts();
   assert.ok(reasons[0]==='병목 묶음 · 한 번도 안 보냄'||reasons[0]==='발송 조건 미충족 · 가능 0명',JSON.stringify(reasons));
   assert.ok(reasons.includes('자동 제외 대상 있음'),JSON.stringify(reasons));
   assert.match(await v.locator('.sb-why').innerText(),/왜 못 보내나[\s\S]*문자 수신동의 없음 1명[\s\S]*휴대폰번호 없음 1명/);
   /* 묶음 줄: 자료 발송 후 무응답 = 대상 3 · 가능 1 · 발송 기록 없음 → 빨강 '한 번도 안 보냄' */
   const sent=v.locator('.psb-row[data-key="sent"]');assert.equal(await sent.count(),1);
-  assert.match(await sent.innerText(),/발송 후 반응 기록 미확인 — 후속 안내[\s\S]*병목 · 영업팀 · 영업 병목[\s\S]*지금 보낼 때[\s\S]*대상 3명 · 가능 1명 · 발송 기록 없음[\s\S]*병목 묶음 · 한 번도 안 보냄[\s\S]*0일[\s\S]*보내기/);
+  assert.match(await sent.innerText(),/발송 후 반응 기록 미확인 — 후속 안내[\s\S]*병목 · 영업팀 · 영업 병목[\s\S]*지금 보낼 때[\s\S]*대상 3명 · 가능 1명 · 발송 기록 없음[\s\S]*병목 묶음 · 한 번도 안 보냄[\s\S]*발송 기록 없음[\s\S]*보내기/);/* nine_menus 6절: 미발송은 '0일'이 아님 */
   const order=await v.locator('.psb-row').evaluateAll(a=>a.map(n=>n.dataset.key));
   assert.ok(order.indexOf('sent')<order.indexOf('yearend'),'빨강(병목) 먼저 '+JSON.stringify(order));
   assert.equal(await v.locator('.psb-row').count(),13,'묶음 13개');

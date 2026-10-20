@@ -85,11 +85,11 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await V.locator('.ps3-tab').nth(3).locator('span').innerText()),'착공일 입력 후 · 주 1회 방문');/* stage7_2 ⑤: 4상태 — 계약 체결 · 착공 준비 · 시공 중 · 준공 확인 */
   /* ⑥ 수주 · ⑦ 실주: 끝 상태 · 제목 숫자 · 실주일 한국 시간 · 재영업 '예'만 재접촉 */
   await page.evaluate(()=>PipelineWorkspace.open('won'));await page.waitForSelector('#pipeline-stage-v3[data-stage="won"] .prv-row');await page.waitForTimeout(200);
-  assert.match(await kpi(),/^실적 정보 보완 1건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.match(one(await V.locator('.ps3-diag .ps3-box header span').first().innerText()),/^1건 · 낙찰금액 합 1\.4억$/);
+  assert.match(await kpi(),/^실적 정보 보완 1건 기한 초과 0 · 지연 아님 · 끝 상태 · 수주 정보 \d+ · 계약 날짜 \d+ · 계약금액 \d+ \(한 건이 여러 항목에 걸릴 수 있음\)$/);/* nine_menus: 항목별 분해 */assert.match(one(await V.locator('.ps3-diag .ps3-box header span').first().innerText()),/^1건 · 낙찰금액 합 1\.4억$/);
   const w1=await rowOf('w-1');assert.deepEqual([w1.now,w1.base,w1.due,w1.dueCls],['수주 · '+(await page.evaluate(()=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(DAY(-34));return m[1]+'.'+(+m[2])+'.'+(+m[3]);}))+' · 1.4억','수주 결과 항목 보완 필요','확인 필요 · 기한 아님','amb']);
   assert.match(one(await V.locator('.ps3-head span').innerText()),/^끝 상태 · /);
   await page.evaluate(()=>PipelineWorkspace.open('lost'));await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(200);
-  assert.match(await kpi(),/^결과 정보 보완 \d+건 기한 초과 0 · 지연 아님 · 끝 상태$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/대기|2개월|차기 공사/);
+  assert.match(await kpi(),/^결과 정보 보완 \d+건 기한 초과 0 · 지연 아님 · 끝 상태 · 사유 \d+ · 재영업 여부 \d+ · 경쟁사 \d+ \(한 건이 여러 항목에 걸릴 수 있음\)$/);assert.doesNotMatch(one(await V.locator('.ps3-head span').innerText()),/대기|2개월|차기 공사/);
   const kd=await page.evaluate(()=>{const k=DAY(-9),m=/^(\d{4})-(\d{2})-(\d{2})/.exec(k);return {dot:m[1]+'.'+(+m[2])+'.'+(+m[3]),md:(+m[2])+'.'+(+m[3])};});
   const ly=await rowOf('l-yes'),ln=await rowOf('l-no');
   assert.deepEqual([ly.now,ly.why],['실주 · '+kd.dot+' · 가격','판정: 실주 '+kd.md+' · 기한 없음'],'실주일 = 한국 날짜(UTC 15:00 = 다음날) · 목록과 판정이 같은 날');

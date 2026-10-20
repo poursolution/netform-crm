@@ -25,7 +25,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    goPage('work');
   });
   const v=page.locator('#work-v2.gj-workspace');await v.waitFor();await page.waitForTimeout(100);
-  assert.match(await v.locator('.gj-intro').innerText(),/영업기회 5건 중 공종 확정 2건/);
+  assert.match(await v.locator('.gj-intro').innerText(),/영업기회 5건\(수주 · 실주 · 종결 포함 · 분류 대상\) 중 공종 확정 2건/);/* nine_menus 9절: 대상 범위를 문구로 */
+  assert.match(await v.locator('.gj-intro').innerText(),/AI 추정 없음 3 — 미실행 · 조회 실패 · 근거 부족 구분 안 됨/);assert.equal(await v.locator('.gj-intro button[disabled]').innerText(),'확인할 AI 추정 없음 (0건)','0건이면 실행 가능처럼 보이지 않음');
+  assert.match(await v.locator('.gj-diagnosis').innerText(),/진행 중 \d+건만\(수주 · 실주 · 종결 제외\) · 예상금액 합/,'차트 집합 = 진행 중만');
   assert.equal(await v.locator('.gj-group').count(),1,'different site IDs must not group');
   assert.deepEqual(await page.evaluate(()=>Gongjong.groups(B.deals).map(g=>g.map(d=>d.id))),[['d1','d2'],['d3'],['d4'],['d5']]);
   assert.equal(await page.evaluate(()=>Gongjong.prediction(B.deals[2])),null,'no sibling evidence');
