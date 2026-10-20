@@ -447,6 +447,8 @@ w.document.addEventListener('compositionstart',e=>{if(e.target.matches(registrat
   w.document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-gs][role="button"],[data-gs][role="checkbox"]')){e.preventDefault();e.target.click();}});
   if(w.G?.user)run();else w.MobileApprovedBoot?.login();
  }
- w.MobileGuideShell={show,state:S};
+ /* v5 '정리됨' 화면의 '다음 할 일' = 오늘 v5 와 같은 순서의 다음 카드 */
+ function todayItems(){try{return w.MobileV5Today&&w.DayZoneRules?w.MobileV5Today.model(zones(),{next,label,brand,color,inquiry}).items:[];}catch(e){return [];}}
+ w.MobileGuideShell={show,state:S,todayItems};
  if(w.document.readyState==='loading')w.document.addEventListener('DOMContentLoaded',boot);else boot();
 })(window);

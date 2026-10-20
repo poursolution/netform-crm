@@ -14,7 +14,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   const view=page.locator('.approved-d');
   async function connected(memo='합성 상담: 고객 회의 후 확인합니다.',request=false){await view.locator('[data-ce="res"][data-v="연결됨"]').click();await view.locator('[data-ce-in="memo"]').fill(memo);if(request)await view.locator('[data-ce-in="req"]').check();}
   const save=()=>view.locator('[data-ce="save"]').click();
-  const saved=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨');
+  const saved=()=>page.waitForFunction(()=>MobileEntry.state()===null&&(document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'||!!document.querySelector('#sheetcard .approved-v5a')));
   const failed=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
   const read=()=>page.evaluate(()=>({rows:structuredClone(__review.rows),replies:structuredClone(__review.replies),request:structuredClone(__review.request),deal:structuredClone(DEALS[0]),journal:MobileSaveJournal.read('contact',DEALS[0].id),state:MobileEntry.state()}));
   try{

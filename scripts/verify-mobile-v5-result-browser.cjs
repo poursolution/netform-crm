@@ -22,10 +22,11 @@ const SHOT=process.env.SHOT_DIR||'';
   const view=page.locator('.approved-d');
   const read=()=>page.evaluate(()=>structuredClone({rows:__review.rows,replies:__review.replies,request:__review.request,deal:DEALS[0],state:MobileEntry.state()}));
   const prev=()=>view.locator('.ce-prev').innerText();
-  const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨');
+  const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&!!document.querySelector('#sheetcard .approved-v5a'));
+  const after=()=>page.locator('#sheetcard .approved-v5a');
   try{
    await page.goto(origin+'/mobile.html?demo=1&review=contact&reset=1',{waitUntil:'domcontentloaded'});await view.waitFor();
-   await body({page,view,read,prev,save,success});
+   await body({page,view,read,prev,save,success,after});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,width+'px 가로 넘침 없음');
    assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);checks.push(name);
   }finally{await context.close();}
@@ -46,6 +47,11 @@ const SHOT=process.env.SHOT_DIR||'';
    await save();await success();const a=await read();
    assert.equal(a.request.status,'done','요청 완료(서버 확인)');assert.equal(a.replies.length,1);assert.equal(a.replies[0].action,'done');
    assert.match(a.rows[0].payload.note,/\[확인\] 견적 요청 범위 · 방문이 필요한지/,'체크한 것 = 기록 글');
+   /* 정리됨: 끝난 일 · 남은 일 · 다음 할 일 + [다음 건으로] */
+   const done=await page.locator('#sheetcard .approved-v5a').innerText();
+   assert.match(done,/정리됨/);assert.match(done,/끝난 일[\s\S]*첫 연락 요청 완료 · 요청자에게 알림/);assert.match(done,/남은 일[\s\S]*회의 결과 확인/);assert.match(done,/다음 할 일/);
+   if(SHOT)await page.screenshot({path:path.join(SHOT,'mobile-v5-result-done.png')});
+   await page.locator('#sheetcard [data-v5a="next"]').click();await page.waitForFunction(()=>G.tab==='today'&&!G.deal&&!document.querySelector('#sheetcard .approved-v5a'));
   });
   await run('일부만 확인하고 저장 = 연락 기록 · 요청은 그대로',async({view,read,save,success})=>{
    await view.locator('[data-ce="res"][data-v="연결됨"]').click();await view.locator('.v5r-ck').nth(0).click();
@@ -66,6 +72,7 @@ const SHOT=process.env.SHOT_DIR||'';
    await save();await success();const a=await read();
    assert.deepEqual(a.replies,[],'연락 시도는 요청 상태를 바꾸지 않음');assert.equal(a.request.status,'sent');assert.match(a.rows[0].payload.note,/다시 연락 내일 오전/);
    assert.deepEqual(a.rows.map(r=>r.operation),['activity'],'새 업무 안 만듦');
+   const done=await page.locator('#sheetcard .approved-v5a').innerText();assert.match(done,/남긴 것[\s\S]*연락 시도 1회/);assert.match(done,/아직 남은 일[\s\S]*첫 연락 요청 · 연결 필요/);assert.match(done,/다시 연락 내일 오전/);
   });
   await run('새 업무 · 가능한 시간(확정 전) / 확정(고객 약속)',async({page,view,prev})=>{
    await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());DEALS[0].nextAction=null;DEALS[0].nextActionObj=null;MobileEntry.open();});await view.waitFor();
@@ -77,6 +84,38 @@ const SHOT=process.env.SHOT_DIR||'';
    await view.locator('.v5r-chip[data-v="customer"]').click();
    assert.match(await prev(),/현장 방문 .* · 고객 약속/);
   },320);
+  await run('방문 · 만남 · 확인한 것 · 견적 지금 요청 → 견적 요청(방문 이어받음 · 고객 약속) → 정리됨',async({page,view,read,prev,save,success,after})=>{
+   await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());Object.assign(DEALS[0].nextAction,{type:'방문',text:'현장 실측'});DEALS[0].nextActionObj=DEALS[0].nextAction;MobileRequests.state().list=[];
+    window.__fields=[];let fail=1;const rpc=Phase1.rpc;Phase1.rpc=async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__fields.push(structuredClone(args.p));if(fail){fail=0;throw Error('합성 저장 실패');}return {ok:true,version:2,stage_context:{to:'consulting',fields:args.p.fields}};}return rpc(name,args);};
+    const a=DEALS[0].nextAction;MobileEntry.open({ch:'방문',existing:{id:a.id,text:a.text,due:a.due,type:'방문',promise:false}});});await view.waitFor();
+   const vis=await view.locator('.cd-results [data-ce="res"]:visible, .cd-results [data-ce="v5cancel"]').allInnerTexts();assert.deepEqual(vis,['만남','담당 부재','취소 · 연기'],'만났나요? 칩 3개');
+   await view.locator('[data-ce="res"][data-v="연결됨"]').click();
+   assert.deepEqual(await view.locator('.v5r-ck span').allInnerTexts(),['공사 범위','실측','사진'],'확인한 것 = 컨설팅 기준');assert.match(await view.locator('.v5r-ck-h').innerText(),/^확인한 것/);
+   for(let i=0;i<3;i++)await view.locator('.v5r-ck').nth(i).click();
+   assert.deepEqual(await view.locator('.v5r-quote .v5r-chip').allInnerTexts(),['필요 · 지금 요청','나중에','필요 없음']);
+   await view.locator('.v5r-chip[data-ce="v5quote"][data-v="now"]').click();assert.match(await prev(),/이어서 견적 요청/);
+   await save();await success();
+   let a=await read();assert.equal(a.rows.length,1,'방문 기록 1건');assert.match(a.rows[0].payload.note,/방문 완료[\s\S]*\[확인\] 공사 범위 · 실측 · 사진[\s\S]*\[견적\] 필요 · 지금 요청/);
+   const q=after();assert.match(await q.innerText(),/견적 요청[\s\S]*방문에서 가져옴[\s\S]*공사 범위 · 실측 · 사진/);assert.match(await q.innerText(),/견적팀 예정일\s*미정/);
+   assert.equal(await q.locator('[data-v5a-in="req"]').inputValue(),'공사 범위 · 실측 · 사진','빠진 것만 묻기 = 방문 내용으로 채움');
+   const wish=await page.evaluate(()=>DayZoneRules.kst(Date.now()+7*864e5));await q.locator('[data-v5a-in="wish"]').fill(wish);await q.locator('[data-v5a="accept"][data-v="1"]').click();
+   assert.match(await q.locator('.ce-prev').innerText(),/방문 기록 ✓ 이미 저장됨 · 이 방문에 견적 요청 1 연결 · 고객 약속/);
+   if(SHOT)await page.screenshot({path:path.join(SHOT,'mobile-v5-visit-quote.png')});
+   await q.locator('[data-v5a="qsend"]').click();await page.locator('#sheetcard .approved-v5a .ce-err').waitFor();
+   a=await read();assert.equal(a.rows.length,1,'요청 실패해도 방문 기록 그대로 · 중복 없음');
+   await q.locator('[data-v5a="qsend"]').click();await page.waitForFunction(()=>/정리됨/.test(document.querySelector('#sheetcard .approved-v5a')?.innerText||''));
+   a=await read();const F=await page.evaluate(()=>__fields);
+   assert.equal(F.length,2,'재시도 = 같은 요청 한 번 더');assert.equal(F[1].fields.quote_visit_activity,a.rows[0].ack.activity_id,'이 방문 기록에 연결');assert.equal(F[1].fields.quote_customer_due,wish);assert.equal('quote_due' in F[1].fields,false,'견적팀 예정일은 건드리지 않음');
+   assert.deepEqual(a.rows.map(r=>r.operation),['activity','next_action'],'방문 1 + 고객 약속 일정 1');assert.match(a.rows[1].payload.text,/^고객 약속: 견적서 전달/);
+   const done=await after().innerText();assert.match(done,/끝난 일[\s\S]*방문[\s\S]*견적 요청 1 · 이 방문에 연결/);assert.match(done,/견적 도착 확인 · 견적팀 예정일 미정 · 고객 약속/);
+   if(SHOT)await page.screenshot({path:path.join(SHOT,'mobile-v5-visit-done.png')});
+  });
+  await run('방문 취소 · 연기 = 고객에게 들은 연기 + 기존 방문 날짜만 변경',async({page,view,prev})=>{
+   await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());Object.assign(DEALS[0].nextAction,{type:'방문',text:'현장 실측'});DEALS[0].nextActionObj=DEALS[0].nextAction;const a=DEALS[0].nextAction;MobileEntry.open({ch:'방문',existing:{id:a.id,text:a.text,due:a.due,type:'방문',promise:false}});});await view.waitFor();
+   await view.locator('[data-ce="v5cancel"]').click();await view.locator('.cd-date-sheet').waitFor();
+   await view.locator('.cd-date-sheet [data-ce-in="date"]').fill('2099-01-05');await view.locator('.cd-date-sheet [data-ce="date-close"]').last().click();
+   assert.equal(await view.locator('.v5r-ck,.v5r-quote').count(),0);const p=await prev();assert.match(p,/^저장하면: 방문 취소 · 연기 기록 1 · 첫 연락 요청|^저장하면: 방문 취소 · 연기 기록 1/,p);assert.match(p,/날짜 변경 · 현장 실측 → 1\.5/,p);
+  });
   await run('끄기 = 예전 D',async({page,view})=>{
    await page.evaluate(()=>{G.mobileV5Off=true;closeSheet();MobileEntry.open();});await view.waitFor();
    assert.equal(await view.locator('.v5r-ck,.v5r-retry').count(),0);assert.equal(await view.locator('[data-ce-in="req"]').count(),1);

@@ -24,7 +24,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
    const view=page.locator('.approved-d'),read=()=>page.evaluate(()=>({rows:structuredClone(__review.rows),deal:structuredClone(DEALS[0]),request:structuredClone(__review.request),replies:structuredClone(__review.replies),state:MobileEntry.state(),journal:MobileSaveJournal.read('contact',DEALS[0].id),rpc:__rpc,toasts:__toasts}));
    const choose=async(result='연결됨',memo='옥상 실측 결과를 확인했습니다.')=>{await view.locator('[data-ce="res"][data-v="'+result+'"]').click();if(!['부재','번호 오류'].includes(result))await view.locator('[data-ce-in="memo"]').fill(memo);};
    const save=()=>view.locator('[data-ce="save"]').click();
-   const saved=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨');
+   const saved=()=>page.waitForFunction(()=>MobileEntry.state()===null&&(document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'||!!document.querySelector('#sheetcard .approved-v5a')));
    const failed=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
    await body({page,view,read,choose,save,saved,failed});
    assert.equal(await page.locator('#sheetcard .ce-infobody,#sheetcard [data-mf],#scr .mv-now,#scr .mh-hub,#scr .flow-strip').count(),0,'retired UI is never restored');
@@ -36,7 +36,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   for(const rpc of ['crm_deal_stage_fields_update_v1','crm_work_request_list_v1','crm_work_request_reply_v1','crm_inquiry_command_v1','crm_inquiry_flow_list_v1'])assert(src.includes("'"+rpc+"'"));
   await run('approved D keeps PC result values and the exact selected non-primary visit',async({view,read})=>{
    assert.match(await view.locator('.cd-head').innerText(),/방문 결과/);
-   assert.deepEqual(await view.locator('[data-ce="res"]').allTextContents(),['연결됨','회신 받음','부재','번호 오류','배드핏']);
+   /* 값은 PC 5가지 그대로 · 방문 v5 는 이름만 방문 말로(만남 = 연결됨 · 담당 부재 = 부재) */assert.deepEqual(await view.locator('[data-ce="res"]').evaluateAll(n=>n.map(x=>x.dataset.v)),['연결됨','회신 받음','부재','번호 오류','배드핏']);assert.deepEqual(await view.locator('[data-ce="res"]:visible').allTextContents(),['만남','담당 부재']);
    assert.match(await view.locator('.cd-existing').innerText(),/옥상 현장 방문/);assert.equal(await view.locator('[data-ce="save"]').isDisabled(),true);
    const x=await read();assert.equal(x.state.existing.id,x.deal.openNextActions[1].id);assert.notEqual(x.state.existing.id,x.deal.nextAction.id);assert.equal(x.state.mode,'keep');assert.equal(x.state.existing.promise,true);assert.equal(x.rows.length,0);
   });
