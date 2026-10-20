@@ -83,7 +83,7 @@
  }
  /* ── 모바일 연락 결과 입력(D): 상담 내용 칸 아래 같은 단추 · 같은 창 — 넣는 곳만 모바일 칸(300자) ── */
  function decorateMobile(){
-  if(!on())return;const ta0=document.querySelector('textarea[data-ce-in="memo"]');if(!ta0||document.querySelector('.cs-open.cs-m'))return;const say=ta0.closest('.ce-say')||ta0.parentNode;if(!say)return;
+  if(!on())return;const ta0=document.querySelector('textarea[data-ce-in="memo"]');if(!ta0||document.querySelector('.cs-open.cs-m'))return;const say=ta0.closest('.ce-say')||ta0.parentNode;if(!say||ta0.closest('[hidden]'))return;/* 부재 · 번호 오류 = 상담 칸이 숨겨지면 요약 버튼도 없음 */
   const deal=()=>{try{return (R.DEALS||[]).find(d=>String(d.id)===String(R.G&&R.G.deal))||null;}catch(e){return null;}};
   const b=document.createElement('button');b.type='button';b.className='cs-open cs-m';b.textContent='통화 녹음 요약';
   b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const d=deal();if(!d)return;open({deal:d,site:d.nm,

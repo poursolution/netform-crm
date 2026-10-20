@@ -41,6 +41,8 @@
   if(s.err)body.insertAdjacentHTML('beforeend','<p class="ce-err" role="alert">'+esc(s.err)+'</p>');
   footer.className='ce-foot';footer.firstElementChild.className='ce-prev';footer.firstElementChild.setAttribute('aria-live','polite');footer.firstElementChild.textContent=plan?.ok?plan.preview:plan?.error||'연락 결과를 골라 주세요';
   const save=action(footer.lastElementChild,'save',null,'ce-save');save.textContent=busy?'저장 중':s.err?'다시 시도':'저장';save.disabled=busy||!plan?.ok;
+  // v5 결과 화면(mobile-v5-result.js): 확인할 것 체크 · 다시 연락 칩 · 확정 전/확정 · 한 줄 미리보기. 끄기 G.mobileV5Off
+  w.MobileV5Result?.decorate(frame,m);
   // A submitted payload is immutable. A partial failure only retries remaining operations.
   if(m.frozen||busy)frame.querySelectorAll('input,textarea,button:not(.cd-back):not(.ce-save)').forEach(n=>n.disabled=true);
   if(s.datePanel&&!m.frozen){const btn=(key,label,val)=>'<button type="button" data-ce="'+key+'"'+(val?' data-v="'+attr(val)+'"':'')+'>'+esc(label)+'</button>';frame.insertAdjacentHTML('beforeend','<div class="cd-date-layer"><button class="cd-date-backdrop" data-ce="date-close" aria-label="날짜 선택 닫기"></button><div class="cd-date-sheet" role="dialog" aria-label="날짜 선택"><div class="cd-grip"></div><b>날짜 선택</b><div class="ce-dates">'+m.dateOptions.map(([label,v])=>'<button type="button" class="ce-date" data-ce="date" data-v="'+attr(v)+'" aria-pressed="'+(s.date===v)+'">'+esc(label+' · '+ce.md(v))+'</button>').join('')+'</div><label class="cd-direct">직접 입력<input type="date" data-ce-in="date" min="'+m.today+'" value="'+attr(s.date)+'"></label><button type="button" class="cd-confirm" data-ce="date-close">확인</button></div></div>');}

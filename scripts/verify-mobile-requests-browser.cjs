@@ -16,6 +16,8 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   const save=()=>view.locator('[data-ce="save"]').click(),success=()=>page.waitForFunction(()=>MobileEntry.state()===null&&document.querySelector('.approved-d [data-ce="save"]')?.textContent==='저장됨'),failure=()=>page.waitForFunction(()=>!!MobileEntry.state()?.err);
   try{
    await page.goto(origin+'/mobile.html?demo=1&review='+scenario+'&reset=1',{waitUntil:'domcontentloaded'});await view.waitFor();
+   /* 예전 D(요청 체크 상자) = 끄기 경로. v5 결과 화면(확인 항목 체크)은 verify-mobile-v5-result */
+   await page.evaluate(()=>{G.mobileV5Off=true;closeSheet();MobileEntry.open();});await view.waitFor();
    await body({page,view,fill,save,success,failure,read});
    assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);assert.equal(await page.locator('#scr .mq,#scr .mh-hub,#scr .mv-now').count(),0);checks.push(name);
   }finally{await context.close();}
