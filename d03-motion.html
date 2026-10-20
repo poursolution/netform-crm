@@ -37,6 +37,8 @@ html,body{margin:0;height:100%;background:#EEF0F3;font-family:Pretendard,'Malgun
 #d03 .msg{position:absolute;left:80px;right:80px;top:752px;margin:0;text-align:center;font-size:25px;font-weight:700;letter-spacing:-.035em}
 #d03 .msg strong{color:var(--o)}
 #d03 .fade{animation:fadeup .5s var(--e) both}
+.clk #d03 .fade{animation-duration:.18s}
+.clk .rail .pb{display:none}
 @keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #d03 .pr{position:absolute;left:80px;right:80px;top:806px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 #d03 .pr div{height:58px;border-radius:14px;background:var(--soft);display:flex;align-items:center;gap:10px;padding:0 22px;font-size:20px;font-weight:700}
@@ -464,19 +466,20 @@ html.emb .ctl{display:none}
   }
   raf=requestAnimationFrame(tick);
  }
+ function show(i){cancelAnimationFrame(raf);run=false;done=true;st.classList.remove('paused');if(i>0)setCls(i-1,99,'instant');else st.className='stage sc0 instant';void st.offsetWidth;cur=i;t=0;applied=0;ui(i);setCls(i,0);void st.offsetWidth;requestAnimationFrame(()=>setCls(i,99));pbs.forEach((p,j)=>p.style.width=j<=i?'100%':'0');btn()}
  function pause(){if(!run)return;run=false;cancelAnimationFrame(raf);st.classList.add('paused');btn()}
  function resume(){run=true;last=performance.now();st.classList.remove('paused');raf=requestAnimationFrame(tick);btn()}
  function toggle(){if(run)pause();else if(t>0&&!done)resume();else{all=true;jump(0,true)}}
  btns.forEach((b,i)=>b.addEventListener('click',()=>{all=false;jump(i,true)}));
  play.addEventListener('click',toggle);
  $('#replay').addEventListener('click',()=>{all=false;jump(cur,true)});
- const onKey=e=>{if(EMB&&!(e.key==='r'||e.key==='R')){try{parent.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,bubbles:true,cancelable:true}))}catch(_){}e.preventDefault();return}if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key==='ArrowRight'&&cur<4){all=false;jump(cur+1,true)}else if(e.key==='ArrowLeft'&&cur>0){all=false;jump(cur-1,true)}else if(e.key==='r'||e.key==='R'){all=false;jump(cur,true)}};
+ const onKey=e=>{if(EMB&&!(e.key==='r'||e.key==='R')){try{parent.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,repeat:e.repeat,bubbles:true,cancelable:true}))}catch(_){}e.preventDefault();return}if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key==='ArrowRight'&&cur<4){all=false;jump(cur+1,true)}else if(e.key==='ArrowLeft'&&cur>0){all=false;jump(cur-1,true)}else if(e.key==='r'||e.key==='R'){all=false;jump(cur,true)}};
  const fit=()=>{const k=EMB?Math.min(innerWidth/1600,innerHeight/900):Math.min((innerWidth-28)/1600,(innerHeight-86)/900);slide.style.transform='scale('+k+')';wrap.style.width=1600*k+'px';wrap.style.height=900*k+'px';if(EMB)wrap.style.marginTop=Math.max(0,(innerHeight-900*k)/2)+'px'};
  const onVis=()=>{if(document.hidden)pause()};
  addEventListener('keydown',onKey);addEventListener('resize',fit);document.addEventListener('visibilitychange',onVis);
- fit();{const q=new URLSearchParams(location.search);if(q.has('step')){const i=Math.max(0,Math.min(4,+q.get('step')||0));all=false;jump(i,false);setTimeout(()=>{if(!run&&t===0){all=false;jump(i,true)}},EMB?60:500)}else{all=true;jump(0,false);setTimeout(()=>{if(!run&&t===0)jump(0,true)},EMB?500:700)}}
+ fit();{const q=new URLSearchParams(location.search);if(q.get('click')==='1'){document.documentElement.classList.add('clk');show(Math.max(0,Math.min(4,+q.get('step')||0)))}else if(q.has('step')){const i=Math.max(0,Math.min(4,+q.get('step')||0));all=false;jump(i,false);setTimeout(()=>{if(!run&&t===0){all=false;jump(i,true)}},EMB?60:500)}else{all=true;jump(0,false);setTimeout(()=>{if(!run&&t===0)jump(0,true)},EMB?500:700)}}
  // 발표 파일에 넣을 때: 이 장면을 벗어나면 정리
- window.D03Motion={jump:(i)=>{all=false;jump(i,true)},playAll:()=>{all=true;jump(0,true)},pause,destroy(){cancelAnimationFrame(raf);run=false;removeEventListener('keydown',onKey);removeEventListener('resize',fit);document.removeEventListener('visibilitychange',onVis)}};
+ window.D03Motion={show,jump:(i)=>{all=false;jump(i,true)},playAll:()=>{all=true;jump(0,true)},pause,destroy(){cancelAnimationFrame(raf);run=false;removeEventListener('keydown',onKey);removeEventListener('resize',fit);document.removeEventListener('visibilitychange',onVis)}};
 })();
 </script>
 </body>
