@@ -15,6 +15,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
    const deals=[mk('s1','sent',{stage_contexts:{sent:{fields:{sent_date:day(-12)}}}}),mk('s2','sent'),mk('s3','sent'),mk('s4','sent',{assignee:'황윤선'}),mk('c1','consulting'),mk('w1','won',{outcome:'won',won_amount:1.4e8,closed_at:day(-30)}),mk('l1','lost',{outcome:'lost',closed_at:day(-3)})];
    B={deals,inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
+   /* 서버 응답 흉내(검사 verify-work-v2 와 같음): 합치기 이력 · AI 추천 — 없으면 공종 분석이 '합치기 이력 확인 못 함 · 금액 집계 보류' 상태로 그려진다 */
+   window.saveLocal=()=>{};window.pushWrite=()=>'req';
+   window.OpsStore={settings:async()=>({}),aiOn:()=>true,ai:async()=>({id:'ai-1',suggestion:{keys:['옥상>우레탄'],primary:'옥상>우레탄',basis:'기록 확인'}}),decide:()=>{}};
+   window.SB={rpc:async(name)=>name==='crm_gongjong_links_v1'?{data:{ok:true,links:[]}}:{error:{code:'PGRST202'}}};
   });
   const pre=process.env.NM_SHOT||'';
   const shot=async(name,fn)=>{await page.evaluate(fn);await page.waitForTimeout(500);if(pre)await page.screenshot({path:pre+'-'+name+'.png'});console.log('shot',name);};
