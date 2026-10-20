@@ -87,17 +87,18 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.match(RA.pend,/적용 예정/);assert.match(RA.pend,/→ 단계 이동 창/);assert.match(RA.pend,/→ 관계관리 재분류/);assert.match(RA.pend,/→ 상세 담당 변경/);
   /* ⑤ 계약 · 시공 4상태 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('construction');});await page.waitForSelector('#pipeline-stage-v3[data-stage="construction"] .prv-row');await page.waitForTimeout(250);
-  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent,Number(t.querySelector('.n').textContent)])),[['전체','이 단계 모든 현장',6],['계약 확인','계약일 · 금액 · 계약서',2],['착공 준비','착공일 미입력 · 착공일 확인',1],['시공 중','착공일 입력 후 · 주 1회 방문',2],['준공 확인','준공검사 · 고객 확인',1]],'4상태 + 전체 = 합');
+  assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,t.querySelector('span').textContent,Number(t.querySelector('.n').textContent)])),[['전체','진행 상태 합 = 6 · 서로 안 겹침',6],['계약 확인','계약일 · 금액 · 계약서',2],['착공 준비','착공일 미입력 · 착공일 확인',1],['시공 중','착공일 입력 후 · 주 1회 방문',2],['준공 확인','준공검사 · 고객 확인',1]],'4상태 + 전체 = 합');
   const ci=await rowOf('c-info'),ns=await rowOf('c-nostart'),cb=await rowOf('c-build'),cf=await rowOf('c-fin');
   assert.deepEqual([ci.tab,ci.task,ci.btn,ns.tab,ns.task,ns.btn,ns.act,cb.tab,cb.task,cb.btn,cf.tab,cf.task],['0','계약 정보 입력','정보 입력','1','착공일 확인','착공일 입력','stagefields','2','주간 현장 방문','현장 확인','3','준공 확인'],'계약일만으로 시공 중 아님 · 착공일 없으면 착공 준비');
   assert.equal(ns.stale,'"계약 체결 확인" 종료 대상','끝난 상태의 업무는 종료 대상 표시');
-  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['계약일 · 금액 없음',2],['착공일 미입력',1],['인계서 미확인',1],['시공 중 주 1회 방문 없음',2],['준공 확인 없음',1]]);
+  assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['시공 중 주 1회 방문 없음',2]/* pipeline_list ③: 기한 묶음 먼저 */,['계약일 · 금액 없음',2],['착공일 미입력',1],['인계서 미확인',1],['준공 확인 없음',1]]);
   /* ⑥⑦⑧ 실주: 기록 완료 = 사유 + 재영업 여부 · 경쟁사는 경쟁사 낙찰일 때만 · 왼쪽 칸 = 완성률 + 보완할 것 */
   await page.evaluate(()=>{G.ps3=null;PipelineWorkspace.open('lost');});await page.waitForSelector('#pipeline-stage-v3[data-stage="lost"] .prv-row');await page.waitForTimeout(250);
   assert.deepEqual(await V.locator('.ps3-tab').evaluateAll(l=>l.map(t=>[t.querySelector('.l').textContent,Number(t.querySelector('.n').textContent)])),[['전체',4],['기록 보완 필요',2],['기록 완료',2],['재영업 가능 · 예',0]]/* 2026-10-20 7stage_rules: 재영업 '미정'도 고른 값 그대로 기록 완료 */);
   assert.deepEqual(await V.locator('.prv-row').evaluateAll(l=>l.map(r=>[r.dataset.key.replace(/^deal:/,''),r.dataset.tab])).then(a=>a.sort()),[['l-cancel','1'],['l-comp','0'],['l-none','0'],['l-undecided','1']].sort());/* 사유 + 재영업 '미정' = 기록 완료 칸 */
   const side=await V.locator('.ps3-diag').innerText();
-  assert.match(one(side),/결과 기록 완성률 50% 2 \/ 4/);assert.match(one(side),/보완할 것 2건/);assert.doesNotMatch(side,/평균 체류|왜 멈춰 있나/,'체류 · 왜 멈춰 있나는 없음');
+  /* pipeline_list ④-8(2026-10-20): 결과(실주 n건)와 기록 완성률을 분리 — 완성률은 '보완할 것' 줄에 작게 · 성과처럼 크게 쓰지 않음 */
+  assert.match(one(side),/실주 결과 4건 예상금액 기준 · 손실액 아님/);assert.match(one(side),/보완할 것 2건 기록 완성률 50% · 성과 아님/);assert.doesNotMatch(side,/결과 기록 완성률|평균 체류|왜 멈춰 있나|그래서 뭘 해야 하나/,'완성률 큰 숫자 · 체류 · 왜 멈춰 있나 · 뭘 해야 하나는 없음');
   assert.deepEqual(await V.locator('.ps3-reason').evaluateAll(l=>l.map(b=>[b.querySelector('span>b').textContent,Number(b.querySelector('.c').textContent)])),[['실주 사유 미입력',1],['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',1],['재영업 가능 여부 미입력',1],['재접촉 할 일 없음',0]],'경쟁사 필수는 경쟁사 낙찰 1건만 · 사업 취소는 해당 없음(세지 않음) · 미정은 고른 값 그대로 기록 완료(2026-10-20 7stage_rules)');
   assert.equal(one(await L.locator('.prv-row[data-key$="l-cancel"] .prv-b>small.base').innerText()),'기록 완료 · 경쟁사 해당 없음');
   /* ⑤ 자료 없음 3가지 */

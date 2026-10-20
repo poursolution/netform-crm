@@ -66,25 +66,43 @@ const legacyCount=()=>PS()?rows(undefined,{legacy:'only'}).length:0;
    7열이 한 화면에(실주는 96px 좁은 열), 카드는 현장명 + 한 줄(상태점·담당자·금액), 열마다 12장 + '더보기'(단계 페이지로).
    카드를 끌어 다른 열에 놓으면 그 단계의 기존 전환창(stage-transition, 한 일·결과·다음 할 일·사유 필수)이 열린다 —
    근거 없이 단계만 옮기지 않는 규칙은 그대로라 '놓자마자 이동·되돌리기'는 넣지 않았다. 저장되면 보드가 다시 그려진다. */
-const PK_PER=12,PK_LOST=3;
+const PK_PER=20;/* ④ 칸마다 한 쪽 최대 20건 + 쪽 번호(2026-10-05 대표 전체 지침 · pipeline_list) */
 const PK_COLS=[['consulting','컨설팅 설계','#8b8fa3'],['sent','자료 발송완료','#6f8fd6'],['relationship','관계관리','#4f74d9'],['competition','경쟁·입찰','#9a6bd6'],['construction','계약·시공','#d68a3a'],['won','수주','#3f9e64'],['lost','실주','#b8b8b2']];
 function cardState(r){if(r.group==='won')return ['done','수주'];if(r.group==='lost')return ['ok',r.reason&&r.reason!=='미기록'?'실주 · '+r.reason:'실주'];if(r.flags.includes('overdue'))return ['over','기한 지남 · '+Math.abs(r.days)+'일'];if(r.flags.includes('missing'))return ['none','다음 할 일 없음'];return ['ok',r.days===0?'오늘 할 일':r.days>0?'진행 중 · '+r.days+'일 남음':'진행 중'];}
 const PK_ORDER={over:0,none:1,ok:2,done:2};
-function kanbanSort(items,key){if(key==='lost'||key==='won')return items.slice().sort((p,q)=>String(q.item.closed_at||'').localeCompare(String(p.item.closed_at||'')));return items.slice().sort((p,q)=>PK_ORDER[cardState(p)[0]]-PK_ORDER[cardState(q)[0]]||(Number(q.amount)||0)-(Number(p.amount)||0));}
+/* ④ 카드 셋째 줄 = 먼저 볼 이유(항상 보임 · 마우스 올림 아님) — 판정 함수(PipelineJudge.basis)와 같은 근거: '어떤 기한인지 + 상태'. 날짜 없으면 보완할 것, 기록 없으면 판정 불가. 수주 · 실주는 결과 · 보완 */
+let judgeCache=new Map();
+function judgeOf(r){if(judgeCache.has(r.key))return judgeCache.get(r.key);let b=null;try{const J=root.PipelineJudge;b=J&&J.on&&J.on()?J.basis(r.item,r.group):null;}catch(e){b=null;}judgeCache.set(r.key,b);return b;}
+function cardReason(r){
+ if(r.group==='won')return ['','수주'+(Number(r.amount)>0?'':' · 낙찰금액 확인')];
+ if(r.group==='lost')return ['',r.reason&&r.reason!=='미기록'?'실주 · '+r.reason:'실주 · 사유 보완'];
+ if(!r.owner||r.owner==='미배정')return ['r','담당 미배정'];
+ const J=root.PipelineJudge,b=judgeOf(r);
+ /* 줄 글은 한 줄에(2026-10-07 대표): 단계 기한 이름은 짧게 — '마감 · 결정 일정 10.18' → '마감 10.18', '물량 산출 기한' → '물량 산출', '발송 10.11 + 7일' → '발송 10.11+7일' */
+ const short=w=>String(w||'').replace('마감 · 결정 일정','마감').replace('물량 산출 기한','물량 산출').replace('후속 확인일','후속 확인').replace('마지막 연락','연락').replace(/ \+ /g,'+').replace(/ · 회의 전 경고 없음| · .*까지 경고 없음/,'');
+ if(b&&b.kind==='date'&&b.n!=null){const late=b.n<0,name=b.src==='next'?'연락 약속':short(b.why);return [late?'r':'',late&&b.src==='next'?name+' '+(J.md?J.md(b.due):String(b.due).slice(5,10))+' · '+J.dueText(b):name+' · '+J.dueText(b)];}
+ if(b&&b.kind==='none')return ['',b.fix?b.fix+' 필요':'날짜 미입력 · 기한 없음'];/* 지연 아님 — 한 줄에 들어가게 짧게(카드 title 에 같은 글) */
+ if(b&&b.kind==='norecord')return ['','판정 불가 · 이관 전 기록 확인'];
+ const st=cardState(r);return [st[0]==='over'?'r':'',st[1]];
+}
+/* 정렬 = 확인된 기한 급한 순(지난 것 → 오늘 → 가까운 날) → 기한 없음 · 같은 기한은 금액 큰 순. 수주 · 실주 = 최근 종료 순 */
+function kanbanSort(items,key){if(key==='lost'||key==='won')return items.slice().sort((p,q)=>String(q.item.closed_at||'').localeCompare(String(p.item.closed_at||'')));const n=r=>{const b=judgeOf(r);return b&&b.kind==='date'&&b.n!=null?b.n:1e9;};return items.slice().sort((p,q)=>n(p)-n(q)||(Number(q.amount)||0)-(Number(p.amount)||0));}
 function kanbanCard(r){
- const st=cardState(r),owner=r.owner||'미배정',amt=Number(r.amount)||0;
+ const st=cardState(r),owner=r.owner||'미배정',amt=Number(r.amount)||0,why=cardReason(r);
  // 카드 전체가 클릭 대상 — 누르면 해당 영업의 상세 화면이 열린다. 종료 건은 끌 수 없다.
- return '<button type="button" class="ps-kcard" draggable="'+(['won','lost'].includes(r.group)?'false':'true')+'" data-ps-action="record" data-value="'+attr(r.key)+'" data-group="'+attr(r.group)+'" title="'+attr(st[1])+'"><span class="ps-ksite">'+h(r.site)+'</span><span class="ps-kr2"><i class="ps-kdot '+st[0]+'"></i><span class="ps-kowner'+(owner==='미배정'?' none':'')+'">'+h(owner)+'</span><b>'+(amt?moneyShort(amt):'–')+'</b></span></button>';
+ return '<button type="button" class="ps-kcard" draggable="'+(['won','lost'].includes(r.group)?'false':'true')+'" data-ps-action="record" data-value="'+attr(r.key)+'" data-group="'+attr(r.group)+'" title="'+attr(why[1])+'"><span class="ps-ksite">'+h(r.site)+'</span><span class="ps-kr2"><i class="ps-kdot '+st[0]+'"></i><span class="ps-kowner'+(owner==='미배정'?' none':'')+'">'+h(owner)+'</span><b>'+(amt?(r.group==='won'?'낙찰 ':r.group==='lost'?'예상 ':'')+moneyShort(amt):'금액 미확인')+'</b></span><span class="ps-kr3'+(why[0]?' r':'')+'" title="'+attr(why[1])+'">'+h(why[1])+'</span></button>';
 }
 function kanban(all){
+ /* pipeline_list ④(2026-10-20): 칸마다 한 쪽 최대 20건 + 쪽 번호(ListPager · '+n건 더보기' 없음) · 정렬 = 확인된 기한 급한 순 → 기한 없음 · 수주 · 실주는 최근 종료 순 · 금액 = 수주는 낙찰 · 그 외 예상 */
+ const S=state(),LP=root.ListPager;
  return '<div class="ps-kanban pk">'+PK_COLS.map(([key,name,color])=>{
-  const items=kanbanSort(all.filter(r=>r.group===key),key),lost=key==='lost',shown=items.slice(0,lost?PK_LOST:PK_PER),more=items.length-shown.length;
-  const amount=items.reduce((s,r)=>s+(Number(r.amount)||0),0);
-  return '<section class="ps-kcol'+(lost?' lost':'')+'" data-pk-col="'+key+'" style="--stage-color:'+color+'"><div class="ps-khead"><div class="ps-kt"><i class="ps-kstage"></i>'+button(name,'stage',key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney">'+(lost?'종료':moneyShort(amount))+'</div></div>'
+  const items=kanbanSort(all.filter(r=>r.group===key),key),lost=key==='lost',cp=LP?LP.cut(items,LP.page(S,'pk:'+key),PK_PER):{rows:items.slice(0,PK_PER),pages:1},shown=cp.rows;
+  const known=items.filter(r=>Number(r.amount)>0),amount=known.reduce((s,r)=>s+(Number(r.amount)||0),0),unk=items.length-known.length;
+  return '<section class="ps-kcol'+(lost?' lost':'')+'" data-pk-col="'+key+'" style="--stage-color:'+color+'"><div class="ps-khead"><div class="ps-kt"><i class="ps-kstage"></i>'+button(name,'stage',key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney" title="'+attr((key==='won'?'낙찰금액 합':'예상금액 합')+(unk?' · 금액 미확인 '+unk+'건 제외':''))+'">'+(lost?'예상 '+moneyShort(amount):(key==='won'?'낙찰 ':'')+moneyShort(amount))+'</div></div>'
    +(lost?'<div class="ps-kdrop">여기로 끌어<br>실주 처리</div>':'')
    +'<div class="ps-kbody">'+shown.map(kanbanCard).join('')+'</div>'
-   +(more>0?button('+ '+more+'건 더보기','stage',key,'ps-kmore'):'')+'</section>';
- }).join('')+'</div><div class="pk-legend"><span><i class="ps-kdot over"></i>기한 지남</span><span><i class="ps-kdot none"></i>할 일 없음</span><span><i class="ps-kdot ok"></i>진행 중</span><span>· 카드를 끌어 놓으면 단계 전환창이 열립니다 · 마우스를 올리면 상태 표시</span></div>';
+   +(LP?LP.html(cp,{ns:'pk',v:key,small:true,info:false}):'')+'</section>';
+ }).join('')+'</div><div class="pk-legend"><span><i class="ps-kdot over"></i>기한 지남</span><span><i class="ps-kdot none"></i>할 일 없음</span><span><i class="ps-kdot ok"></i>진행 중</span><span>· 카드를 끌어 놓으면 단계 전환창이 열립니다 · 셋째 줄 = 먼저 볼 이유(어떤 기한인지) · 칸마다 한 쪽 20건</span></div>';
 }
 /* 끌어 놓기 → 기존 단계 전환창. 그 단계로 바로 갈 수 없으면(전환 규칙) 이유를 알린다 */
 let pkDrag=null;
@@ -105,16 +123,28 @@ function pkBind(el){
  board.addEventListener('dragleave',e=>{const col=e.target.closest('.ps-kcol');if(col&&!col.contains(e.relatedTarget))col.classList.remove('over');});
  board.addEventListener('drop',e=>{const col=e.target.closest('.ps-kcol');if(!col)return;e.preventDefault();clear();board.querySelector('.ps-kcard.dragging')?.classList.remove('dragging');pkDrop(col.dataset.pkCol);});
 }
+/* 조회 상태 한 줄(pipeline_list ① · 검토서 3-2): 핵심 자료 일부를 못 받았으면 'HH:MM에 받은 값 표시 중'을 화면 안에도 — 실패를 0건 · 최신으로 보이지 않게. 전부 받았으면 빈 문자열(상단 알약이 '최신 · n분 전') */
+function readFailLine(){
+ const rf=Array.isArray(root.LAST_OPERATIONAL_READ_ERROR)&&root.LAST_OPERATIONAL_READ_ERROR.length?root.LAST_OPERATIONAL_READ_ERROR:null;if(!rf)return '';
+ const at=root.LAST_OPERATIONAL_OK_AT,d=at?new Date(at):null,hm=d?String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):'';
+ return '<div class="pk-readfail" role="status"><b>일부 조회 실패</b> · '+(hm?hm+'에 받은 값':'이전에 받은 값')+' 표시 중<small>'+h(rf.map(x=>x.message||'조회 실패').join(' · '))+'</small>'+button('다시 불러오기','reload','','pk-reload')+'</div>';
+}
+/* 단계에 들어가도 유지되는 조건(①-3): 전체 화면에서 고른 공사예정 연도 · 공종 — 브랜드 · 담당은 공통 필터줄에 이미 보인다 */
+function keptLine(){
+ const y=kanbanYear(),w=root.G.workFilter||'전체',p=[];if(y!=='전체')p.push(y==='미입력'?'연도 미입력':y+'년');if(w!=='전체')p.push(w);
+ return p.length?'<span class="pk-kept">조건 유지 · '+h(p.join(' · '))+button('해제','unkeep','','pk-unkeep')+'</span>':'';
+}
 /* 한 줄 머리: 제목 · 진행 N건 · 금액 · [연도|브랜드|담당자|공종] · 검색 — 브랜드 칩 줄·담당자 구분 줄·공종 줄을 여기로 접는다 */
 function pkHead(all,source){
- const live=all.filter(liveRow),amount=live.reduce((s,r)=>s+(Number(r.amount)||0),0),basis=liveBasis();
+ /* pipeline_list ①(2026-10-20 검토서 3-1 · 3-4): 범위 문구 — '진행 중 n건(진행 5단계 · 영업건 단위)' · '예상금액 합(금액 미확인 n건 제외)' · 끝난 영업(수주 · 실주)은 따로 · 과거 이관 · 분류 전은 별도 구역 단추 그대로 */
+ const live=all.filter(liveRow),known=live.filter(r=>Number(r.amount)>0),amount=known.reduce((s,r)=>s+(Number(r.amount)||0),0),unk=live.length-known.length,wonN=all.filter(r=>r.group==='won').length,lostN=all.filter(r=>r.group==='lost').length,basis=liveBasis();
  const seg=(html,on)=>'<label class="pk-segitem'+(on?' on':'')+'">'+html+'</label>';
  const sel=(aria,attrs,opts,value,first)=>'<select aria-label="'+attr(aria)+'" '+attrs+'>'+opts.map(v=>'<option value="'+attr(v)+'"'+(String(v)===String(value)?' selected':'')+'>'+h(v==='전체'?first:v)+'</option>').join('')+'</select>';
  const years=root.ConstructionYear?root.ConstructionYear.options(root.B?.deals||[]):['전체'],y=kanbanYear();
  const year='<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+years.map(v=>'<option value="'+attr(v)+'"'+(String(v)===y?' selected':'')+'>'+h(v==='전체'?'전체 연도':v==='미입력'?'연도 미입력':v+'년')+'</option>').join('')+'</select>';
  const brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))].sort((a,b)=>a==='전체'?-1:b==='전체'?1:a.localeCompare(b,'ko'));
  const brand=root.G.brand||'전체',owner=root.SalesScope.state().owner||'전체',work=root.G.workFilter||'전체';
- return '<header class="pk-head"><h2>파이프라인</h2><div class="pk-sum" title="'+attr(basis)+'"><span>진행 <b>'+live.length+'건</b></span><span>금액 <b>'+moneyShort(amount)+'</b></span></div>'+(()=>{const n=legacyCount();return n?'<button type="button" class="pk-legacy" data-ps-action="stage" data-value="legacy" title="'+attr(PS().LEGACY_BASIS)+'">'+h(PS().LABEL)+' <b>'+n+'건</b></button>':'';})()+'<div class="pk-spacer"></div>'
+ return readFailLine()+'<header class="pk-head"><h2>파이프라인</h2><div class="pk-sum" title="'+attr(basis)+'"><span>진행 중 <b>'+live.length+'건</b><small>진행 5단계 · 영업건 단위</small></span><span>예상금액 합 <b>'+moneyShort(amount)+'</b>'+(unk?'<small>금액 미확인 '+unk+'건 제외</small>':'')+'</span><span class="pk-closed" title="결과 — 진행 숫자 · 예상금액 합에 넣지 않음">끝난 영업 · 수주 <b>'+wonN+'</b> · 실주 <b>'+lostN+'</b></span></div>'+(()=>{const n=legacyCount();return n?'<button type="button" class="pk-legacy" data-ps-action="stage" data-value="legacy" title="'+attr(PS().LEGACY_BASIS)+'">'+h(PS().LABEL)+' <b>'+n+'건</b></button>':'';})()+'<div class="pk-spacer"></div>'
   +'<div class="pk-seg">'+seg(year,y!=='전체')+seg(sel('브랜드','data-pk-filter="brand"',brands,brand,'전체 브랜드'),brand!=='전체')+seg(sel('담당자','data-pk-filter="owner"',owners,owner,'전체 담당자'),owner!=='전체')+seg('<select aria-label="단계 공종" data-ps-filter="workFilter">'+root.workFilterOptions(root.G.workFilter).replace(/>전체</,'>전체 공종<')+'</select>',work!=='전체')+'</div>'
   +'<input class="pk-search" aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장 검색"></header>';
 }
@@ -135,24 +165,27 @@ function detailCells(r,key){
 function management(r){const label=['won','lost'].includes(r.group)?'종료':r.days==null?'기한 미입력':r.days<0?Math.abs(r.days)+'일 지남':r.days===0?'오늘':r.days+'일 남음';return '<div class="ps-management"><span class="ps-due '+(r.days<0?'overdue':'')+'">'+h(label)+'</span>'+button('처리','process',r.key)+'</div>';}
 function render(){
  root.G.pipelineWorkspace=true;/* 칸반 단일 뷰 — 구형 칸반·스플릿·포캐스트 전환은 사용하지 않는다 */
- const host=document.getElementById('pg-pipe');if(!host)return false;state();let el=document.getElementById('pipeline-stage-root');if(!el){el=document.createElement('div');el.id='pipeline-stage-root';host.append(el);}host.classList.add('ps-active');root.PipelineSplit?.beforePaint();
+ const host=document.getElementById('pg-pipe');if(!host)return false;state();judgeCache=new Map();let el=document.getElementById('pipeline-stage-root');if(!el){el=document.createElement('div');el.id='pipeline-stage-root';host.append(el);}host.classList.add('ps-active');root.PipelineSplit?.beforePaint();
  /* 과거 이관 · 분류 전 화면(pipeline-legacy.js) */
  if(root.G.pipelineStage==='legacy'){if(PS()&&root.PipelineLegacy){el.classList.remove('pk-mode');document.getElementById('ptitle').textContent=PS().LABEL;document.getElementById('psub').textContent='예전 시스템에서 옮겨 온 자료 중 현재 CRM 단계가 정해지지 않은 건';el.innerHTML=root.PipelineLegacy.html(rows(undefined,{legacy:'only'}));el.onclick=click;el.onchange=null;el.onkeydown=null;sidebar();return true;}root.G.pipelineStage='all';}
- const key=root.G.pipelineStage||'all',def=S.definition(key),v2=!!(def&&root.PipelineListV2?.enabled(key));if(v2)root.PipelineListV2.adoptLegacyFilters();const all=rows(),list=def?all.filter(r=>r.group===key):all,f=state(),filtered=list.filter(r=>f.status==='all'||r.flags.includes(f.status));const source=rows({unscoped:true}),brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))];
+ const key=root.G.pipelineStage||'all',def=S.definition(key),v2=!!(def&&root.PipelineListV2?.enabled(key));if(v2)root.PipelineListV2.adoptLegacyFilters();const all=rows(),list=def?all.filter(r=>r.group===key&&kanbanYearMatch(r)):all,f=state()/* ①-3: 전체에서 고른 연도는 단계에서도 같은 대상 */,filtered=list.filter(r=>f.status==='all'||r.flags.includes(f.status));const source=rows({unscoped:true}),brands=['전체',...new Set(source.map(r=>r.item.brand).filter(Boolean))],owners=['전체',...new Set(source.map(r=>r.owner).filter(Boolean))];
  const work='<label>공종<select aria-label="단계 공종" data-ps-filter="workFilter">'+root.workFilterOptions(root.G.workFilter)+'</select></label>';
  let body='';if(v2){body='';}else if(def){body=root.StageWorkspaces?.[key]?'<div class="sw-workspace" data-workspace="'+key+'">'+root.StageWorkspaces.render(key,list)+(list.length?'':'<p class="ps-empty">현재 조건의 현장이 없습니다.</p>')+'</div>':'<p class="ps-empty">단계별 화면을 불러오지 못했습니다. 새로고침해 주세요.</p>';}else{body=kanban(all.filter(kanbanYearMatch));}
  if(def&&!POPUP_STAGES.includes(key)&&root.PipelineSplit.active())body=root.PipelineSplit.shell(key,body);
- const title=def?def.label:'전체 파이프라인';document.getElementById('ptitle').textContent=title;document.getElementById('psub').textContent=def?.description||'8개 단계의 현재 적재 현황과 업무를 확인합니다.';
+ const title=def?def.label:'전체 파이프라인';document.getElementById('ptitle').textContent=title;document.getElementById('psub').textContent=def?.description||'진행 5단계 · 영업건 단위 — 끝난 영업(수주 · 실주)과 과거 이관 · 분류 전은 별도 구역';
  const yearSelect=!def&&root.ConstructionYear?'<label>연도<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+root.ConstructionYear.options(root.B?.deals||[]).map(y=>'<option value="'+attr(y)+'"'+(String(y)===kanbanYear()?' selected':'')+'>'+h(y==='전체'?'전체 연도':y==='미입력'?'미입력':y+'년')+'</option>').join('')+'</select></label>':'';
  /* 상단 단계 타일 스트립은 사이드바와 중복이라 전 단계에서 제거했다. */
  /* 단계 목록 v2(2026-10-01 핸드오프): 새 모듈이 그린다. 끄면(G.pipeListV2Off) 아래 예전 화면 */
  if(root.PipelineListV2?.paint(el,key,list)){}else if(!def){el.classList.add('pk-mode');el.innerHTML=pkHead(all.filter(kanbanYearMatch),source)+body;}else{el.classList.remove('pk-mode');el.innerHTML='<header class="ps-heading"><div><small>파이프라인 / '+h(title)+'</small><h2>'+h(title)+'</h2><p>'+h(def?.description||'단계별 적재·금액·정체를 한 화면에서 확인하고, 카드를 누르면 상세로 이동합니다.')+'</p></div><b>'+list.length+'건</b></header>'+(!def?kpiStrip(all.filter(kanbanYearMatch)):'')+root.SalesFilters.controls(source.filter(r=>!def||r.group===key).map(r=>({brand:r.item.brand,owner:r.owner,item:r.item})))+'<div class="ps-filters">'+yearSelect+work+'<label>현장 검색<input aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장·담당자·공종"></label>'+button('검색','search')+'</div>'+'<p class="ps-note">'+(def?'현재 적재 기준 · 생성 연도와 무관하게 진행 영업 표시'+(root.G.pipelinePeriod?' · 이전 분석 기간 '+h(root.G.pipelinePeriod):''):'공사예정년도 기준 조회 · 칼럼 제목=단계 페이지 · 카드=상세 화면')+'</p>'+body;}
- el.onclick=click;el.onchange=e=>{const k=e.target.dataset.psFilter,pk=e.target.dataset.pkFilter;if(pk==='brand'){root.G.brand=e.target.value;f.page=1;root.paint();return;}if(pk==='owner'){root.SalesScope.change('owner',e.target.value);root.G.rep=e.target.value;f.page=1;root.paint();return;}if(k){root.G[k]=e.target.value;f.page=1;root.paint();}};if(!def)pkBind(el);el.onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('[data-ps-filter="q"]')){root.G.q=e.target.value;f.page=1;root.paint();}};root.PipelineSplit.mount(list);sidebar();return true;
+ el.onclick=click;el.onchange=e=>{const k=e.target.dataset.psFilter,pk=e.target.dataset.pkFilter;const LP=root.ListPager;if(pk==='brand'){root.G.brand=e.target.value;f.page=1;LP&&LP.reset(f);root.paint();return;}if(pk==='owner'){root.SalesScope.change('owner',e.target.value);root.G.rep=e.target.value;f.page=1;LP&&LP.reset(f);root.paint();return;}if(k){root.G[k]=e.target.value;f.page=1;LP&&LP.reset(f);/* 필터가 바뀌면 칸반 칸 쪽도 1쪽으로 */root.paint();}};if(!def)pkBind(el);el.onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('[data-ps-filter="q"]')){root.G.q=e.target.value;f.page=1;root.paint();}};root.PipelineSplit.mount(list);sidebar();return true;
 }
-function click(e){const b=e.target.closest('[data-ps-action]');if(!b)return;const a=b.dataset.psAction,v=b.dataset.value;if(a==='stage')open(v);if(a==='triage-tab'){state().triage=v;state().page=1;root.paint();}if(a==='page'){state().qpage=Number(b.dataset.page)||1;root.paint();}if(a==='view'){state().view=v;state().page=1;root.paint();}if(a==='status'){state().status=v;state().page=1;root.paint();}if(a==='owner'){const current=root.SalesScope.state().owner;root.SalesScope.change('owner',current===v?'전체':v);state().page=1;root.paint();}if(a==='relseg'){root.G.relSeg=v;state().page=1;root.paint();}if(a==='compseg'){root.G.compSeg=v;state().page=1;root.paint();}if(a==='consseg'){root.G.consSeg=v;state().page=1;root.paint();}if(a==='page'){state().page=Number(v);root.paint();}if(a==='search'){root.G.q=document.querySelector('[data-ps-filter="q"]')?.value||'';state().page=1;root.paint();}if(a==='contract-refresh'){Promise.resolve(root.ContractSalesData?.refresh()).then(refresh);return;}if(['record','process','contact','next','stage-edit','primary'].includes(a)){const r=rows().find(r=>r.key===v);if(!r)return;if(!POPUP_STAGES.includes(root.G.pipelineStage)&&root.PipelineSplit?.select(r,a))return;if(r.expansion){root.ExpansionPool.open(r.expansion.id);return;}root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='process')root.DealDetailWorkspace.run(r.flags.includes('missing')?'next':'contact');else if(a!=='record')root.DealDetailWorkspace.run(a);}}
+function click(e){const pk=e.target.closest('[data-pk="page"]');if(pk){root.ListPager.set(state(),'pk:'+pk.dataset.v,pk.dataset.page);root.paint();return;}/* ④ 칸반 칸마다 쪽 번호 */
+ const b=e.target.closest('[data-ps-action]');if(!b)return;const a=b.dataset.psAction,v=b.dataset.value;if(a==='stage')open(v);
+ if(a==='reload'){if(typeof root.loadData==='function')Promise.resolve(root.loadData()).then(()=>root.paint&&root.paint());return;}/* ① 조회 상태 줄 [다시 불러오기] */
+ if(a==='unkeep'){root.G.pipeRepYear='전체';root.G.workFilter='전체';state().page=1;root.paint();return;}/* ①-3 유지한 조건 해제 */if(a==='triage-tab'){state().triage=v;state().page=1;root.paint();}if(a==='page'){state().qpage=Number(b.dataset.page)||1;root.paint();}if(a==='view'){state().view=v;state().page=1;root.paint();}if(a==='status'){state().status=v;state().page=1;root.paint();}if(a==='owner'){const current=root.SalesScope.state().owner;root.SalesScope.change('owner',current===v?'전체':v);state().page=1;root.paint();}if(a==='relseg'){root.G.relSeg=v;state().page=1;root.paint();}if(a==='compseg'){root.G.compSeg=v;state().page=1;root.paint();}if(a==='consseg'){root.G.consSeg=v;state().page=1;root.paint();}if(a==='page'){state().page=Number(v);root.paint();}if(a==='search'){root.G.q=document.querySelector('[data-ps-filter="q"]')?.value||'';state().page=1;root.paint();}if(a==='contract-refresh'){Promise.resolve(root.ContractSalesData?.refresh()).then(refresh);return;}if(['record','process','contact','next','stage-edit','primary'].includes(a)){const r=rows().find(r=>r.key===v);if(!r)return;if(!POPUP_STAGES.includes(root.G.pipelineStage)&&root.PipelineSplit?.select(r,a))return;if(r.expansion){root.ExpansionPool.open(r.expansion.id);return;}root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='process')root.DealDetailWorkspace.run(r.flags.includes('missing')?'next':'contact');else if(a!=='record')root.DealDetailWorkspace.run(a);}}
 function refresh(){sidebar();if(root.G.page==='today')root.paintTodayHome();if(root.G.page==='pipe'&&root.G.pipelineWorkspace)render();if(['dash','perf','control'].includes(root.G.page))root.SalesInsights?.render();}
 function acknowledgements(){setTimeout(()=>{if(!root.B)return;let changed=false;for(const q of root.Phase1?.queue?.list?.()||[]){if(seen.has(q.request_id)||q.status!=='done'||!q.ack)continue;seen.add(q.request_id);if(!['opportunity_touch','opportunity_favorite'].includes(q.operation))changed=true;if(['transition','close'].includes(q.operation)&&root.G.pipelineWorkspace&&root.G.page==='pipe'&&String(root.CUR_DETAIL?.item?.id)===String(q.object_id)){const d=root.B.deals.find(d=>String(d.id)===String(q.object_id)),key=d&&S.group(root.dealStage(d),root.outcomeOf(d));if(key){const wasOpen=document.getElementById('detailView')?.classList.contains('on');open(key);if(wasOpen){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}}}if(changed)refresh();},0);}
 root.addEventListener('phase1:queue',acknowledgements);root.addEventListener('phase1:identity-cleared',()=>{seen.clear();actor='';document.getElementById('pipeline-stage-root')?.replaceChildren();document.getElementById('pipeline-stage-menu')?.replaceChildren();});
 root.addEventListener('contract-sales:changed',()=>{if(root.G.page==='pipe'&&['won','construction'].includes(root.G.pipelineStage))render();});
-root.PipelineWorkspace={open,render,sidebar,rows,refresh};
+root.PipelineWorkspace={open,render,sidebar,rows,refresh,readFailLine,keptLine};
 })(window);

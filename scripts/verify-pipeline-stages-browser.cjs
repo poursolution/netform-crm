@@ -8,7 +8,7 @@ assert.equal(await page.locator('#pipeline-stage-menu button').count(),7);
 assert.equal(await page.locator('.ps-kanban.pk>.ps-kcol').count(),7);
 assert.deepEqual(await page.locator('.ps-kanban .ps-ktitle').allTextContents(),['컨설팅 설계','자료 발송완료','관계관리','경쟁·입찰','계약·시공','수주','실주']);
 assert.equal(await page.locator('.ps-kpis').count(),0);
-assert.match(await page.locator('.pk-head .pk-sum').innerText(),/진행\s*2건[\s\S]*금액\s*3,000만/);
+assert.match(await page.locator('.pk-head .pk-sum').innerText(),/진행 중\s*2건[\s\S]*예상금액 합\s*3,000만/);/* pipeline_list ①: 범위 문구 */
 assert.equal(await page.locator('.pk-seg select').count(),4);
 assert.equal(await page.locator('.ps-kcol.lost .ps-kdrop').count(),1);
 assert.equal(await page.locator('.pk-legend').count(),1);

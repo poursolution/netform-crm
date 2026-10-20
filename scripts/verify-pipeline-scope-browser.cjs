@@ -50,7 +50,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.match(N.title,/^기준: 현재 CRM 유효 단계.*과거 이관 · 분류 전 제외 · 모든 연도$/);
   /* ② 컨설팅 설계에는 진짜 컨설팅 설계만(예전 리드 단계 값이 섞이지 않는다) · 과거 이관은 맨 아래 따로 */
   assert.deepEqual(N.menu,['컨설팅 설계 1','자료 발송완료 2','관계관리 1','경쟁·입찰 0','계약·시공 1','수주 1','실주 1','과거 이관 · 분류 전 6']);
-  assert.match(one(N.head),/^진행 5건 금액/);assert.equal(one(N.legacyBtn),'과거 이관 · 분류 전 6건');
+  assert.match(one(N.head),/^진행 중 5건 진행 5단계 · 영업건 단위 예상금액 합 /);/* pipeline_list ①: 범위 문구 */assert.equal(one(N.legacyBtn),'과거 이관 · 분류 전 6건');
   /* 대시보드 · 주간 브리핑도 같은 진행 건수 + 기준 한 줄 */
   await page.evaluate(()=>goPage('dash'));await page.waitForSelector('#si-dash .db-kpi');
   const kpi=await page.evaluate(()=>[...document.querySelectorAll('#si-dash .db-kpi')].map(b=>[b.querySelector('span').innerText,b.querySelector('small').innerText,b.title]).find(k=>k[0]==='진행 중 파이프라인'));

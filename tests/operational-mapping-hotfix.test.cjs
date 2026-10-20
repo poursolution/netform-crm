@@ -252,7 +252,8 @@ test('PC refresh keeps a successful core domain when the other domain fails',asy
  const bundle=await root.loadData();
  assert.equal(bundle.deals[0].id,'fresh-deal');
  assert.equal(bundle.inquiries[0].id,'old-inquiry');
- assert.equal(elements.live.textContent,'일부 데이터 최신 · 문의 갱신 필요');
+ assert.equal(elements.live.textContent,'일부 조회 실패 · 문의 갱신 필요 · 이전 값 표시 중');/* pipeline_list ①: 실패를 '최신'이라 쓰지 않는다 */
+ assert.equal(root.LAST_OPERATIONAL_OK_AT,undefined,'일부 실패면 전부 받은 시각을 갱신하지 않는다');
  assert.match(elements.live.title,/문의: INQUIRY_TIMEOUT/);
  assert.deepEqual(root.LAST_OPERATIONAL_READ_ERROR,[{domain:'inquiry_core',message:'INQUIRY_TIMEOUT'}]);
  assert.equal(root.LAST_INQUIRY_SYNC,undefined);

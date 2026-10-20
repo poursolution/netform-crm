@@ -204,6 +204,10 @@
  }
  /* 정보 보완으로 보는 사유(연락이 아니라 입력으로 풀리는 것) */
  const INFO_RS={sent:['nosent'],competition:['nodate'],construction:['cinfo','nostart','handoff']};
+ /* pipeline_list ③: '먼저 볼 이유' 상자의 기한 묶음(어떤 기한인지 이름에) — 나머지 사유는 기록 보완 묶음 */
+ const DUE_RS={consulting:['nodue','long'],sent:['nofollow','long'],relationship:['over','quiet'],competition:[],construction:['site7']};
+ const DUE_SHORT={consulting:'물량 산출 · 미팅',relationship:'다음 연락 약속',construction:'착공 · 방문'};
+ const DUE_NAME={consulting:'물량 산출 기한 · 체류 기준',sent:'발송 후 '+(B.rules().follow||7)+'일 후속 약속 · 체류 기준',relationship:'다음 연락 약속 · 무접촉 기준',competition:'마감 · 결정 일정',construction:'착공 뒤 주 1회 현장 방문'};
  let LASTX=new Map();/* 마지막으로 그린 목록의 '키 → 줄'(그 자리 보완이 누른 줄을 찾는다) */
  if(root.InlineFix)root.InlineFix.setFinder(k=>LASTX.get(k)||null);
  const competitionEvidence=r=>root.PipelineRowV11&&root.PipelineRowV11.competitionEvidence?root.PipelineRowV11.competitionEvidence(r):null;
@@ -220,9 +224,12 @@
   if(S.reason&&!C.reasons.some(r=>r[0]===S.reason))S.reason=null;
   if(S.work&&!(C.workFilters||[]).some(w=>w[0]===S.work))S.work=null;const listed=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&(!S.reason||x.rs.includes(S.reason))&&(!S.work||!C.work||C.work(x,S.work)));/* 업무 필터는 상태와 함께 걸림(관계관리 v12) */
   const sumAmt=items.reduce((s,x)=>s+(Number(x.row.amount)||0),0),avg=total?Math.round(items.reduce((s,x)=>s+x.stall,0)/total):0;
+  /* pipeline_list ①-4(2026-10-20): 금액 이름 — 수주 = 낙찰금액 합 · 그 외 = 예상금액 합 · 미확인은 0으로 넣지 않고 '금액 미확인 n건 제외' */
+  const unkAmt=items.filter(x=>!(Number(x.row.amount)>0)).length,amtTxt=(key==='won'?'낙찰금액 합 ':'예상금액 합 ')+(sumAmt?money(sumAmt):'없음')+(unkAmt?' · 금액 미확인 '+unkAmt+'건 제외':'');
+  const PW=root.PipelineWorkspace||{},topLine=(PW.readFailLine?PW.readFailLine():'')+'',keptLine=PW.keptLine?PW.keptLine():'';
   /* 상태 탭 4칸: [전체] + 상태 3개 */
   const tab=(t,l,rule,num,hot,src,amb)=>'<button type="button" class="ps3-tab'+(S.tab===t?' on':'')+'" data-ps3="tab" data-v="'+t+'" aria-pressed="'+(S.tab===t)+'"><b class="n'+(hot&&num?' r':amb&&num?' amb':'')+'">'+num.toLocaleString('ko-KR')+'</b><b class="l">'+h(l)+'</b><span>'+h(rule)+'</span>'+(src?'<small class="src">'+h(src)+'</small>':'')+'</button>';
-  const tabs='<div class="ps3-tabs" role="group" aria-label="상태" data-n="'+(C.tabs.length+1)+'">'+tab(-1,'전체','이 단계 모든 현장',total,false)+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i),C.tabSrc?C.tabSrc[i]:'',C.ambTab===i)).join('')+'</div>'+(C.workFilters?'<div class="ps3-works" role="group" aria-label="업무 필터"><span>업무 필터 · 상태와 함께 걸림</span>'+C.workFilters.map(w=>{const m=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&C.work(x,w[0])).length;return '<button type="button" data-ps3="work" data-v="'+w[0]+'" aria-pressed="'+(S.work===w[0])+'">'+h(w[1])+' <span>'+m+'</span></button>';}).join('')+'<i></i>'+(C.workNote?'<small>'+h(C.workNote)+'</small>':'')+'</div>':'');
+  const tabs='<div class="ps3-tabs" role="group" aria-label="상태" data-n="'+(C.tabs.length+1)+'">'+tab(-1,'전체','진행 상태 합 = '+total.toLocaleString('ko-KR')+' · 서로 안 겹침',total,false)/* ③ 목록 위 첫 줄 = 진행 상태(서로 안 겹침 · 합 = 전체) */+C.tabs.map((t,i)=>tab(i,t[0],t[1],n[i],hot(i),C.tabSrc?C.tabSrc[i]:'',C.ambTab===i)).join('')+'</div>'+(C.workFilters?'<div class="ps3-works" role="group" aria-label="업무 필터"><span>업무 필터 · 상태와 함께 걸림</span>'+C.workFilters.map(w=>{const m=items.filter(x=>(S.tab===-1||x.tab===S.tab)&&C.work(x,w[0])).length;return '<button type="button" data-ps3="work" data-v="'+w[0]+'" aria-pressed="'+(S.work===w[0])+'">'+h(w[1])+' <span>'+m+'</span></button>';}).join('')+'<i></i>'+(C.workNote?'<small>'+h(C.workNote)+'</small>':'')+'</div>':'');
   /* stage7 공통(2026-10-07): 제목 숫자 = '기한 초과 n'(날짜 있고 넘김 · 판정 함수와 같은 수) + '확인 필요 n'(날짜 미입력 · 판정 불가 · 정보 보완). '기준 넘김' 단어 없음. 수주 · 실주는 끝 상태라 기한 초과 0 · 지연 아님 */
   const TL=(()=>{try{const J=root.PipelineJudge;return J&&J.on()?J.tally(items.map(x=>x.row&&x.row.item).filter(Boolean)):null;}catch(e){return null;}})();
   const CE=key==='competition'?items.map(x=>competitionEvidence(x.row)).filter(Boolean):null;
@@ -230,7 +237,7 @@
   const SE=key==='sent'?items.map(x=>B.sentEvidence(x.row,x.it.values)):null;
   const sentKpi=SE?'<div class="over"><span>발송 후 후속 지연</span><b>'+cnt(0)+'건</b><small>판정 가능 '+SE.filter(e=>e.eligible).length+' / '+total+'건 · 발송일 확인 '+SE.filter(e=>!e.eligible).length+'건</small></div>':null;
   /* after_deploy 8: 진단 칸 = '판정 가능 n / 전체' + 판정 불가 · 확인 완료 / 해당 없음 · 실제 문제 + 다음 업무. '0건'은 판정 가능한 건이 있을 때만 쓴다(없으면 –) */
-  const JD=C.closed?null:C.judge?C.judge(items,{TL,SE,CE,cnt,rsN,total}):TL?(()=>{const un=TL.nodate+TL.norecord;return {label:'기한 초과',ok:TL.late+TL.ok,all:total,un,unWhy:'일정 · 기록 미확인',fine:TL.ok+TL.na,okLabel:'기한 안 · 해당 없음',prob:TL.late,probLabel:'실제 기한 초과',next:un?'기존 기록 확인 → 일정 · 날짜 등록':TL.late?'기한 넘긴 건 오늘 처리':'없음'};})():null;
+  const JD=C.closed?null:C.judge?C.judge(items,{TL,SE,CE,cnt,rsN,total}):TL?(()=>{const un=TL.nodate+TL.norecord;return {label:'기한 초과 · '+(DUE_SHORT[key]||'다음 행동일')/* ③ 어떤 기한인지 이름에 */,ok:TL.late+TL.ok,all:total,un,unWhy:'일정 · 기록 미확인',fine:TL.ok+TL.na,okLabel:'기한 안 · 해당 없음',prob:TL.late,probLabel:'실제 기한 초과',next:un?'기존 기록 확인 → 일정 · 날짜 등록':TL.late?'기한 넘긴 건 오늘 처리':'없음'};})():null;
   const jrow=(l,n,cls,show)=>'<span class="'+(cls||'')+'"><i>'+h(l)+'</i><b>'+(show?Number(n).toLocaleString('ko-KR')+'건':'–')+'</b></span>';
   const jbox=J=>'<div class="over ps3-jd'+(J.prob?'':' calm')+'" data-ok="'+J.ok+'" data-all="'+J.all+'"><span>'+h(J.label)+'</span><b>판정 가능 '+Number(J.ok).toLocaleString('ko-KR')+' / '+Number(J.all).toLocaleString('ko-KR')+'</b><div class="ps3-j3">'+jrow('판정 불가 · '+J.unWhy,J.un,J.un?'amb':'',true)+jrow(J.okLabel,J.fine,'',J.ok>0||J.fine>0)+jrow(J.probLabel,J.prob,J.prob?'r':'',J.ok>0)+'</div><small>다음 업무 · '+h(J.next)+'</small>'+(J.extra?'<small>'+h(J.extra)+'</small>':'')+'</div>';
   const kpi1=JD?jbox(JD):sentKpi||competitionKpi||(C.closed?'<div class="over amb"><span>'+h(C.kpiLabel||'정보 보완')+'</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>기한 초과 0 · 지연 아님 · 끝 상태</small></div>'
@@ -241,12 +248,17 @@
   const doneN=C.closed&&C.doneOf?items.filter(x=>C.doneOf(x.it)).length:0,donePct=total?Math.round(doneN*1000/total)/10:0,fixN=total-doneN;
   const headNote=C.headNote?' · '+h(C.headNote(items)):'';
   const ages=CE?CE.filter(e=>e.age!==null).map(e=>e.age):null,ageAvg=ages&&ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):null;
+  /* ③ 먼저 볼 이유 두 묶음: 기한(어떤 기한인지 이름에 — 단계별 DUE_RS) / 기록 보완(나머지 · 점선). 버튼 모양 · 필터 동작은 그대로, 순서만 기한 → 기록 보완 */
+  const rbtn=(r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';};
+  const DUE=DUE_RS[key]||[],rb=C.reasons.map((r,i)=>[r[0],rbtn(r,i)]),dueBtns=rb.filter(x=>DUE.includes(x[0])).map(x=>x[1]).join(''),fixBtns=rb.filter(x=>!DUE.includes(x[0])).map(x=>x[1]).join('');
+  const reasonGroups=C.closed?rb.map(x=>x[1]).join(''):(dueBtns?'<small class="ps3-grp">기한 · '+h(DUE_NAME[key]||'다음 행동일')+'</small>'+dueBtns:'')+(fixBtns?'<small class="ps3-grp'+(dueBtns?' fix':'')+'">기록 보완 · 한 영업건이 여러 개에 걸릴 수 있음 · 합하지 않음</small>'+fixBtns:'');
   /* 왼쪽: 단계 진단 */
-  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(money(sumAmt))+'</span></header><div class="ps3-kpis">'+(JD?jbox(JD):'<div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div>')+'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h((CE?'예상 ':'')+money(sumAmt))+headNote+'</span></header>'
-   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>결과 기록 완성률</span><b>'+donePct+'%</b><small>'+doneN+' / '+total+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':(key==='sent'?'체류 진단 기준 ':'기준 ')+C.goal+'일')+'</small></div>')+'</div>'+(C.closed?'<span class="rv-bar" aria-label="결과 기록 완성률"><i style="width:'+Math.max(donePct>0?2:0,donePct)+'%"></i></span>':'')+'</section>'
-   +missHtml+'<section class="ps3-box ps3-why"><header><b>'+(C.closed?'보완할 것 '+fixN+'건':'왜 멈춰 있나')+'</b><span>누르면 목록이 걸러짐</span></header>'
-   +C.reasons.map((r,i)=>{const c=rsN(r[0]),on=S.reason===r[0];return '<button type="button" class="ps3-reason'+(on?' on':'')+((C.redReason?C.redReason(r[0]):i===0)?' first':'')+'" data-ps3="reason" data-v="'+r[0]+'" aria-pressed="'+on+'"><span><b>'+h(r[1])+'</b><b class="c">'+c.toLocaleString('ko-KR')+'</b></span><i><u style="width:'+(total?Math.min(100,Math.round(c/total*100)):0)+'%"></u></i></button>';}).join('')+'</section>'
-   +'<section class="ps3-box"><header><b>그래서 뭘 해야 하나</b></header>'+(C.todoHtml?C.todoHtml(items,S):'<p class="ps3-todo">'+h(C.todo)+'</p>')+'</section></aside>';
+  const diag=C.leftHtml?'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(amtTxt)+'</span></header><div class="ps3-kpis">'+(JD?jbox(JD):'<div class="over"><span>다음 연락일 지남</span><b>'+over.toLocaleString('ko-KR')+'건</b><small>오늘 연락</small></div>')+'<div><span>평균 체류</span><b>'+avg+'일</b><small>기준 '+C.goal+'일</small></div></div></section>'+C.leftHtml(items,S)+'</aside>':'<aside class="ps3-diag"><section class="ps3-box"><header><b>단계 진단</b><span>'+total.toLocaleString('ko-KR')+'건 · '+h(amtTxt)+'</span></header>'
+   /* ④-8 수주 · 실주: 둘째 칸 = 결과(수주 n건 · 낙찰금액 입력 m건 / 실주 n건 · 예상금액 기준 · 손실액 아님). 기록 완성률은 '보완할 것' 줄에 작게 — 성과처럼 크게 쓰지 않음(검토서 4 · 8절) */
+   +'<div class="ps3-kpis">'+kpi1+(C.closed?'<div><span>'+(key==='won'?'수주 결과':'실주 결과')+'</span><b>'+total.toLocaleString('ko-KR')+'건</b><small>'+(key==='won'?'낙찰금액 입력 '+items.filter(x=>Number(x.row.amount)>0).length+'건 · 유형별 필요한 근거만':'예상금액 기준 · 손실액 아님')+'</small></div>':'<div><span>평균 체류</span><b>'+h(CE?(ageAvg===null?'미확인':ageAvg+'일'):avg+'일')+'</b><small>'+h(CE?'진입일 입력 '+ages.length+' / '+total+'건':(key==='sent'?'체류 진단 기준 ':'기준 ')+C.goal+'일')+'</small></div>')+'</div></section>'
+   /* pipeline_list ②③(2026-10-20 검토서 3-7 · 8): '왜 멈춰 있나 · 그래서 뭘 해야 하나' 반복 문장은 없앴다 — 같은 상자 안에서 '기한'(어떤 기한인지 이름에) / '기록 보완'(점선 · 한 영업건이 여러 개에 걸릴 수 있음 · 합하지 않음) 두 묶음으로. 버튼 · 필터 동작은 그대로(기존 업무 · 기록으로 연결, 새 후속 업무 없음). 수주 · 실주는 '보완할 것 n건' + 기록 완성률은 작게(성과 아님) */
+   +missHtml+'<section class="ps3-box ps3-why"><header><b>'+(C.closed?'보완할 것 '+fixN+'건':'먼저 볼 이유')+'</b><span>'+(C.closed?'기록 완성률 '+donePct+'% · 성과 아님':'누르면 목록이 걸러짐')+'</span></header>'
+   +reasonGroups+'</section></aside>';
   /* 오른쪽: 확인할 현장 */
   const fl=S.reason?(C.reasons.find(r=>r[0]===S.reason)||[])[1]:'';
   const head='<div class="ps3-lhead"><b>확인할 현장 <span>'+listed.length.toLocaleString('ko-KR')+'곳</span></b>'+(fl?'<button type="button" class="ps3-chip" data-ps3="clear" aria-label="'+attr(fl)+' 필터 해제">'+h(fl)+' ×</button>':'')+'<i></i><div class="ps3-views" role="group" aria-label="보기"><button type="button" data-ps3="view" data-v="list" aria-pressed="'+(S.view!=='board')+'">리스트</button><button type="button" data-ps3="view" data-v="board" aria-pressed="'+(S.view==='board')+'">보드</button></div></div>';
@@ -255,7 +267,7 @@
     return '<div class="ps3-col"><div class="ch"><b title="'+attr(t[0])+'">'+h(t[0])+'</b><b class="c'+(i===0?' r':'')+'">'+n[i].toLocaleString('ko-KR')+'</b></div>'+(cards.length?cards.map(x=>cardHtml(C,x)).join(''):'<p class="ps3-none">없음</p>')+LP.html(cp,{ns:'ps3',v:'col:'+i,small:true,info:false})+'</div>';}).join('')+'</div>';
   else{const V=V11(),pg=LP.cut(V?V.sort(listed,x=>x.row):listed,LP.page(S));
    body='<div class="ps3-list'+(V?' prv-list':'')+'" role="table" aria-label="확인할 현장">'+(V?V.head():'')+(V&&ifKey&&LASTX.has(ifKey)&&!pg.rows.some(x=>x.row.key===ifKey)?IF.html(key,LASTX.get(ifKey),true):'')+(pg.rows.length?pg.rows.map(x=>V?V.row(v11(key,C,x),'ps3','ps3-row')+(ifKey===x.row.key?IF.html(key,x,false):''):rowHtml(C,x)).join(''):'<div class="ps3-empty">해당하는 현장이 없습니다</div>')+LP.html(pg,{ns:'ps3',unit:'곳'})+'</div>';}
-  return '<div id="pipeline-stage-v3" class="ps3" data-stage="'+key+'"><div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(C.desc)+'</span></div>'+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
+  return '<div id="pipeline-stage-v3" class="ps3" data-stage="'+key+'">'+topLine+'<div class="ps3-top"><div class="ps3-head"><b>'+h(C.name)+'</b><span>'+h(C.desc)+'</span>'+keptLine+'</div>'+tabs+'</div><div class="ps3-body">'+diag+'<section class="ps3-main">'+head+body+'</section></div></div>';
  }
  function onClick(e){
   const b=e.target.closest('#pipeline-stage-v3 [data-ps3]');if(!b||b.disabled)return;const S=st(),a=b.dataset.ps3,v=b.dataset.v,LP=root.ListPager;

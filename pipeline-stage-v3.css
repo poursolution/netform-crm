@@ -139,3 +139,5 @@
 .ps3-top>.plv-intro,.ps3-top>.plv-owners{margin:0}
 /* stage7_2 ⑤: 자료 없음 3가지 */
 .ps3-miss .ps3-ms{display:flex;flex-direction:column;gap:1px;border-top:1px solid #f2f3f6;padding:6px 0}.ps3-miss .ps3-ms:first-of-type{border-top:0}.ps3-miss .ps3-ms span{font-size:12.5px}.ps3-miss .ps3-ms small{font-size:11.5px;color:#6b7280}
+/* pipeline_list ③(2026-10-20): 먼저 볼 이유 상자 안 두 묶음 — 기한 / 기록 보완(점선) · 버튼 모양은 그대로 */
+.ps3-why .ps3-grp{display:block;font-size:11.5px;color:#9ca3af;margin:2px 0 0}.ps3-why .ps3-grp.fix{border-top:1px dashed #d9dde4;padding-top:8px;margin-top:6px}

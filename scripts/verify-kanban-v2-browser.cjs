@@ -24,16 +24,24 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    PipelineWorkspace.open('all');
   });
   const col=k=>page.locator('.ps-kcol[data-pk-col="'+k+'"]');
-  /* 정렬: 기한 지남 → 할 일 없음(금액 큰 순) → 진행 중 */
-  assert.deepEqual(await col('consulting').locator('.ps-kcard').evaluateAll(ns=>ns.map(n=>n.dataset.value)),['over','none-big','none-small','ok-big']);
-  assert.deepEqual(await col('consulting').locator('.ps-kdot').evaluateAll(ns=>ns.map(n=>n.className.replace('ps-kdot ',''))),['over','none','none','ok']);
-  /* 12장 + 더보기, 실주는 최근 3장 */
-  assert.equal(await col('relationship').locator('.ps-kcard').count(),12);
-  assert.equal(await col('relationship').locator('.ps-kmore').innerText(),'+ 2건 더보기');
-  assert.equal(await col('lost').locator('.ps-kcard').count(),3);
+  /* pipeline_list ④(2026-10-20): 정렬 = 확인된 기한 급한 순(지남 → 가까운 날) → 기한 없음(금액 큰 순) · 셋째 줄 = 먼저 볼 이유(항상 보임 · 어떤 기한인지) */
+  assert.deepEqual(await col('consulting').locator('.ps-kcard').evaluateAll(ns=>ns.map(n=>n.dataset.value)),['over','ok-big','none-big','none-small']);
+  assert.deepEqual(await col('consulting').locator('.ps-kdot').evaluateAll(ns=>ns.map(n=>n.className.replace('ps-kdot ',''))),['over','ok','none','none']);
+  assert.deepEqual(await col('consulting').locator('.ps-kr3').evaluateAll(ns=>ns.map(n=>[n.textContent,n.classList.contains('r')])),[['연락 약속 '+(()=>{const d=new Date(Date.now()-4*864e5);return (d.getMonth()+1)+'.'+d.getDate();})()+' · 4일 지남',true],['연락 약속 · '+(()=>{const d=new Date(Date.now()+5*864e5);return (d.getMonth()+1)+'/'+d.getDate();})()+'까지',false],['판정 불가 · 이관 전 기록 확인',false],['판정 불가 · 이관 전 기록 확인',false]],'셋째 줄 = 먼저 볼 이유 · 기한 지남만 빨강');
+  /* 칸마다 한 쪽 최대 20건 + 쪽 번호('+n건 더보기' 없음) · 실주도 같은 규칙(최근 종료 순) */
+  assert.equal(await col('relationship').locator('.ps-kcard').count(),14);
+  assert.equal(await page.locator('.ps-kmore').count(),0,'더보기 단추 없음');
+  assert.equal(await col('lost').locator('.ps-kcard').count(),5);
   assert.equal(await col('lost').locator('.ps-kcard').first().getAttribute('data-value'),'lost-4','최근 실주가 위');
   assert.equal(await col('lost').locator('.ps-kcard').first().getAttribute('draggable'),'false');
-  assert.match(await page.locator('.pk-sum').innerText(),/진행\s*19건/);
+  await page.evaluate(()=>{for(let i=0;i<25;i++)B.deals.push({id:'many-'+i,site:'많은 현장 '+i,assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-05-01',code:'sent',stage_code:'sent',grp:'영업·관리',amt:1e7});PipelineWorkspace.render();});
+  assert.equal(await col('sent').locator('.ps-kcard').count(),20,'한 쪽 20건');assert.equal(await col('sent').locator('nav.lpg .lpg-b.on').innerText(),'1');
+  await col('sent').locator('nav.lpg .lpg-b[data-page="2"]:not(.lpg-arrow)').click();await page.waitForTimeout(150);
+  assert.equal(await col('sent').locator('.ps-kcard').count(),6,'2쪽 = 나머지 6건');assert.equal(await col('relationship').locator('.ps-kcard').count(),14,'다른 칸 쪽은 그대로');
+  await page.evaluate(()=>{B.deals=B.deals.filter(d=>!/^many-/.test(d.id));PipelineWorkspace.render();});
+  /* 범위 문구: 진행 중 n건(진행 5단계 · 영업건 단위) · 예상금액 합(금액 미확인 n건 제외) · 끝난 영업은 따로 */
+  assert.match((await page.locator('.pk-sum').innerText()).replace(/\s+/g,' '),/진행 중 19건 진행 5단계 · 영업건 단위 예상금액 합 [\d.,]+(억|만) 끝난 영업 · 수주 0 · 실주 5/);
+  assert.match(await page.locator('.pk-legend').innerText(),/셋째 줄 = 먼저 볼 이유/);assert.doesNotMatch(await page.locator('.pk-legend').innerText(),/마우스를 올리면/);
   /* 브랜드·담당자 드롭다운 */
   await page.selectOption('[data-pk-filter="brand"]','석민이앤씨');
   assert.equal(await page.locator('.ps-kcard').count(),1);assert.equal(await page.evaluate(()=>G.brand),'석민이앤씨');
@@ -55,8 +63,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await drop(key,'sent');await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>window.__transition),null,'같은 열은 아무 일 없음');
   assert.equal(await page.evaluate(()=>window.__writes),0,'놓기만으로는 저장되지 않는다');
-  /* 더보기 → 단계 목록 화면 */
-  await col('relationship').locator('.ps-kmore').click();assert.equal(await page.evaluate(()=>G.pipelineStage),'relationship');
+  /* 칸 제목 → 단계 목록 화면(더보기 단추는 없다 — 칸마다 쪽 번호) */
+  await col('relationship').locator('.ps-ktitle').click();assert.equal(await page.evaluate(()=>G.pipelineStage),'relationship');
   assert.equal(await page.locator('#pipeline-stage-root.pk-mode').count(),0,'단계 화면은 기존 모양');
   assert.deepEqual(errs,[]);
   console.log(JSON.stringify({status:'PASS',sort:true,limit12:true,lost3:true,filters:true,drop_opens_transition:true,no_direct_write:true}));

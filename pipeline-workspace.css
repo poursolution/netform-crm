@@ -44,6 +44,14 @@
 #pipeline-stage-root .ps-kanban.pk .ps-kmore{font:inherit;font-size:12px;border:0;background:transparent;color:#7a7d86;padding:4px;cursor:pointer;text-align:left}
 #pipeline-stage-root .ps-kanban.pk .ps-kmore:hover{color:#1a1b1f}
 .pk-legend{display:flex;gap:16px;font-size:11px;color:#9a9ca3;align-items:center;flex-wrap:wrap}.pk-legend span{display:flex;align-items:center;gap:5px}
+/* pipeline_list(2026-10-20) — 문구 · 숫자 · 표시만: 범위 작은 글 · 조회 상태 한 줄 · 유지한 조건 · 칸반 셋째 줄(먼저 볼 이유) · 수주 · 실주 앞 구분선. 틀 · 색 · 카드 모양은 그대로 */
+.pk-sum span{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}.pk-sum small{font-size:11.5px;color:#9a9ca3;font-weight:400}.pk-sum .pk-closed{color:#7a7d86}
+.pk-readfail{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:#b42318;margin:0 0 4px}.pk-readfail small{color:#6b7280;font-size:12px}
+#pipeline-stage-root .pk-readfail .pk-reload,#pipeline-stage-root .pk-kept .pk-unkeep{font:inherit;font-size:12px;font-weight:600;border:1px solid #e3e6ec;border-radius:8px;background:#fff;color:#374151;padding:3px 9px;cursor:pointer;box-shadow:none;height:auto;margin:0}
+.pk-kept{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#4b5563}
+.ps-kanban.pk .ps-kr3{display:block;font-size:11.5px;line-height:1.35;color:#6a6c73;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}.ps-kanban.pk .ps-kr3.r{color:#b42318;font-weight:600}
+.ps-kanban.pk .ps-kcol[data-pk-col="won"]{margin-left:8px;position:relative}.ps-kanban.pk .ps-kcol[data-pk-col="won"]::before{content:'';position:absolute;left:-9px;top:6px;bottom:6px;border-left:2px dashed #d6d6d0}
+.ps-kanban.pk .ps-kcol nav.lpg.sm{padding:4px 0 0;justify-content:flex-start}
 @media(max-width:1100px){#pipeline-stage-root.pk-mode{min-width:0;padding:16px}.ps-kanban.pk{grid-template-columns:1fr}.pk-search{width:100%}.pk-spacer{display:none}.pk-seg{flex-wrap:wrap;width:100%}.pk-segitem{flex:1 1 40%;min-width:0}.pk-segitem select{width:100%;max-width:none;min-width:0}.pk-head{gap:10px}}
 
 /* 페이지 상단 제목 띠(건수만 남는 빈 줄) 제거 — 제목은 앱 헤더가, 건수는 현황판·목록이 보여준다 */
