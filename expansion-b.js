@@ -22,8 +22,9 @@
  const unclassified=r=>!workOf(r);
  const NODATE=-99999;
  const CFG={id:'expansion-b',name:'확장관리',unit:'건',stallUnit:'',stallName:'다음 접촉일',stallDesc:'다음 접촉일 기준',
-  stallFmt:n=>n===NODATE?'다음 접촉일 미지정':n>0?'다음 접촉 '+n+'일 지남':n===0?'다음 접촉 오늘':'다음 접촉 '+(-n)+'일 뒤',
-  kpi3:inB=>{const live=inB.filter(i=>i.bucket!=='hold'),nod=live.filter(i=>i.stall===NODATE).length;return ['다음 접촉일 미지정',nod+'건','날짜 칸 = 다음 접촉일 · 준공 후 경과는 지연 아님'];},listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
+  /* nine_menus(2026-10-20 검토서 3절): 다음 접촉일은 저장된 약속이 없으면 준공 + D+30 자동값이라 고객 약속일과 구분되지 않는다 — '예정일'로 부르고 자동값임을 적는다(실제 기한 초과로 세지 않음 · 분리 저장은 Codex) */
+  stallFmt:n=>n===NODATE?'접촉 예정일 미지정':n>0?'접촉 예정일 '+n+'일 지남':n===0?'접촉 예정일 오늘':'접촉 예정일 '+(-n)+'일 뒤',
+  kpi3:inB=>{const live=inB.filter(i=>i.bucket!=='hold'),nod=live.filter(i=>i.stall===NODATE).length;return ['접촉 예정일 미지정',nod+'건','날짜 칸 = 접촉 예정일(약속 없으면 준공 + D+'+rules().after+' 자동값) · 준공 후 경과는 지연 아님'];},listTitle:'확인할 현장',openLabel:'열기',diagTitle:'사후관리 진단',
   desc:()=>'준공 고객의 다음 매출 · 준공은 끝이 아니라 사후관리 → 재영업 — D+'+rules().after+' 사후 연락(만족도 · 하자 · 내년 공사 · 추가 공종 · 주변 단지) → 니즈 확인 → 견적 확인 후 새 영업건 전환 · 관계는 '+Math.round(rules().wait/30)+'개월 1회',
   axis:'사후관리 진행',
   S:[['after','사후 연락 · 관계 유지','#15171c','준공 후 사후 연락 · 주기마다 관계 연락'],['need','니즈 확인','#8a909c','견적 확인 후 새 영업건 전환'],['hold','보류 · 전환 완료','#d5d9e0','새 영업건에서 진행 · 보류는 연도 지정']],

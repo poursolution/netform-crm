@@ -98,8 +98,9 @@
  }
  function reconHtml(M){
   const X=recon(M);if(!X)return '';const S=st(),gap=Math.abs(X.d.sum-X.a.sum),P=R.ListPager,pg=P?P.cut(X.rows,S.reconPage||1):{rows:X.rows.slice(0,20),pages:1,page:1};
-  return '<section class="ac-recon"><b>대시보드와 대조</b><div><span>대시보드 진행 중 파이프라인</span><b>'+X.d.n.toLocaleString('ko-KR')+'건 · '+h(won(X.d.sum))+'</b></div><div><span>고객 자산 현재 영업기회</span><b>'+X.a.n.toLocaleString('ko-KR')+'건 · '+h(won(X.a.sum))+'</b></div>'
-   +(X.rows.length?'<div class="gap"><span>차이</span><b>'+X.rows.length.toLocaleString('ko-KR')+'건 · '+h(won(gap))+'</b></div><button type="button" data-ac="recon" aria-expanded="'+!!S.recon+'">대조 목록 '+(S.recon?'▴':'▾')+'</button>':'<div class="same"><span>차이</span><b>없음 · 같은 숫자</b></div>')
+  /* nine_menus(2026-10-20 검토서 5절): 차이가 없으면 같은 합계를 두 줄로 반복하지 않는다 — 한 줄 '차이 없음' + 대조 대상 한 번 */
+  return '<section class="ac-recon"><b>대시보드와 대조</b>'+(X.rows.length?'<div><span>대시보드 진행 중 파이프라인</span><b>'+X.d.n.toLocaleString('ko-KR')+'건 · '+h(won(X.d.sum))+'</b></div><div><span>고객 자산 현재 영업기회</span><b>'+X.a.n.toLocaleString('ko-KR')+'건 · '+h(won(X.a.sum))+'</b></div>'
+   +'<div class="gap"><span>차이</span><b>'+X.rows.length.toLocaleString('ko-KR')+'건 · '+h(won(gap))+'</b></div><button type="button" data-ac="recon" aria-expanded="'+!!S.recon+'">대조 목록 '+(S.recon?'▴':'▾')+'</button>':'<div class="same"><span>차이 없음</span><b>대시보드 = 고객 자산 · '+X.a.n.toLocaleString('ko-KR')+'건 · '+h(won(X.a.sum))+'</b></div>')
    +'<small>같은 진행 범위(수주 · 실주 · 과거 이관 제외) · 금액 = 예상 금액 · 차이 사유는 건마다</small>'
    +(S.recon&&X.rows.length?'<div class="ac-reconlist">'+pg.rows.map(r=>'<div><b title="'+attr(r.site)+'">'+h(r.site)+'</b><em>'+h(won(r.amt))+'</em><span title="'+attr(r.side+' · '+r.why)+'">'+h(r.side+' · '+r.why)+'</span></div>').join('')+(P&&pg.pages>1?P.html(pg,{ns:'ac',v:'recon',small:true,info:false}):'')+'</div>':'')+'</section>';
  }

@@ -10,7 +10,9 @@
  const enabled=()=>!root.G.smsBOff&&!root.G.smsV2Off&&!!root.StageBoard&&!!root.SmsV2;
  const KIND={now:'병목',soon:'시즌',keep:'장기 관계',re:'재활성'},SRC={now:'영업 병목',soon:'시즌 인사',keep:'정기 관계',re:'재활성'};
  const daysSince=v=>{if(!v)return null;const n=root.daysTo(String(v).slice(0,10));return Number.isFinite(n)?-n:null;};
- const CFG={id:'sms-b',name:'문자 · 캠페인',unit:'묶음',stallUnit:'',stallName:'마지막 발송 후',stallDesc:'마지막 발송 뒤 지난 일수(미발송 0)',stallRed:null,listTitle:'확인할 묶음',openLabel:'보내기',diagTitle:'발송 진단',noAmount:true,
+ /* nine_menus(2026-10-20 검토서 6절): 줄 단위 = 캠페인 · 대상 묶음 — 칸 이름을 그 뜻으로, 발송 기록이 없는 묶음은 '0일'이 아니라 '발송 기록 없음' */
+ const CFG={id:'sms-b',name:'문자 · 캠페인',unit:'묶음',stallUnit:'',stallName:'마지막 발송 후',stallDesc:'마지막 발송 뒤 지난 일수(발송 기록 없는 묶음은 평균에서 제외)',stallRed:null,listTitle:'확인할 묶음',openLabel:'보내기',diagTitle:'발송 진단',noAmount:true,cols:['묶음 · 출처','발송 준비 상태','걸린 사유 · 마지막 발송'],
+  stallFmt:n=>n<0?'발송 기록 없음':n+'일',
   desc:()=>'병목 · 시즌 · 장기 관계별로 대상을 모아 한 번에 보내는 곳 — 자료 발송 후 무응답 · 침묵 고객은 지금, 명절 · 연말은 D-7 전에, 정기 관계 문자는 월 1회 · 실제 발송은 보내기 창의 최종 확인란을 거친다',
   axis:'발송 준비',
   S:[['now','지금 보낼 때 · 병목','#15171c','발송 가능 대상부터 오늘'],['soon','시즌 · 정기 관계','#8a909c','D-7 전 문구 확정 · 월 1회'],['re','재활성','#d5d9e0','실주 · 휴면 · 무응답 다시 깨우기']],
@@ -39,7 +41,7 @@
   if(r.group==='keep'&&r.ready&&(ld===null||ld>30))rs.push('month');
   if(r.total>r.ready)rs.push('excluded');
   if(r.past)rs.push('past');
-  return {key:r.key,site:r.name,brand:'',brandText:KIND[r.group],owner:r.source,amountText:SRC[r.group],bucket,sub,rs,stall:ld===null?0:ld,extra:{r}};
+  return {key:r.key,site:r.name,brand:'',brandText:KIND[r.group],owner:r.source,amountText:SRC[r.group],bucket,bucketLabel:r.group==='keep'?'정기 관계':undefined,sub,rs,stall:ld===null?-1:ld/* 발송 기록 없음 = -1(0일 아님) */,extra:{r}};
  }
  function sideHtml(m){
   const why=new Map();m.all.filter(t=>!t.guard.ok).forEach(t=>why.set(t.guard.label,(why.get(t.guard.label)||0)+1));

@@ -120,7 +120,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(jandi.length,2);assert.equal(jandi[1].auto,true);assert.equal(jandi[1].period_key,w.a);assert.match(jandi[1].text,/^\[주간 영업 브리핑\]/);
   await page.evaluate(()=>BriefB.autoSend());await page.waitForTimeout(300);assert.equal(jandi.length,2,'같은 주는 한 번만');await page.evaluate(()=>{G.briefBNow=null;});
   /* 7. 전체 현황(참고) */
-  assert.match(await page.locator('#brief-b .bb-ref').innerText(),/^전체 현황 \(참고\)\s*진행 3건 · 올해 수주 \d+건 · 승률 [\d.]+% · 180일\+ 방치 \d+건[\s\S]*이필선 진행 \d+ · 방치 \d+ · 수주 \d+/);
+  assert.match(await page.locator('#brief-b .bb-ref').innerText(),/^전체 현황 \(참고\)\s*진행 3건 · 올해 수주 \d+건 · 연간 메이드율 [\d.]+% · 180일\+ 방치 \d+건[\s\S]*이필선 진행 \d+ · 방치 \d+ · 수주 \d+/);
   if(shot){await page.locator('#brief-b .bb-head').scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-1.png'});await page.locator('#brief-b .bb-prow').first().scrollIntoViewIfNeeded();await page.waitForTimeout(200);await page.screenshot({path:shot+'-2.png'});}
   /* 견적문의 종결 = 종결 창(4종 · 2026-10-05 견적문의 흐름 ②)에서 Bad Fit · 사유 필수(목록 = 운영 기준) · 저장은 명령 하나 */
   const r=await page.evaluate(async()=>{

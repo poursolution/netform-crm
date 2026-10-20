@@ -88,14 +88,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const r=page.locator('#report-b');assert.equal(await r.count(),1);
   /* 문구 · 숫자 */
   const rates=await r.locator('.rb-rates>div>span').allInnerTexts();
-  assert.deepEqual(rates.slice(0,4),['영업 메이드율','문의 적합률','월간 계약 · 문의 비율 (활동량)','같은 문의 집단 전환율 ('+P.m+'월 접수)'],'비율 칸 이름');assert.match(rates[4],/^확정 전환율 \(\d+월 문의\)$/);
+  assert.deepEqual(rates.slice(0,4),['영업 메이드율','문의 적합률','월간 계약 · 문의 비율 (활동량)','같은 문의 집단 전환율 ('+P.m+'월 접수)'],'비율 칸 이름');assert.match(rates[4],/^지금까지 전환율 \(\d+월 문의 · 확정 아님\)$/);/* nine_menus 11절 */
   assert.doesNotMatch(await r.innerText(),/문의 → 계약 전환율/);
   const made=r.locator('.rb-rates>div').nth(0);assert.match(await made.innerText(),/결과 확정 2건 · 표본 적음 · 추세 판단 제한 · /,'메이드율 옆 결과 확정 n건 · 5건 미만 = 표본 적음');assert.doesNotMatch(await made.locator('p').innerText(),/[▲▼]/,'표본이 적으면 전월 대비 화살표 숨김');
   assert.match(await r.locator('.rb-band').innerText(),/메이드율 50% · 이번 달 결과 확정 2건\(실주 1\) — 표본 적음 · 추세 판단 제한/);
   assert.match(await r.locator('.rb-rates>div').nth(3).innerText(),new RegExp(P.m+'월 접수 문의 4건 중 지금까지 계약 \\d건 · 해당 월 접수 문의 기준'));
   assert.equal(await r.locator('[data-rbs="inq"]').innerText(),P.m+'월 접수 문의 4건 · 대시보드 월별 견적문의와 같은 조건','월 문의 수 = 대시보드와 같은 조건 · 제외 이유');
   const asks=await page.evaluate(()=>ReportB.data().asks.map(a=>[a.k,a.t,a.opts[0]]));
-  const stale=asks.find(a=>a[0]==='stale');assert.ok(stale,'오래 조용한 현장 결정 요청 · '+JSON.stringify(asks));assert.match(stale[1],/^\d+일 넘게 접촉 없는 진행 1건 — 기록 확인 → 추진 상태 확인 → 분류 검토$/);assert.equal(stale[2],'기록 확인 → 추진 상태 확인 → 분류 검토');
+  /* nine_menus 11절(2026-10-20): 연락 기록 없는 진행 건의 기록 확인은 일반 업무 — 대표 결정 요청에 넣지 않고 참고 한 줄 */
+  assert.equal(asks.find(a=>a[0]==='stale'),undefined,'기록 확인은 결정 요청 아님 · '+JSON.stringify(asks));
+  const sn=await page.evaluate(()=>ReportB.data().staleNote);assert.match(sn,/^참고 · \d+일 넘게 연락 기록 없는 진행 1건\(.*진행 \d+건 중\)은 담당 기록 확인 업무\(오늘 업무 · 파이프라인\)로 — 대표 결정 아님/);assert.match(await r.innerText(),/대표 결정 아님 · 기록 없음만으로 대기로 바꾸지 않음/);
   assert.doesNotMatch(JSON.stringify(asks),/대기 전환 · 정리/,"'대기 전환 · 정리' 삭제");
   assert.match(await r.locator('[data-rbs="near"]').innerText(),/수원\] 매탄 임박[\s\S]*경쟁 · 입찰 \(입찰단계\) · 기한 미등록/,'공식 7단계 이름 + 세부 상태는 괄호');
   /* 보고서 검증: 눌러서 먼저 뜬다 */

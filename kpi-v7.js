@@ -76,6 +76,8 @@
  const BASE={consulting:{nodue:it=>it.bucket==='done'}};
  function ruleBase(stage,key,items){
   const bucket={focus7:'focus',month30:'normal',long60:'wait'}[key];
+  /* nine_menus 최우선(2026-10-20 검토서 8절): 자료 발송 — 발송일이 없는 건은 7일 판정을 할 수 없으므로 '지킴'이 아니라 판정 불가 · 분모 제외(파이프라인 '판정 가능 n / 전체'와 같은 근거 sentEvidence.eligible). 분모가 0이면 비율 '–' = 판정 불가 */
+  if(stage==='sent'){const nodate=items.filter(it=>it.bucket==='nodate').length;return {base:items.length-nodate,unknown:nodate,unknownWhy:'발송일 미확인'};}
   if(stage!=='relationship'||!bucket){const f=BASE[stage]&&BASE[stage][key];return {base:f?items.filter(f).length:items.length,unknown:0};}
   const unclassified=items.filter(it=>it.bucket==='nodata').length,relevant=items.filter(it=>it.bucket===bucket);
   const known=relevant.filter(it=>it.rs.includes(key)||Number.isFinite(it.seg?it.seg.contact:it.row.contactDays));
@@ -98,7 +100,7 @@
     /* 실주 = 핵심 지표 7 · 측정 기준 a3 · 실주 화면과 같은 완료 판정(사유 + 재영업 여부, 경쟁사 낙찰이면 경쟁사 · 낙찰가) — 빨강이 아닌 두 사유도 같이 센다 */
     const LF=key==='lost'?['noreason','relist','nobid']:[],red=Object.keys(md.C.RS).filter(k=>md.isRed(k)||LF.includes(k));if(!red.length)return;
     out.push({key,label:md.C.name,total:list.length,over:key==='lost'?md.items.filter(it=>it.bucket==='nore').length:md.items.filter(it=>it.red).length,rules:red.map(k=>{const hit=md.items.filter(it=>it.rs.includes(k)),b=ruleBase(key,k,md.items);
-     const how=md.C.RS[k][3]+(key==='lost'?' · 해당 항목만 판단(전체 완성률과 별도)':key==='relationship'?' · 접촉 주기 기준(단계 진척과 별도)':'')+(b.unknown?' · 분류·접촉 확인 필요 '+b.unknown+'건(분모 제외)':'');
+     const how=md.C.RS[k][3]+(key==='lost'?' · 해당 항목만 판단(전체 완성률과 별도)':key==='relationship'?' · 접촉 주기 기준(단계 진척과 별도)':key==='won'?' · 계약 날짜 · 계약금액 보완은 수주 화면의 실적 정보 보완에만(여기와 별도 항목)':'')+(b.unknown?' · '+(b.unknownWhy||'분류·접촉 확인 필요')+' '+b.unknown+'건(판정 불가 · 분모 제외)':'');
      return Object.assign(rule(key,k,md.C.RS[k][0],how,hit.map(it=>({kind:'deal',id:String(it.row.key),name:it.row.site,owner:String(it.row.owner||''),why:md.C.RS[k][0],label:md.C.RS[k][2]})),b.base),{unknown:b.unknown});})});});}
   return out;
  }
@@ -190,10 +192,10 @@
   let body='';
   if(s.tab==='measure'&&KM){body=KM.html(s,KMD);}
   else if(s.tab==='stage'){
-   body='<span class="k7-note">파이프라인 각 단계의 \'그래서 뭘 해야 하나\' 기준을 그대로 가져왔습니다. 기준을 넘긴 건이 곧 관리 대상입니다.</span>'
+   body='<span class="k7-note">파이프라인 각 단계 화면의 빨강 사유(먼저 볼 이유)와 같은 함수로 셉니다. 기준 넘김 = 그 사유가 붙은 건 · 근거가 없어 판정할 수 없는 건(발송일 미확인 등)은 \'지킴\'이 아니라 판정 불가로 분모에서 뺍니다.</span>'
     +(SG.length?'<div class="k7-list">'+SG.map(g=>'<div class="k7-stage"><em>'+h(g.label)+'</em><span>'+g.total+'건 · 기준 넘김 <b class="'+(g.over?'r':'')+'">'+g.over+'건</b></span><i></i><button type="button" data-k7="go" data-v="'+attr(g.key)+'">단계로 이동 →</button></div>'
      +g.rules.map(r=>{const bad=r.p!=null&&r.p<80;return '<div class="k7-row '+(bad?'bad':'ok')+'" data-rule="'+attr(r.pk)+'"><div class="q"><b>'+h(r.t)+'</b><span>'+h(r.how+' · 기준 대상 '+r.base+'건')+'</span>'+(r.n?'<span class="k7-reqn">'+h(reqSum(r.rq,'기준 넘김'))+'</span>':'')+'</div>'
-      +'<div class="p"><span><span>지킨 비율</span><b>'+(r.p==null?'–':r.p+'%')+'</b></span><i><u style="width:'+(r.p==null?0:Math.max(0,Math.min(100,r.p)))+'%"></u></i></div><b class="n'+(r.n?' r':'')+'">'+r.n+'건</b>'
+      +'<div class="p"><span><span>지킨 비율</span><b>'+(r.p==null?(r.unknown?'판정 불가':'–'):r.p+'%')+'</b></span><i><u style="width:'+(r.p==null?0:Math.max(0,Math.min(100,r.p)))+'%"></u></i></div><b class="n'+(r.n?' r':'')+'">'+r.n+'건</b>'
       +(r.n?reqBtn(r.left?reqBtnTxt(r.rq):'보냄 ✓','sreq',r.pk,r.left&&!r.rq.can):'<span class="k7-auto">넘긴 건 없음</span>')+'</div>';}).join('')).join('')+'</div>':'<p class="k7-empty">이 조건에 해당하는 단계 건이 없습니다.</p>');
   }else{
    const head='<div class="k7-head"><b>확인할 지표 <span>'+list.length+'지표</span></b>'+(s.cause?'<button type="button" class="k7-clear" data-k7="clear">'+CL[s.cause]+' · 해제 ×</button>':'')+'<i></i><div class="k7-view">'+[['list','리스트'],['board','보드']].map(v=>'<button type="button" data-k7="view" data-v="'+v[0]+'" aria-pressed="'+(s.view===v[0])+'">'+v[1]+'</button>').join('')+'</div></div>';

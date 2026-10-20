@@ -11,7 +11,7 @@
  const enabled=()=>!root.G.repsBOff&&!root.G.repsV2Off&&!!root.StageBoard&&!!root.RepsV2;
  const eok=v=>root.eok(v);
  const team=n=>{try{const p=root.repProfile(n);return p.team==='gyeongnam'?'경남지사':p.employeeType==='EXTERNAL'?'외부 영업':'본사 영업';}catch(e){return '본사 영업';}};
- const CFG={id:'reps-b',name:'영업사원 관리',unit:'명',stallFmt:n=>'조치 '+n+'건',stallName:'조치 필요',stallDesc:'사람당 평균 조치 필요 건수',stallRed:3,listTitle:'확인할 사람',openLabel:'업무 보기',diagTitle:'팀 진단',noAmount:true,
+ const CFG={id:'reps-b',name:'영업사원 관리',unit:'명',stallFmt:n=>'조치 '+n+'건',stallName:'조치 필요',stallDesc:'사람당 평균 조치 필요 건수',stallRed:3,listTitle:'확인할 사람',openLabel:'업무 보기',diagTitle:'팀 진단',noAmount:true,cols:['담당자 · 업무량','현재 업무 상태','확인 이유 · 조치 필요 건수']/* nine_menus(검토서 7절): 줄 단위 = 사람 — 현장용 칸 이름 대신 */,
   desc:()=>'누구를 먼저 챙길지 — 첫 연락 · 기한 · 정체 · 다음 할 일 · 이번 주 전진으로 사람별 상태를 보고 코칭 약속을 남기는 곳 · 신규 배정은 '+(Number((root.OPS_RULES||{}).inquiryAssignMinutes)||30)+'분 안 배정 · 첫 응대 2시간',
   axis:'관리자 확인',
   S:[['critical','관리자 확인 필요','#15171c','오늘 코칭 약속 · 현장 정리'],['watch','확인 필요','#8a909c','진전 기록 확인'],['ok','여유 · 흐름 정상','#d5d9e0','배정 여유 · 수주 근접']],
@@ -25,7 +25,8 @@
       heavy:['업무량 많음',INK,'재배정 검토','업무량이 몰린 사람 — 신규 배정 조절 · 재배정 검토','open'],
       promise:['이번 주 코칭 약속 없음',INK,'약속 등록','확인이 필요한 사람에게 이번 주 약속을 남겨 다음 주 확인','promise']},
   kpi2:(inB)=>{const un=inB.reduce((a,i)=>a+i.extra.r.unresponded,0),ov=inB.reduce((a,i)=>a+i.extra.r.overdue,0);return ['첫 연락 전 · 기한 초과',un+'건 · '+ov+'건','팀 전체 합계'];},
-  kpi3:(inB)=>{const adv=inB.reduce((a,i)=>a+(i.extra.r.weekAdvanced||0),0),won=inB.reduce((a,i)=>a+(i.extra.r.weekWon||0),0),tracked=inB.some(i=>i.extra.r.weekTracked);return ['이번 주 진전',tracked?adv+'건':'수집 중','단계 전진 · 수주 '+won+'건'];}
+  /* nine_menus(검토서 7절): 수집 중 · 조회 실패 · 확인된 0건을 가른다 — 핵심 자료 일부를 못 받았으면 '조회 실패', 이번 주 단계 변경 기록이 하나도 없으면 '기록 없음(0 아님)', 있으면 n건 */
+  kpi3:(inB)=>{const adv=inB.reduce((a,i)=>a+(i.extra.r.weekAdvanced||0),0),won=inB.reduce((a,i)=>a+(i.extra.r.weekWon||0),0),tracked=inB.some(i=>i.extra.r.weekTracked),rf=Array.isArray(root.LAST_OPERATIONAL_READ_ERROR)&&root.LAST_OPERATIONAL_READ_ERROR.length>0;return ['이번 주 진전',rf?'조회 실패':tracked?adv+'건':'기록 없음',rf?'일부 자료 못 받음 · 다시 불러온 뒤 판단':tracked?'단계 전진 · 수주 '+won+'건':'이번 주 단계 변경 기록 0 · 실제 0건으로 단정 안 함'];}
  };
  function stuck(r){const parts=[];if(r.overdue)parts.push('기한초과 '+r.overdue);if(r.stale)parts.push('정체 '+r.stale);if(r.noNext)parts.push('할 일 없음 '+r.noNext);if(!parts.length&&r.unresponded)return '신규 배정 미착수';if(!parts.length&&!r.weekTracked)return '단계 변경 기록 없음';return parts.join(' · ')||'막힌 곳 없음';}
  /* 조치 n = 견적문의 + 파이프라인 모두(2026-10-07 exec_wording) — 첫 연락 전 문의도 조치 */

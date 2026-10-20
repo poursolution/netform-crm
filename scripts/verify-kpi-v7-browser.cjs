@@ -93,7 +93,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.locator('#kpi-v7 .k7-view [data-v="list"]').click();await page.waitForTimeout(150);
   /* 6. '단계별 기준' 탭: 단계 화면과 같은 함수 · 같은 숫자 */
   await page.locator('#kpi-v7 .k7-tabs [data-v="stage"]').click();await page.waitForTimeout(250);
-  assert.equal(await page.locator('#kpi-v7 .k7-note').innerText(),"파이프라인 각 단계의 '그래서 뭘 해야 하나' 기준을 그대로 가져왔습니다. 기준을 넘긴 건이 곧 관리 대상입니다.");
+  assert.match(await page.locator('#kpi-v7 .k7-note').innerText(),/^파이프라인 각 단계 화면의 빨강 사유\(먼저 볼 이유\)와 같은 함수로 셉니다\. 기준 넘김 = 그 사유가 붙은 건 · 근거가 없어 판정할 수 없는 건.*판정 불가로 분모에서 뺍니다\.$/,'nine_menus: 근거 부족을 지킴으로 세지 않는다는 안내');
   const same=await page.evaluate(()=>{const rows=PipelineWorkspace.rows(),out=[];Object.keys(PipelineStageB.CFG).forEach(key=>{const list=rows.filter(r=>r.group===key);if(!list.length)return;const md=PipelineStageB.model(key,list);Object.keys(md.C.RS).filter(k=>md.isRed(k)||(key==='lost'&&['noreason','relist','nobid'].includes(k))/* 실주 = 실주 화면 · 핵심 지표 7 · 측정 기준과 같은 완료 판정 */).forEach(k=>out.push([key,k,md.C.RS[k][0],md.items.filter(it=>it.rs.includes(k)).length]));});return out;});
   const shown=SG.filter(g=>g.key!=='inquiry').flatMap(g=>g.rules.map(r=>[g.key,r[0],r[1],r[2]]));assert.deepEqual(shown,same,'기준 이름 · 넘긴 건수 = 단계 화면 계산 그대로');
   const inq=SG.find(g=>g.key==='inquiry');assert.ok(inq,'견적문의 묶음');assert.deepEqual(inq.rules.map(r=>r[1]),['첫 연락 전','후속 연락 필요']);
