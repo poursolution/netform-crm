@@ -127,12 +127,14 @@
     const rs=[];if(!typed)rs.push('wtype');if(!dOk)rs.push('cdate');if(!info)rs.push('cinfo');
     return {bucket,sub,rs,missing};}},
   /* stage7 ⑦(2026-10-07) + stage7_2 ⑥⑦: 끝 상태. '차기 연도 → 대기 2개월 연락(전체)' 안내 삭제 · 재영업 가능 '예'인 건만 재접촉 할 일 · 실주 처리하면 기존 영업 업무는 서버가 닫는다 · 다시 열어도 실주 기록은 보존.
-     '기록 완료' = 실주 사유 + 재영업 가능 여부(예 · 아니오) 둘 다. 경쟁사 · 낙찰가는 '경쟁사 낙찰'일 때만 필수 — 사업 취소 · 중단 · 연기 · 예산 같은 사유는 '해당 없음'(미기록으로 세지 않음) */
+     '기록 완료' = 실주 사유 + 재영업 가능 여부(예 · 아니오 · 미정) 둘 다. 경쟁사 · 낙찰가는 '경쟁사 낙찰'일 때만 필수 — 사업 취소 · 중단 · 연기 · 예산 같은 사유는 '해당 없음'(미기록으로 세지 않음) */
   lost:{name:'실주',desc:()=>'끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부를 남기는 곳 · 재영업 가능 "예"인 건만 재접촉 할 일(이전 실주 결과는 그대로 보존)',axis:'실주 기록',
-   S:[['nore','기록 보완 필요','#15171c','사유 · 재영업 여부 기록'],['rec','기록 완료','#d5d9e0','사유 + 재영업 여부 입력됨'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
-   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stage'],nobid:['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',INK,'결과 기록','경쟁사 · 낙찰가 기록(경쟁사 낙찰일 때만)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
+   S:[['nore','기록 보완 필요','#15171c','사유 · 재영업 여부 기록'],['rec','기록 완료','#d5d9e0','사유 + 재영업 여부(미정 포함) 입력됨'],['re','재영업 가능 · 예','#8a909c','재접촉 할 일 하나']],
+   /* 2026-10-20 7stage_rules 2번: [사유 기록] = 실주 기록 입력으로 바로(예전 'stage' = 비활성 단계 선택이 먼저 열림) */
+   RS:{noreason:['실주 사유 미입력',RED,'사유 기록','원인 · 고객 반응 기록','stagefields'],nobid:['경쟁사 낙찰 · 경쟁사 · 낙찰가 미입력',INK,'결과 기록','경쟁사 · 낙찰가 기록(경쟁사 낙찰일 때만)','stagefields'],relist:['재영업 가능 여부 미입력',INK,'여부 입력','재영업 가능 여부 입력','stagefields'],contact:['재접촉 할 일 없음',INK,'재접촉 등록','재접촉 할 일 하나 등록','next']},
    calc(r,v,q){const reason=v.lossReason&&v.lossReason!=='미기록'?v.lossReason:'',lf=((r.item.stage_contexts||{}).lost||{}).fields||{},eng=String(lf.reengage||(r.fields||{}).reengage||'').trim(),legacy=!eng&&!!v.recontact,
-    recorded=eng==='예'||eng==='아니오',re=eng==='예',
+    /* 재영업 '미정'도 고른 값 그대로 기록 완료(입력에서 고를 수 있는 값을 완료에서 빼지 않는다 · 2026-10-20) — 재접촉 업무 생성과는 별개 */
+    recorded=eng==='예'||eng==='아니오'||eng==='미정',re=eng==='예',
     compWin=/타사 선정|경쟁 패배|경쟁사 낙찰|타사 낙찰|경쟁업체/.test(reason),na=!!reason&&!compWin&&/취소|중단|연기|예산|사업/.test(reason),done=!!reason&&recorded&&(!compWin||!!v.competitor);
     const bucket=!done?'nore':re?'re':'rec';
     const sub=(v.lossDate?String(v.lossDate).slice(0,10)+' 실주':'실주일 미기록')+(reason?' · '+reason:'')+(eng?' · 재영업 '+eng:legacy?' · 재접촉 '+v.recontact:' · 재영업 가능 미정')+(na?' · 경쟁사 해당 없음':'');
@@ -222,5 +224,12 @@
   root.CommonFilterBar?.mount('pipe');const bar=pg?.querySelector(':scope>.cf-bar');if(bar)bar.hidden=false;
   return true;
  };
- root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules,sentEvidence,consultingEvidence};
+ /* 한 영업건의 목록 판정(상태 칸 · 첫 사유 · 할 일 · 버튼) — 상세 창이 목록과 같은 업무 · 버튼을 쓰게(2026-10-20 7stage_rules 3번) */
+ function itemOf(key,d){
+  try{if(!CFG[key]||!d)return null;const r=root.PipelineWorkspace.rows().find(x=>String(x.item&&x.item.id)===String(d.id));if(!r)return null;
+   const M=model(key,[r]),it=M.items[0];if(!it)return null;const rs=it.first?M.C.RS[it.first]:null;
+   return {bucket:it.bucket,first:it.first,rs:it.rs,sub:it.sub,values:it.values||{},why:rs?rs[0]:'',task:key==='consulting'?consultingEvidence(r).task:rs?rs[3]:'',btn:rs?[rs[2],rs[4]]:null,row:r};
+  }catch(e){return null;}
+ }
+ root.PipelineStageB={enabled,model,html,CFG,rules,open,segRules,sentEvidence,consultingEvidence,itemOf};
 })(window);

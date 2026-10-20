@@ -81,7 +81,9 @@
    tab:it=>it.bucket==='late'?0:it.bucket==='done'?2:it.bucket==='nodate'?3:1,
    /* after_deploy 8: 발송일이 있는 건만 판정 가능 — 발송일 없는 건을 '후속 지연 0건'으로 읽히게 두지 않는다 */
    judge:(items,X)=>{const ok=X.SE?X.SE.filter(e=>e.eligible).length:items.filter(x=>x.tab!==3).length,un=X.total-ok,late=X.cnt(0);return {label:'발송 후 후속 지연',ok,all:X.total,un,unWhy:'발송일 미확인',fine:Math.max(0,ok-late),okLabel:'확인 완료 · 기한 안',prob:late,probLabel:'실제 지연',next:un?'기존 발송 자료 · 수신자 · 발송일 확인':late?'오늘 후속 연락 → 결과 기록':'없음'};},
-   has:{nofollow:(it,t)=>t===0,nosent:(it,t)=>t===3,nodecider:it=>!deciderKnown(it),nonext,long},sub:it=>it.sub};
+   has:{nofollow:(it,t)=>t===0,nosent:(it,t)=>t===3,nodecider:it=>!deciderKnown(it),nonext,long},sub:it=>it.sub,
+   /* 2026-10-20 7stage_rules: 상세 '발송 내역 확인'에서 [안 보냄]으로 남긴 건 = 발송 준비(목록 · 상세 같은 업무 · 같은 버튼 → 그 입력으로 바로) */
+   rowOpts:x=>{const f=((ctxOf(x.row.item).sent||{}).fields)||{};return String(f.sent_state||'')==='안 보냄'&&!f.sent_date?{task:'발송 준비 → 보낸 뒤 발송일 · 받는 분 · 자료 기록',btn:['발송 기록','stagefields'],base:'아직 안 보냄 · 발송 준비'}:{};}};
   /* 관계관리 v12(2026-10-07 design_handoff_relationship_v12): 상태 5칸(집중 · 일반 · 대기 · 보류 · 미확인) + 업무 필터(상태와 별개) + 왼쪽 전환 검토 요청 · 재분류 진행률. 끄기 G.relV12Off */
   if(key==='relationship'&&root.RelV12&&root.RelV12.on()){const RV=root.RelV12,TB=RV.tabs();
    return {name:'관계관리',goal:goalOf(key,60),desc:'견적 후 고객 상태에 따라 연락 주기를 다르게 · 고객과 약속한 날짜가 있으면 그 날짜 우선',

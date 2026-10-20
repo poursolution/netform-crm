@@ -84,7 +84,7 @@
     const resp=await sb.rpc('crm_quote_version_save_v1',{p:payload});if(resp&&resp.error)throw new Error(resp.error.message||'저장하지 못했습니다');const o=resp&&resp.data;if(!o||o.ok!==true)throw new Error('서버 응답을 확인하지 못했습니다');
     const p=R.itemPatch(d,'deal'),A=R.execQuoteVersions(d),row={version_no:o.version_no,amount:o.amount,base_amount:o.base_amount,kind:o.kind,reason:o.reason,created_at:o.server_at||R.isoNow(),created_by:(typeof ME!=='undefined'&&ME&&ME.name)||''};
     d.quote_versions=p.quoteVersions=A.concat([row]);d.quote_amount=p.quoteAmt=o.amount;try{R.saveLocal();}catch(e){}
-    const back=document.querySelector('#detailView [data-dv3="p7close"]');if(back)back.click();
+    const back=document.querySelector('#detailView [data-dv3="p7close"]');if(back)back.click();/* 지금 응대 중심(dv8): 자료는 가운데 패널 — 확정 뒤 자료 목록으로 돌아가 새 수정본을 보여 준다 */if(document.querySelector('#detailView.dv8')&&R.DealDetailV3&&R.DealDetailV3.openPanel){try{R.DealDetailV3.openPanel('files');}catch(e){}}
     R.renderDetail();R.showDetailErr&&R.showDetailErr('견적 V'+o.version_no+'을 확정했습니다 — '+fmt(o.amount)+'원 (VAT 별도). 이어서 [제출금액 만들기]로 가산할 수 있습니다.',true);
    }catch(e){st.busy=false;st.msg={text:String(e&&e.message||e),cls:'cae'};refresh();}
   }

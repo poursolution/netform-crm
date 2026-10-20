@@ -41,7 +41,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
    window.__open=async(i)=>{try{closeDetail();}catch(e){}await DealWin.load();drwDeal(JSON.stringify(B.deals[i]));detailTabFocus('현장·견적');};
   },STD);
   const date=await page.evaluate(()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10));
-  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView [data-dv3="files"]');await page.waitForTimeout(500);if(await page.locator('#detailView .dv3-fadd').count()===0)await page.click('#detailView [data-dv3="files"]');await page.waitForSelector('#detailView .dv3-fadd');};
+  const open=async i=>{await page.evaluate(i=>window.__open(i),i);await page.waitForSelector('#detailView [data-dv3="files"],#detailView .dv8-links [data-v="files"]');await page.waitForTimeout(500);if(await page.locator('#detailView .dv3-fadd').count()===0)await page.click(await page.locator('#detailView .dv8-links [data-v="files"]').count()?'#detailView .dv8-links [data-v="files"]':'#detailView [data-dv3="files"]');/* 지금 응대 중심: 자료 = 왼쪽 링크 → 가운데 패널 */await page.waitForSelector('#detailView .dv3-fadd');};
   /* ① 자료 구역 [견적 작성] → 가운데 칸 */
   await open(0);assert.equal(await page.locator('#detailView .dv3-fadd button[data-v="compose"]').count(),1);
   await page.click('#detailView .dv3-fadd button[data-v="compose"]');await page.waitForSelector('#detailView .dv7-drawer:not([hidden]) .qc');
