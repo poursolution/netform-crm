@@ -409,7 +409,7 @@ SC.b22={eb:'PART 2 영업관리 — 컨트롤타워',h2:'요청을 보낸 것으
 SC.b21={eb:'PART 2 영업관리 — 성과분석',h2:'얼마를 수주했는지만 보면,<br><em>다음에 무엇을 바꿔야 할지는 보이지 않습니다.</em>',
  foot:'2026.10.18 실제 화면(성과 분석 · 2026년 연간) 기준 · 담당자별 비율은 이 발표에서 보여 주지 않음',
  steps:[
-  {nm:'무엇을 근거로',d:29150,c:[150,8150,15983],role:'다음 영업 보완',title:'결과를 집계해도, 다음 영업에서 보완할 근거가 부족했습니다.',msg:'활동 · 진행 · 결과 · <strong>확인된 사유</strong>를 함께 봐야 보완할 것이 보입니다.'},
+  {nm:'무엇을 근거로',kmsg:{1:'결과만으로는 <strong>다음 영업에서 무엇을 바꿀지</strong> 알기 어려웠습니다.'},d:29150,c:[150,8150,15983],role:'다음 영업 보완',title:'결과를 집계해도, 다음 영업에서 보완할 근거가 부족했습니다.',msg:'활동 · 진행 · 결과 · <strong>확인된 사유</strong>를 함께 봐야 보완할 것이 보입니다.'},
   {nm:'멈춘 구간',d:28817,c:[150,7817,10650,14817],role:'사람보다 멈춘 구간',title:'낮은 사람이 아니라, 멈춘 구간을 찾습니다.',msg:'어디서 막혔는지 보고, <strong>무엇을 보완할지</strong> 정합니다.'},
   {nm:'왜 졌나',d:25650,c:[150,5150,11650],role:'왜 졌나',title:'실주 31건 중 이유가 남은 건 1건입니다.',msg:'이유가 없으면 다음 제안에서 무엇을 바꿀지 정할 수 없습니다 — <strong>확인된 실주 사유</strong>부터 남깁니다.'},
   {nm:'아직 판단 안 함',d:23817,c:[150,8983,15150],role:'아직 판단하지 않는 것',title:'기록이 쌓이기 전에는 원인을 단정하지 않습니다.',msg:'기록이 적을 때는 <strong>원인을 단정하지 않고</strong>, 기록 부족이라고 그대로 둡니다.'}],
@@ -626,7 +626,7 @@ SC.c13={eb:'PART 4 인수인계와 향후계획 — 매주',h2:'지난주에 안
   <div class="note" style="margin-top:14px;font-size:17px" data-in="1.5">매일 확인은 컨트롤타워에서 — 매주는 그 결과가 달라졌는지를 봅니다</div></div>`};
 
 /* ───── 재생기 ───── */
-const Q=new URLSearchParams(location.search),EMB=Q.get('embed')==='1',ID=SC[Q.get('s')]?Q.get('s'):'b06',S=SC[ID],ONLY=Q.has('step')?+Q.get('step'):null;
+const Q=new URLSearchParams(location.search),EMB=Q.get('embed')==='1',ID=SC[Q.get('s')]?Q.get('s'):'b06',S=SC[ID],ONLY=Q.has('step')?+Q.get('step'):null,CLICK=Q.get('click')==='1',K0=Q.has('k')?+Q.get('k'):null;
 if(EMB)document.documentElement.classList.add('emb');
 const sl=document.getElementById('sl'),wrap=document.getElementById('wrap');if(S.site)sl.classList.add('site');
 const N=S.steps.length;document.title=S.eb.replace(/^.*— /,'');
@@ -660,20 +660,21 @@ function tick(now){if(!run)return;t+=now-last;last=now;const s=S.steps[cur];
  pbs[cur].style.width=Math.min(100,t/s.d*100)+'%';
  if(t>=s.d){if(all&&cur<N-1){cur++;t=0;applied=0;ui(cur);apply((cur+1)*100)}else{run=false;done=true;pbs[cur].style.width='100%';btn();return}}
  raf=requestAnimationFrame(tick)}
+function show(i,k){cancelAnimationFrame(raf);run=false;done=true;st.classList.remove('paused');cur=i;t=0;applied=0;ui(i);const s=S.steps[i];if(s.kmsg&&k!=null&&s.kmsg[k])document.getElementById('msg').innerHTML=s.kmsg[k];snap((i+1)*100+(k==null||isNaN(k)?99:k));pbs.forEach((p,j)=>p.style.width=j<=i?'100%':'0');fadeIn(st);btn()}
 function pause(){if(!run)return;run=false;cancelAnimationFrame(raf);st.classList.add('paused');btn()}
 function resume(){run=true;last=performance.now();st.classList.remove('paused');raf=requestAnimationFrame(tick);btn()}
 function toggle(){if(run)pause();else if(t>0&&!done)resume();else{all=true;jump(0,true)}}
 btns.forEach((b,i)=>b.addEventListener('click',()=>{all=false;jump(i,true)}));
 play.addEventListener('click',toggle);document.getElementById('replay').addEventListener('click',()=>{all=false;jump(cur,true)});
-addEventListener('keydown',e=>{if(EMB&&!(e.key==='r'||e.key==='R')){try{parent.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,bubbles:true,cancelable:true}))}catch(_){}e.preventDefault();return}
+addEventListener('keydown',e=>{if(EMB&&!(e.key==='r'||e.key==='R')){try{parent.dispatchEvent(new KeyboardEvent('keydown',{key:e.key,code:e.code,repeat:e.repeat,bubbles:true,cancelable:true}))}catch(_){}e.preventDefault();return}
  if(e.code==='Space'){e.preventDefault();toggle()}else if(e.key==='ArrowRight'&&cur<N-1){all=false;jump(cur+1,true)}else if(e.key==='ArrowLeft'&&cur>0){all=false;jump(cur-1,true)}else if(e.key==='r'||e.key==='R'){all=false;jump(cur,true)}});
 const fit=()=>{const k=EMB?Math.min(innerWidth/1600,innerHeight/900):Math.min((innerWidth-28)/1600,(innerHeight-86)/900);sl.style.transform='scale('+k+')';wrap.style.width=1600*k+'px';wrap.style.height=900*k+'px';if(EMB)wrap.style.marginTop=Math.max(0,(innerHeight-900*k)/2)+'px'};
 addEventListener('resize',fit);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 fit();
 const i0=ONLY!=null?Math.max(0,Math.min(N-1,ONLY)):0;
 snap(i0*100+99);ui(i0);cur=i0;
-setTimeout(()=>{if(!run&&t===0){all=ONLY==null;jump(i0,true)}},EMB?60:600);
-window.SceneMotion={N,jump:i=>{all=false;jump(i,true)},pause,end:i=>{cancelAnimationFrame(raf);run=false;snap((i+1)*100+99);ui(i);cur=i}};
+if(CLICK)show(i0,K0);else setTimeout(()=>{if(!run&&t===0){all=ONLY==null;jump(i0,true)}},EMB?60:600);
+window.SceneMotion={N,show,jump:i=>{all=false;jump(i,true)},pause,end:i=>{cancelAnimationFrame(raf);run=false;snap((i+1)*100+99);ui(i);cur=i}};
 })();
 </script>
 </body>
