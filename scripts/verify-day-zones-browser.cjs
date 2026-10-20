@@ -36,7 +36,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
     ...[1,2,3].map(n=>deal('lost'+n,'[대구] 실주 현장 '+n,{code:'lost',stage_code:'lost',outcome:'lost',closed_at:day(-20-n),amt:1e8}))],
     inquiries:[{id:'aaaaaaaa-1111-4111-8111-111111111111',site:'[경기 수원] 수원장안힐스테이트',status:'배정완료',at:at(0.02),created_at:at(0.02),brand:'POUR솔루션',phone:'010-1234-5612',contact_name:'고객1',assignee:'이필선',assigned_to:'이필선',assigned_at:new Date(Date.now()-20*6e4).toISOString(),memo:'옥상 방수 견적 문의',raw:{'문의내용':'견적 문의'}}],activities:[],inquiryTrash:[],expansion_pool:[]};
    try{localStorage.removeItem('crm.dz.assignSeen.v1');}catch(e){}
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;G.dayZones=null;G.workReq=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.todayV3Off=false;G.todayV6Off=true;/* 예전 4구역 목록(끄기 경로) — v6 는 verify-today-v6-browser */G.dayZones=null;G.workReq=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op)=>{__writes.push(op);return 'req';};
    window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};
    window.__drw=[];const drw0=window.drwDeal;window.drwDeal=s=>{try{__drw.push(JSON.parse(s).id);}catch(e){}};window.__dial=0;window.contactDial=()=>{__dial++;};

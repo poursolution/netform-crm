@@ -41,9 +41,10 @@ const EXPECT={now:['합성 오늘 실측','합성 오늘 약속','합성 문의 
    SB={rpc:async()=>({data:{ok:true,requests:[],tasks:[],entries:[],rows:[],units:[],events:[],comments:[],advisory:[]}})};OpsStore.aiOn=()=>false;
    goPage('today');
   },[CASES,INQ]);
-  await pc.waitForSelector('#today-v2 .dz');await pc.waitForTimeout(800);
+  await pc.waitForSelector('#today-v2 .tv6-tabs');await pc.waitForTimeout(800);
   const pcZones=await pc.evaluate(()=>{const Z=DayZones.last(),site=i=>(i.i&&i.i.site)||(i.d&&(i.d.site||i.d.site_name))||'';return {now:Z.now.map(site),late:(Z.late||[]).map(site),wait:Z.wait.map(site),fix:(Z.fix||[]).map(site)};});
-  const pcTabs=await pc.locator('#today-v2 .dz-tabs button span').allInnerTexts();
+  /* design_handoff_pc_today_v6: PC 는 5칸 탭(전체 · 기한 지남 · 오늘 처리 · 회신 대기 · 기록 보완) — 구역 4칸 숫자를 같은 이름 순서로 읽는다 */
+  const pcTabs=await pc.evaluate(()=>{const n=v=>document.querySelector('#today-v2 .tv6-tabs [data-v="'+v+'"] .n').textContent.trim();return ['오늘 처리 '+n('now'),'기한 초과 '+n('late'),'고객 회신 대기 '+n('wait'),'기록 보완 '+n('fix')];});
   /* ── 모바일 ── */
   const mo=await ctx(390);
   await mo.goto(origin+'/mobile.html?demo=1&review=hub&screen=B',{waitUntil:'domcontentloaded'});await mo.locator('.approved-b').waitFor();
