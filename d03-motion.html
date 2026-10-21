@@ -339,7 +339,7 @@ html.emb .ctl{display:none}
       <h4>준공 현장 취합표</h4>
       <div class="th"><span>분석할 자료</span><span>원본 연결</span></div>
       <div class="r r1" style="--i:0"><span>품수 · 노임금액</span><em><span class="dash">—</span><span class="man">손으로 옮겨 적는 중…</span><span class="lnk">출역표 · 정산서</span></em></div>
-      <div class="r r2" style="--i:1"><span>면적 · 시트 사용량</span><em><span class="dash">—</span><span class="lnk">계약 면적 · ERP 시트</span></em></div>
+      <div class="r r2" style="--i:1"><span>소요량 · 시트 사용량</span><em><span class="dash">—</span><span class="lnk">계약 면적 · ERP 구매 · 출고 내역</span></em></div>
       <div class="r r3" style="--i:2"><span>자재비 · 공사기간</span><em><span class="dash">—</span><span class="lnk">ERP · 착공 · 준공 기록</span></em></div>
       <div class="r r4" style="--i:3"><span>자료가 비어 있으면</span><em><span class="dash">—</span><span class="lnk need">확인 필요로 남김</span></em></div>
       <span class="fol">따라갈 두 항목 →</span>
@@ -350,10 +350,10 @@ html.emb .ctl{display:none}
     <!-- 2 비교 -->
     <div class="o ru"><b>비교 기준부터 맞춤</b><span class="ch" style="--i:0">같은 현장 A</span><span class="ch" style="--i:1">같은 공종</span><span class="ch" style="--i:2">같은 집계 범위</span></div>
     <div class="o card ln lnA"><b class="tg">노임</b><div class="cd cL">품수 × 적용 품단가<small>품단가 적용일 확인</small></div><div class="mid"><i class="lk"></i><span class="neq">차이</span></div><div class="cd cR">노임금액<small>정산서 기준</small></div></div>
-    <div class="o card ln lnB"><b class="tg">시트</b><div class="cd cL">컨설팅면적<small>면적 산출 · 할증 기준</small></div><div class="mid"><i class="lk"></i><span class="neq">차이</span></div><div class="cd cR">실제 시트 사용량<small>ERP · 집계 범위</small></div></div>
+    <div class="o card ln lnB"><b class="tg">시트</b><div class="cd cL">면적 산정 소요량<small>컨설팅면적 · 할증 · 같은 단위</small></div><div class="mid"><i class="lk"></i><span class="neq">차이</span></div><div class="cd cR">확인한 시트 사용량<small>같은 단위 · 규격 · 구매 · 출고와 구분</small></div></div>
     <div class="o T"><b class="t1">확인할 항목</b><b class="t2">확인할 차이</b></div>
     <div class="o fl fA"><span class="a">차이 확인</span><span class="b">노임 차이<small>출역표 ↔ 계약 · 정산서</small></span></div>
-    <div class="o fl fB"><span class="a">차이 확인</span><span class="b">시트 사용량 차이<small>면적 산출 ↔ ERP</small></span></div>
+    <div class="o fl fB"><span class="a">차이 확인</span><span class="b">소요량 ↔ 사용량 차이<small>같은 단위 · 규격으로</small></span></div>
 
     <!-- 3 이유 확인 -->
     <svg class="o w2" viewBox="0 0 1440 450">
@@ -397,13 +397,13 @@ html.emb .ctl{display:none}
       <span class="bd">현장 B · 다음 현장</span>
       <h4>보완한 기준으로 준비 · 시공</h4>
       <div class="tr"><i class="bf"></i><span class="t0">준비</span><span class="t1">시공</span><span class="t2">준공</span></div>
-      <div class="rs"><span style="--i:0">품수 · 노임금액</span><span style="--i:1">면적 · 시트 사용량</span><span style="--i:2">품질 · 하자</span></div>
+      <div class="rs"><span style="--i:0">품수 · 노임금액</span><span style="--i:1">소요량 · 시트 사용량</span><span style="--i:2">품질 · 하자</span></div>
     </div>
     <div class="o ar a6"><i></i></div>
     <div class="o card M">
       <h4>같은 기준으로 다시 비교</h4>
       <div class="mr"><b>노임</b><span>품수 × 단가 ⟷ 노임금액</span></div>
-      <div class="mr"><b>시트</b><span>면적 ⟷ 실제 사용량</span></div>
+      <div class="mr"><b>시트</b><span>산정 소요량 ⟷ 확인한 사용량</span></div>
       <div class="mr"><b>품질</b><span>하자 · 품질 함께 확인</span></div>
       <p>비슷한 공종 · 조건끼리 비교 · 결과는 준공 뒤 확인</p>
     </div>
