@@ -1,0 +1,19 @@
+{
+  "purpose": "읽기/변환 대응 설명. 원업무 저장용 완전한 레코드가 아님.",
+  "mappings": [
+    {
+      "existing": "OS_B2C.getById(id)의 id",
+      "exchangeOrRule": "source.id 및 os-b2c 출처 원본 ID"
+    },
+    {
+      "existing": "CRM 실제 응답의 원문의 식별값",
+      "exchangeOrRule": "source.id와 대조; API 필드명이 미정이면 미정으로 기록"
+    },
+    {
+      "existing": "CRM 외부 업무 ID",
+      "exchangeOrRule": "담당 확장 매핑으로 보존; 플랫폼 접수번호로 대체 금지"
+    }
+  ],
+  "caseLookupExample": "const l = window.OS_CASE_FLOW?.api.lookup(system, id); // 없으면 null 유지; 임의 caseId 생성 금지",
+  "note": "조회 API가 없으면 예시 JSON으로만 시험. 현재 파일에 있는 저장 함수와 정규화 규칙을 확인한 후 담당 범위에서 변환한다."
+}
