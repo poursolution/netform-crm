@@ -1,0 +1,151 @@
+[
+  {
+    "schema": "OS_STAFF_HANDOFF_V1",
+    "schemaVersion": 1,
+    "mode": "fixture",
+    "handoffKey": "TEST:b2c:101동:1:crm",
+    "source": {
+      "system": "b2c",
+      "id": "TEST-b2c-101동"
+    },
+    "targetSystem": "crm",
+    "receiptRefs": [
+      {
+        "sourceSystem": "os-b2c",
+        "typeKey": "b2c",
+        "sourceId": "TEST-SOURCE-101동",
+        "osInternalId": "TEST-INTERNAL-101동",
+        "displayNo": null
+      }
+    ],
+    "caseRef": {
+      "caseId": "TEST-CASE-101",
+      "siteId": "TEST-SITE-SAME",
+      "scope": 1,
+      "route": "bid"
+    },
+    "documents": [
+      {
+        "id": "TEST-DOC-101동",
+        "version": "v1",
+        "purpose": "tender"
+      }
+    ],
+    "result": {
+      "status": "시험용 처리결과",
+      "note": "실제 업무 상태값으로 그대로 저장하지 않음"
+    },
+    "unresolved": []
+  },
+  {
+    "schema": "OS_STAFF_HANDOFF_V1",
+    "schemaVersion": 1,
+    "mode": "fixture",
+    "handoffKey": "TEST:b2c:102동별도:1:crm",
+    "source": {
+      "system": "b2c",
+      "id": "TEST-b2c-102동별도"
+    },
+    "targetSystem": "crm",
+    "receiptRefs": [
+      {
+        "sourceSystem": "os-b2c",
+        "typeKey": "b2c",
+        "sourceId": "TEST-SOURCE-102동별도",
+        "osInternalId": "TEST-INTERNAL-102동별도",
+        "displayNo": null
+      }
+    ],
+    "caseRef": {
+      "caseId": "TEST-CASE-102",
+      "siteId": "TEST-SITE-SAME",
+      "scope": 1,
+      "route": "direct"
+    },
+    "documents": [
+      {
+        "id": "TEST-DOC-102동별도",
+        "version": "v1",
+        "purpose": "tender"
+      }
+    ],
+    "result": {
+      "status": "시험용 처리결과",
+      "note": "실제 업무 상태값으로 그대로 저장하지 않음"
+    },
+    "unresolved": []
+  },
+  {
+    "schema": "OS_STAFF_HANDOFF_V1",
+    "schemaVersion": 1,
+    "mode": "fixture",
+    "handoffKey": "TEST:b2c:101동:2:crm",
+    "source": {
+      "system": "b2c",
+      "id": "TEST-b2c-101동"
+    },
+    "targetSystem": "crm",
+    "receiptRefs": [
+      {
+        "sourceSystem": "os-b2c",
+        "typeKey": "b2c",
+        "sourceId": "TEST-SOURCE-101동",
+        "osInternalId": "TEST-INTERNAL-101동",
+        "displayNo": null
+      }
+    ],
+    "caseRef": {
+      "caseId": "TEST-CASE-101",
+      "siteId": "TEST-SITE-SAME",
+      "scope": 2,
+      "route": "bid"
+    },
+    "documents": [
+      {
+        "id": "TEST-DOC-101동변경",
+        "version": "v2",
+        "purpose": "construction"
+      }
+    ],
+    "result": {
+      "status": "시험용 처리결과",
+      "note": "실제 업무 상태값으로 그대로 저장하지 않음"
+    },
+    "unresolved": []
+  },
+  {
+    "schema": "OS_STAFF_HANDOFF_V1",
+    "schemaVersion": 1,
+    "mode": "fixture",
+    "handoffKey": "TEST:b2c:101동:1:crm:unbound",
+    "source": {
+      "system": "b2c",
+      "id": "TEST-b2c-101동"
+    },
+    "targetSystem": "crm",
+    "receiptRefs": [
+      {
+        "sourceSystem": "os-b2c",
+        "typeKey": "b2c",
+        "sourceId": "TEST-SOURCE-101동",
+        "osInternalId": "TEST-INTERNAL-101동",
+        "displayNo": null
+      }
+    ],
+    "caseRef": null,
+    "documents": [
+      {
+        "id": "TEST-DOC-101동",
+        "version": "v1",
+        "purpose": "tender"
+      }
+    ],
+    "result": {
+      "status": "시험용 처리결과",
+      "note": "실제 업무 상태값으로 그대로 저장하지 않음"
+    },
+    "unresolved": [
+      "공사 건 미확정 — 이름으로 자동 연결하지 않음"
+    ]
+  }
+]
