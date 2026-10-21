@@ -22,45 +22,79 @@ jobs:
     steps:
       - name: Check out reviewed source
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Decide whether CRM tests are needed
+        id: scope
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          deck_only=false
+          parent=$(git rev-parse HEAD^1 2>/dev/null || true)
+          if [ -n "$parent" ] && { [ "$EVENT" = "pull_request" ] || { [ "$EVENT" = "push" ] && [ "$BEFORE" = "$parent" ]; }; }; then
+            files=$(git diff --name-only "$parent" HEAD)
+            echo "$files"
+            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(live-demo\.html|scene-motion\.html|d03-motion\.html|demo-media/.+)$'; then
+              deck_only=true
+              echo "발표 파일만 바뀌어 CRM 시험을 건너뜁니다."
+            fi
+          fi
+          echo "deck_only=$deck_only" >> "$GITHUB_OUTPUT"
 
       - name: Use Node.js 24
+        if: steps.scope.outputs.deck_only != 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
 
       - name: Install locked browser test runtime
+        if: steps.scope.outputs.deck_only != 'true'
         run: npm ci
 
       - name: Verify customer asset and workflow contracts
+        if: steps.scope.outputs.deck_only != 'true'
         run: npm run test:contracts
 
       - name: Verify contract sales ledger transactions
+        if: steps.scope.outputs.deck_only != 'true'
         run: npm run test:contract-db
 
       - name: Verify manual inquiry intake and retry contracts
+        if: steps.scope.outputs.deck_only != 'true'
         run: node --test tests/inquiry-manual-create.test.cjs
 
       - name: Verify Aligo provider and campaign queue contracts
+        if: steps.scope.outputs.deck_only != 'true'
         run: npm run test:aligo
 
       - name: Verify executive dashboard hierarchy
+        if: steps.scope.outputs.deck_only != 'true'
         run: node --test tests/dashboard-control-summary.test.cjs
 
       - name: Install Chromium for the PC smoke test
+        if: steps.scope.outputs.deck_only != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Exercise the executive dashboard in a real browser
+        if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/verify-dashboard-control-browser.cjs
 
       - name: Exercise Today and Customer Assets in a real browser
+        if: steps.scope.outputs.deck_only != 'true'
         run: npm run smoke:pc
 
       - name: Exercise manual inquiry intake in a real browser
+        if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/verify-inquiry-create-browser.cjs
 
       - name: Assemble the production release
+        if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/build-production-ui.cjs
 
       - name: Verify release provenance and runtime hashes
+        if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/verify-production-manifest.cjs ../deploy/netform-crm-production-pages
