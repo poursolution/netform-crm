@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OS B2C ↔ CRM 어댑터 확인</title>
+<style>body{font-family:system-ui,"Malgun Gothic",sans-serif;margin:24px;color:#15171c;background:#fff;max-width:1100px}h1{font-size:18px}h2{font-size:14px;margin:18px 0 6px}pre{background:#f6f7f9;border:1px solid #e3e6ec;border-radius:8px;padding:10px;font-size:12px;overflow:auto;max-height:280px}.ok{color:#1f7a4d}.bad{color:#b42318}table{border-collapse:collapse;font-size:13px}td,th{border:1px solid #e3e6ec;padding:6px 10px;text-align:left}small{color:#6b7280}</style></head>
+<body>
+<h1>OS 업무페이지(B2C 아파트 접수) ↔ 영업 CRM 연결 어댑터 — 확인용</h1>
+<p><small>서버 · 잔디 · 실데이터 없이 브라우저 안에서 가짜 CRM(메모리)으로 6가지 시험을 돌립니다. 실제 전송 · 조회 API 는 아직 연결되지 않았습니다(docs/OS_B2C_BRIDGE_20261021.md 5절).</small></p>
+<h2>시험 결과</h2><table id="t"><tr><th>#</th><th>시험</th><th>결과</th><th>근거</th></tr></table>
+<h2>OS → CRM 입력 예시(봉투 1건 + 합성 문의 → crm_inquiry_manual_create_v1 payload)</h2><pre id="in"></pre>
+<h2>CRM → OS 결과 봉투 예시(수주 뒤 · osContract=false)</h2><pre id="out"></pre>
+<script src="../os-b2c-bridge.js"></script>
+<script>
+(function(){
+ const B=window.OSB2CBridge,rows=[],add=(n,ok,why)=>rows.push([n,ok,why]);
+ const env=(key,caseRef,scope)=>({schema:'OS_STAFF_HANDOFF_V1',schemaVersion:1,mode:'fixture',handoffKey:key,source:{system:'b2c',id:'TEST-b2c-101동'},targetSystem:'crm',receiptRefs:[{sourceSystem:'os-b2c',typeKey:'b2c',sourceId:'TEST-SOURCE-101동',osInternalId:'TEST-INTERNAL-101동',displayNo:null}],caseRef:caseRef===undefined?{caseId:'TEST-CASE-101',siteId:'TEST-SITE-SAME',scope:scope||1,route:'bid'}:caseRef,documents:[{id:'TEST-DOC-101동',version:'v1',purpose:'tender'}],result:{status:'시험용 처리결과'},unresolved:caseRef===null?['공사 건 미확정 — 이름으로 자동 연결하지 않음']:[]});
+ const item=(id,o)=>Object.assign({id,brand:'POUR솔루션',region:'TEST-지역',site_name:'TEST 현장',address:'TEST 주소',customer_name:'TEST 담당',phone:'010-0000-0000',work_types:['옥상방수'],content:'TEST 문의',consult_channel:'전화',owner:'',status:'NEW'},o||{});
+ try{
+  const T=B.fakeTransport(),br=B.createBridge(T),e1=env('TEST:b2c:101동:1:crm');
+  add('연결 전 상태',br.state(e1.handoffKey).link==='unlinked','state.link = '+br.state(e1.handoffKey).link);
+  T.fail=true;const f=br.send(e1,item('TEST-b2c-101동'));add('연결 실패 → 재시도 가능',f.link==='retryable',f.lastError);T.fail=false;
+  const s1=br.send(e1,item('TEST-b2c-101동')),s2=br.send(e1,item('TEST-b2c-101동'));add('같은 handoffKey 재시도 = 같은 CRM 문의',s2.replayed===true&&s2.crmId===s1.crmId,'crmId '+s1.crmId+' · 가짜 CRM 문의 수 '+T.byId.size);
+  const p1=br.pull(e1);add('CRM 응답 반영 + 같은 응답 재수신 = 변경 없음',p1.ok&&br.receive(e1,T.status(s1.crmId)).duplicate===true,p1.reason);
+  const e2=env('TEST:b2c:102동별도:1:crm');e2.source.id='TEST-b2c-102동별도';e2.receiptRefs[0].sourceId='TEST-SOURCE-102동별도';e2.receiptRefs[0].osInternalId='TEST-INTERNAL-102동별도';br.send(e2,item('TEST-b2c-102동별도'));
+  const o=br.receive(e1,T.status('TEST-CRM-2'));add('다른 문의 응답 무시',o.ok===false,o.reason);
+  br.assign(e1.handoffKey,'TEST 담당B');T.progress(s1.crmId,{inquiry:{status:'영업건'},deal:{stage:'won',outcome:'won'},at:'2026-10-22T10:00:00+09:00'});const w=br.pull(e1);
+  add('OS 배정 변경은 owner 만 · CRM 수주는 OS 계약 완료 아님',br.state(e1.handoffKey).osOwner==='TEST 담당B'&&w.envelope.result.osContract===false&&w.envelope.result.code==='crm_won',w.envelope.result.status);
+  const st=T.status(s1.crmId);st.inquiry.updated_at='2026-10-21T09:00:00+09:00';st.deal=null;st.inquiry.status='접수';const z=br.receive(e1,st);add('이전(지연) 응답 무시',z.stale===true,z.reason);
+  add('공통 검증기 규칙(봉투 형식)',B.validate(w.envelope).length===0&&B.validate(env('x',null)).length===0,'오류 0');
+  document.getElementById('in').textContent=JSON.stringify(B.fromHandoff(env('TEST:b2c:101동:1:crm'),item('TEST-b2c-101동')),null,1);
+  document.getElementById('out').textContent=JSON.stringify(w.envelope,null,1);
+ }catch(e){add('실행 오류',false,String(e&&e.message||e));}
+ const t=document.getElementById('t');rows.forEach((r,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+(i+1)+'</td><td>'+r[0]+'</td><td class="'+(r[1]?'ok':'bad')+'">'+(r[1]?'정상':'오류')+'</td><td>'+String(r[2]).replace(/</g,'&lt;')+'</td>';t.appendChild(tr);});
+})();
+</script>
+</body></html>
