@@ -3282,9 +3282,11 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 #card .vz13f svg[data-z14="r03"] .tile rect{transition:stroke .2s,fill .2s}
 #card .vz13f svg[data-sel="0"] .t0 rect:first-child,#card .vz13f svg[data-sel="1"] .t1 rect:first-child,#card .vz13f svg[data-sel="2"] .t2 rect:first-child,#card .vz13f svg[data-sel="3"] .t3 rect:first-child{stroke:#3182F6;stroke-width:2.5;fill:#F5F9FF}
 #card .vz13f .dt0 .ch rect{animation:z14ch 1.2s ease var(--d,0s) both}
-@keyframes z14ch{0%{fill:#fff}40%{fill:#3182F6}100%{fill:#EAF1FD}}
+@keyframes z14ch{0%{fill:#fff}40%{fill:#333D4B;stroke:#333D4B}100%{fill:#F2F4F6;stroke:#D1D6DB}}
+#card .vz13f .dt0 .ch text{animation:z14tc 1.2s ease var(--d,0s) both}
+@keyframes z14tc{0%{fill:#4E5968}40%{fill:#fff}100%{fill:#333D4B}}
 #card .vz13f .dt0 .ch:last-of-type rect{animation-name:z14ch2}
-@keyframes z14ch2{0%{fill:#fff}100%{fill:#1B64DA}}
+@keyframes z14ch2{0%{fill:#fff}100%{fill:#191F28;stroke:#191F28}}
 #card .vz13f .dt0 .ch:last-of-type text{animation:z14tx 1.2s ease var(--d,0s) both}
 @keyframes z14tx{to{fill:#fff}}
 #card .vz13f .ckr .ckc,#card .vz13f .ckr .ckp{transition:fill .2s,stroke .2s}
@@ -3395,6 +3397,45 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    const s=E_.find(x=>x.id==='h02');if(s&&s.steps.length===1&&!/견적서는/.test(s.steps[0].script))s.steps[0].script=s.steps[0].script.replace('영업에서 현장으로 넘길 때와','견적서는 옥상방수공사를 희선님이 맡고, 재도장 · 에폭시 · 기술자문은 제가 맡다가 추후 희선님께 이관하겠습니다. 영업에서 현장으로 넘길 때와')}
   S('q16',`다음 보고에서는 오늘 보여 드린 건에 어떤 조치를 했고, 무엇이 해결됐으며, 무엇이 남았는지 네 가지로 나눠 말씀드리겠습니다. 제 계획과 실제 결과를 비교해 끝낸 일과 미뤄진 일, 바꾼 일정의 이유를 보여 드리겠습니다. 영업은 기한 지난 26건과 제가 보낸 요청 1건에 어떤 조치를 했는지, 현장은 준비와 범위 전달, 준공 뒤 남은 일에서 무엇을 확인하고 해결했는지, 그리고 희선님이 인수한 업무와 남은 일입니다.
 해결되지 않은 것은 남은 일과 담당, 다음 확인일까지 함께 보고드리겠습니다. 고객이 진행 상황과 공사범위를 더 분명하게 안내받는지도, 달성했다고 말하기보다 기록으로 확인하겠습니다. 감사합니다.`);
+ }
+ /* ───── 2026-10-21 재편 21: 4쪽 체크리스트 한 장 — 줄마다 [일 → 언제 → 끝났다는 근거], 누르면 체크, 못 끝나면 = 공통 한 줄, 적용 전 확인할 것 ───── */
+ {const css=`
+#card .vis.vck4{display:flex!important;flex-direction:column;align-items:stretch!important;justify-content:flex-start!important;gap:5px;width:100%;align-self:start;justify-self:stretch}#card .vck4>*{width:100%;box-sizing:border-box}#card .vck4>.tip{width:auto}
+#card .vck4 .hd,#card .vck4 .rw{display:grid;grid-template-columns:34px minmax(0,1.05fr) minmax(0,.85fr) 26px minmax(0,1.5fr);align-items:center;column-gap:10px}
+#card .vck4 .hd{padding:0 16px 2px;font-size:13px;font-weight:800;color:#8B95A1}
+#card .vck4 .gp{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:0 4px;font-size:15px;font-weight:800;color:#1B64DA;animation:k4in .4s ease var(--d) both}
+#card .vck4 .gp.o{color:#E8590C}#card .vck4 .gp small{font-size:13px;font-weight:700;color:#8B95A1}
+#card .vck4 .rw{background:#F7F8FA;border:1.5px solid transparent;border-radius:14px;padding:9px 16px;cursor:pointer;animation:k4in .45s cubic-bezier(.2,.7,.2,1) var(--d) both;transition:background .2s,border-color .2s}
+#card .vck4 .rw:hover{border-color:#D1D6DB}
+#card .vck4 .cb{width:26px;height:26px;border-radius:8px;border:2px solid #C9CED4;background:#fff;display:grid;place-items:center;transition:all .2s}
+#card .vck4 .cb::after{content:'';width:12px;height:7px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+#card .vck4 .rw.on{background:#EEF5FF;border-color:#BFD6FB}#card .vck4 .rw.on .cb{background:#3182F6;border-color:#3182F6}#card .vck4 .rw.on .cb::after{opacity:1}
+#card .vck4 .rw.s.on{background:#FFF5EE;border-color:#FFC9A3}#card .vck4 .rw.s.on .cb{background:#FF6F0F;border-color:#FF6F0F}
+#card .vck4 .rw b{font-size:20px;font-weight:800;color:#191F28;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#card .vck4 .wh{justify-self:start;font-size:15px;font-weight:800;color:#1B64DA;background:#EAF1FD;border-radius:999px;padding:5px 12px;white-space:nowrap}
+#card .vck4 .rw.s .wh{color:#E8590C;background:#FFF3EB}
+#card .vck4 .ar{font-size:18px;font-weight:800;color:#B0B8C1;text-align:center}
+#card .vck4 .ev{font-size:18px;font-weight:800;color:#191F28;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#card .vck4 .ev::before{content:'✓ ';color:#3182F6}#card .vck4 .rw.s .ev::before{color:#FF6F0F}
+#card .vck4 .ms{margin-top:6px;display:flex;align-items:center;gap:12px;background:#FFF5F5;border-radius:14px;padding:10px 18px;font-size:18px;font-weight:800;color:#D22030;animation:k4in .45s ease var(--d) both}
+#card .vck4 .ms i{font-style:normal;font-size:13px;font-weight:800;color:#fff;background:#F04452;border-radius:999px;padding:3px 10px}
+#card .vck4 .cd{display:flex;align-items:center;gap:12px;border:1.5px solid #F7C9A6;background:#FFF8F1;border-radius:14px;padding:9px 18px;font-size:16px;font-weight:800;color:#191F28;animation:k4in .45s ease var(--d) both}
+#card .vck4 .cd i{font-style:normal;font-size:13px;font-weight:800;color:#E8590C;white-space:nowrap}#card .vck4 .cd small{display:block;font-size:13px;font-weight:700;color:#6B7684;margin-top:2px}
+#card .vck4 .tip{align-self:flex-end;font-size:12px;font-weight:700;color:#B0B8C1}
+@keyframes k4in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#card .vck4 .rw,#card .vck4 .gp,#card .vck4 .ms,#card .vck4 .cd{animation:none}}`;
+  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  window.addEventListener('click',e=>{const r=e.target&&e.target.closest&&e.target.closest('#card .vck4 .rw');if(!r)return;e.stopPropagation();e.preventDefault();r.classList.toggle('on')},true);
+  const G=[['영업','','CRM 기록으로 지금 확인할 수 있습니다',[['신규 문의 초기 응대','매일','담당 · 첫 연결 · 다음 날짜'],['기한 지난 후속','매일','처리 결과 · 다음 기한'],['보낸 요청','기한 + 주 1회','완료 조건 기록 · 요청자 확인']]],
+           ['현장','o','날짜 기준 · 확인 기록 위치는 협의 후',[['착공 준비','착공 D-3 · D-2','소통방 · 착공서류 발송'],['공사범위 전달','착공 전 · 변경 시','소장님 확인 기록'],['준공 사진첩 발송','완료 후 영업일 3일','사진첩 발송']]]];
+  let n=0;const d=()=>(.15+(n++)*.1).toFixed(2)+'s';
+  window.EXEC_VIS.r04=()=>{n=0;return '<div class="vis vck4"><div class="hd"><span></span><span>놓치지 않을 일</span><span>언제 확인</span><span></span><span>이게 있으면 끝</span></div>'
+   +G.map(g=>'<div class="gp'+(g[1]?' o':'')+'" style="--d:'+d()+'">'+g[0]+'<small>'+g[2]+'</small></div>'+g[3].map(r=>'<div class="rw'+(g[1]?' s':'')+'" style="--d:'+d()+'"><i class="cb"></i><b>'+r[0]+'</b><span class="wh">'+r[1]+'</span><span class="ar">→</span><span class="ev">'+r[2]+'</span></div>').join('')).join('')
+   +'<div class="ms" style="--d:'+d()+'"><i>못 끝나면</i>이유 · 담당 · 다음 기한을 남기고 다시 확인합니다</div>'
+   +'<div class="cd" style="--d:'+d()+'"><i>적용 전 확인할 것</i><div>인계 뒤 담당 · 착공 준비 날짜 기준 · 소장님 확인 기록 위치<small>정하기 전까지는 제가 직접 확인하고 기록합니다</small></div></div>'
+   +'<span class="tip">줄을 누르면 체크</span></div>'};
+  {const r=E_.find(x=>x.id==='r04');if(r&&r.card){r.card.h='영업 · 현장에서 놓치지 않을 여섯 가지,<br><em>정한 때에 확인하고, 근거가 남아야 끝으로 봅니다.</em>';r.keyMessage='놓치지 않을 여섯 가지 — 정한 때에 확인하고, 근거가 남아야 끝으로 봅니다.'}}
+  const s=E_.find(x=>x.id==='r04');if(s&&s.steps.length===1&&!/못 끝난 건은/.test(s.steps[0].script))s.steps[0].script=s.steps[0].script.replace('적용 전에 인계 뒤 담당','못 끝난 건은 어느 항목이든 이유와 담당, 다음 기한을 남기고 다시 확인합니다.\n적용 전에 인계 뒤 담당');
  }
  /* ───── 2026-10-18 재편 7: 장면 창 한 장(#motLayer)을 카드 위에 — 같은 장면 안 단계 이동은 다시 불러오지 않음(대표 "로딩이 길다") ───── */
  {const init=()=>{const card=document.getElementById('card');if(!card||window.__motInit)return;window.__motInit=1;
