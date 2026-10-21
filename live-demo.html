@@ -2881,7 +2881,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    '그중 한 건을 열어 보겠습니다.'));
   L.push(MS('b07','00 · 영업건 한 건에서','‘진행 중’이라는 말만으로는, 다음 일을 정할 수 없었습니다.','scene-motion.html?s=b07',[
    ['최근 기록',`예전에는 ‘진행 중’이라는 말로만 상태를 알았습니다. 이 영업건은 고객과 일곱 번 접촉했지만, 기록 대부분이 ‘통화 완료, 진행 중, 다음 일정 협의’입니다. 접촉 기록만으로는 진행 결과와 다음 업무를 확인하기 어렵습니다.`],
-   ['이 단계 확인',`지금 단계는 경쟁 · 입찰입니다. 이 단계에서 끝나야 할 일은 입찰 준비와 제출이고, 완료 조건은 제출 접수증 첨부입니다. 입찰 준비는 다섯 개 중 0개이고, 내부 처리 기한은 44일 지났습니다. 단계를 옮겼다는 것만으로 끝났다고 보지 않고, 완료 조건으로 봅니다.`],
+   ['이 단계 확인',`지금 단계는 경쟁 · 입찰입니다. 이 단계에서 끝나야 할 일은 입찰 준비와 제출이고, 완료 조건은 제출 접수증 첨부입니다. 입찰 준비는 다섯 개 중 0개이고, 등록된 후속 업무 기한은 44일 지났습니다. 단계를 옮겼다는 것만으로 끝났다고 보지 않고, 완료 조건으로 봅니다.`],
    ['다음 업무',`그래서 다음 통화에서 무엇부터 정할지가 보입니다. 주소, 공종, 공사 예정, 유입 경로가 비어 있고 결정권자도 확인되지 않았습니다. 결정 일정과 빈 정보를 확인하고 다음 날짜를 정하면, 그날 아침 오늘 업무에 이 현장이 다시 올라옵니다.`]],
    '이렇게 멈춘 건에 관리자가 어떻게 개입하는지 보겠습니다.'));
   L.push(MS('b22','00 · 컨트롤타워','요청을 보낸 것으로 끝내지 않고, 처리 결과까지 확인합니다.','scene-motion.html?s=b22',[
@@ -3102,7 +3102,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
   const focus=v=>{v.classList.add('z12tap');v.querySelectorAll('.rc').forEach(rc=>{rc.title='누르면 이 항목만 강조 · 다시 누르면 전체';rc.addEventListener('click',e=>{e.stopPropagation();const on=rc.classList.contains('z12on');v.querySelectorAll('.rc').forEach(x=>x.classList.remove('z12on'));if(on)v.classList.remove('z12f');else{rc.classList.add('z12on');v.classList.add('z12f')}})})};
   const D={
    /* 목차 왼쪽 타임라인은 뺌(2026-10-20 대표 "이상해") */
-   r01(v){const g=document.createElement('div');g.className='z12gap';g.innerHTML=[['발견',100,'.6s'],['계획',100,'.75s'],['실행',45,'.9s'],['마감',0,'0s']].map(x=>'<div'+(x[1]?'':' class="x"')+'><span>'+x[0]+(x[1]?'':' · 보완할 점')+'</span><i>'+(x[1]?'<b style="--w:'+x[1]+'%;--d:'+x[2]+'"></b>':'')+'</i></div>').join('');g.classList.add('z12in');g.style.setProperty('--d','.5s');v.appendChild(g)},
+   /* 2쪽 막대는 뺌 — 길이에 근거 없음(2026-10-21 검토) */
    p02(v){v.querySelectorAll('.qb').forEach((q,i)=>{const s=document.createElement('span');s.className='z12rep';s.style.setProperty('--d',(.7+i*.25)+'s');s.innerHTML=IC.rep;q.prepend(s)})},
    p34(v){const a=v.querySelector('.arw');if(a){const d=document.createElement('i');d.className='z12dot';a.appendChild(d)}},
    p05(v){const h=v.querySelector('.hub'),rc=[...v.querySelectorAll('.rc')];if(!h||!rc.length)return;v.classList.add('z12r');const s=svgOf(v),H=off(h,v),hx=H.x+H.w/2,hy=H.y+H.h,T=rc.map(x=>off(x,v)),top=Math.min(...T.map(r=>r.y)),my=hy+(top-hy)/2;/* 조직도형: 가운데 아래 → 가로 줄 → 각 카드 윗변 (2026-10-20 대표 '이것도' — 카드 가운데로 비스듬히 들어가던 선 바꿈) */T.forEach((r,i)=>{const cx=r.x+r.w/2;path(s,'M'+hx+' '+hy+' V'+my+' H'+cx+' V'+r.y,'rgba(49,130,246,.55)',2,.6+i*.12)});h.classList.add('z12ring')},
@@ -3168,36 +3168,75 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
    const defs='<defs><marker id="z13a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#B0B8C1"/></marker><marker id="z13b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+B+'"/></marker></defs>';
    const wrap=(svg)=>'<div class="vis vz13f"><svg viewBox="0 0 920 440" role="img">'+defs+svg+'</svg></div>';
    /* ── 4쪽 · 타임라인 ── */
-   /* 4쪽 — 타임라인(일러스트) + 아이콘 카드 넷 · 글은 단어만(원인 가설은 대본으로) */
+   /* 4쪽 — 사실 타임라인(작게) + 바꿀 것 칩 넷 · 자각 문장은 제목으로(2026-10-21 검토) */
    window.EXEC_VIS.r03=()=>{N=0;let s='';
-    s+=g(ic(I.person,236,6,30,'#6B7684')+'<path d="M282 8 h168 a9 9 0 0 1 9 9 v14 a9 9 0 0 1 -9 9 h-112 l-10 9 l1 -9 h-47 a9 9 0 0 1 -9 -9 v-14 a9 9 0 0 1 9 -9z" fill="#F2F4F6"/>'+tx(370,29,'어느 단계인지 안 보여요',{fs:14,fw:700,c:'#4E5968',a:'middle'}),'.6s');
-    s+=ln('M40 118 H880',{w:3,c:'#D1D6DB',d:'.05s'});
-    const P=[[100,'9/23','아파트스퀘어 이관','r'],[330,'9/29','6단계 · 10/15 약속',''],[590,'10/15','지키지 못함','x'],[820,'10/21','개선안 정리','b']];
-    P.forEach((p,i)=>{const col=p[3]==='x'||p[3]==='r'?R:p[3]==='b'?B:INK;let gg=tx(p[0],96,p[1],{fs:30,fw:800,c:col,a:'middle'})+'<circle cx="'+p[0]+'" cy="118" r="8" fill="#fff" stroke="'+col+'" stroke-width="3.5"/>'+(p[3]==='x'?ic(I.no,p[0]-6,112,12,R):'')+tx(p[0],150,p[2],{fs:16,fw:800,c:p[3]==='b'?BD:p[3]?RD:'#4E5968',a:'middle'});s+=g(gg,(.15+i*.12).toFixed(2)+'s')});
-    s+=g(tx(40,206,'바꿀 것 · 적용 전',{fs:13,fw:800,c:G}),'.75s');
-    const C=[[I.scope,'완료 범위','범위 고정'],[I.step,'단계 통과','완료 기준 · 검토 결과'],[I.talk,'보고 · 검토','공유 · 검토 시점 분리'],[I.hand,'이관','받은 사람 확인']];
-    C.forEach((k,i)=>{const x=40+i*215;s+=g(box(x,218,200,128,{f:'#fff'})+'<circle cx="'+(x+100)+'" cy="256" r="24" fill="'+BL+'"/>'+ic(k[0],x+86,242,28,BD)+tx(x+100,306,k[1],{fs:17,fw:800,a:'middle'})+tx(x+100,332,k[2],{fs:14,fw:800,c:BD,a:'middle'}),(.85+i*.12).toFixed(2)+'s')});
-    s+=g(tx(460,404,'다시 묻던 상황을, 팀장님께는 제가 만들고 있었습니다.',{fs:20,fw:800,c:BD,a:'middle'}),'1.4s');
+    s+=ln('M60 70 H860',{w:3,c:'#D1D6DB',d:'.05s'});
+    const P=[[140,'9/23 이후','아파트스퀘어 일정 안 보임','r'],[460,'9/29','지적 · 6단계 · 매일 확인 · 10/15 약속',''],[780,'10/15','목표 · 지키지 못함','x']];
+    P.forEach((p,i)=>{const col=p[3]?R:INK;s+=g(tx(p[0],48,p[1],{fs:24,fw:800,c:col,a:'middle'})+'<circle cx="'+p[0]+'" cy="70" r="7" fill="#fff" stroke="'+col+'" stroke-width="3"/>'+(p[3]==='x'?ic(I.no,p[0]-5,65,10,R):'')+tx(p[0],100,p[2],{fs:15,fw:800,c:p[3]?RD:'#4E5968',a:'middle'}),(.15+i*.12).toFixed(2)+'s')});
+    s+=g(tx(460,160,'바꿀 것 · 적용 전',{fs:13,fw:800,c:G,a:'middle'}),'.6s');
+    const C=[[I.scope,'범위 고정'],[I.step,'완료 기준 · 검토 결과'],[I.talk,'공유 · 검토 시점 분리'],[I.hand,'받은 사람 확인']];
+    C.forEach((k,i)=>{const x=40+i*215;s+=g(box(x,176,200,50,{f:BL,s:'#BFD6FB',r:25})+ic(k[0],x+16,189,24,BD)+tx(x+112,207,k[1],{fs:15,fw:800,c:BD,a:'middle'}),(.7+i*.1).toFixed(2)+'s')});
     return wrap(s)};
    /* ── 5쪽 · 플로차트 ── */
    window.EXEC_VIS.r04=()=>{N=0;let s='';
-    const X=[92,276,460,644,828],Y=150;
-    s+=g(tx(460,52,'일이 생기면, 이 순서로',{fs:22,fw:800,c:INK,a:'middle'}),'.05s');
-    s+=ln('M'+X[0]+' '+Y+' H'+X[4],{w:3,c:'#BFD6FB',d:'.15s'});
-    const ST=[[I.scope,'끝낼 범위','이번 것 · 나중 것 나누기',0],[I.step,'완료 기준','단계마다 산출물 · 기준',0],[I.talk,'검토 요청','승인 · 보완 · 판단 대기',0],[I.clock,'3일 전 점검','못 끝나면 먼저 조정',1],[I.hand,'이관 확인','받은 사람 확인 뒤 완료',0]];
-    ST.forEach((k,i)=>{const x=X[i],rd=k[3];s+=g('<circle cx="'+x+'" cy="'+Y+'" r="40" fill="'+(rd?RL:BL)+'" stroke="'+(rd?'#FBD5D5':'#BFD6FB')+'" stroke-width="2"/>'+ic(k[0],x-17,Y-17,34,rd?RD:BD)
-     +'<circle cx="'+(x-30)+'" cy="'+(Y-30)+'" r="12" fill="'+(rd?R:B)+'"/>'+tx(x-30,Y-25.5,String(i+1),{fs:13,fw:800,c:'#fff',a:'middle'})
-     +tx(x,Y+72,k[1],{fs:20,fw:800,c:INK,a:'middle'})+tx(x,Y+98,k[2],{fs:14,fw:600,c:G,a:'middle'}),(.3+i*.15).toFixed(2)+'s')});
-    /* 추가 요청 — ①에서 갈라짐 */
-    s+=ln('M'+X[0]+' '+(Y+112)+' V'+(Y+150)+' H'+(X[0]+44),{c:'#F5A3A9',w:2,m:'z13a',d:'1.1s'});
-    s+=g(box(X[0]+46,Y+128,330,46,{f:RL,s:'#FBD5D5',r:23})+tx(X[0]+64,Y+157,'추가 요청이 오면',{fs:15,fw:800,c:RD})+tx(X[0]+190,Y+157,'→ 일정 영향 먼저 · 컨펌',{fs:15,fw:700,c:RD}),'1.2s');
-    s+=g(tx(460,404,'적용 전 개선안 · 요일과 기한은 팀장님과 함께 정하겠습니다',{fs:15,fw:700,c:G,a:'middle'}),'1.4s');
+    const X=[92,276,460,644,828],Y=62;
+    s+=ln('M'+X[0]+' '+Y+' H'+X[4],{w:3,c:'#BFD6FB',d:'.1s'});
+    const ST=[[I.scope,'끝낼 범위','이번 것 · 나중 것',0],[I.step,'완료 기준','단계마다 산출물',0],[I.talk,'검토 요청','승인 · 보완 · 대기',0],[I.clock,'3일 전 점검','못 끝나면 먼저 조정',1],[I.hand,'이관 확인','받은 사람 확인',0]];
+    ST.forEach((k,i)=>{const x=X[i],rd=k[3];s+=g('<circle cx="'+x+'" cy="'+Y+'" r="30" fill="'+(rd?RL:BL)+'" stroke="'+(rd?'#FBD5D5':'#BFD6FB')+'" stroke-width="2"/>'+ic(k[0],x-13,Y-13,26,rd?RD:BD)+'<circle cx="'+(x-23)+'" cy="'+(Y-23)+'" r="10" fill="'+(rd?R:B)+'"/>'+tx(x-23,Y-19,String(i+1),{fs:12,fw:800,c:'#fff',a:'middle'})+tx(x,Y+54,k[1],{fs:17,fw:800,a:'middle'})+tx(x,Y+76,k[2],{fs:13,fw:600,c:G,a:'middle'}),(.2+i*.1).toFixed(2)+'s')});
+    s+=g(box(X[0]+40,Y+90,300,34,{f:RL,s:'#FBD5D5',r:17})+tx(X[0]+190,Y+112,'추가 요청이 오면 → 일정 영향 먼저 · 컨펌',{fs:13,fw:800,c:RD,a:'middle'}),'.75s');
+    const TY=208,RH2=40,CX=[20,300,600];
+    s+=g(box(20,TY,880,30+RH2*4,{f:'#fff',r:12})+tx(CX[0]+16,TY+20,'영업 · 현장 체크 항목',{fs:12,fw:800,c:G})+tx(CX[1]+16,TY+20,'지금 하는 방법',{fs:12,fw:800,c:G})+tx(CX[2]+16,TY+20,'협의 · 미확인',{fs:12,fw:800,c:RD}),'.9s');
+    [['배정 전 · 기한 지난 건','매일 컨트롤타워에서 조치 지정','인계 뒤 누가 볼지 협의'],['보낸 요청 완료','주 1회 요청 추적 확인','최근 30일 완료 0% · 미착수 이유'],['현장 기한 D-3 · D-2 · +3','현장 보드 기한 표시','보드 날짜 설정(영업일) 확인'],['소장님 범위 확인','소통방 공유문 전송','확인 기록 방법 협의']].forEach((r,i)=>{const y=TY+30+i*RH2,cy=y+RH2/2+5;s+=g('<path d="M20 '+y+' H900" stroke="#F2F4F6"/>'+tx(CX[0]+16,cy,r[0],{fs:15,fw:800})+tx(CX[1]+16,cy,r[1],{fs:14,fw:600,c:'#4E5968'})+tx(CX[2]+16,cy,r[2],{fs:14,fw:700,c:RD}),(1+i*.1).toFixed(2)+'s')});
+    s+=g(tx(460,428,'적용 전 개선안 · 요일과 기한은 팀장님과 함께 정하겠습니다',{fs:14,fw:700,c:G,a:'middle'}),'1.4s');
     return wrap(s)};
   }
   /* 목차 PART 1 설명 · 오프닝 — 과제 두 가지를 먼저 말함 */
-  {const o=window.EXEC_VIS.t00;if(o)window.EXEC_VIS.t00=(...a)=>o(...a).replace('계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동','제 단점 · 최근 사례 · 개선 계획 · 업무 체크리스트')}
+  {const o=window.EXEC_VIS.t00;if(o)window.EXEC_VIS.t00=(...a)=>o(...a).replace('계획을 실행 · 마감까지 이어가지 못했던 점과 앞으로의 행동','최근 사례 · 제 단점 · 바꿀 행동 · 체크리스트')}
   {const t=E_.find(s=>s.id==='t00');if(t)t.steps[0].script=`안녕하세요. 서비스운영팀 송보람입니다. 오늘은 과제 두 가지, 제 단점과 개선 계획, 그리고 제 업무에서 놓치지 말아야 할 체크리스트를 먼저 말씀드리겠습니다. 이어서 그 체크리스트를 실제로 지키려고 만든 CRM과 현장관리 화면을 보여 드리겠습니다.
 일은 하고 있었지만, 무엇을 했는지와 어디까지 왔는지가 남지 않아 같은 질문을 다시 해야 했습니다. 그래서 한 건마다 상태, 다음 행동, 담당, 기한, 완료 근거를 이어 두었습니다. 멈춘 일을 제때 찾고, 고객과 약속한 일을 끝까지 잇기 위해서입니다.`}
+ }}
+ /* ───── 2026-10-21 재편 14: 검토 반영 — 첫 화면 후킹(실제 지적), 사례 → 단점 → 바꿀 행동 → 체크리스트 순서, 4쪽 제목 = 자각 문장, 5쪽 영업 · 현장 체크, 결론 = 확인 대상 ───── */
+ {if(!E_.some(s=>s.id==='h00')){
+  const H0=EX('h00','00 · 시작하며','어느 단계인지가 안 보여요 — 제 업무에 대한 지적이었습니다.','시작하며','',{},
+`9월 29일, 팀장님께 CRM 구축이 어느 단계인지, 컨펌은 받았는지가 보이지 않는다는 말씀을 들었습니다.
+돌아보니 제가 영업 담당자에게 매번 진행을 다시 물어봐야 했던 상황을, 팀장님께는 제가 만들고 있었습니다.
+제 업무부터 바꾸겠습니다. 무엇을 끝낼지, 지금 어느 단계인지, 무엇을 확인받았고 무엇이 남았는지를 먼저 보이게 하겠습니다.
+영업과 현장관리에서도 같은 기준을 적용하려 합니다. 문의마다 담당자와 다음 행동을 정하고, 요청을 보낸 뒤에는 처리 결과를, 현장 작업이 끝난 뒤에는 남은 마무리 업무까지 확인하는 것입니다.
+오늘은 제가 바꿀 업무방식과, 그동안 만들어 온 CRM · 현장 보드가 이를 어디까지 지원하는지 말씀드리겠습니다.`,'');
+  H0.vis='h00';E_.unshift(H0);
+  const ORD0=['h00','t00','r03','r01','r02','r04'];const head=ORD0.map(id=>E_.find(s=>s.id===id)).filter(Boolean),rest=E_.filter(s=>!ORD0.includes(s.id));E_.length=0;head.concat(rest).forEach(s=>E_.push(s));
+  {let n=0;E_.forEach(s=>{s.title=s.title.replace(/^[0-9]+ · /,String(++n).padStart(2,'0')+' · ')})}
+  const S=(id,txt)=>{const s=E_.find(x=>x.id===id);if(s)s.steps[0].script=txt};
+  S('t00',`순서는 이렇습니다. 먼저 최근 사례와 거기서 드러난 제 단점, 바꿀 행동과 체크리스트를 말씀드리고, 이어서 영업관리와 현장관리 화면, 마지막으로 앞으로 누가 어떻게 운영할지 말씀드리겠습니다.`);
+  S('r03',`그때 저는 여섯 단계로 나누고 매일 확인받아 10월 15일에 끝내겠다고 답했지만, 그 계획을 지키지 못했습니다. 아파트스퀘어도 9월 23일 이후 일정이 보이지 않아, 끝났는지 다시 물어보시게 했습니다.
+원인은 당시 요청과 일정 기록으로 확인하고 있습니다. 지금은 끝낼 범위와 단계별 완료 기준이 없었고, 진행 공유와 검토 요청이 섞였던 것으로 보고 있습니다.`);
+  S('r01',`이 일에서 드러난 제 단점은, 계획을 세우는 것보다 끝까지 관리하는 것이 약하다는 점입니다. 불편을 찾아 바꾸는 것은 제 장점이지만, 실행하고 기한 안에 끝내는 관리가 부족했습니다.`);
+  S('r02',`그래서 바꿀 행동은 이렇습니다. 무엇을 끝낼지 먼저 정하고, 지금 어느 단계인지 보이게 하고, 무엇을 확인받았고 무엇이 남았는지 남기겠습니다. 막히면 기한이 지나기 전에 먼저 협의하겠습니다.`);
+  S('r04',`이 행동을 일이 생겼을 때의 순서로 정리했습니다. 끝낼 범위를 정하고, 단계마다 완료 기준을 두고, 검토를 요청해 승인 · 보완 · 판단 대기를 남기고, 마감 3일 전에 점검하고, 이관은 받은 사람 확인까지 받습니다. 추가 요청은 일정 영향부터 정합니다.
+영업과 현장에서 놓치지 말 항목도 지금 하는 방법과 아직 협의하거나 확인할 것을 함께 적었습니다. 이 개선안은 아직 적용 전이라, 적용하면서 점검 부담과 누락을 확인해 보고드리겠습니다.`);
+  S('q16',`다음 보고에서는 다짐이 아니라, 오늘 보여 드린 건이 어떻게 끝났는지로 말씀드리겠습니다. 기한 지난 26건은 건마다 처리 결과를, 제가 보낸 요청 1건은 완료 근거를, 오늘 말씀드린 개선안은 적용한 결과와 점검 부담을 보고드리겠습니다.
+그래서 같은 질문을 다시 하지 않아도 되고, 고객이 먼저 묻기 전에 진행을 안내할 수 있게 운영하겠습니다. 감사합니다.`);
+  {const r3=E_.find(s=>s.id==='r03');if(r3&&r3.card){r3.card.h='다시 묻던 상황을,<br><em>팀장님께는 제가 만들고 있었습니다.</em>';r3.keyMessage='다시 묻던 상황을, 팀장님께는 제가 만들고 있었습니다.'}
+   const q=E_.find(s=>s.id==='q16');if(q&&q.card){q.card.h='다음 보고에서는,<br><em>오늘 보여 드린 건이 어떻게 끝났는지로.</em>';q.keyMessage='다음 보고는 오늘 보여 드린 건의 결과로 말씀드리겠습니다.';q.vis='q16x'}}
+  const css=String.raw`
+#card:has(.vz14) h2{display:none}
+#card .vz14{display:flex;flex-direction:column;justify-content:center;gap:18px;min-height:420px;padding-left:6px}
+#card .vz14 .q{margin:0;font-size:64px;line-height:1.2;font-weight:800;color:#191F28;letter-spacing:-.02em;animation:z13op .6s ease .15s both}
+#card .vz14 .s{margin:0;font-size:30px;font-weight:800;color:#1B64DA;animation:z13op .6s ease .7s both}
+#card .vz14 .d{margin:6px 0 0;font-size:15px;font-weight:700;color:#8B95A1;animation:z13op .6s ease 1.1s both}
+#card .vq16{display:flex;flex-direction:column;gap:12px;width:100%;align-self:stretch}#card .vq16 .rw{width:100%;box-sizing:border-box}
+#card .vq16 .rw{display:grid;grid-template-columns:150px 1fr 28px;align-items:center;gap:14px;background:#F7F8FA;border-radius:14px;padding:16px 20px;animation:z13op .45s ease var(--d) both}
+#card .vq16 .rw b{font-size:30px;font-weight:800;color:#1B64DA;letter-spacing:-.01em}
+#card .vq16 .rw span{font-size:18px;font-weight:700;color:#333D4B}
+#card .vq16 .rw i{width:24px;height:24px;color:#1B64DA}
+#card .vq16 .nt{font-size:14px;color:#8B95A1;font-weight:700;margin-top:4px;animation:z13op .45s ease 1.2s both}
+@media (prefers-reduced-motion:reduce){#card .vz14 *,#card .vq16 *{animation:none!important}}`;
+  const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  window.EXEC_VIS.h00=()=>'<div class="vis vz14"><p class="q">“어느 단계인지가 안 보여요.”</p><p class="s">제 업무에 대한 지적이었습니다.</p><p class="d">2026. 9. 29 · 팀장님</p></div>';
+  {const OK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>';
+   window.EXEC_VIS.q16x=()=>'<div class="vis vq16">'+[['26건','기한 지난 건 — 건마다 처리 결과'],['1건','제가 보낸 요청 — 완료 근거'],['개선안','바꿀 행동 · 체크리스트 — 적용 결과 · 점검 부담']].map((x,i)=>'<div class="rw" style="--d:'+(.3+i*.2).toFixed(1)+'s"><b>'+x[0]+'</b><span>'+x[1]+'</span><i>'+OK+'</i></div>').join('')+'<p class="nt">같은 질문을 다시 하지 않아도 되도록 · 고객이 먼저 묻기 전에 안내할 수 있도록</p></div>'}
+  /* 3쪽(바꿀 행동) 목록 — 첫 화면 다짐과 같은 말 */
+  {const o=window.EXEC_VIS.r02;if(o)window.EXEC_VIS.r02=(...a)=>o(...a).replace('실행 · 점검 · 완료까지<br>정해 둔 계획','끝낼 것 · 단계 · 남은 일이<br>보이는 계획').replace('<li>먼저 해야 할 일</li>','<li>무엇을 끝낼지 먼저</li>').replace('<li>중간에 확인할 시점</li>','<li>지금 어느 단계인지</li>').replace('<li>완료라고 볼 기준</li>','<li>확인받은 것 · 남은 것</li>').replace('<li>막히면 먼저 공유</li>','<li>막히면 기한 전에 협의</li>')}
  }}
  /* ───── 2026-10-18 재편 7: 장면 창 한 장(#motLayer)을 카드 위에 — 같은 장면 안 단계 이동은 다시 불러오지 않음(대표 "로딩이 길다") ───── */
  {const init=()=>{const card=document.getElementById('card');if(!card||window.__motInit)return;window.__motInit=1;
