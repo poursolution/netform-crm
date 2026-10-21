@@ -3181,7 +3181,7 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
     T.forEach((k,i)=>{const x=20+i*225;s+='<g class="f tile t'+i+'" data-tile="'+i+'" style="--d:'+(1.05+i*.12).toFixed(2)+'s;cursor:pointer">'+box(x,108,205,128,{f:'#fff',s:LN,r:16})+'<circle cx="'+(x+102)+'" cy="148" r="24" fill="'+BL+'"/>'+ic(k[0],x+89,135,26,BD)+tx(x+102,196,k[1],{fs:18,fw:800,a:'middle'})+tx(x+102,220,k[2],{fs:14,fw:800,c:BD,a:'middle'})+'</g>'});
     /* 자세히 — 고른 타일만 */
     const DY=258;let d0='<g class="dt dt0">'+tx(20,DY+18,'CRM 구축 일정 예시',{fs:13,fw:800,c:G});const CH=['수정본 완성','검토','보완','실데이터 테스트','운영 전환'],W=[130,90,90,150,120];let x=20;
-    CH.forEach((c,i)=>{d0+='<g class="ch" style="--d:'+(1.6+i*.25).toFixed(2)+'s">'+box(x,DY+30,W[i],44,{f:'#fff',s:'#BFD6FB',r:22})+tx(x+W[i]/2,DY+58,c,{fs:16,fw:800,c:BD,a:'middle'})+'</g>';x+=W[i];if(i<4){d0+='<path d="M'+(x+6)+' '+(DY+52)+' h16" stroke="#B0B8C1" stroke-width="2.5" marker-end="url(#z13a)"/>';x+=30}});
+    CH.forEach((c,i)=>{d0+='<g class="ch" style="--d:'+(1.6+i*.25).toFixed(2)+'s">'+box(x,DY+30,W[i],44,{f:'#fff',s:'#BFD6FB',r:22})+tx(x+W[i]/2,DY+58,c,{fs:16,fw:800,c:BD,a:'middle'})+(i<4?'<g class="ck" style="transform-origin:'+(x+W[i]-8)+'px '+(DY+32)+'px"><circle cx="'+(x+W[i]-8)+'" cy="'+(DY+32)+'" r="10" fill="#3182F6" stroke="#fff" stroke-width="2"/><path d="M'+(x+W[i]-13)+' '+(DY+32)+' l3.5 3.5 l6 -6.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>':'')+'</g>';x+=W[i];if(i<4){d0+='<path d="M'+(x+6)+' '+(DY+52)+' h16" stroke="#B0B8C1" stroke-width="2.5" marker-end="url(#z13a)"/>';x+=30}});
     d0+=tx(20,DY+102,'이번에 끝낼 범위 · 뒤로 넘길 범위를 먼저 정하고, 칸마다 산출물 · 기한 · 완료 조건을 둡니다',{fs:14,fw:700,c:G})+'</g>';
     const det=(i,a,b)=>'<g class="dt dt'+i+'">'+box(20,DY+26,880,92,{f:'#F7F8FA',s:LN,r:14})+tx(44,DY+64,a,{fs:18,fw:800,c:INK})+tx(44,DY+94,b,{fs:15,fw:700,c:BD})+'</g>';
     s+='<g class="f" style="--d:1.5s">'+d0+det(1,'아침 — 먼저 끝낼 일을 정합니다','마감 전 — 계획과 결과를 비교해 남은 일 · 막힌 이유 · 다음 조치를 남깁니다')+det(2,'이번 범위에 넣을지, 이후로 넘길지 정합니다','작업 · 검토 시간과 목표일 영향을 확인해 기한 전에 협의합니다')+det(3,'산출물과 검토 결과를 함께 냅니다','검토 대기는 완료와 구분 · 이관은 인수 확인과 남은 일의 담당 · 기한까지')+'</g>';
@@ -3282,11 +3282,11 @@ CRM의 목적은 입력을 많이 하는 게 아닙니다. 내가 맡은 현장�
 #card .vz13f svg[data-z14="r03"] .tile rect{transition:stroke .2s,fill .2s}
 #card .vz13f svg[data-sel="0"] .t0 rect:first-child,#card .vz13f svg[data-sel="1"] .t1 rect:first-child,#card .vz13f svg[data-sel="2"] .t2 rect:first-child,#card .vz13f svg[data-sel="3"] .t3 rect:first-child{stroke:#3182F6;stroke-width:2.5;fill:#F5F9FF}
 #card .vz13f .dt0 .ch rect{animation:z14ch 1.2s ease var(--d,0s) both}
-@keyframes z14ch{0%{fill:#fff}40%{fill:#333D4B;stroke:#333D4B}100%{fill:#F2F4F6;stroke:#D1D6DB}}
-#card .vz13f .dt0 .ch text{animation:z14tc 1.2s ease var(--d,0s) both}
-@keyframes z14tc{0%{fill:#4E5968}40%{fill:#fff}100%{fill:#333D4B}}
+@keyframes z14ch{0%{fill:#fff;stroke:#BFD6FB;stroke-width:1.5}100%{fill:#F5F9FF;stroke:#3182F6;stroke-width:2.5}}
+#card .vz13f .dt0 .ch .ck{opacity:0;animation:z14ck .4s cubic-bezier(.2,.7,.2,1) calc(var(--d,0s) + .3s) both}
+@keyframes z14ck{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
 #card .vz13f .dt0 .ch:last-of-type rect{animation-name:z14ch2}
-@keyframes z14ch2{0%{fill:#fff}100%{fill:#191F28;stroke:#191F28}}
+@keyframes z14ch2{0%{fill:#fff}100%{fill:#3182F6;stroke:#3182F6}}
 #card .vz13f .dt0 .ch:last-of-type text{animation:z14tx 1.2s ease var(--d,0s) both}
 @keyframes z14tx{to{fill:#fff}}
 #card .vz13f .ckr .ckc,#card .vz13f .ckr .ckp{transition:fill .2s,stroke .2s}
