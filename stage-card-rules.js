@@ -17,13 +17,14 @@
  /* 단계 코드 → 기준 열쇠(PipelineStages 그룹이 있으면 그것, 없으면 코드로) */
  function keyOf(code,outcome){
   const o=String(outcome||'');if(o==='won')return 'won';if(o==='lost'||o==='badfit'||o==='nocontact')return 'lost';
-  let g='';try{g=String(root.PipelineStages&&root.PipelineStages.group?root.PipelineStages.group(code,outcome):'')||'';}catch(e){}
+  /* 그룹이 없으면(견적문의 'inquiry' 등) null — String(null)='null' 이 되면 아무 규칙에도 안 걸려 '컨설팅'(방문 결과 조건)으로 떨어졌다(2026-10-22 운영 실측: 첫 연락 카드에 '공사 범위 · 실측 · 사진 / 방문 결과 남기면 끝') */
+  let g='';try{g=String((root.PipelineStages&&root.PipelineStages.group?root.PipelineStages.group(code,outcome):'')||'');}catch(e){}
   const c=String(g||code||'');
   if(/inquiry|first_contact/.test(c))return 'inquiry';
   if(/consult/.test(c))return 'consulting';
   if(/sent|quote|material/.test(c))return 'sent';
   if(/rapport|relation|nurture|waiting|hold/.test(c))return 'relationship';
-  if(/compete|bidding|imminent|pt/.test(c))return 'compete';
+  if(/compet|bidding|imminent|pt/.test(c))return 'compete';/* PipelineStages 그룹 이름은 'competition' — 'compete' 만 보면 경쟁 · 입찰 카드가 컨설팅 기준으로 떨어졌다 */
   if(/contract|construct|work|complete/.test(c))return 'contract';
   if(/won/.test(c))return 'won';
   if(/lost/.test(c))return 'lost';

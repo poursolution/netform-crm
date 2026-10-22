@@ -128,6 +128,7 @@
  function listing(){
   let rows=mine();const needle=S.q.trim().toLocaleLowerCase();
   if(S.stage)rows=rows.filter(d=>w.PipelineStages.group(d.code,d.outcome)===S.stage);
+  else if(S.openOnly)rows=rows.filter(d=>w.isOpen?.(d));/* 오늘 요약 '내 담당 ›'에서 옴 = 그 숫자와 같은 조건(진행 중만) */
   else if(lostHide()&&!needle)rows=rows.filter(d=>!lostM(d));/* 전체 = 실주 숨김(목록 끝 [실주 n건 ›] 칸) */
   if(needle)rows=rows.filter(d=>{const c=w.contactInfoM(d);return [d.nm,d.address,d.addr,c.name,c.mobile,c.officeTel,work(d)].join(' ').toLocaleLowerCase().includes(needle);});
   if(w.G.brandF&&w.G.brandF!=='전체')rows=rows.filter(d=>brand(d)===w.G.brandF);
@@ -178,7 +179,9 @@
   const reqOf=d=>R?.forDeal?.(d.id)?.[0]||null,reqLate=r=>{const t=Date.parse(r&&r.due_at||'');return Number.isFinite(t)&&t<Date.now();};
   /* 문의 첫 연락: 배정 시각 + 기준 시간(PC 와 같은 계산 DayZoneRules.inqLate) — 넘겼으면 기한 초과 */
   const hrs=Number(w.OPS_RULES&&w.OPS_RULES.responseSlaHours)||2,views=(w.ADMIN&&w.ADMIN.inquiries)||[];
-  (w.buildToday()||[]).filter(t=>t.kind!=='deal').forEach(t=>{const v=views.find(x=>String(x.key)===String(t.ref)),raw=(v&&v.raw)||{},late=RU.inqLate({assignedAt:raw.sales_assigned_at||raw.assigned_at||raw.assignedAt||'',createdAt:raw.at||raw.created_at||'',hours:hrs});(late?Z.late:Z.now).push({inq:t,late});});
+  /* 2026-10-23 '배정일 미확인 ≠ 지연': 배정일시가 없는(담당 미배정 · 배정 기록 없음) 문의는 접수 시각으로 지연을 확정하지 않는다 — 오늘 할 일(첫 연락)로만.
+     PC inquiryResponseLate 도 이관 기록 확인 대상 · 담당 없음은 지연에서 뺀다. 끄기 G.mobileInqLateStrictOff(=예전처럼 접수 시각으로 판정) */
+  (w.buildToday()||[]).filter(t=>t.kind!=='deal').forEach(t=>{const v=views.find(x=>String(x.key)===String(t.ref)),raw=(v&&v.raw)||{},assignedAt=raw.sales_assigned_at||raw.assigned_at||raw.assignedAt||'',known=!!assignedAt&&!(v&&v.done===false),late=(known||(w.G&&w.G.mobileInqLateStrictOff))&&RU.inqLate({assignedAt,createdAt:raw.at||raw.created_at||'',hours:hrs});(late?Z.late:Z.now).push({inq:t,late});});
   mine().filter(d=>w.isOpen?.(d)).forEach(d=>{const p=zonePrim(d),r=reqOf(d);let z=RU.zone(p,day);if(!z&&r)z=reqLate(r)?'late':'now';if(z)Z[z].push({d,p,r,w:z==='wait'||z==='fix'?RU.waiting(p,day):null});});
   Z.late.sort((a,b)=>(a.inq?1:RU.rank('late',a.p,day))-(b.inq?1:RU.rank('late',b.p,day)));Z.now.sort((a,b)=>(a.inq?-1:RU.rank('now',a.p,day))-(b.inq?-1:RU.rank('now',b.p,day)));
   return Z;
@@ -287,7 +290,9 @@
    if(hb)hb.insertAdjacentHTML('beforebegin',w.MobileV6.historyHtml(m));
   }
   /* 2026-10-22 실주 칸(내 현장 '전체' 목록 끝 한 줄): 누르면 실주 칩으로 — 숨긴 건수를 숫자로 알린다 */
-  if(!d&&w.G.tab==='mine'&&!S.stage&&!S.q.trim()&&lostHide()){const n=lostCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-lost-note" data-gs="stage" data-value="lost" role="button" tabindex="0" aria-label="실주 '+n+'건 보기"><b>실주 '+n+'건</b><span>누르면 보입니다 ›</span></span>');}
+  /* 2026-10-23 오늘 요약 '내 담당 ›'으로 들어온 목록: 같은 조건(진행 중)이라는 걸 맨 위 한 줄로 · [전체 보기]로 풀기 */
+  if(!d&&w.G.tab==='mine'&&S.openOnly&&!S.stage){const list=scr.querySelector('.approved-list'),n=mine().filter(x=>w.isOpen?.(x)).length;if(list)list.insertAdjacentHTML('afterbegin','<span class="approved-empty gs-open-note"><b>진행 중 '+n+'건</b><span data-gs="open-only-clear" role="button" tabindex="0">전체 보기 ›</span></span>');}
+  if(!d&&w.G.tab==='mine'&&!S.stage&&!S.openOnly&&!S.q.trim()&&lostHide()){const n=lostCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-lost-note" data-gs="stage" data-value="lost" role="button" tabindex="0" aria-label="실주 '+n+'건 보기"><b>실주 '+n+'건</b><span>누르면 보입니다 ›</span></span>');}
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */
   if(!d&&w.G.tab==='mine'){const n=legacyCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-legacy-note">과거 이관 · 분류 전 '+n+'건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개</span>');}
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
@@ -335,7 +340,7 @@
   w.saveContactM=unavailable;
   w.addEventListener('phase1:identity-cleared',()=>{
    requestRead=null;requestReadOwner='';pcRedirected=false;taskClick++;
-   Object.assign(S,{q:'',stage:'',page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1}});resetDetail({force:true});
+   Object.assign(S,{q:'',stage:'',openOnly:false,page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1}});resetDetail({force:true});
    try{const prefix=w.MobileRegistrationContext?.draftPrefix||'crm:mobile-registration:v1:';Object.keys(w.sessionStorage).filter(k=>k.startsWith(prefix)).forEach(k=>w.sessionStorage.removeItem(k));}catch(e){}
   });
   const previous=w.render;
@@ -364,7 +369,8 @@
     if(!resetDetail())return;S.scroll=listScroller()?.scrollTop||0;S.returnTab=w.G.tab;w.G.deal=b.dataset.id;w.G.sub=null;const entry=S.entryAction;S.entryAction='';run();if(entry==='contact')openContact();else if(entry==='attach')w.MobileQuick?.attach('photo');else if(entry==='sched')w.MobileQuick?.schedule();else if(b.dataset.taskId)openVisit(mine().find(d=>String(d.id)===b.dataset.id),b.dataset.taskId);
    }
    else if(k==='back'||k==='stage-confirmation-back'){if(S.detailView==='input'){const r=w.MobileInputFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)));if(r?.render)run();if(!r?.ok&&r?.note)w.toast(r.note);return;}if(S.detailView==='quote'&&w.MobileQuoteFlow?.back(mine().find(x=>String(x.id)===String(w.G.deal)))){run();return;}if(S.detailView){if(!resetDetail())return;run();return;}if(!resetDetail())return;const registrationBack=w.G.tab==='registration-match';w.G.deal=null;w.G.tab=registrationBack?'record':S.returnTab;run();}
-   else if(k==='tab'){if(!['today','mine','record','schedule'].includes(b.dataset.tab))return unavailable();if(!resetDetail())return;w.G.tab=b.dataset.tab;w.G.deal=null;w.G.sub=null;S.entryAction='';S.page=1;S.scroll=0;run();}
+   else if(k==='tab'){if(!['today','mine','record','schedule'].includes(b.dataset.tab))return unavailable();if(!resetDetail())return;w.G.tab=b.dataset.tab;w.G.deal=null;w.G.sub=null;S.entryAction='';S.page=1;S.scroll=0;S.openOnly=b.dataset.scope==='open';if(S.openOnly)S.stage='';run();}
+   else if(k==='open-only-clear'){S.openOnly=false;S.page=1;S.scroll=0;run();}
    else if(k==='more'&&b.dataset.value==='이 단지 다른 영업'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),sid=d0&&(d0.site_id||d0.cleanup_site_id),sib=sid?mine().filter(x=>String(x.site_id||x.cleanup_site_id)===String(sid)&&String(x.id)!==String(d0.id)):[];if(!sib.length)w.toast('이 단지의 다른 영업이 없습니다');else if(sib.length===1){w.G.deal=sib[0].id;S.detailView='';run();}else w.toast(sib.map(x=>x.nm+' · '+work(x)).join(' / '));}
    else if(k==='more'&&b.dataset.value==='근처 현장'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),ad=((d0&&(d0.address||d0.addr))||'').trim();if(!ad)w.toast('주소가 없어 지도를 열 수 없습니다');else w.open('https://map.kakao.com/?q='+encodeURIComponent(ad),'_blank','noopener');}
    else if(k==='more'&&(b.dataset.value==='자료 발송 내역'||b.dataset.value==='영업 조건')){S.detailView=b.dataset.value==='자료 발송 내역'?'evidence':'confirmation';S.evidencePage=1;run();}
@@ -406,7 +412,7 @@
    else if(k==='schedule-day'){if(!w.MobileScheduleModel?.dateOnly(b.dataset.date))return;S.scheduleDay=b.dataset.date;S.schedulePage=1;run();}
    else if(k==='day-close')closeDay();
    else if(k==='day-close-page'){if(!Object.hasOwn(S.closePages,b.dataset.group))return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.closePages[b.dataset.group]=n;run();}}
-   else if(k==='stage'||k==='area'){S[k]=b.dataset.value;S.page=1;S.areaPage=1;S.scroll=0;run();}
+   else if(k==='stage'||k==='area'){S[k]=b.dataset.value;if(k==='stage')S.openOnly=false;S.page=1;S.areaPage=1;S.scroll=0;run();}
    else if(k==='areapage'){S.areaPage=Number(b.dataset.page)||1;run();}
    else if(k==='page'){w.ListPager.set(S,null,b.dataset.page);S.scroll=0;run();}
    else if(k==='contact')openContact();

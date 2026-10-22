@@ -19,7 +19,7 @@ test('요약: 0 은 숫자 대신 "아직 없음", 붉은 글자는 기한 지�
 
 test('요약: 내 담당 → 내 현장 탭, 오늘 방문 → 오늘 동선, 기한 지남 · 미배정은 누를 곳 없음', ()=>{
  const html=V6.summaryHtml(V6.summary({late:1,mine:2,visit:3,unassigned:4}));
- assert.match(html,/data-v6="mine" data-gs="tab" data-tab="mine"/);
+ assert.match(html,/data-v6="mine" data-gs="tab" data-tab="mine" data-scope="open"/,'내 담당 = 진행 중만 여는 목록');
  assert.match(html,/data-v6="visit" data-mr="view" data-v="route"/);
  assert.ok(!/data-v6="late" data-/.test(html));
  assert.ok(!/data-v6="unassigned" data-/.test(html));

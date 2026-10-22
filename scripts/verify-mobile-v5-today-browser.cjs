@@ -59,11 +59,22 @@ const SHOT=process.env.SHOT_DIR||'';
    /* 회색(담당 미배정 · 배정 기록 없음) 문의는 기한 지남 숫자에 넣지 않는다 — 카드는 그대로 보임 */
    const grayLate=await page.evaluate(()=>{const Z={late:[{inq:{ref:'g1',nm:'합성 미배정',kind:'inquiry'},late:true},{inq:{ref:'g2',nm:'합성 배정 기록 없음',kind:'inquiry'},late:true}],now:[],wait:[],fix:[]};
     const M=MobileV5Today.model(Z,{inquiry:id=>id==='g1'?{raw:{at:'2026-06-30T04:10:00+09:00'},done:false}:{raw:{at:'2026-06-30T04:10:00+09:00'},done:true}});return [M.items.length,M.items.filter(i=>i.late).length,M.lateItems];});
-   assert.deepEqual(grayLate,[2,2,0],'회색 문의 2건은 카드로 보이되 기한 지남 숫자는 0: '+JSON.stringify(grayLate));
+   assert.deepEqual(grayLate,[2,0,0],'회색 문의 2건은 카드로 보이되 지연 아님 · 기한 지남 숫자 0: '+JSON.stringify(grayLate));
    await page.evaluate(()=>{G.mobileV6Off=true;render();});
    assert.match((await page.locator('.mv5 .mv5-top').innerText()).replace(/\s+/g,' ').trim(),/^지금 먼저 할 일 7건 · 기한 지남 3건$/,'v6 끄기 = 예전 한 줄');
    assert.equal(await page.locator('.mv5 .mv6-sum').count(),0,'v6 끄기 = 요약 없음');
    await page.evaluate(()=>{G.mobileV6Off=false;render();});
+   /* 2026-10-23 01: '내 담당' 숫자 = 도착 목록(같은 조건 · 진행 중만). 수주 건을 하나 섞어 목록에 안 나오는지 · [전체 보기]로 풀리는지 */
+   const scope=await page.evaluate(async()=>{
+    const won={...DEALS[0],id:'p-won',nm:'합성 수주 완료',outcome:'won',code:'won',nextAction:null};DEALS.push(won);render();
+    const n=Number(document.querySelector('.mv5 [data-v6="mine"] b').innerText);document.querySelector('.mv5 [data-v6="mine"]').click();await new Promise(r=>setTimeout(r,50));
+    const rows=[...document.querySelectorAll('.approved-row')].map(r=>r.innerText),note=document.querySelector('.gs-open-note')?.innerText.replace(/\s+/g,' ').trim();
+    document.querySelector('[data-gs="open-only-clear"]').click();await new Promise(r=>setTimeout(r,50));
+    const all=[...document.querySelectorAll('.approved-row')].map(r=>r.innerText),cleared=!document.querySelector('.gs-open-note');
+    DEALS.pop();G.tab='today';render();
+    return {n,rows:rows.length,hasWon:rows.some(t=>/합성 수주 완료/.test(t)),note,allWon:all.some(t=>/합성 수주 완료/.test(t)),cleared,tab:G.tab};});
+   assert.equal(scope.rows,scope.n,'요약 숫자 = 도착 목록 건수: '+JSON.stringify(scope));assert.equal(scope.hasWon,false,'진행 중만(수주 제외)');
+   assert.equal(scope.note,'진행 중 '+scope.n+'건 전체 보기 ›');assert.equal(scope.cleared,true);assert.equal(scope.allWon,true,'[전체 보기] = 예전 전체 목록(수주 포함)');
    assert.equal(v.areaTabs,0,'숫자 4개 탭 없음');
    assert.match(v.card,/3일 지남 · 10\.17 \(토\) 기한/,'첫 카드 = 가장 오래 지난 건: '+v.card);
    assert.match(v.card,/합성 기한 지남 3일/);assert.match(v.card,/합성 소장 관리소장 · 010-3415-8556/,'현장 · 연락처');
@@ -89,13 +100,14 @@ const SHOT=process.env.SHOT_DIR||'';
     const a=mk(false,'안녕하세요.\n- 올해 하반기 지하주차장 보수공사 예정\n- 설계.감리 진행 문의 및 견적 요청드립니다.\n감사합니다.'),c=mk(true,'옥상 누수');
     const b=MobileV5Today._item.inqItem({inq:{ref:'q2',nm:'합성 배정 현장',kind:'inquiry'},late:true},{inquiry:()=>({raw:{at:'2026-10-20T07:00:00+09:00',assigned_at:'2026-10-20T07:00:00+09:00',contact_name:'합성 고객'},done:true,phone:'0100000002',body:'지하주차장 누수로 문의 주심. 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음. 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 떨어져 피해를 보고 있는 상태. 담당자가 현장 와서 보고 자세한 상담 원하심.'})},now);
     const html=MobileV5Today.render({items:[a],line:'1건',wait:0,fix:0,late:1},{},{});const box=document.createElement('div');box.innerHTML=html;const card=box.querySelector('.mv5-card');
-    return {aHead:a.head,aColor:a.color,aGray:a.gray,aSrc:a.source,bHead:b.head,bColor:b.color,bSrc:b.source,cHead:c.head,cGray:c.gray,cls:card.className,k:card.querySelector('.mv5-k').className,sum:MobileV5Today.summarize('문의드립니다. 옥상 누수.',90)};});
-   assert.equal(iq.aHead,'담당 미배정 · 견적문의');assert.equal(iq.aColor,'#9ca3af');assert.equal(iq.aGray,true);assert.equal(iq.cls,'mv5-card gray');assert.equal(iq.k,'mv5-k gray','미배정은 붉은 글이 아니다');
+    return {aLate:a.late,aDeadline:a.deadline,aDone:a.done,aHead:a.head,aColor:a.color,aGray:a.gray,aSrc:a.source,bHead:b.head,bColor:b.color,bSrc:b.source,cHead:c.head,cGray:c.gray,cls:card.className,k:card.querySelector('.mv5-k').className,sum:MobileV5Today.summarize('문의드립니다. 옥상 누수.',90)};});
+   assert.equal(iq.aHead,'담당 미배정 · 견적문의 · 접수 6.30 (화)');assert.equal(iq.aLate,false,'배정일 미확인 ≠ 지연');assert.equal(iq.aDeadline,null,'근거 없는 마감 시각을 만들지 않음');assert.equal(iq.aColor,'#9ca3af');assert.equal(iq.aGray,true);assert.equal(iq.cls,'mv5-card gray');assert.equal(iq.k,'mv5-k gray','미배정은 붉은 글이 아니다');
    assert.equal(iq.aSrc,'문의 요약: 올해 하반기 지하주차장 보수공사 예정 · 설계.감리 진행 문의 및 견적 요청드립니다','인사말 빼고 항목만: '+iq.aSrc);
    assert.equal(iq.cHead,'배정 기록 없음 · 견적문의 · 접수 6.30 (화)','담당 이름만 있고 배정일시가 없으면 회색 + 접수일: '+iq.cHead);assert.equal(iq.cGray,true);
    assert.equal(iq.bHead,'첫 연락 기준 오늘 09:00 지남 · 견적문의 첫 연락','배정 기록이 있는 문의: '+iq.bHead);assert.equal(iq.bColor,'#15171c');
    assert.equal(iq.bSrc,'문의 요약: 지하주차장 누수로 문의 주심 · 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음 · 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 …','문장 세 토막 · 90자: '+iq.bSrc);
    assert.equal(iq.sum,'옥상 누수');
+   assert.equal(iq.aDone,'연결돼서 확인한 내용을 남기면 끝','첫 연락 끝나는 조건 = 견적문의 기준(방문 결과 아님)');
    /* 요청 건을 맨 위로: 재연락 16:10 · 마감 그대로 */
    const card=await page.evaluate(()=>{const M=MobileV5Today._item.dealItem('now',{d:DEALS.find(d=>d.id==='p05'),p:{type:'deal',due:DEALS[4].nextAction.due,text:'첫 연락'},r:MobileRequests.forDeal('p05')[0]},{next:d=>d.nextAction,color:()=>'#1f9d55'},Date.now());return M;});
    assert.equal(card.retry,'오늘 16:10 다시 · 18:00 마감 그대로','재연락을 뒤로 잡아도 마감 그대로');
