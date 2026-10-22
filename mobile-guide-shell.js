@@ -261,6 +261,16 @@
   w.MobileApprovedBoot?.ready();loadRequests();w.setTimeout(()=>w.MobileRoute?.drawMap(),0);return true;
  }
  function run(){w.render();}
+ /* 2026-10-22 회의록 모바일 1단계: 로그인 뒤 운영 자료가 오기 전 = 오늘 화면과 같은 틀의 뼈대(스켈레톤). 예전 바깥 화면도, 빈 배경도 보이지 않는다. 숫자 · 현장은 만들지 않고 회색 자리만. */
+ function showLoading(){
+  const scr=w.document.getElementById('scr'),tab=w.document.getElementById('tabbar'),stage=w.document.getElementById('stage');if(!scr||!tab)return false;
+  w.document.body.classList.add('claude-shell');if(stage)stage.style.display='';
+  scr.classList.add('gs-screen','gs-approved-frame','gs-approved-a');scr.classList.remove('gs-prospect');
+  const card='<div class="gs-skel-card" aria-hidden="true"><i style="width:38%"></i><b style="width:86%"></b><b style="width:60%"></b><i style="width:52%"></i><u></u></div>';
+  const tabs=[['today','오늘'],['mine','내 현장'],['record','기록 · 등록'],['schedule','일정']].map(([k,l],n)=>'<span'+(n===0?' aria-current="page" class="on"':'')+'>'+l+'</span>').join('');
+  scr.innerHTML='<div class="approved-a mv5 gs-skel" role="status" aria-live="polite" aria-label="오늘 업무를 불러오는 중"><div class="mv5-head"><b>오늘</b><div style="flex:1"></div></div><div class="mv5-body"><div class="mv5-top"><span>지금 먼저 할 일</span><b class="gs-skel-line" style="width:42%" aria-hidden="true"></b></div>'+card+card+card+'<p class="gs-skel-note">서버에서 오늘 업무를 불러오는 중입니다</p></div><div class="mv5-nav">'+tabs+'</div></div>';
+  tab.innerHTML='';tab.classList.add('gs-tabhost');w.MobileApprovedBoot?.ready();return true;
+ }
  function openVisit(d,taskId){
   if(!d)return false;
   const tasks=Array.isArray(d.openNextActions)?d.openNextActions:[d.nextActionObj,d.nextAction].filter(a=>a&&typeof a==='object');
@@ -294,6 +304,8 @@
     if(w.G.mode==='rep'){show();unavailable();return;}
     w.MobileApprovedBoot?.hold();unavailable();return;
    }
+   // 2026-10-22 회의록(8~10월) 모바일 1단계: 로그인 뒤 자료가 오기 전에는 빈 화면 대신 같은 틀의 뼈대(스켈레톤). 끄기 G.mobileSkelOff
+   if(w.G?.user&&w.TOKEN&&!w.LIVE&&!w.DEMO&&!w.LOAD_ERR&&!w.G.mobileSkelOff&&showLoading())return;
    // Only the unauthenticated login can use the former outer renderer.
    w.document.body.classList.remove('claude-shell');w.document.getElementById('scr').classList.remove('gs-screen','gs-approved-frame','gs-approved-a');w.document.getElementById('tabbar').classList.remove('gs-tabhost');
    const result=previous.apply(this,arguments);w.MobileApprovedBoot?.login();return result;
@@ -387,8 +399,10 @@
    else if(k==='task'){if(!resetDetail())return;S.returnTab='today';if(b.dataset.kind==='deal'){if(b.dataset.requestId)openRequestedTask(b.dataset.id,b.dataset.requestId,taskClick);else{w.G.deal=b.dataset.id;run();openVisit(mine().find(d=>String(d.id)===b.dataset.id));}}else if(b.dataset.kind==='inquiry'){const r=w.MobileInquiryEntry?.open(inquiry(b.dataset.id));if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');}else unavailable();}
    else if(k==='phone'||k==='sms'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),c=w.contactInfoM(d),phone=w.phoneN(c.mobile||c.officeTel);
-    if(w.DEMO)return w.toast('예시 화면에서는 외부 앱을 실행하지 않습니다.');
-    if(phone)w.location.href=(k==='phone'?'tel:':'sms:')+phone;
+    if(w.DEMO)w.toast('예시 화면에서는 외부 앱을 실행하지 않습니다.');
+    else if(phone)w.location.href=(k==='phone'?'tel:':'sms:')+phone;
+    /* 2026-10-22 회의록 모바일 1단계: 상세 [전화]도 오늘 카드와 같이 전화 앱 → 돌아오면 바로 연락 결과 화면(통화 뒤 10초 입력). 끄기 G.mobileCallSheetOff */
+    if(k==='phone'&&phone&&!w.G.mobileCallSheetOff)openContact();
    }else unavailable();
   });
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-pending="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.pendingPage=n;run();}});

@@ -319,6 +319,8 @@
     const sb=c.querySelector('.ce-save');if(sb)sb.textContent='저장됨';
     const pv=c.querySelector('.ce-prev');if(pv)pv.textContent=rows.map(r=>r[1]).join(' · ');
     root.toast?.('저장됨 · '+rows.map(r=>r[1]).join(' · '));
+    /* 2026-10-22 회의록 모바일: 저장 성공 = 토스트 + 짧은 진동(지원 기기만 · Android) */
+    try{root.navigator?.vibrate?.(30);}catch(e){}
     if(v5done)V5().after(c,Object.assign(v5done,{d,pl,rows,api:MR()}));
    }else if(c.contains(savingView))c.innerHTML='<div class="sheet-grip"></div><div class="ce-done"><b class="ce-dt">저장했습니다</b><small>'+h(d.nm)+'</small><ul>'+rows.map(r=>'<li class="'+k[r[0]]+'"><em>'+h(r[0])+'</em><span>'+h(r[1])+'</span></li>').join('')+'</ul><div class="ce-donebtn"><button type="button" class="btn btn-line" data-ce="close">닫기</button><button type="button" class="btn btn-primary" data-ce="next">다음 건으로</button></div>'+(quoteOk?'<button type="button" class="btn btn-line" data-ce="quote" style="margin-top:8px">견적 요청 등록</button>':'')+'</div>';
    try{root.saveLocal&&root.saveLocal();}catch(e){}

@@ -151,7 +151,7 @@
    if(!ctx.mobile)ensureExpansionRecord(d,update.completion_date,true);
    else pushWrite('expansion_pool_upsert',{opportunity_id:d.id,source_opportunity_id:d.id,site_id:d.site_id||null,site_name:d.nm,source_work_summary:d.workSummary||'공종 미분류',source_won_amount:d.won_amount,completion_date:update.completion_date,owner_name:d.rep,expansion_status:'신규 대상',relationship_state:'기존고객',candidate_work_items:['타공종 확인'],next_contact_at:new Date(new Date(update.completion_date+'T00:00:00Z').getTime()+30*864e5).toISOString().slice(0,10)});
   }
-  if(!ctx.mobile)saveLocal();const mobile=ctx.mobile;close();if(mobile){render();toast('전환 기록을 저장 요청했습니다. 서버 반영 상태를 확인해 주세요.')}else{renderDetail();showDetailErr(saveMsg('단계별 정보를 저장 요청했습니다.'),true)}
+  if(!ctx.mobile)saveLocal();const mobile=ctx.mobile;close();if(mobile){render();toast('전환 기록을 저장 요청했습니다. 서버 반영 상태를 확인해 주세요.');try{navigator.vibrate?.(30);}catch(e){}}else{renderDetail();showDetailErr(saveMsg('단계별 정보를 저장 요청했습니다.'),true)}
  }
  function installPC(){
   const oldOpen=openTransition,oldConfirm=confirmTransition;
