@@ -40,19 +40,21 @@
  /* PC deal-prep.js history() 와 같은 정리: 같은 단계 · 같은 날은 한 번, 최근 것 먼저 · 운영 시작 전 + 사람 없음(시스템 · 이관)은 legacy */
  function history(d){
   const raw=[].concat(Array.isArray(d.stageHistory)?d.stageHistory:[],Array.isArray(d.stage_history)?d.stage_history:[]),seen=new Set(),live=liveFrom();
-  return raw.filter(x=>x&&(x.to||x.to_stage)).map(x=>({to:String(x.to||x.to_stage),at:String(x.at||x.changed_at||''),who:String(x.actor||x.actor_name||''),why:String(x.reason||'')}))
-   .filter(x=>{const k=x.to+'|'+x.at.slice(0,10);if(seen.has(k))return false;seen.add(k);return true;})
+  return raw.filter(x=>x&&(x.to||x.to_stage)).map(x=>({id:x.id!=null?String(x.id):'',to:String(x.to||x.to_stage),at:String(x.at||x.changed_at||''),who:String(x.actor||x.actor_name||''),why:String(x.reason||'')}))
+   /* 같은 기록만 한 번(PC stageHistory 와 서버 stage_history 가 겹칠 때) — 기록 id, 없으면 단계 + 시각까지 같을 때. 날짜만 같다고 합치지 않는다(같은 날 되돌림 · 재진입은 서로 다른 사건 · 2026-10-23 인계 03) */
+   .filter(x=>{const k=x.id?'id:'+x.id:x.to+'|'+x.at;if(seen.has(k))return false;seen.add(k);return true;})
    .sort((a,b)=>b.at.localeCompare(a.at)).map(x=>Object.assign(x,{label:stageName(x.to),legacy:!!x.at&&x.at.slice(0,10)<live&&(!x.who||/시스템|이관|system/i.test(x.who+' '+x.why))}));
  }
- function progress(d){
+ /* opt.page = 단계 이력 쪽(한 쪽 5건 · 공용 ListPager 쪽 번호 — 5건 밖도 모바일에서 같은 영업건 맥락으로 본다 · 2026-10-23 인계 03) */
+ function progress(d,opt){
   const S=P();if(!S||!d)return null;
   const key=S.group(d.code,d.outcome),lost=key==='lost',cur=key==='expansion'?STEPS.length-1:STEPS.indexOf(key);
   const steps=STEPS.map((k,i)=>({key:k,label:SHORT[k],full:S.definition(k).label,state:lost||cur<0?'':i<cur?'done':i===cur?'cur':''}));
   const all=history(d),loading=!all.length&&d.mobile_today_partial===true;
   /* 이력이 없으면 단계 진입일 한 줄 — 운영 시작 전 날짜면 이관일(2026-10-22 운영 실측: 이관 288건 모두 09-01)이라 진입일로 쓰지 않는다 */
   const at=String(d.stage_entered_at||''),since=!all.length&&!loading&&at?[{to:d.code,at,who:'',why:'',label:stageName(d.code),entered:true,legacy:at.slice(0,10)<liveFrom()}]:[];
-  const rows=(all.length?all:since).slice(0,HISTORY_MAX);
-  return {lost,current:lost?S.definition('lost').label:cur>=0?steps[cur].full:stageName(d.code),steps,rows,older:Math.max(0,all.length-HISTORY_MAX),loading};
+  const src=all.length?all:since,LP=w.ListPager,pg=LP?LP.cut(src,opt&&opt.page||1,HISTORY_MAX):{rows:src.slice(0,HISTORY_MAX),page:1,pages:1,total:src.length};
+  return {lost,current:lost?S.definition('lost').label:cur>=0?steps[cur].full:stageName(d.code),steps,rows:pg.rows,pager:pg,total:src.length,loading};
  }
  const day=v=>{const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s.slice(0,4)+'.'+s.slice(5,7)+'.'+s.slice(8,10):'';};
  const time=v=>{const n=Date.parse(v);if(!/T\d/.test(String(v))||!Number.isFinite(n))return '';const t=new Date(n+9*36e5);return String(t.getUTCHours()).padStart(2,'0')+':'+String(t.getUTCMinutes()).padStart(2,'0');};
@@ -68,8 +70,8 @@
   const rows=m.loading?'<p class="mv6-none">단계 이력을 불러오는 중입니다</p>':m.rows.length?'<ul class="mv6-tl">'+m.rows.map(r=>r.legacy
    /* PC 단계 이력과 같은 말: 날짜 (이관일) + '이관 자료 · 실제 진입일 미확인' */
    ?'<li class="legacy"><b>'+h(r.label)+'</b><span>'+h((day(r.at)||'날짜 미기록')+' (이관일)')+'</span><small>'+h('이관 자료 · 실제 진입일 미확인'+(r.why?' · '+r.why:''))+'</small></li>'
-   :'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.older?'<p class="mv6-none">이전 '+m.older+'건은 PC 상세 \'단계 이력\'에 있습니다</p>':''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
-  return '<section class="mv6-hist" aria-label="단계 이력"><header><b>단계 이력</b></header>'+rows+'</section>';
+   :'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.pager&&m.pager.pages>1&&w.ListPager?w.ListPager.html(m.pager,{ns:'v6h',unit:'건',small:true}):''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
+  return '<section class="mv6-hist" aria-label="단계 이력"><header><b>단계 이력</b>'+(m.total>HISTORY_MAX?'<span>'+m.total+'건</span>':'')+'</header>'+rows+'</section>';
  }
  return Object.freeze({on,summary,summaryHtml,progress,barHtml,historyHtml,history,STEPS});
 });
