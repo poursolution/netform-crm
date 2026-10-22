@@ -79,7 +79,7 @@
  /* ── ⑤ 단계 전진: 다음 단계로 이동 + 근거 기록 · 월~금 · 뒤로 이동 · 종결 제외 ── */
  const rankOf=c=>{try{return R.perfStageRank?R.perfStageRank(c):null;}catch(e){return null;}};
  const ORD=['first_contact','consulting','sent','rapport','silent','waiting','compete','imminent','bidding','contract','construction','completion'];
- const isEndStage=c=>/^(won|lost|badfit|nocontact|closed|completion)/.test(String(c||''));
+ const isEndStage=c=>/^(won|lost|badfit|nocontact|support|closed|completion)/.test(String(c||''));
  function evidenceOf(x,d,to){
   if(String(x.reason||x.note||x.evidence||x.memo||'').trim())return true;
   const cx=(d&&(d.stage_contexts||patch(d).stage_contexts))||{};const c=cx[to];return !!(c&&c.fields&&Object.keys(c.fields).some(k=>c.fields[k]!=null&&c.fields[k]!==''));

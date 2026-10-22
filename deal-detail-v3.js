@@ -134,7 +134,7 @@
  /* 단계별 B안의 첫 사유 = 추천 다음 행동(규칙 — AI 표식 없음) */
  function ruleHint(d){try{const P=root.PipelineStageB,key=String(d.id||root.dealKey(d)),row=root.PipelineWorkspace.rows({unscoped:true}).find(r=>r.key===key);if(!P||!row||!P.CFG[row.group])return null;const it=P.model(row.group,[row]).items[0];if(!it||!it.first)return null;const rs=P.CFG[row.group].RS[it.first];return {why:rs[0],todo:rs[3],btn:rs[2],act:rs[4],red:rs[1]==='#d93a3a'};}catch(e){return null;}}
  /* ── 연락하고 결과 남기기: '지금 할 일' 카드 안에서 펼침(시안) — 저장은 기존 연락 기록 경로 그대로 ── */
- const STAGES=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁·입찰'],['construction','계약·시공'],['won','수주'],['lost','실주']];
+ const STAGES=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁·입찰'],['construction','계약·시공'],['won','수주'],['lost','실주'],['support','지원 종결']];/* support(2026-10-22) = 묶음 없는 종료 코드 하나 */
  const RCH=['전화','문자','카카오','방문','이메일'];
  /* 결과별 다음 행동(규칙 · 며칠 뒤) — 10/16 확정 전이라 OPS_RULES.contactNext 로 바꿀 수 있다 */
  const NXT=Object.assign({'연결됨':['다시 연락',3],'부재':['다시 전화',1],'검토중':['결과 확인',7],'자료요청':['자료 보내기',1],'회신대기':['회신 확인',3],'거절':[null,0]},(root.OPS_RULES&&root.OPS_RULES.contactNext)||{});
@@ -498,7 +498,7 @@
   {const hb=band.querySelector('.hd b'),ht=legacy?'영업 재개 — 어느 단계로 올릴까요?':'어느 단계로 옮길까요?';if(hb&&hb.textContent!==ht)hb.textContent=ht;}
   /* 지금 묶음 안에서 옮길 수 있는 단계: 계약·시공 · 컨설팅 설계는 순서가 있으므로 다음 단계만(계약 → 시공 → 준공), 관계관리 · 경쟁·입찰은 나란한 상태라 나머지 전부 */
   const inGroup=k=>{const def=P.definition(k),codes=def?def.codes:[],i=codes.indexOf(from),linear=k==='construction'||k==='consulting';return codes.filter((c,j)=>c!==from&&choices.includes(c)&&(!linear||i<0||j>i));};
-  const mh=STAGES.map(([k,n])=>{const def=P.definition(k),ok=(def?def.codes:[]).some(c=>choices.includes(c)),cur=k===group;
+  const mh=STAGES.map(([k,n])=>{const def=P.definition(k),ok=(def?def.codes:[k]).some(c=>choices.includes(c)),cur=k===group;
    if(cur){const sub=inGroup(k);return '<button type="button" data-dv3="mvpick" data-stage="'+k+'" class="cur" aria-disabled="true">'+h(n)+' (지금'+(sname&&sname!==n?' · '+h(sname):'')+')</button>'+sub.map(c=>'<button type="button" class="sub" data-dv3="mvpick" data-stage="'+k+'" data-code="'+c+'">→ '+h(root.stageLabel(c))+'</button>').join('');}
    /* 수주 = 수주 처리 창(유형 먼저 고르기)이 있으면 어느 단계에서나 누를 수 있다 */
    const winOpen=k==='won'&&!closed&&!!(root.DealWin&&root.DealWin.available());
@@ -621,7 +621,7 @@
  }
  function pickStage(d,key,want){
   const def=root.PipelineStages.definition(key),T=root.StageTransition,UI=root.StageTransitionUI;const PSC=root.PipelineScope,lg=!!(PSC&&PSC.on()&&PSC.isLegacy(d));let choices=[];try{choices=T.choices(lg?(PSC.fromCode?PSC.fromCode(d):PSC.rawCode(d)):root.dealStage(d));}catch(e){}
-  const code=want&&choices.includes(want)?want:(def?def.codes:[]).find(c=>choices.includes(c));if(!code||!UI||typeof UI.open!=='function')return false;
+  const code=want&&choices.includes(want)?want:(def?def.codes:[key]).find(c=>choices.includes(c));if(!code||!UI||typeof UI.open!=='function')return false;/* 묶음 없는 종료 코드(support)는 key 그대로 */
   if(document.getElementById('stage-transition-form'))UI.close();
   UI.open(d,false,code);return true;
  }
