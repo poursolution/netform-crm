@@ -15,8 +15,12 @@ test('crm-ai: 브라우저 사전 확인(OPTIONS)은 204 + CORS 헤더 — 본�
  assert.equal(r.status,204);assert.equal(r.body,null);assert.equal(r.headers.get('access-control-allow-origin'),'https://poursolution.github.io');assert.match(r.headers.get('access-control-allow-headers'),/authorization/);assert.match(r.headers.get('access-control-allow-methods'),/POST/);
 });
 test('crm-ai: memo_tidy — 받아쓰기 원문을 정리 · 결과 분류 · 날짜 있는 다음 할 일만',()=>{
- assert.deepEqual(sanitize('memo_tidy',{memo:'소장님 화요일 방문 확정, 견적 수정본 지참',result:'promise',what:'화요일 방문',next:{date:'2026-10-07',text:'방문'}}),{memo:'소장님 화요일 방문 확정, 견적 수정본 지참',result:'promise',what:'화요일 방문',next:{date:'2026-10-07',text:'방문'}});
- assert.deepEqual(sanitize('memo_tidy',{memo:'x',result:'뭔가',next:{date:'다음주',text:'방문'}}),{memo:'x',result:'unknown',what:'',next:null},'모르는 분류는 unknown · 날짜 모양이 아니면 다음 할 일 없음');
+ assert.deepEqual(sanitize('memo_tidy',{memo:'소장님 화요일 방문 확정, 견적 수정본 지참',result:'promise',what:'화요일 방문',next:{date:'2026-10-07',text:'방문'}}),{memo:'소장님 화요일 방문 확정, 견적 수정본 지참',result:'promise',what:'화요일 방문',next:{date:'2026-10-07',text:'방문'},issue:'',competitor:'',decision:'',needs:'',tags:[]});
+ assert.deepEqual(sanitize('memo_tidy',{memo:'x',result:'뭔가',next:{date:'다음주',text:'방문'}}),{memo:'x',result:'unknown',what:'',next:null,issue:'',competitor:'',decision:'',needs:'',tags:[]},'모르는 분류는 unknown · 날짜 모양이 아니면 다음 할 일 없음');
+ /* 2026-10-22 구조화: 핵심 이슈 · 경쟁사 · 결정 일정(날짜 모양만) · 요구 · 꼬리표(정해진 것만) */
+ assert.deepEqual(sanitize('memo_tidy',{memo:'골든팰리스 소장 미팅 완료 · 다음 주 입대의 옥상 방수 안건 상정',result:'ongoing',issue:'옥상 슁글 누수 · 입대의 안건 상정 예정',competitor:'1곳 있음',decision:'2026-10-29',needs:'비교 견적 자료',tags:['입대의상정','경쟁비교','아무거나',' 자료요청 ']}),
+  {memo:'골든팰리스 소장 미팅 완료 · 다음 주 입대의 옥상 방수 안건 상정',result:'ongoing',what:'',next:null,issue:'옥상 슁글 누수 · 입대의 안건 상정 예정',competitor:'1곳 있음',decision:'2026-10-29',needs:'비교 견적 자료',tags:['입대의상정','경쟁비교','자료요청']});
+ assert.equal(sanitize('memo_tidy',{memo:'x',decision:'다음 주'}).decision,'','결정 일정은 날짜 모양만');
  assert.ok(KINDS.includes('memo_tidy'));
 });
 test('crm-ai: auth, flag, cache, sanitize, proposal-only save, key stays server-side',async()=>{
