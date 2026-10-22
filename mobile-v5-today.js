@@ -27,6 +27,13 @@
  const GENERIC=/^(고객\s*)?첫\s*연락$/;
  const VISIT=/방문|실측|미팅/;
  const short=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1)+'…':s;};
+ /* 2026-10-22 대표 "문의 요약해서": 문의 원문을 항목 · 문장 단위로 잘라 인사말을 빼고 앞 세 토막만 ' · ' 로 잇는다(AI 아님 · 원문 글자 그대로). 카드에서는 두 줄까지 */
+ const BOILER=/^(안녕하세요|안녕하십니까|감사합니다|수고하세요|수고하십시오|잘 부탁드립니다|부탁드립니다|문의\s*드립니다|문의드려요|문의합니다)[.!~]*$/;
+ function summarize(body,n){
+  const parts=String(body||'').replace(/\r/g,'').replace(/([.!?。])\s+/g,'$1\n').split(/\n+|\s+[-•·▪■]\s+/).map(s=>s.replace(/^[-•·▪■\s]+/,'').replace(/[.。]\s*$/,'').replace(/\s+/g,' ').trim()).filter(s=>s.length>1&&!BOILER.test(s));
+  const seen=[];for(const p of parts){if(!seen.includes(p))seen.push(p);if(seen.length>=3)break;}
+  return short(seen.join(' · '),n||90);
+ }
  /* 들어온 시각(같은 순위 안 순서) */
  const arrived=v=>{const n=Date.parse(v||'');return Number.isFinite(n)?n:Infinity;};
 
@@ -35,11 +42,13 @@
   const t=x.inq,v=ctx.inquiry(t.ref)||{},raw=v.raw||{},hrs=Number(w.OPS_RULES&&w.OPS_RULES.responseSlaHours)||2;
   const base=arrived(raw.sales_assigned_at||raw.assigned_at||raw.assignedAt||raw.at||raw.created_at),deadline=Number.isFinite(base)?base+hrs*36e5:null,R=rule('inquiry');
   const phone=fmtPhone(v.phone||''),who=raw.contact_name||raw.customer_name||'';
-  return {kind:'inquiry',id:t.ref,late:!!x.late,deadline,at:deadline,arrived:base,
-   head:(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 배정',
+  /* 2026-10-22 대표 "배정 안 된 건 회색": 담당 미배정 문의는 회색 띠 · 회색 머리 글(붉게 재촉하지 않음). 배정된 문의 머리 글은 '견적문의 첫 연락' */
+  const unassigned=v.done===false;
+  return {kind:'inquiry',id:t.ref,late:!!x.late,deadline,at:deadline,arrived:base,gray:unassigned,
+   head:unassigned?'담당 미배정 · 견적문의':(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 첫 연락',
    site:t.nm||v.nm||'견적문의',contact:[who||'고객',phone].filter(Boolean).join(' · '),
-   check:R.check,source:v.body?'문의: '+short(v.body,44):'',done:R.done,
-   button:phone?'전화하기':'응대 기록',mode:phone?'call':'open',color:'#15171c',phone};
+   check:R.check,source:v.body?'문의 요약: '+summarize(v.body,90):'',done:R.done,
+   button:phone?'전화하기':'응대 기록',mode:phone?'call':'open',color:unassigned?'#9ca3af':'#15171c',phone};
  }
  function dealItem(z,x,ctx,now){
   const d=x.d,p=x.p,r=x.r,n=ctx.next(d),R=rule(d.code,d.outcome),RU=w.DayZoneRules,MR=w.MobileRequests;
@@ -81,15 +90,15 @@
  /* ── 그리기 ── 승인 틀(approved-a)의 머리 · 본문 · 탭 세 칸 구조를 그대로 써서 MobileApprovedBoot · 동선 보기 · 쪽 번호가 같이 붙는다 */
  const btn=(i,cls)=>'<span class="'+cls+'" data-gs="v5task" data-mode="'+i.mode+'" data-kind="'+i.kind+'" data-id="'+h(i.id)+'"'+(i.requestId?' data-request-id="'+h(i.requestId)+'"':'')+(i.taskId?' data-task-id="'+h(i.taskId)+'"':'')+' role="button" tabindex="0">'+h(i.button)+'</span>';
  function card(i){
-  return '<div class="mv5-card" style="border-left-color:'+h(i.color||'#1f9d55')+'" data-v5-item="'+h(i.kind+':'+i.id)+'">'
-   +'<span class="mv5-k'+(i.late||/지남/.test(i.head)?' red':'')+'">'+h(i.head)+'</span>'
+  return '<div class="mv5-card'+(i.gray?' gray':'')+'" style="border-left-color:'+h(i.color||'#1f9d55')+'" data-v5-item="'+h(i.kind+':'+i.id)+'">'
+   +'<span class="mv5-k'+(i.gray?' gray':i.late||/지남/.test(i.head)?' red':'')+'">'+h(i.head)+'</span>'
    +'<b class="mv5-site">'+h(i.site)+'</b><span class="mv5-contact">'+h(i.contact)+'</span>'
    +'<div class="mv5-check"><span>이번에 확인할 것</span><b>'+h(i.check||'—')+'</b>'+(i.source?'<em>'+h(i.source)+'</em>':'')+'</div>'
    +(i.retry?'<span class="mv5-retry">'+h(i.retry)+'</span>':'')
    +btn(i,'mv5-btn')+'</div>';
  }
  function row(i){
-  return '<div class="mv5-row" data-v5-item="'+h(i.kind+':'+i.id)+'"><div class="mv5-row-t"><span class="mv5-k'+(i.late?' red':'')+'">'+h(i.head)+'</span><b>'+h(i.site)+'</b><span class="mv5-row-c">'+h(i.check||'')+'</span></div>'+btn(i,'mv5-btn sm')+'</div>';
+  return '<div class="mv5-row" data-v5-item="'+h(i.kind+':'+i.id)+'"><div class="mv5-row-t"><span class="mv5-k'+(i.gray?' gray':i.late?' red':'')+'">'+h(i.head)+'</span><b>'+h(i.site)+'</b><span class="mv5-row-c">'+h(i.check||'')+'</span></div>'+btn(i,'mv5-btn sm')+'</div>';
  }
  /* 회신 대기 · 기록 보완 목록 줄(mobile-guide-shell zoneRow 결과) — 누르면 예전과 같은 업무 열기(data-gs="task") */
  function zoneRow(t){
@@ -105,17 +114,16 @@
   }else if(first){
    body+=card(first);
    body+='<div class="mv5-done"><span>끝나는 조건</span><b>'+h(first.done)+'</b></div>';
-   if(S.v5more&&rest.length){
+   /* 2026-10-22 대표 "그다음 n건이 숨겨져 있으면 안 본다": 나머지는 접지 않고 항상 줄로 보인다(한 쪽 20건 + 쪽 번호 — 목록 공통 규칙). '다음 · …' 미리보기 · [그다음 n건 ›] 펼침 없음 */
+   if(rest.length){
     const P=w.ListPager,pg=P?P.cut(rest,S.v5page||1):{rows:rest.slice(0,20),pages:1};
-    body+='<div class="mv5-sub"><b>그다음 '+rest.length+'건</b><span data-gs="v5more" data-value="0" role="button" tabindex="0">접기</span></div>'+pg.rows.map(row).join('');
+    body+='<div class="mv5-sub"><b>그다음 '+rest.length+'건</b></div>'+pg.rows.map(row).join('');
     if(P&&pg.pages>1)body+=P.html(pg,{ns:'gs',unit:'건',small:true}).replace(/data-gs="page"/g,'data-gs="v5page"');
-   }else if(second){
-    body+='<div class="mv5-next"><span>다음 · '+h(second.head)+'</span><b>'+h(second.site+(second.check?' · '+second.check:''))+'</b>'+(it.length>2?'<span class="mv5-more" data-gs="v5more" data-value="1" role="button" tabindex="0">그다음 '+(it.length-2)+'건 ›</span>':'<span class="mv5-more" data-gs="v5more" data-value="1" role="button" tabindex="0">열기 ›</span>')+'</div>';
    }
   }
   if(M.wait||M.fix)body+='<div class="mv5-quiet"><span data-gs="area" data-value="wait" role="button" tabindex="0">고객 회신 대기 '+M.wait+'</span><span data-gs="area" data-value="fix" role="button" tabindex="0">기록 보완 '+M.fix+'</span></div>';
   const tabs=[['today','오늘'],['mine','내 현장'],['record','기록 · 등록'],['schedule','일정']].map(([k,l],n)=>'<span data-gs="tab" data-tab="'+k+'" role="button" tabindex="0"'+(n===0?' aria-current="page" class="on"':'')+'>'+l+'</span>').join('');
   return '<div class="approved-a mv5"><div class="mv5-head"><b>오늘</b><div style="flex:1"></div><span data-gs="v5perf" role="button" tabindex="0">성과 ›</span></div><div class="mv5-body">'+body+'</div><div class="mv5-nav">'+tabs+'</div></div>';
  }
- w.MobileV5Today=Object.freeze({on,model,render,zoneRow,order,taskAt,when,fmtPhone,_item:{inqItem,dealItem}});
+ w.MobileV5Today=Object.freeze({on,model,render,zoneRow,order,taskAt,when,fmtPhone,summarize,_item:{inqItem,dealItem}});
 })(window);

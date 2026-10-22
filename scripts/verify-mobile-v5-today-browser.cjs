@@ -48,7 +48,7 @@ const SHOT=process.env.SHOT_DIR||'';
    });
    await page.locator('.approved-a.mv5').waitFor();
    const v=await page.evaluate(()=>{const q=s=>document.querySelector('.mv5 '+s),t=n=>n?n.innerText.replace(/\s+/g,' ').trim():'';
-    return {top:t(q('.mv5-top')),card:t(q('.mv5-card')),done:t(q('.mv5-done')),next:t(q('.mv5-next')),quiet:t(q('.mv5-quiet')),perf:t(q('[data-gs="v5perf"]')),areaTabs:document.querySelectorAll('.mv5 [data-gs="area"][data-value="now"],.mv5 [data-gs="area"][data-value="late"]').length,
+    return {top:t(q('.mv5-top')),card:t(q('.mv5-card')),done:t(q('.mv5-done')),sub:t(q('.mv5-sub')),rows:document.querySelectorAll('.mv5 .mv5-row').length,hidden:document.querySelectorAll('.mv5 .mv5-next,.mv5 [data-gs="v5more"]').length,quiet:t(q('.mv5-quiet')),perf:t(q('[data-gs="v5perf"]')),areaTabs:document.querySelectorAll('.mv5 [data-gs="area"][data-value="now"],.mv5 [data-gs="area"][data-value="late"]').length,
      scroll:document.documentElement.scrollWidth<=innerWidth,first:q('.mv5-card [data-gs="v5task"]')?.dataset.id,boot:document.documentElement.getAttribute('data-mobile-approved-view')};});
    assert.equal(v.boot,'approved','승인 틀 부팅');
    assert.match(v.top,/^지금 먼저 할 일 7건 · 기한 지남 3건$/,'맨 위 한 줄: '+v.top);
@@ -58,12 +58,12 @@ const SHOT=process.env.SHOT_DIR||'';
    assert.match(v.card,/이번에 확인할 것 견적 검토 확인/,'확인할 것 = 고객 기록(다음 할 일)');
    assert.match(v.card,/전화하기$/,'버튼 하나');assert.equal(v.first,'p01');
    assert.equal(v.done,'끝나는 조건 연결돼서 확인한 내용을 남기면 끝','전화 업무 끝나는 조건');
-   assert.match(v.next,/^다음 · 1일 지남 합성 기한 지남 1일 · 자료 회신 확인/,'다음 한 건 미리보기: '+v.next);assert.match(v.next,/그다음 5건 ›/);
+   /* 2026-10-22 대표: 나머지는 접지 않고 항상 줄로(숨기면 안 본다) — '다음 · …' 미리보기 · [그다음 n건 ›] 펼침 없음 */
+   assert.equal(v.sub,'그다음 6건','나머지 건수 제목: '+v.sub);assert.equal(v.rows,6,'나머지 6건이 바로 줄로 보인다');assert.equal(v.hidden,0,'미리보기 · 펼침 버튼 없음');
    assert.equal(v.quiet,'고객 회신 대기 1 기록 보완 1','회신 대기 · 기록 보완 숫자만(오늘 밖)');
    assert.equal(v.perf,'성과 ›');assert.equal(v.scroll,true,width+'px 가로 넘침 없음');
    if(SHOT)await page.screenshot({path:path.join(SHOT,'mobile-v5-today-'+width+'.png')});
-   /* 그다음 n건 → 순서 확인 */
-   await page.locator('.mv5 [data-gs="v5more"]').first().click();await page.locator('.mv5 .mv5-row').first().waitFor();
+   /* 그다음 n건(항상 보임) → 순서 확인 */
    const rows=await page.evaluate(()=>[...document.querySelectorAll('.mv5 .mv5-row')].map(r=>r.innerText.replace(/\s+/g,' ').trim()));
    const NAMES=['합성 기한 지남 1일','합성 문의 기준 넘김','합성 오늘 방문','합성 문의 새 배정','합성 요청 재연락','합성 오늘 약속'],order=rows.map(r=>NAMES.find(n=>r.includes(n))||r);
    assert.deepEqual(order,['합성 기한 지남 1일','합성 문의 기준 넘김','합성 오늘 방문','합성 문의 새 배정','합성 요청 재연락','합성 오늘 약속'],'순서: '+JSON.stringify(rows));
@@ -71,7 +71,17 @@ const SHOT=process.env.SHOT_DIR||'';
    assert.match(req,/오늘 18:00까지 · 송보람 요청/,'요청 카드 = 기한 · 요청자: '+req);
    assert.match(req,/견적 요청 내용 · 방문이 필요한지/,'확인할 것 = 요청 항목');
    assert.match(rows.find(r=>/합성 오늘 방문/.test(r)),/오늘 11:00 · 방문 약속.*방문 결과 남기기/,'방문 카드');
-   assert.match(rows.find(r=>/합성 문의 기준 넘김/.test(r)),/첫 연락 기준 오늘 09:00 지남/,'문의 기준 넘김');
+   assert.match(rows.find(r=>/합성 문의 기준 넘김/.test(r)),/첫 연락 기준 오늘 09:00 지남 · 견적문의 첫 연락/,'문의 기준 넘김 · 머리 글은 "첫 연락"(배정이 아님)');
+   /* 2026-10-22 대표: 담당 미배정 문의 = 회색(붉게 재촉 안 함) · 문의 요약 = 원문 토막 세 개까지 · 두 줄 */
+   const iq=await page.evaluate(()=>{const now=Date.now(),mk=(done,body)=>MobileV5Today._item.inqItem({inq:{ref:'q',nm:'합성 요약 현장',kind:'inquiry'},late:true},{inquiry:()=>({raw:{at:'2026-06-30T04:10:00+09:00',contact_name:'합성 고객'},done,phone:'0328816611',body})},now);
+    const a=mk(false,'안녕하세요.\n- 올해 하반기 지하주차장 보수공사 예정\n- 설계.감리 진행 문의 및 견적 요청드립니다.\n감사합니다.'),b=mk(true,'지하주차장 누수로 문의 주심. 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음. 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 떨어져 피해를 보고 있는 상태. 담당자가 현장 와서 보고 자세한 상담 원하심.');
+    const html=MobileV5Today.render({items:[a],line:'1건',wait:0,fix:0,late:1},{},{});const box=document.createElement('div');box.innerHTML=html;const card=box.querySelector('.mv5-card');
+    return {aHead:a.head,aColor:a.color,aGray:a.gray,aSrc:a.source,bHead:b.head,bColor:b.color,bSrc:b.source,cls:card.className,k:card.querySelector('.mv5-k').className,sum:MobileV5Today.summarize('문의드립니다. 옥상 누수.',90)};});
+   assert.equal(iq.aHead,'담당 미배정 · 견적문의');assert.equal(iq.aColor,'#9ca3af');assert.equal(iq.aGray,true);assert.equal(iq.cls,'mv5-card gray');assert.equal(iq.k,'mv5-k gray','미배정은 붉은 글이 아니다');
+   assert.equal(iq.aSrc,'문의 요약: 올해 하반기 지하주차장 보수공사 예정 · 설계.감리 진행 문의 및 견적 요청드립니다','인사말 빼고 항목만: '+iq.aSrc);
+   assert.match(iq.bHead,/^첫 연락 기준 .+ 지남 · 견적문의 첫 연락$/);assert.equal(iq.bColor,'#15171c');
+   assert.equal(iq.bSrc,'문의 요약: 지하주차장 누수로 문의 주심 · 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음 · 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 …','문장 세 토막 · 90자: '+iq.bSrc);
+   assert.equal(iq.sum,'옥상 누수');
    /* 요청 건을 맨 위로: 재연락 16:10 · 마감 그대로 */
    const card=await page.evaluate(()=>{const M=MobileV5Today._item.dealItem('now',{d:DEALS.find(d=>d.id==='p05'),p:{type:'deal',due:DEALS[4].nextAction.due,text:'첫 연락'},r:MobileRequests.forDeal('p05')[0]},{next:d=>d.nextAction,color:()=>'#1f9d55'},Date.now());return M;});
    assert.equal(card.retry,'오늘 16:10 다시 · 18:00 마감 그대로','재연락을 뒤로 잡아도 마감 그대로');

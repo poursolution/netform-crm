@@ -96,6 +96,21 @@ const MEASURE=()=>{
    assert.equal(lg.note,'과거 이관 · 분류 전 1건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개','한 줄 알림: '+lg.note);
    assert.equal(lg.quiet,'고객 회신 대기 1 기록 보완 1','기록 보완에 과거 이관 건이 섞이지 않는다: '+lg.quiet);
    assert.equal(lg.off,true,'끄면 보인다');assert.equal(lg.offNote,0,'끄면 알림 없음');
+   /* ⑧ 2026-10-22 대표: 내 현장에서 실주는 최대한 안 보이게 — '전체'는 실주 숨김 + 목록 끝 [실주 n건 ›] 칸, 누르면 실주 칩으로 바뀌어 사유 · 종료일. 검색어가 있으면 실주도 찾는다. 끄기 G.mobileLostHideOff */
+   const lost=await page.evaluate(()=>{closeSheet&&closeSheet();G.deal=null;G.mobileLostHideOff=false;
+    DEALS.push({id:'p10',site_id:'p10s',nm:'합성 실주 현장',code:'lost',stage_code:'lost',outcome:'lost',close_reason:'예산 부족 · 내년 재검토',closed_at:'2026-10-05T03:00:00Z',sub:'방수',rep:G.user.nm,owner_id:Phase1.profile.user_id,brand:'POUR솔루션',version:0,amt:3e7,manager_name:'합성 소장',manager_role:'관리소장',manager_mobile:'01000000001',created_at:'2026-06-01T00:00:00Z',stageAt:'2026-10-05T00:00:00Z',lastAt:'2026-10-05T00:00:00Z',contactAt:'',activities:[],tl:[],nextAction:null});
+    G.tab='mine';MobileGuideShell.state.q='';MobileGuideShell.state.stage='';render();
+    const names=()=>[...document.querySelectorAll('.approved-bc .approved-list [data-gs="deal"]')].map(n=>n.innerText.replace(/\s+/g,' ').trim());
+    const r={all:names(),note:document.querySelector('.approved-bc .gs-lost-note')?.innerText.replace(/\s+/g,' ').trim()||'',noteH:document.querySelector('.approved-bc .gs-lost-note')?.getBoundingClientRect().height||0,over:document.documentElement.scrollWidth-innerWidth};
+    document.querySelector('.approved-bc .gs-lost-note').click();r.stage=MobileGuideShell.state.stage;r.lostRows=names();r.chip=document.querySelector('.approved-stages [aria-pressed="true"]')?.innerText.trim();r.note2=document.querySelectorAll('.approved-bc .gs-lost-note').length;
+    MobileGuideShell.state.stage='';MobileGuideShell.state.q='실주 현장';render();r.search=names();MobileGuideShell.state.q='';
+    G.mobileLostHideOff=true;render();r.off=names();r.offNote=document.querySelectorAll('.approved-bc .gs-lost-note').length;
+    G.mobileLostHideOff=false;DEALS=DEALS.filter(d=>d.id!=='p10');G.tab='today';render();return r;});
+   assert.equal(lost.all.some(t=>/합성 실주 현장/.test(t)),false,'전체 목록에 실주 없음');assert.equal(lost.note,'실주 1건 누르면 보입니다 ›','실주 칸 한 줄: '+lost.note);assert(lost.noteH>=44,'실주 칸 44px 이상');assert.equal(lost.over,0,'가로 넘침 없음');
+   assert.equal(lost.stage,'lost','칸을 누르면 실주 칩');assert.equal(lost.chip,'실주');assert.equal(lost.note2,0,'실주 칩에서는 칸 없음');
+   assert.match(lost.lostRows.find(t=>/합성 실주 현장/.test(t))||'',/실주.*예산 부족 · 내년 재검토.*종료 10\.05/,'실주 줄 = 사유 · 종료일(다음 업무 미등록 아님): '+JSON.stringify(lost.lostRows));
+   assert.equal(lost.search.some(t=>/합성 실주 현장/.test(t)),true,'검색어가 있으면 실주도 찾는다');
+   assert.equal(lost.off.some(t=>/합성 실주 현장/.test(t)),true,'끄면 전체에 보인다');assert.equal(lost.offNote,0,'끄면 칸 없음');
    /* ⑤ 문의 한도 */
    const cap=await page.evaluate(()=>{const base=ADMIN.inquiries[1];ADMIN.inquiries=[ADMIN.inquiries[0]].concat(Array.from({length:19},(_,i)=>{const raw={...base.raw,id:'bbbbbbbb-1111-4111-8111-0000000000'+String(i+10).padStart(2,'0'),site:'합성 문의 '+(i+10)};return Object.assign(inquiryViewM(raw),{raw,done:true,rep:G.user.nm,status:'배정완료'});}));const n=(buildToday()||[]).filter(t=>t.kind!=='deal').length;return n;});
    assert.equal(cap,20,'문의 20건이 12건에서 잘리지 않음: '+cap);
