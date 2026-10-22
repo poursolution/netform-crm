@@ -24,19 +24,25 @@ export function createQueueClient({url,key,fetchImpl=fetch}) {
 }
 
 export class CampaignWorker {
- constructor({queue,dispatcher,provider,workerId,allowedReceivers,liveEnabled=false}) {
+ constructor({queue,dispatcher,provider,workerId,allowedReceivers,liveEnabled=false,lanes=null}) {
   if(!liveEnabled)throw new QueueError('LIVE_WORKER_DISABLED');
   if(!UUID.test(workerId))throw new QueueError('INVALID_WORKER_ID');
   if(!Array.isArray(allowedReceivers)||!allowedReceivers.length||allowedReceivers.length>500||
      allowedReceivers.some(x=>!/^010\d{8}$/.test(x)))throw new QueueError('EXPLICIT_RECEIVER_ALLOWLIST_REQUIRED');
-  Object.assign(this,{queue,dispatcher,provider,workerId,allowedReceivers:[...new Set(allowedReceivers)]});
+  /* lanes(2026-10-22 브랜드별 발신): 큐 항목의 sender_brand → {provider,dispatcher}. 없으면 생성자에 준 provider · dispatcher 하나 */
+  Object.assign(this,{queue,dispatcher,provider,workerId,allowedReceivers:[...new Set(allowedReceivers)],lanes});
   this.running=false;
+ }
+ lane(item){
+  if(this.lanes&&typeof this.lanes.for==='function'){const l=this.lanes.for(item&&item.sender_brand);if(l&&l.provider&&l.dispatcher)return l;}
+  return {provider:this.provider,dispatcher:this.dispatcher};
  }
  validate(item) {
   if(!item||!UUID.test(item.id)||!UUID.test(item.claim_token)||!this.allowedReceivers.includes(item.receiver)||
      typeof item.message!=='string'||!item.message.trim()||!['SMS','LMS'].includes(item.type)||
      !['sending','submitted','unknown'].includes(item.status)||
-     item.provider_message_id!=null&&!/^[1-9]\d{0,19}$/.test(item.provider_message_id))
+     item.provider_message_id!=null&&!/^[1-9]\d{0,19}$/.test(item.provider_message_id)||
+     item.sender_brand!=null&&(typeof item.sender_brand!=='string'||item.sender_brand.length>100))
     throw new QueueError('INVALID_QUEUE_ITEM');
   return {receiver:item.receiver,message:item.message,type:item.type,mode:'live'};
  }
@@ -49,19 +55,19 @@ export class CampaignWorker {
   return {id:item.id,status:result.status};
  }
  async process(item,fresh) {
-  const job=this.validate(item);
+  const job=this.validate(item),{provider,dispatcher}=this.lane(item);
   if(item.status==='unknown')return {id:item.id,status:'unknown'};
   if(item.status==='submitted') {
    if(!item.provider_message_id)throw new QueueError('SUBMITTED_ID_REQUIRED');
-   const outcome=await this.provider.delivery({messageId:item.provider_message_id,receiver:item.receiver});
+   const outcome=await provider.delivery({messageId:item.provider_message_id,receiver:item.receiver});
    if(!['submitted','sent','failed'].includes(outcome.status)||outcome.messageId!==item.provider_message_id)
     throw new QueueError('PROVIDER_RESULT_MISMATCH');
    return this.record(item,{status:outcome.status,messageId:outcome.messageId});
   }
   // A server claim without our local ledger may have been sent by a lost process.
   // Never manufacture a new dispatch after restart to "recover" an uncertain request.
-  if(!fresh&&!this.dispatcher.row(item.id))return this.record(item,{status:'unknown',errorCode:'LOCAL_LEDGER_MISSING'});
-  const outcome=await this.dispatcher.dispatch(item.id,job);
+  if(!fresh&&!dispatcher.row(item.id))return this.record(item,{status:'unknown',errorCode:'LOCAL_LEDGER_MISSING'});
+  const outcome=await dispatcher.dispatch(item.id,job);
   if(!['submitted','sent','failed','unknown'].includes(outcome.status))throw new QueueError('INVALID_DISPATCH_RESULT');
   return this.record(item,outcome);
  }

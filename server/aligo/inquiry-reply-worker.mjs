@@ -6,16 +6,22 @@ import {QueueError} from './campaign-worker.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const INQUIRY_QUEUE_OPERATIONS=['crm_sms_worker_claim_inquiry_v1','crm_sms_worker_pending_inquiry_v1','crm_sms_worker_result_inquiry_v1'];
 export class InquiryReplyWorker {
- constructor({queue,dispatcher,provider,workerId,enabled=false}) {
+ constructor({queue,dispatcher,provider,workerId,enabled=false,lanes=null}) {
   if(!enabled)throw new QueueError('INQUIRY_REPLY_WORKER_DISABLED');
   if(!UUID.test(workerId))throw new QueueError('INVALID_WORKER_ID');
-  Object.assign(this,{queue,dispatcher,provider,workerId});this.running=false;
+  /* lanes(2026-10-22 브랜드별 발신): 문의 브랜드(sender_brand) → {provider,dispatcher}. 없으면 하나 */
+  Object.assign(this,{queue,dispatcher,provider,workerId,lanes});this.running=false;
+ }
+ lane(item){
+  if(this.lanes&&typeof this.lanes.for==='function'){const l=this.lanes.for(item&&item.sender_brand);if(l&&l.provider&&l.dispatcher)return l;}
+  return {provider:this.provider,dispatcher:this.dispatcher};
  }
  validate(item) {
   if(!item||!UUID.test(item.id)||!UUID.test(item.claim_token)||!/^010\d{8}$/.test(String(item.receiver||''))||
      typeof item.message!=='string'||!item.message.trim()||item.message.length>2000||!['SMS','LMS'].includes(item.type)||
      !['sending','submitted','unknown'].includes(item.status)||
-     item.provider_message_id!=null&&!/^[1-9]\d{0,19}$/.test(item.provider_message_id))
+     item.provider_message_id!=null&&!/^[1-9]\d{0,19}$/.test(item.provider_message_id)||
+     item.sender_brand!=null&&(typeof item.sender_brand!=='string'||item.sender_brand.length>100))
    throw new QueueError('INVALID_QUEUE_ITEM');
   return {receiver:item.receiver,message:item.message,type:item.type,mode:'live'};
  }
@@ -27,17 +33,17 @@ export class InquiryReplyWorker {
   return {id:item.id,status:result.status};
  }
  async process(item,fresh) {
-  const job=this.validate(item);
+  const job=this.validate(item),{provider,dispatcher}=this.lane(item);
   if(item.status==='unknown')return {id:item.id,status:'unknown'};
   if(item.status==='submitted') {
    if(!item.provider_message_id)throw new QueueError('SUBMITTED_ID_REQUIRED');
-   const outcome=await this.provider.delivery({messageId:item.provider_message_id,receiver:item.receiver});
+   const outcome=await provider.delivery({messageId:item.provider_message_id,receiver:item.receiver});
    if(!['submitted','sent','failed'].includes(outcome.status)||outcome.messageId!==item.provider_message_id)throw new QueueError('PROVIDER_RESULT_MISMATCH');
    return this.record(item,{status:outcome.status,messageId:outcome.messageId});
   }
   /* 재시작 뒤 로컬 원장에 없는 서버 claim 은 보내지 않고 unknown 으로 격리(캠페인 실행기와 같은 원칙) */
-  if(!fresh&&!this.dispatcher.row(item.id))return this.record(item,{status:'unknown',errorCode:'LOCAL_LEDGER_MISSING'});
-  const outcome=await this.dispatcher.dispatch(item.id,job);
+  if(!fresh&&!dispatcher.row(item.id))return this.record(item,{status:'unknown',errorCode:'LOCAL_LEDGER_MISSING'});
+  const outcome=await dispatcher.dispatch(item.id,job);
   if(!['submitted','sent','failed','unknown'].includes(outcome.status))throw new QueueError('INVALID_DISPATCH_RESULT');
   return this.record(item,outcome);
  }

@@ -81,7 +81,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* CRM 직접 발송(2026-10-03 "진행해"): 서버 함수 + 로그인 + 010 번호면 [CRM에서 보내기] — 두 번 눌러 확인 → crm_inquiry_sms_request_v1 → 이력 «문자 · 회신대기 (CRM 발송)» → 목록 함수의 상태가 타임라인에 */
   await page.evaluate(()=>{window.__sms=[];window.__smsRows=[];SB={rpc:async(name,args)=>{if(name==='crm_inquiry_sms_request_v1'){__sms.push(args.p);const row={id:'cccccccc-0000-4000-8000-00000000000'+__sms.length,status:'queued',body:args.p.text,phone:'01011112222',requested_by_name:'송보람',created_at:new Date().toISOString()};__smsRows.unshift(row);return {data:{ok:true,id:row.id,status:'queued',phone:row.phone}};}if(name==='crm_inquiry_sms_list_v1')return {data:{ok:true,rows:__smsRows}};return {data:{ok:true,tasks:[]}};}};TOKEN='test';});
   await d.locator('.idv-ctabs [data-v="sms"]').click();await page.waitForTimeout(250);
-  assert.match(await d.locator('.idv-smsnote').innerText(),/\[CRM에서 보내기\]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송/);
+  assert.match(await d.locator('.idv-smsnote').innerText(),/\[CRM에서 보내기\]를 누르면 문의 브랜드의 등록 발신번호로 고객 휴대폰에 바로 발송/);
   const crmBtn=d.locator('[data-idv="sms-crm"]');assert.equal(await crmBtn.innerText(),'CRM에서 보내기');assert.match(await d.locator('[data-idv="sms-send"]').innerText(),/직접 보내기$/,'직접 보내기는 보조 버튼으로');
   await d.locator('.idv-tpls .idv-chip',{hasText:'부재 후'}).click();await page.waitForTimeout(150);
   await crmBtn.click();await page.waitForTimeout(200);
