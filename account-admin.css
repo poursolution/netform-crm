@@ -99,6 +99,11 @@ dialog.aa2:focus,dialog.aa2:focus-visible{outline:0}
 .aa2-foot{flex:none;padding:10px 22px;border-top:1px solid #eef0f3;font-size:11.5px;color:#9ca3af;display:flex;align-items:center;gap:12px}
 .aa2-foot>span{flex:1}
 .aa2-msg{margin:0;padding:22px;font-size:12.5px;color:#6b7280}
+/* v3(2026-10-22): 역할 변경 패널 · 외부 영업이사 탭 */
+.aa2-rolef{margin:8px 0 2px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.aa2-dirhead{display:flex;align-items:center;gap:12px;padding:12px 22px;border-bottom:1px solid #eef0f3;background:#fff}
+.aa2-dirhead .aa2-ptxt{flex:1;color:#4b5563}
+.aa2-diradd .aa2-fields{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
 @media (max-width:720px){
  .aa2-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
  .aa2-thead{display:none}
@@ -106,4 +111,5 @@ dialog.aa2:focus,dialog.aa2:focus-visible{outline:0}
  .aa2-row .aa2-who{grid-column:1/-1}
  .aa2-row .aa2-mail{grid-column:1/-1}
  .aa2-panel{margin-left:22px}
+ .aa2-rolef,.aa2-diradd .aa2-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
