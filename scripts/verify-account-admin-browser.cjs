@@ -33,7 +33,8 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
     mk(5,'이필선','rep','ipilseon@crm.netform.co.kr','2026-10-02T03:00:00Z'),mk(6,'정정훈','rep','jeongjeonghun@crm.netform.co.kr',null),
     mk(7,'김성민','rep','kimseongmin@crm.netform.co.kr',null),mk(8,'조현식','rep','johyeonsik@crm.netform.co.kr','2026-09-30T03:00:00Z'),
     mk(9,'조재연','rep',null,null),mk(10,'경남지사','rep',null,null),
-    mk(11,'주현진','rep',null,null,{active:false}),mk(12,'한인규','viewer',null,null,{active:false})]};
+    mk(11,'주현진','rep',null,null,{active:false}),mk(12,'한인규','viewer',null,null,{active:false})],
+    directors:[{name:'전용성',active:true,note:null,assigned_open:1,created_at:'2026-09-28T00:00:00Z'},{name:'조성용',active:true,note:null,assigned_open:0,created_at:'2026-09-28T00:00:00Z'}]};
    const err=m=>Object.assign(Error(m),{code:'P0001'});
    const out=u=>{const x=Object.assign({},u);if(db.v2){x.permission_role=u.linked?(u.permission_role||(u.role==='rep'?'rep':'admin')):null;x.kind=u.kind||null;x.team=u.team||null;x.must_change=!!u.must_change;x.created_at='2026-09-07T00:00:00Z';}else{delete x.kind;delete x.team;delete x.must_change;delete x.permission_role;}return x;};
    window.__profile={permission_role:'admin',auth_uid:'u-admin',user_id:db.users[0].user_id,name:'송보람'};
@@ -50,6 +51,10 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
      Object.assign(u,{email:p.email,linked:true,kind:p.kind,team:p.team,must_change:true,permission_role:p.kind==='branch'?'branch':(p.kind==='admin'||p.kind==='dual')?'admin':'rep'});
      return {ok:true,policy:'admin-account-create-v1',user_id:u.user_id,name:u.name,email:u.email,kind:p.kind,linked:!!p.link_user_id,must_change:true};}
     if(name==='crm_admin_set_active_v1'){const u=db.users.find(x=>x.user_id===args.p.user_id);if(!u)throw err('target not eligible');if(u.self)throw err('cannot change own account');u.active=args.p.active;return {ok:true,policy:'admin-account-active-v1',user_id:u.user_id,name:u.name,active:u.active};}
+    /* v3(2026-10-22): 역할 변경 · 영업이사 명단 */
+    if(name==='crm_admin_set_role_v1'){const p=args.p,u=db.users.find(x=>x.user_id===p.user_id);if(!u||!u.active)throw err('target not eligible');if(u.self)throw err('cannot change own account');if(!['rep','lead','branch','admin','dual'].includes(p.kind))throw err('invalid payload');const was=u.permission_role;u.kind=p.kind;u.team=p.team||null;u.role=p.kind==='admin'?'admin':p.kind==='dual'?'dual':'rep';if(u.linked)u.permission_role=p.kind==='branch'?'branch':(p.kind==='admin'||p.kind==='dual')?'admin':'rep';return {ok:true,policy:'admin-account-role-v1',user_id:u.user_id,name:u.name,kind:p.kind,team:u.team,role:u.role,permission_role:u.linked?u.permission_role:null,session_cleared:was==='admin'&&u.permission_role!=='admin'};}
+    if(name==='crm_admin_director_list_v1')return {ok:true,policy:'admin-directors-v1',items:db.directors.map(d=>Object.assign({},d))};
+    if(name==='crm_admin_director_set_v1'){const p=args.p,nm=String(p.name||'').trim();if(!nm)throw err('invalid payload');if(db.users.some(x=>x.name===nm))throw err('name already used');let d=db.directors.find(x=>x.name===nm);const created=!d;if(!d){d={name:nm,active:p.active!==false,note:p.note||null,assigned_open:0,created_at:'2026-10-22T00:00:00Z'};db.directors.push(d);}else{if(typeof p.active==='boolean')d.active=p.active;if(p.note)d.note=p.note;}return {ok:true,policy:'admin-director-set-v1',name:nm,active:d.active,note:d.note,created};}
     throw Error('AUTH_REQUIRED');
    };
    const P=Object.assign({},real,{rpc});Object.defineProperty(P,'profile',{get:()=>window.__profile});window.Phase1=P;
@@ -73,7 +78,8 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   assert.deepEqual(await dlg.evaluate(n=>{const s=getComputedStyle(n);return [s.borderTopLeftRadius,s.backgroundColor,n.querySelector('#aa2-title').textContent,getComputedStyle(n.querySelector('#aa2-title')).fontSize];}),['16px','rgb(255, 255, 255)','직원 계정 관리','18px']);
   assert.equal(await dlg.evaluate(n=>getComputedStyle(n).fontFamily===getComputedStyle(document.body).fontFamily),true,'CRM 본문 글꼴 그대로');
   assert.equal(await dlg.locator('.aa2-count').innerText(),'10명 · 로그인 연결 8명');
-  assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 10','관리자 1','대표 · 겸직 2','영업 · 팀장 5','지사 1']);
+  await page.waitForFunction(()=>[...document.querySelectorAll('dialog.aa2 .aa2-tab')].some(b=>/외부 영업이사 2/.test(b.textContent)));
+  assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 10','관리자 1','대표 · 겸직 2','영업 · 팀장 5','지사 1','외부 영업이사 2']);
   assert.deepEqual(await dlg.locator('.aa2-tab').first().evaluate(b=>{const s=getComputedStyle(b);return [s.backgroundColor,s.color,s.borderRadius,s.fontSize,s.fontWeight];}),['rgb(21, 23, 28)','rgb(255, 255, 255)','999px','12.5px','700']);
   assert.equal(await dlg.locator('.aa2-search').getAttribute('placeholder'),'이름 · 이메일 검색');
   assert.deepEqual((await dlg.locator('.aa2-thead span').allInnerTexts()).map(one),['이름','역할','로그인 이메일','마지막 로그인','']);
@@ -85,12 +91,12 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   const cells=async n=>one(await row(n).locator('.aa2-row').innerText());
   assert.equal(await cells('송보람'),'송 송보람 영업관리 관리자 songboram@crm.netform.co.kr 2026.10.5 본인은 비밀번호 변경 사용');
   assert.equal(await row('송보람').locator('button').count(),0,'본인 줄에는 버튼이 없다');
-  assert.equal(await cells('이승우'),'이 이승우 대표 대표 · 겸직 iseungwoo@crm.netform.co.kr 로그인 기록 없음 비밀번호 재설정 ···');
-  assert.equal(await cells('황윤선'),'황 황윤선 본사 영업 · 상무 대표 · 겸직 hwangyunseon@crm.netform.co.kr 2026.10.4 비밀번호 재설정 ···');
-  assert.equal(await cells('한준엽'),'한 한준엽 본사 영업 · 팀장 팀장 hanjunyeop@crm.netform.co.kr 2026.10.3 비밀번호 재설정 ···');
-  assert.equal(await cells('이필선'),'이 이필선 본사 영업 영업사원 ipilseon@crm.netform.co.kr 2026.10.2 비밀번호 재설정 ···');
-  assert.equal(await cells('조재연'),'조 조재연 B2B팀 · 협약문의 B2B 로그인 미연결 로그인 기록 없음 계정 연결 ···');
-  assert.equal(await cells('경남지사'),'경 경남지사 경남지사 지사 로그인 미연결 로그인 기록 없음 계정 연결 ···');
+  assert.equal(await cells('이승우'),'이 이승우 대표 대표 · 겸직 iseungwoo@crm.netform.co.kr 로그인 기록 없음 비밀번호 재설정 역할 변경 ···');
+  assert.equal(await cells('황윤선'),'황 황윤선 본사 영업 · 상무 대표 · 겸직 hwangyunseon@crm.netform.co.kr 2026.10.4 비밀번호 재설정 역할 변경 ···');
+  assert.equal(await cells('한준엽'),'한 한준엽 본사 영업 · 팀장 팀장 hanjunyeop@crm.netform.co.kr 2026.10.3 비밀번호 재설정 역할 변경 ···');
+  assert.equal(await cells('이필선'),'이 이필선 본사 영업 영업사원 ipilseon@crm.netform.co.kr 2026.10.2 비밀번호 재설정 역할 변경 ···');
+  assert.equal(await cells('조재연'),'조 조재연 B2B팀 · 협약문의 B2B 로그인 미연결 로그인 기록 없음 계정 연결 역할 변경 ···');
+  assert.equal(await cells('경남지사'),'경 경남지사 경남지사 지사 로그인 미연결 로그인 기록 없음 계정 연결 역할 변경 ···');
   const css=(n,sel,props)=>row(n).locator(sel).first().evaluate((e,props)=>{const s=getComputedStyle(e);return props.map(p=>s[p]);},props);
   assert.deepEqual(await css('경남지사','.aa2-mail',['color']),['rgb(192, 57, 43)'],'미연결 = 주황');
   assert.deepEqual(await css('경남지사','[data-aa2="link"]',['backgroundColor','color']),['rgb(21, 23, 28)','rgb(255, 255, 255)'],'[계정 연결] = 검정');
@@ -127,7 +133,7 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),shown);
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-2-issued.png')});
   await row('이필선').locator('[data-aa2="cancel"]').click();assert.equal(await dlg.locator('.aa2-panel').count(),0);
-  assert.equal(await row('이필선').locator('.aa2-act .aa2-btn').innerText(),'임시 비밀번호 보기');
+  assert.equal(await row('이필선').locator('.aa2-act .aa2-btn').first().innerText(),'임시 비밀번호 보기');
   await row('이필선').locator('[data-aa2="show"]').click();assert.equal(await row('이필선').locator('.aa2-pw').innerText(),shown);
   await row('이필선').locator('[data-aa2="cancel"]').click();
 
@@ -148,9 +154,9 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   assert.deepEqual([made.name,made.email,made.kind,made.team,made.link_user_id],['박지훈','parkjihoon@crm.netform.co.kr','branch','경남지사',undefined]);assert.match(made.temp_password,PW);
   assert.equal(await row('박지훈').locator('.aa2-pw').innerText(),made.temp_password);
   assert.equal(await add.isHidden(),true,'폼은 닫힌다');assert.equal(await dlg.locator('.aa2-count').innerText(),'11명 · 로그인 연결 9명');
-  assert.equal(one(await row('박지훈').locator('.aa2-row').innerText()),'박 박지훈 경남지사 지사 parkjihoon@crm.netform.co.kr 방금 만듦 · 첫 로그인 전 임시 비밀번호 보기 ···');
+  assert.equal(one(await row('박지훈').locator('.aa2-row').innerText()),'박 박지훈 경남지사 지사 parkjihoon@crm.netform.co.kr 방금 만듦 · 첫 로그인 전 임시 비밀번호 보기 역할 변경 ···');
   assert.equal(one(await row('박지훈').locator('[data-aa2-loginhint]').innerText()),'로그인 화면의 이름 칸에 이메일 parkjihoon@crm.netform.co.kr 을 넣어 로그인합니다');
-  assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 11','관리자 1','대표 · 겸직 2','영업 · 팀장 5','지사 2']);
+  assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 11','관리자 1','대표 · 겸직 2','영업 · 팀장 5','지사 2','외부 영업이사 2']);
   if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-3-added.png')});
   await row('박지훈').locator('[data-aa2="cancel"]').click();
 
@@ -185,8 +191,41 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   /* 창을 닫으면 임시 비밀번호는 다시 볼 수 없다 */
   await dlg.locator('[data-aa2="close"]').click();await dlg.waitFor({state:'detached'});
   await page.evaluate(()=>AccountAdmin.open());await rows.first().waitFor();
-  assert.equal(await row('이필선').locator('.aa2-act .aa2-btn').innerText(),'비밀번호 재설정');assert.equal(await row('박지훈').locator('.aa2-act .aa2-btn').innerText(),'비밀번호 재설정');
+  assert.equal(await row('이필선').locator('.aa2-act .aa2-btn').first().innerText(),'비밀번호 재설정');assert.equal(await row('박지훈').locator('.aa2-act .aa2-btn').first().innerText(),'비밀번호 재설정');
   await page.keyboard.press('Escape');await dlg.waitFor({state:'detached'});
+
+  /* v3 역할 변경: 영업사원 → 지사 · 서버 권한 · 겸직(admin) → 영업사원이면 로그인 끊김 안내 · 본인 줄에는 없음 */
+  await page.evaluate(()=>AccountAdmin.open());await rows.first().waitFor();
+  assert.equal(await row('송보람').locator('[data-aa2="chrole"]').count(),0,'본인 줄에는 역할 변경이 없다');
+  await row('정정훈').locator('[data-aa2="chrole"]').click();
+  assert.match(one(await row('정정훈').locator('.aa2-panel').innerText()),/^정정훈의 역할 · 소속을 바꿉니다\. 서버 권한도 같이 바뀌며, 관리자 권한을 내리면 지금 로그인이 끊깁니다\(다시 로그인하면 새 권한\)\. 역할 \* .* 소속 .* 취소 역할 바꾸기$/);
+  assert.deepEqual(await row('정정훈').locator('select').evaluateAll(l=>l.map(s=>s.value)),['rep','본사 영업'],'지금 역할 · 소속이 미리 골라져 있다');
+  await row('정정훈').locator('[data-aa2-r="kind"]').selectOption('branch');await row('정정훈').locator('[data-aa2-r="team"]').selectOption('경남지사');
+  await row('정정훈').locator('[data-aa2="doRole"]').click();await page.waitForFunction(()=>document.querySelector('dialog.aa2 .aa2-panel')===null);
+  assert.deepEqual((await calls('crm_admin_set_role_v1')).at(-1),{p:{user_id:'00000000-0000-4000-8000-000000000006',kind:'branch',team:'경남지사'}});
+  assert.equal(await cells('정정훈'),'정 정정훈 경남지사 지사 jeongjeonghun@crm.netform.co.kr 로그인 기록 없음 비밀번호 재설정 역할 변경 ···');
+  assert.deepEqual((await dlg.locator('.aa2-tab').allInnerTexts()).map(one),['전체 11','관리자 1','대표 · 겸직 2','영업 · 팀장 4','지사 3','외부 영업이사 2']);
+  if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-5-role.png')});
+  /* v3 외부 영업이사 탭: 목록 · 추가 · 직원 이름 금지 · 비활성 · 다시 활성 · 배정 창 명단 */
+  await dlg.locator('.aa2-tab',{hasText:'외부 영업이사'}).click();
+  assert.deepEqual(await dlg.locator('.aa2-list .aa2-who b').allInnerTexts(),['전용성','조성용']);
+  assert.match(one(await dlg.locator('.aa2-dirhead').innerText()),/^영업이사는 로그인 계정 없이 이름으로 문의를 배정받는 외부 담당입니다\. 삭제하지 않고 비활성으로 둡니다\(배정 이력은 이름으로 남습니다\)\. \+ 영업이사 추가$/);
+  assert.equal(one(await dlg.locator('.aa2-item[data-dir="전용성"] .aa2-row').innerText()),'전 전용성 외부 영업이사 외부 영업이사 로그인 없음 · 이름으로 배정 배정 중 1건 비활성화');
+  await dlg.locator('[data-aa2="dirAdd"]').click();await dlg.locator('[data-aa2-d="name"]').fill('이필선');await dlg.locator('[data-aa2="dirCreate"]').click();
+  await page.waitForFunction(()=>/같은 이름의 직원이 이미 있습니다/.test(document.querySelector('dialog.aa2 .aa2-addnote')?.textContent||''));
+  await dlg.locator('[data-aa2-d="name"]').fill('고영운');await dlg.locator('[data-aa2-d="note"]').fill('경기 남부');await dlg.locator('[data-aa2="dirCreate"]').click();
+  await page.waitForFunction(()=>[...document.querySelectorAll('dialog.aa2 .aa2-list .aa2-who b')].some(b=>b.textContent==='고영운'));
+  assert.deepEqual((await calls('crm_admin_director_set_v1')).at(-1),{p:{name:'고영운',note:'경기 남부'}});
+  assert.equal(one(await dlg.locator('.aa2-item[data-dir="고영운"] .aa2-row').innerText()),'고 고영운 경기 남부 외부 영업이사 로그인 없음 · 이름으로 배정 배정 중 0건 비활성화');
+  assert.ok((await page.evaluate(()=>inquiryDirectorReps())).includes('고영운'),'배정 창 명단에 새 영업이사가 바로 들어간다');
+  assert.equal(await page.evaluate(()=>repProfile('고영운').directorAssignable),true,'새 이름은 외부 영업 프로필로 등록');
+  await dlg.locator('.aa2-item[data-dir="조성용"] [data-aa2="dirOff"]').click();await page.waitForFunction(()=>!document.querySelector('dialog.aa2 .aa2-item[data-dir="조성용"]'));
+  assert.deepEqual((await calls('crm_admin_director_set_v1')).at(-1),{p:{name:'조성용',active:false}});
+  assert.deepEqual(await page.evaluate(()=>inquiryDirectorReps()),['전용성','고영운'],'비활성 영업이사는 배정 명단에서 빠진다');
+  await dlg.locator('[data-aa2="toggleOff"]').click();await dlg.locator('.aa2-item[data-dir="조성용"] [data-aa2="dirOn"]').click();await page.waitForFunction(()=>!document.querySelector('dialog.aa2 .aa2-item[data-dir="조성용"].off'));
+  assert.equal(await page.evaluate(()=>__db.directors.length),3,'영업이사는 지우지 않는다');
+  if(shot)await page.screenshot({path:shot.replace(/\.png$/,'-6-directors.png')});
+  await dlg.locator('[data-aa2="toggleOff"]').click();await page.keyboard.press('Escape');await dlg.waitFor({state:'detached'});
 
   /* 좁은 화면(1207×914)에서도 가운데 · 화면 안 */
   await page.setViewportSize({width:1207,height:914});await page.evaluate(()=>AccountAdmin.open());await rows.first().waitFor();
@@ -197,6 +236,7 @@ const PW=/^NF-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/;
   await seed(false);await page.evaluate(()=>AccountAdmin.open());await rows.first().waitFor();
   assert.deepEqual(await dlg.evaluate(n=>[n.querySelector('[data-aa2="add"]').disabled,n.querySelector('[data-aa2="add"]').title,[...n.querySelectorAll('[data-aa2="link"]')].every(b=>b.disabled),[...n.querySelectorAll('[data-aa2="more"]')].every(b=>b.disabled)]),[true,'서버 적용 뒤에 열립니다',true,true]);
   assert.equal(await cells('조재연'),'조 조재연 B2B팀 · 협약문의 B2B 로그인 미연결 로그인 기록 없음 계정 연결 ···');
+  assert.equal(await dlg.locator('[data-aa2="chrole"]').count(),0,'서버 함수 전에는 역할 변경 없음');assert.equal(await dlg.locator('.aa2-tab',{hasText:'외부 영업이사'}).count(),0,'영업이사 탭도 없음');
   await row('정정훈').locator('[data-aa2="reset"]').click();await row('정정훈').locator('[data-aa2="doReset"]').click();await row('정정훈').locator('.aa2-pw').waitFor();
   assert.match(await row('정정훈').locator('.aa2-pw').innerText(),PW);
   await page.keyboard.press('Escape');await dlg.waitFor({state:'detached'});

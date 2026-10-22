@@ -98,10 +98,32 @@
   /* ── v2: 시안(직원 계정 관리 v2.dc.html) 그대로 ── */
   const RL = { admin: '관리자', rep: '영업사원', dual: '대표 · 겸직', lead: '팀장', branch: '지사', b2b: 'B2B' };
   const AV = ['#15171c', '#7048e8', '#3b6ce4', '#1f9d55', '#e8590c', '#9aa0ab'];
-  const TABS = [['all', '전체'], ['admin', '관리자'], ['dual', '대표 · 겸직'], ['rep', '영업 · 팀장'], ['branch', '지사']];
+  const TABS = [['all', '전체'], ['admin', '관리자'], ['dual', '대표 · 겸직'], ['rep', '영업 · 팀장'], ['branch', '지사'], ['director', '외부 영업이사']];
   const KINDS = [['rep', '영업사원'], ['lead', '팀장'], ['branch', '지사'], ['admin', '관리자'], ['dual', '대표 · 겸직']];
   const TEAMS = ['본사 영업', '경남지사', 'B2B'];
   const NOT_YET = '서버 적용 뒤에 열립니다';
+  /* v3(2026-10-22 회의록 10/1 '관리자 계정 제어'): 역할 · 소속 변경 + 외부 영업이사 명단(로그인 없이 이름으로 배정). 서버 sql/admin-accounts-v3-20261022.sql. 끄기 G.accountAdminV3Off */
+  const DIR = { items: null, at: 0, failAt: 0, busy: null };
+  const v3on = () => !(root.G && root.G.accountAdminV3Off);
+  const released = name => !(root.CRMRelease && root.CRMRelease.has && root.CRMRelease.has(name) === false);
+  async function loadDirectors(force) {
+    if (!isAdmin() || !root.Phase1 || !v3on() || !released('crm_admin_director_list_v1')) return null;
+    if (!force && DIR.items && Date.now() - DIR.at < 300000) return DIR.items;
+    if (!force && !DIR.items && Date.now() - DIR.failAt < 300000) return null;
+    if (DIR.busy) return DIR.busy;
+    DIR.busy = (async () => {
+      try {
+        const r = await root.Phase1.rpc('crm_admin_director_list_v1');
+        if (!r?.ok || r.policy !== 'admin-directors-v1' || !Array.isArray(r.items)) throw Error('CONTRACT');
+        DIR.items = r.items; DIR.at = Date.now();
+        try { root.applySalesDirectors?.(r.items); } catch (e) { /* 화면 명단 반영 실패는 목록 표시를 막지 않는다 */ }
+        return r.items;
+      } catch (e) { DIR.failAt = Date.now(); return DIR.items; } finally { DIR.busy = null; }
+    })();
+    return DIR.busy;
+  }
+  /* 동기 조회(문의 배정 창용): 받아 둔 명단이 있으면 활성 이름 목록, 없으면 null(화면 명단 사용) — 처음 부를 때 받기 시작 */
+  function directorsSync() { if (!v3on()) return null; if (!DIR.items) { loadDirectors(); return null; } return DIR.items.filter(x => x.active !== false).map(x => x.name); }
   const messages2 = {
     'invalid payload': '이름 · 이메일 · 역할을 확인해 주세요.',
     'email already used': '이미 쓰고 있는 이메일입니다.',
@@ -156,7 +178,8 @@
     dialog2 = el;
     el.className = 'aa2';
     el.setAttribute('aria-labelledby', 'aa2-title');
-    const S = { items: [], loaded: false, err: '', server2: false, role: 'all', q: '', open: null, stage: null, rowErr: '', adding: false, link: null, form: { name: '', email: '', kind: 'rep', team: TEAMS[0] }, formErr: '', busy: false, temps: {}, fresh: {}, showOff: false };
+    const S = { items: [], loaded: false, err: '', server2: false, role: 'all', q: '', open: null, stage: null, rowErr: '', adding: false, link: null, form: { name: '', email: '', kind: 'rep', team: TEAMS[0] }, formErr: '', busy: false, temps: {}, fresh: {}, showOff: false,
+      /* v3 */ roleForm: null, dir: null, dirLoadErr: '', dirAdding: false, dirForm: { name: '', note: '' }, dirErr: '', dirErrName: '' };
     el.innerHTML = '<header class="aa2-head"><div class="aa2-h1"><b id="aa2-title">직원 계정 관리</b><span class="aa2-count" data-aa2-count></span><i class="aa2-sp"></i><button type="button" class="aa2-btn aa2-dark aa2-addbtn" data-aa2="add">+ 계정 추가</button><button type="button" class="aa2-x" data-aa2="close" aria-label="닫기">×</button></div>' +
       '<div class="aa2-h2"><div class="aa2-tabs" data-aa2-tabs></div><i class="aa2-sp"></i><input type="search" class="aa2-search" data-aa2-search placeholder="이름 · 이메일 검색" aria-label="이름 · 이메일 검색" autocomplete="off"></div></header>' +
       '<div class="aa2-add" data-aa2-addbox hidden></div>' +
@@ -182,7 +205,45 @@
           (x.email && mapped !== x.email ? '<span class="aa2-pnote" data-aa2-loginhint>로그인 화면의 이름 칸에 이메일 <b>' + h(x.email) + '</b> 을 넣어 로그인합니다</span>' : '');
       } else if (S.stage === 'off') body = '<span class="aa2-ptxt">' + n + ' 계정을 비활성화합니다. 지금 로그인이 바로 끊기고 다시 로그인할 수 없습니다. 기록과 실적 귀속은 그대로 남습니다(삭제하지 않음).</span>' + acts('doOff', '비활성화', true);
       else if (S.stage === 'on') body = '<span class="aa2-ptxt">' + n + ' 계정을 다시 활성화합니다. ' + (x.linked ? '로그인을 다시 쓸 수 있게 됩니다.' : '로그인은 [계정 연결] 뒤에 쓸 수 있습니다.') + '</span>' + acts('doOn', '다시 활성화', false);
+      else if (S.stage === 'role') {
+        /* v3: 역할 · 소속 변경 — 권한도 같이 바뀌고, 관리자 권한을 내리면 그 사람의 지금 로그인이 끊긴다 */
+        const k0 = kindOf(x), k = k0 === 'b2b' ? 'rep' : k0;
+        const f = S.roleForm || (S.roleForm = { kind: KINDS.some(([kk]) => kk === k) ? k : 'rep', team: x.team || (k0 === 'b2b' ? 'B2B' : k === 'branch' ? '경남지사' : TEAMS[0]) });
+        const teams = TEAMS.includes(f.team) ? TEAMS : TEAMS.concat([f.team]);
+        body = '<span class="aa2-ptxt">' + n + '의 역할 · 소속을 바꿉니다. 서버 권한도 같이 바뀌며, 관리자 권한을 내리면 지금 로그인이 끊깁니다(다시 로그인하면 새 권한).</span>' +
+          '<div class="aa2-fields aa2-rolef"><label>역할 *<select data-aa2-r="kind">' + KINDS.map(([kk, l]) => '<option value="' + kk + '"' + (f.kind === kk ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></label>' +
+          '<label>소속<select data-aa2-r="team">' + teams.map(t => '<option' + (f.team === t ? ' selected' : '') + '>' + h(t) + '</option>').join('') + '</select></label></div>' + acts('doRole', '역할 바꾸기', false);
+      }
       return '<div class="aa2-panel">' + body + (S.rowErr ? '<span class="aa2-err" role="alert">' + h(S.rowErr) + '</span>' : '') + '</div>';
+    }
+    /* v3: 외부 영업이사 탭 — 로그인 없이 이름으로 문의가 배정되는 사람. 추가 · 비활성 · 다시 활성(삭제 없음) */
+    function dirHtml() {
+      if (!can('crm_admin_director_list_v1')) return '<p class="aa2-msg">' + h(NOT_YET) + '.</p>';
+      if (!S.dir) return '<p class="aa2-msg">' + h(S.dirLoadErr || '영업이사 명단을 불러오는 중…') + '</p>';
+      const q = S.q.trim().toLowerCase(), rows = S.dir.filter(x => (S.showOff || x.active !== false) && (!q || String(x.name || '').toLowerCase().includes(q)));
+      const setOk = can('crm_admin_director_set_v1');
+      const form = S.dirAdding ? '<div class="aa2-add aa2-diradd"><b class="aa2-addt">영업이사 추가</b><div class="aa2-fields"><label>이름 *<input data-aa2-d="name" value="' + h(S.dirForm.name) + '" maxlength="40" autocomplete="off"></label><label>메모<input data-aa2-d="note" value="' + h(S.dirForm.note) + '" maxlength="120" placeholder="소속 · 연락 경로" autocomplete="off"></label></div>' +
+        '<div class="aa2-addfoot"><span class="aa2-addnote' + (S.dirErr ? ' err' : '') + '" role="status" aria-live="polite">' + h(S.dirErr || (S.busy ? '추가하는 중입니다…' : '로그인 계정 없이 이름으로 문의가 배정됩니다 · 직원 이름과 같은 이름은 안 됩니다')) + '</span><button type="button" class="aa2-btn" data-aa2="dirCancel">취소</button><button type="button" class="aa2-btn aa2-dark" data-aa2="dirCreate"' + (S.busy ? ' disabled' : '') + '>추가</button></div></div>' : '';
+      const list = rows.map((x, i) => '<div class="aa2-item' + (x.active === false ? ' off' : '') + '" data-dir="' + h(x.name) + '"><div class="aa2-cols aa2-row">' +
+        '<div class="aa2-who"><span class="aa2-av" style="background:' + AV[(i + 3) % AV.length] + '">' + h(Array.from(String(x.name || '?'))[0]) + '</span><div><b>' + h(x.name) + '</b><span>' + h(x.active === false ? '비활성' : (x.note || '외부 영업이사')) + '</span></div></div>' +
+        '<span class="aa2-tag aa2-k-b2b">외부 영업이사</span><span class="aa2-mail none">로그인 없음 · 이름으로 배정</span>' +
+        '<span class="aa2-last' + (x.assigned_open ? '' : ' none') + '">배정 중 ' + (Number(x.assigned_open) || 0) + '건</span>' +
+        '<div class="aa2-act">' + (x.active === false ? btn('dirOn', '다시 활성', '', !setOk) : btn('dirOff', '비활성화', '', !setOk)) + '</div></div>' +
+        (S.dirErrName === x.name && S.rowErr ? '<div class="aa2-panel"><span class="aa2-err" role="alert">' + h(S.rowErr) + '</span></div>' : '') + '</div>').join('');
+      return '<div class="aa2-dirhead"><span class="aa2-ptxt">영업이사는 로그인 계정 없이 이름으로 문의를 배정받는 외부 담당입니다. 삭제하지 않고 비활성으로 둡니다(배정 이력은 이름으로 남습니다).</span><button type="button" class="aa2-btn aa2-dark" data-aa2="dirAdd"' + (setOk ? '' : ' disabled title="' + NOT_YET + '"') + '>+ 영업이사 추가</button></div>' + form + (list || '<p class="aa2-msg">' + (q ? '검색 결과가 없습니다.' : '영업이사가 없습니다.') + '</p>');
+    }
+    async function dirSet(p, ctx) {
+      if (S.busy || !isAdmin()) return;
+      S.busy = true; S.dirErr = ''; S.rowErr = ''; S.dirErrName = ''; drawList();
+      try {
+        if (ctx === 'create' && !String(p.name || '').trim()) throw Error('NAME_REQUIRED');
+        const ack = await root.Phase1.rpc('crm_admin_director_set_v1', { p });
+        if (!ack?.ok || ack.policy !== 'admin-director-set-v1') throw Error('CONTRACT');
+        if (ctx === 'create') { S.dirAdding = false; S.dirForm = { name: '', note: '' }; }
+        S.dir = (await loadDirectors(true)) || S.dir;
+      } catch (e) { if (ctx === 'create') S.dirErr = errorText2(e, 'director'); else { S.rowErr = errorText2(e); S.dirErrName = p.name; } }
+      S.busy = false;
+      if (el.isConnected) draw();
     }
     function rowHtml2(x, i) {
       const id = String(x.user_id), k = kindOf(x), off = x.active === false, op = S.open === id, team = teamOf(x);
@@ -194,16 +255,19 @@
       else if (S.temps[id]) act = btn('show', '임시 비밀번호 보기');
       else act = btn('reset', '비밀번호 재설정');
       const more = x.self || off ? '' : '<button type="button" class="aa2-more" data-aa2="more" aria-label="' + h(x.name) + ' 비활성화"' + (can('crm_admin_set_active_v1') ? ' title="비활성화"' : ' disabled title="' + NOT_YET + '"') + '>···</button>';
+      /* v3: 역할 변경(본인 · 비활성 제외 · 서버 함수가 있을 때만 보임) */
+      const roleBtn = x.self || off || !v3on() || !can('crm_admin_set_role_v1') ? '' : btn('chrole', '역할 변경');
       return '<div class="aa2-item' + (off ? ' off' : '') + '" data-id="' + h(id) + '"><div class="aa2-cols aa2-row' + (op ? ' open' : '') + '">' +
         '<div class="aa2-who"><span class="aa2-av" style="background:' + AV[i % AV.length] + '">' + h(Array.from(String(x.name || '?'))[0]) + '</span><div><b>' + h(x.name) + '</b>' + (team ? '<span>' + h(team) + '</span>' : '') + '</div></div>' +
         '<span class="aa2-tag aa2-k-' + k + '">' + RL[k] + '</span>' +
         '<span class="aa2-mail' + (x.email ? '' : ' none') + '">' + h(x.email || '로그인 미연결') + '</span>' +
         '<span class="aa2-last' + (x.last_sign_in_at ? '' : ' none') + '">' + h(last) + '</span>' +
-        '<div class="aa2-act">' + act + more + '</div></div>' + (op ? panel(x) : '') + '</div>';
+        '<div class="aa2-act">' + act + roleBtn + more + '</div></div>' + (op ? panel(x) : '') + '</div>';
     }
     function drawList() {
       const box = $('[data-aa2-list]');
       if (!S.loaded) { box.innerHTML = '<p class="aa2-msg">' + h(S.err || '계정 목록을 불러오는 중…') + '</p>'; return; }
+      if (S.role === 'director') { box.innerHTML = dirHtml(); return; }
       const q = S.q.trim().toLowerCase(), all = pool();
       const rows = all.filter(x => match(x, S.role) && (!q || String(x.name || '').toLowerCase().includes(q) || String(x.email || '').toLowerCase().includes(q)));
       box.innerHTML = rows.map(x => rowHtml2(x, all.indexOf(x))).join('') || '<p class="aa2-msg">' + (q ? '검색 결과가 없습니다.' : '해당하는 계정이 없습니다.') + '</p>';
@@ -223,7 +287,9 @@
     function draw() {
       const A = active(), P = pool(), offN = S.items.length - A.length, add = $('[data-aa2="add"]');
       $('[data-aa2-count]').textContent = S.loaded ? A.length + '명 · 로그인 연결 ' + A.filter(x => x.linked).length + '명' : '';
-      $('[data-aa2-tabs]').innerHTML = TABS.map(([k, l]) => '<button type="button" class="aa2-tab' + (S.role === k ? ' on' : '') + '" data-aa2="role" data-k="' + k + '" aria-pressed="' + (S.role === k) + '">' + l + ' <span>' + P.filter(x => match(x, k)).length + '</span></button>').join('');
+      const tabs = TABS.filter(([k]) => k !== 'director' || (v3on() && can('crm_admin_director_list_v1')));
+      const cnt = k => (k === 'director' ? (S.dir ? S.dir.filter(x => S.showOff || x.active !== false).length : '…') : P.filter(x => match(x, k)).length);
+      $('[data-aa2-tabs]').innerHTML = tabs.map(([k, l]) => '<button type="button" class="aa2-tab' + (S.role === k ? ' on' : '') + '" data-aa2="role" data-k="' + k + '" aria-pressed="' + (S.role === k) + '">' + l + ' <span>' + cnt(k) + '</span></button>').join('');
       add.disabled = !can('crm_admin_create_account_v1');
       add.title = add.disabled && S.loaded ? NOT_YET : '';
       drawAdd(); drawList();
@@ -238,6 +304,10 @@
         S.server2 = r.items.some(x => Object.prototype.hasOwnProperty.call(x, 'must_change'));
       } catch (e) { if (!S.loaded) S.err = errorText2(e, 'load'); }
       if (el.isConnected) draw();
+      /* v3: 영업이사 명단은 따로(목록을 막지 않는다) */
+      if (S.loaded && v3on() && can('crm_admin_director_list_v1') && !S.dir) {
+        loadDirectors(true).then(items => { S.dir = items || []; if (!items) S.dirLoadErr = '영업이사 명단을 불러오지 못했습니다.'; if (el.isConnected) draw(); });
+      }
     }
     async function submitAdd() {
       if (S.busy || !isAdmin()) return;
@@ -273,6 +343,14 @@
           const ack = await root.Phase1.rpc('crm_admin_reset_password_v1', { p_target_user_id: id, p_new_password: pw });
           if (!ack?.ok || ack.policy !== 'admin-password-reset-v1' || String(ack.target_user_id) !== id) throw Error('CONTRACT');
           S.temps[id] = pw; S.stage = 'issued';
+        } else if (a === 'doRole') {
+          /* v3: 역할 · 소속 변경 */
+          const f = S.roleForm || {};
+          const ack = await root.Phase1.rpc('crm_admin_set_role_v1', { p: { user_id: id, kind: f.kind, team: f.team } });
+          if (!ack?.ok || ack.policy !== 'admin-account-role-v1' || String(ack.user_id) !== id) throw Error('CONTRACT');
+          closeRow(); S.roleForm = null; S.busy = false;
+          await load();
+          return;
         } else {
           const on = a === 'doOn';
           const ack = await root.Phase1.rpc('crm_admin_set_active_v1', { p: { user_id: id, active: on } });
@@ -294,6 +372,11 @@
       if (a === 'close') return el.close();
       if (a === 'role') { S.role = b.dataset.k; return draw(); }
       if (a === 'toggleOff') { S.showOff = !S.showOff; return draw(); }
+      /* v3: 영업이사 추가 · 활성 · 비활성 */
+      if (a === 'dirAdd') { S.dirAdding = !S.dirAdding; S.dirErr = ''; S.dirForm = { name: '', note: '' }; drawList(); if (S.dirAdding) $('[data-aa2-d="name"]')?.focus(); return; }
+      if (a === 'dirCancel') { S.dirAdding = false; S.dirErr = ''; return drawList(); }
+      if (a === 'dirCreate') return dirSet({ name: String(S.dirForm.name || '').trim(), note: String(S.dirForm.note || '').trim() }, 'create');
+      if (a === 'dirOn' || a === 'dirOff') { const nm = b.closest('.aa2-item')?.dataset.dir; if (nm) dirSet({ name: nm, active: a === 'dirOn' }); return; }
       if (a === 'add') { const openBlank = !S.adding || !!S.link; S.adding = openBlank; S.link = null; S.formErr = ''; S.form = { name: '', email: '', kind: 'rep', team: TEAMS[0] }; drawAdd(); if (openBlank) $('[data-aa2-f="name"]')?.focus(); return; }
       if (a === 'addCancel') { S.adding = false; S.link = null; S.formErr = ''; return drawAdd(); }
       if (a === 'create') return submitAdd();
@@ -308,12 +391,12 @@
         return;
       }
       if (a === 'cancel') { closeRow(); return drawList(); }
-      if (a === 'reset' || a === 'show' || a === 'more' || a === 'on') {
-        const stage = { reset: 'confirm', show: 'issued', more: 'off', on: 'on' }[a];
-        if (S.open === id && S.stage === stage) closeRow(); else { S.open = id; S.stage = stage; S.rowErr = ''; }
+      if (a === 'reset' || a === 'show' || a === 'more' || a === 'on' || a === 'chrole') {
+        const stage = { reset: 'confirm', show: 'issued', more: 'off', on: 'on', chrole: 'role' }[a];
+        if (S.open === id && S.stage === stage) closeRow(); else { S.open = id; S.stage = stage; S.rowErr = ''; S.roleForm = null; }
         return drawList();
       }
-      if (a === 'doReset' || a === 'doOff' || a === 'doOn') return rowAction(a, x);
+      if (a === 'doReset' || a === 'doOff' || a === 'doOn' || a === 'doRole') return rowAction(a, x);
       if (a === 'copy') {
         const text = S.temps[id] || '', done = t => { b.textContent = t; root.setTimeout(() => { if (b.isConnected) b.textContent = '복사'; }, 1600); };
         const pick = () => { const node = item.querySelector('[data-aa2-pw]'), r = doc.createRange(), sel = root.getSelection(); r.selectNodeContents(node); sel.removeAllRanges(); sel.addRange(r); done('선택됨 · Ctrl+C'); };
@@ -325,10 +408,17 @@
       if (t.matches?.('[data-aa2-search]')) { S.q = t.value; drawList(); return; }
       const f = t.dataset?.aa2F;
       if (f) S.form[f] = t.value;
+      const r = t.dataset?.aa2R;
+      if (r && S.roleForm) S.roleForm[r] = t.value;
+      const d = t.dataset?.aa2D;
+      if (d) S.dirForm[d] = t.value;
     };
     el.addEventListener('input', sync);
     el.addEventListener('change', sync);
-    el.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches?.('input[data-aa2-f]')) { e.preventDefault(); submitAdd(); } });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.matches?.('input[data-aa2-f]')) { e.preventDefault(); submitAdd(); }
+      else if (e.key === 'Enter' && e.target.matches?.('input[data-aa2-d]')) { e.preventDefault(); dirSet({ name: String(S.dirForm.name || '').trim(), note: String(S.dirForm.note || '').trim() }, 'create'); }
+    });
     const invalidated = () => el.close();
     el.addEventListener('close', () => {
       /* 임시 비밀번호는 창을 닫는 순간 지운다 */
@@ -348,5 +438,5 @@
   }
   function open() { return root.G?.accountAdminV2Off ? openV1() : openV2(); }
   if (typeof module === 'object' && module.exports) module.exports = { validate, errorText, tempPassword, kindOf };
-  else root.AccountAdmin = Object.freeze({ open, isAdmin });
+  else root.AccountAdmin = Object.freeze({ open, isAdmin, directorsSync, loadDirectors });
 })(typeof window === 'object' ? window : globalThis);
