@@ -87,7 +87,8 @@
   const first=items[0];
   let line='',lead='';if(first){const t=first.late?'기한 지남 '+items.filter(i=>i.late).length+'건':first.mode==='visit'&&first.at?when(first.at,now)+' 방문':first.deadline?when(first.deadline,now)+' 마감':first.at?when(first.at,now):'오늘';line=items.length+'건 · '+t;lead=first.late?'':t;}
   /* lead = 맨 위 요약(mobile-v6)이 건수를 보여 줄 때 한 줄에 남기는 첫 건 시각(기한 지남이면 없음) */
-  return {items,line,lead,wait:Z.wait.length,fix:Z.fix.length,late:Z.late.length,lateItems:items.filter(i=>i.late).length};
+  /* lateItems = 요약 '기한 지남' 숫자(붉은 글자). 회색(담당 미배정 · 배정 기록 없음) 문의는 재촉하지 않으므로 세지 않는다(2026-10-22 대표 "배정 안 된 건 회색") */
+  return {items,line,lead,wait:Z.wait.length,fix:Z.fix.length,late:Z.late.length,lateItems:items.filter(i=>i.late&&!i.gray).length};
  }
 
  /* ── 그리기 ── 승인 틀(approved-a)의 머리 · 본문 · 탭 세 칸 구조를 그대로 써서 MobileApprovedBoot · 동선 보기 · 쪽 번호가 같이 붙는다 */
