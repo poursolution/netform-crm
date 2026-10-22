@@ -1,0 +1,34 @@
+/* 모바일 v6 1단계 — 오늘 요약 · 상세 진행(mobile-v6.js). 색은 지금 CRM 모바일 값(파랑 #2a52b8 · 붉은 #b42318 · 회색 #6b7280) */
+.mv5 .mv6-sum{display:grid;gap:6px}
+.mv5 .mv6-cell{background:#fff;border:1px solid #e8eaef;border-radius:12px;min-height:64px;padding:9px 10px;display:flex;flex-direction:column;justify-content:center;gap:2px;box-sizing:border-box;min-width:0}
+.mv5 .mv6-cell b{font-size:20px;line-height:1.2;color:#15171c;font-variant-numeric:tabular-nums}
+.mv5 .mv6-cell small{font-size:12px;color:#4b5563;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv5 .mv6-cell.red b{color:#b42318}
+.mv5 .mv6-cell.none b{font-size:13px;font-weight:600;color:#9ca3af;line-height:1.85}
+.mv5 .mv6-cell[role=button]{cursor:pointer}
+.mv5 .mv6-cell[role=button] small::after{content:' ›'}
+/* 요약이 있을 때 '지금 먼저 할 일' = 상자 없이 카드 위 작은 제목(+ 첫 건 시각) */
+.mv5 .mv5-top.mv6-lead{background:none;border:0;border-radius:0;padding:4px 2px 0;flex-direction:row;align-items:baseline;gap:8px}
+.mv5 .mv5-top.mv6-lead span{font-size:13px;font-weight:700;color:#15171c}
+.mv5 .mv5-top.mv6-lead b{font-size:12.5px;font-weight:600;color:#6b7280}
+/* 상세 맨 위 진행 바 — approved-detail-body 첫 칸(현장 이름) 바로 아래, 얇게 */
+.mv6-prog{padding:2px 0 0;word-break:keep-all}
+.mv6-bar{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.mv6-bar li{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mv6-bar i{display:block;height:4px;border-radius:2px;background:#e5e7eb}
+.mv6-bar li.done i,.mv6-bar li.cur i{background:#2a52b8}
+.mv6-bar span{font-size:11.5px;line-height:1.3;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv6-bar li.done span{color:#6b7280}
+.mv6-bar li.cur span{color:#15171c;font-weight:700}
+.mv6-lost{font-size:12.5px;color:#6b7280;font-weight:600}
+/* 단계 이력 — '응대 이력' 바로 위, 옆 카드(응대 이력 · 연락처)와 같은 테두리 · 둥근 모서리 */
+.mv6-hist{background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;word-break:keep-all}
+.mv6-hist header b{font-size:13px;color:#15171c}
+.mv6-tl{list-style:none;margin:0 0 0 4px;padding:0 0 0 14px;border-left:2px solid #e5e7eb;display:flex;flex-direction:column;gap:9px}
+.mv6-tl li{position:relative;display:flex;flex-direction:column;gap:1px}
+.mv6-tl li::before{content:'';position:absolute;left:-20px;top:5px;width:8px;height:8px;border-radius:50%;background:#2a52b8;box-shadow:0 0 0 2px #fff}
+.mv6-tl li+li::before{background:#c9d6f5}
+.mv6-tl b{font-size:13px}
+.mv6-tl span{font-size:12px;color:#6b7280}
+.mv6-tl small{font-size:12px;color:#374151;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mv6-none{margin:0;font-size:12px;color:#6b7280}

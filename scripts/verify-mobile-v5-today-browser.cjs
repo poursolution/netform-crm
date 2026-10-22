@@ -51,7 +51,15 @@ const SHOT=process.env.SHOT_DIR||'';
     return {top:t(q('.mv5-top')),card:t(q('.mv5-card')),done:t(q('.mv5-done')),sub:t(q('.mv5-sub')),rows:document.querySelectorAll('.mv5 .mv5-row').length,hidden:document.querySelectorAll('.mv5 .mv5-next,.mv5 [data-gs="v5more"]').length,quiet:t(q('.mv5-quiet')),perf:t(q('[data-gs="v5perf"]')),areaTabs:document.querySelectorAll('.mv5 [data-gs="area"][data-value="now"],.mv5 [data-gs="area"][data-value="late"]').length,
      scroll:document.documentElement.scrollWidth<=innerWidth,first:q('.mv5-card [data-gs="v5task"]')?.dataset.id,boot:document.documentElement.getAttribute('data-mobile-approved-view')};});
    assert.equal(v.boot,'approved','승인 틀 부팅');
-   assert.match(v.top,/^지금 먼저 할 일 7건 · 기한 지남 3건$/,'맨 위 한 줄: '+v.top);
+   /* 2026-10-22 모바일 v6 ①: 맨 위 '오늘의 업무 현황' 숫자 칸(기한 지남 · 내 담당 · 오늘 방문) — 건수는 숫자 칸이, 한 줄에는 첫 건 시각만(기한 지남이면 제목만) */
+   const sum=await page.evaluate(()=>[...document.querySelectorAll('.mv5 .mv6-sum .mv6-cell')].map(n=>n.dataset.v6+'='+n.querySelector('b').innerText));
+   assert.deepEqual(sum.slice(0,2),['late=3','mine=8'],'요약 숫자: '+JSON.stringify(sum));assert.equal(sum.length,3,'관리자 아님 = 3칸');
+   assert.equal(await page.evaluate(()=>document.querySelector('.mv5 .mv5-body').firstElementChild.className),'mv6-sum','요약이 맨 위');
+   assert.equal(v.top,'지금 먼저 할 일','맨 위 한 줄(기한 지남 = 제목만): '+v.top);
+   await page.evaluate(()=>{G.mobileV6Off=true;render();});
+   assert.match((await page.locator('.mv5 .mv5-top').innerText()).replace(/\s+/g,' ').trim(),/^지금 먼저 할 일 7건 · 기한 지남 3건$/,'v6 끄기 = 예전 한 줄');
+   assert.equal(await page.locator('.mv5 .mv6-sum').count(),0,'v6 끄기 = 요약 없음');
+   await page.evaluate(()=>{G.mobileV6Off=false;render();});
    assert.equal(v.areaTabs,0,'숫자 4개 탭 없음');
    assert.match(v.card,/3일 지남 · 10\.17 \(토\) 기한/,'첫 카드 = 가장 오래 지난 건: '+v.card);
    assert.match(v.card,/합성 기한 지남 3일/);assert.match(v.card,/합성 소장 관리소장 · 010-3415-8556/,'현장 · 연락처');

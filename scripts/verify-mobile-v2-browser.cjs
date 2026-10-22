@@ -80,6 +80,15 @@ const shot=process.argv[2]||'';
       else{const expected=prev.cloneNode(true);expected.dataset.value='하자 접수';expected.children[0].textContent='하자 접수';expected.children[1].textContent='사진 1장 · 본사 알림 ›';expected.setAttribute('aria-label','하자 접수');tree(defect,expected,'C defect row');}
       defect.remove();
      }
+     // C may carry the 2026-10-22 mobile v6 sections (mobile-v6.js): the progress bar right after the identity block and
+     // the stage history right before the approved history block. They are not approved source nodes — check their slots, then compare the rest.
+     const cbody=copy.querySelector('.approved-detail-body'),progress=copy.querySelectorAll('.mv6-prog'),stageHist=copy.querySelectorAll('.mv6-hist');
+     if(progress.length>1||stageHist.length>1||progress.length!==stageHist.length)differences.push('C v6 sections '+progress.length+'/'+stageHist.length);
+     else if(progress.length){
+      if(progress[0].previousElementSibling!==cbody.firstElementChild)differences.push('C v6 progress: expected right after the identity block');
+      const next=stageHist[0].nextElementSibling;if(!next||!next.querySelector('[data-gs="history"]'))differences.push('C v6 stage history: expected right before the approved history block');
+      progress[0].remove();stageHist[0].remove();
+     }
      tree(copy,source,screen);
     }else tree(actual,source,screen);
     for(const [label,a,b]of pairs){if(!a||!b){differences.push(label+': missing source/bound node');continue;}for(const key of new Set([...a.style,...b.style]))if(a.style.getPropertyValue(key)!==b.style.getPropertyValue(key))differences.push(label+': '+key+' '+a.style.getPropertyValue(key)+' / '+b.style.getPropertyValue(key));}
