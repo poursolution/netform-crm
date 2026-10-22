@@ -19,7 +19,8 @@
   const site=str(d&&(d.nm||d.site||d.site_name),40)||'현장 미입력';
   return {event:'defect_reported',title:'[하자 접수] '+site,text:[str(info&&info.part,20),info&&info.urgent?'긴급':'일반',str(info&&info.memo,80),'접수 '+str(info&&info.by,20)].filter(Boolean).join(' · '),links:links('deal',String(d&&d.id||''))};
  }
- function on(){try{return !(root.G&&root.G.jandiEventsOff)&&!!root.TOKEN&&!!root.SUPABASE_URL&&root.OpsStore&&root.OpsStore.flags&&root.OpsStore.flags().jandi_enabled===true;}catch(e){return false;}}
+ /* PC 는 설정값(jandi_enabled)을 알고 있어 미리 거르고, 모바일(OpsStore 없음)은 서버가 거른다(꺼져 있으면 409) */
+ function on(){try{if(root.G&&root.G.jandiEventsOff)return false;if(!root.TOKEN||!root.SUPABASE_URL)return false;if(!(root.OpsStore&&root.OpsStore.flags))return true;return root.OpsStore.flags().jandi_enabled===true;}catch(e){return false;}}
  async function send(msg){
   if(!msg||!EVENTS.includes(msg.event))throw new Error('BAD_EVENT');
   const r=await root.fetch(root.SUPABASE_URL+'/functions/v1/crm-jandi',{method:'POST',headers:{apikey:root.SUPABASE_ANON,Authorization:'Bearer '+root.TOKEN,'Content-Type':'application/json'},body:JSON.stringify({kind:'event',event:msg.event,title:msg.title,text:msg.text,links:msg.links})});

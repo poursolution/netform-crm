@@ -143,6 +143,7 @@
   if(S.detailView==='qlive')return w.MobileQuoteLive?.render(d)||'';
   if(S.detailView==='quote')return w.MobileQuoteFlow?.render(d)||'';
   if(S.detailView==='confirmation')return stageConfirmation(d);
+  if(S.detailView==='defect')return w.MobileDefect?.render(d)||'';/* 2026-10-22 하자 사진 간이 접수 */
   if(S.detailView==='evidence'){
    if(typeof w.MobileApprovedGJSource?.G!=='string'||typeof w.MobileStageReview?.readG!=='function'||typeof w.MobileApprovedGJ?.renderG!=='function')return '';
    return w.MobileApprovedGJ.renderG(w.MobileStageReview.readG(d,{page:S.evidencePage}));
@@ -262,6 +263,8 @@
   const scr=w.document.getElementById('scr'),tab=w.document.getElementById('tabbar');
   const views={mine:listing,today,pending,record:registration,'registration-match':registrationMatches,schedule,'day-close':dayClose};
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
+  /* 2026-10-22 하자 사진 간이 접수: 상세 더보기 끝에 [하자 접수] 줄 하나(승인 원본 줄을 복제 · 서버 함수가 있을 때만) */
+  if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */
   if(!d&&w.G.tab==='mine'){const n=legacyCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-legacy-note">과거 이관 · 분류 전 '+n+'건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개</span>');}
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
@@ -342,6 +345,7 @@
    else if(k==='more'&&b.dataset.value==='이 단지 다른 영업'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),sid=d0&&(d0.site_id||d0.cleanup_site_id),sib=sid?mine().filter(x=>String(x.site_id||x.cleanup_site_id)===String(sid)&&String(x.id)!==String(d0.id)):[];if(!sib.length)w.toast('이 단지의 다른 영업이 없습니다');else if(sib.length===1){w.G.deal=sib[0].id;S.detailView='';run();}else w.toast(sib.map(x=>x.nm+' · '+work(x)).join(' / '));}
    else if(k==='more'&&b.dataset.value==='근처 현장'){const d0=mine().find(x=>String(x.id)===String(w.G.deal)),ad=((d0&&(d0.address||d0.addr))||'').trim();if(!ad)w.toast('주소가 없어 지도를 열 수 없습니다');else w.open('https://map.kakao.com/?q='+encodeURIComponent(ad),'_blank','noopener');}
    else if(k==='more'&&(b.dataset.value==='자료 발송 내역'||b.dataset.value==='영업 조건')){S.detailView=b.dataset.value==='자료 발송 내역'?'evidence':'confirmation';S.evidencePage=1;run();}
+   else if(k==='more'&&b.dataset.value==='하자 접수'){/* 2026-10-22 하자 사진 간이 접수 */if(!w.MobileDefect||!w.MobileDefect.on())return w.toast('하자 접수는 서버 적용 뒤에 열립니다');w.MobileDefect.reset();S.detailView='defect';run();}
    else if(k==='stage-change'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal));
     if(!d)return;if(d.code!=='consulting')return w.nextSheet?w.nextSheet():w.toast('단계를 바꿀 수 없습니다');
