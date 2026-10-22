@@ -34,19 +34,22 @@
   if(def)return def.label;
   try{return w.stageLabel?w.stageLabel(code):String(code||'');}catch(e){return String(code||'');}
  }
- /* PC deal-prep.js history() 와 같은 정리: 같은 단계 · 같은 날은 한 번, 최근 것 먼저 */
+ /* 운영 시작일(OPS_RULES.liveFrom, 없으면 2026-10-01 — contact-state.js 와 같은 기본값). 이전 날짜 = 이관 자료 */
+ const liveFrom=()=>String(w.OPS_RULES&&w.OPS_RULES.liveFrom||'2026-10-01');
+ /* PC deal-prep.js history() 와 같은 정리: 같은 단계 · 같은 날은 한 번, 최근 것 먼저 · 운영 시작 전 + 사람 없음(시스템 · 이관)은 legacy */
  function history(d){
-  const raw=[].concat(Array.isArray(d.stageHistory)?d.stageHistory:[],Array.isArray(d.stage_history)?d.stage_history:[]),seen=new Set();
+  const raw=[].concat(Array.isArray(d.stageHistory)?d.stageHistory:[],Array.isArray(d.stage_history)?d.stage_history:[]),seen=new Set(),live=liveFrom();
   return raw.filter(x=>x&&(x.to||x.to_stage)).map(x=>({to:String(x.to||x.to_stage),at:String(x.at||x.changed_at||''),who:String(x.actor||x.actor_name||''),why:String(x.reason||'')}))
    .filter(x=>{const k=x.to+'|'+x.at.slice(0,10);if(seen.has(k))return false;seen.add(k);return true;})
-   .sort((a,b)=>b.at.localeCompare(a.at)).map(x=>Object.assign(x,{label:stageName(x.to)}));
+   .sort((a,b)=>b.at.localeCompare(a.at)).map(x=>Object.assign(x,{label:stageName(x.to),legacy:!!x.at&&x.at.slice(0,10)<live&&(!x.who||/시스템|이관|system/i.test(x.who+' '+x.why))}));
  }
  function progress(d){
   const S=P();if(!S||!d)return null;
   const key=S.group(d.code,d.outcome),lost=key==='lost',cur=key==='expansion'?STEPS.length-1:STEPS.indexOf(key);
   const steps=STEPS.map((k,i)=>({key:k,label:SHORT[k],full:S.definition(k).label,state:lost||cur<0?'':i<cur?'done':i===cur?'cur':''}));
   const all=history(d),loading=!all.length&&d.mobile_today_partial===true;
-  const since=!all.length&&!loading&&d.stage_entered_at?[{to:d.code,at:String(d.stage_entered_at),who:'',why:'',label:stageName(d.code),entered:true}]:[];
+  /* 이력이 없으면 단계 진입일 한 줄 — 운영 시작 전 날짜면 이관일(2026-10-22 운영 실측: 이관 288건 모두 09-01)이라 진입일로 쓰지 않는다 */
+  const at=String(d.stage_entered_at||''),since=!all.length&&!loading&&at?[{to:d.code,at,who:'',why:'',label:stageName(d.code),entered:true,legacy:at.slice(0,10)<liveFrom()}]:[];
   const rows=(all.length?all:since).slice(0,HISTORY_MAX);
   return {lost,current:lost?S.definition('lost').label:cur>=0?steps[cur].full:stageName(d.code),steps,rows,older:Math.max(0,all.length-HISTORY_MAX),loading};
  }
@@ -61,7 +64,10 @@
  /* '응대 이력' 바로 위: 단계 이력 */
  function historyHtml(m){
   if(!m)return '';
-  const rows=m.loading?'<p class="mv6-none">단계 이력을 불러오는 중입니다</p>':m.rows.length?'<ul class="mv6-tl">'+m.rows.map(r=>'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.older?'<p class="mv6-none">이전 '+m.older+'건은 PC 상세 \'단계 이력\'에 있습니다</p>':''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
+  const rows=m.loading?'<p class="mv6-none">단계 이력을 불러오는 중입니다</p>':m.rows.length?'<ul class="mv6-tl">'+m.rows.map(r=>r.legacy
+   /* PC 단계 이력과 같은 말: 날짜 (이관일) + '이관 자료 · 실제 진입일 미확인' */
+   ?'<li class="legacy"><b>'+h(r.label)+'</b><span>'+h((day(r.at)||'날짜 미기록')+' (이관일)')+'</span><small>'+h('이관 자료 · 실제 진입일 미확인'+(r.why?' · '+r.why:''))+'</small></li>'
+   :'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.older?'<p class="mv6-none">이전 '+m.older+'건은 PC 상세 \'단계 이력\'에 있습니다</p>':''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
   return '<section class="mv6-hist" aria-label="단계 이력"><header><b>단계 이력</b></header>'+rows+'</section>';
  }
  return Object.freeze({on,summary,summaryHtml,progress,barHtml,historyHtml,history,STEPS});

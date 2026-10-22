@@ -28,6 +28,8 @@
 .mv6-tl li{position:relative;display:flex;flex-direction:column;gap:1px}
 .mv6-tl li::before{content:'';position:absolute;left:-20px;top:5px;width:8px;height:8px;border-radius:50%;background:#2a52b8;box-shadow:0 0 0 2px #fff}
 .mv6-tl li+li::before{background:#c9d6f5}
+.mv6-tl li.legacy::before{background:#d1d5db}
+.mv6-tl li.legacy small{color:#6b7280}
 .mv6-tl b{font-size:13px}
 .mv6-tl span{font-size:12px;color:#6b7280}
 .mv6-tl small{font-size:12px;color:#374151;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
