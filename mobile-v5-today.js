@@ -36,19 +36,21 @@
  }
  /* 들어온 시각(같은 순위 안 순서) */
  const arrived=v=>{const n=Date.parse(v||'');return Number.isFinite(n)?n:Infinity;};
+ const arrivedOk=v=>Number.isFinite(Date.parse(v||''));
 
  /* ── 카드 한 장 모양 만들기 ── ctx = mobile-guide-shell 이 넘기는 조회 함수(next · label · brand · color · inquiry) */
  function inqItem(x,ctx,now){
   const t=x.inq,v=ctx.inquiry(t.ref)||{},raw=v.raw||{},hrs=Number(w.OPS_RULES&&w.OPS_RULES.responseSlaHours)||2;
   const base=arrived(raw.sales_assigned_at||raw.assigned_at||raw.assignedAt||raw.at||raw.created_at),deadline=Number.isFinite(base)?base+hrs*36e5:null,R=rule('inquiry');
   const phone=fmtPhone(v.phone||''),who=raw.contact_name||raw.customer_name||'';
-  /* 2026-10-22 대표 "배정 안 된 건 회색": 담당 미배정 문의는 회색 띠 · 회색 머리 글(붉게 재촉하지 않음). 배정된 문의 머리 글은 '견적문의 첫 연락' */
-  const unassigned=v.done===false;
-  return {kind:'inquiry',id:t.ref,late:!!x.late,deadline,at:deadline,arrived:base,gray:unassigned,
-   head:unassigned?'담당 미배정 · 견적문의':(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 첫 연락',
+  /* 2026-10-22 대표 "배정 안 된 건 회색": 담당이 없거나(미배정) 배정 기록(배정일시)이 없는 문의는 회색 띠 · 회색 머리 글(붉게 재촉하지 않음).
+     운영에서 담당 이름만 있고 배정일시가 빈 문의가 많다(시트 이관) — 그건 '배정 기록 없음'. 배정 기록이 있는 문의 머리 글은 '견적문의 첫 연락' */
+  const unassigned=v.done===false,noDate=!unassigned&&!arrivedOk(raw.sales_assigned_at||raw.assigned_at||raw.assignedAt),gray=unassigned||noDate;
+  return {kind:'inquiry',id:t.ref,late:!!x.late,deadline,at:deadline,arrived:base,gray,
+   head:unassigned?'담당 미배정 · 견적문의':noDate?'배정 기록 없음 · 견적문의'+(deadline&&x.late?' · 접수 '+when(deadline,now).replace(/ \d{2}:\d{2}$/,''):''):(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 첫 연락',
    site:t.nm||v.nm||'견적문의',contact:[who||'고객',phone].filter(Boolean).join(' · '),
    check:R.check,source:v.body?'문의 요약: '+summarize(v.body,90):'',done:R.done,
-   button:phone?'전화하기':'응대 기록',mode:phone?'call':'open',color:unassigned?'#9ca3af':'#15171c',phone};
+   button:phone?'전화하기':'응대 기록',mode:phone?'call':'open',color:gray?'#9ca3af':'#15171c',phone};
  }
  function dealItem(z,x,ctx,now){
   const d=x.d,p=x.p,r=x.r,n=ctx.next(d),R=rule(d.code,d.outcome),RU=w.DayZoneRules,MR=w.MobileRequests;
