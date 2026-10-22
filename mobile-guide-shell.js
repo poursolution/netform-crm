@@ -265,9 +265,20 @@
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */
   if(!d&&w.G.tab==='mine'){const n=legacyCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-legacy-note">과거 이관 · 분류 전 '+n+'건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개</span>');}
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
-  w.MobileApprovedBoot?.ready();loadRequests();w.setTimeout(()=>w.MobileRoute?.drawMap(),0);return true;
+  w.MobileApprovedBoot?.ready();loadRequests();w.setTimeout(()=>w.MobileRoute?.drawMap(),0);applyOpenLink();return true;
  }
  function run(){w.render();}
+ /* 2026-10-22 잔디 알림 링크 → 앱 실행: mobile.html?open=inq:<문의 id> · deal:<영업건 id>. 로그인 · 자료가 준비된 뒤 그 문의 응대 화면 · 영업건 상세를 한 번 연다. 주소에서는 바로 지운다(새로고침해도 다시 열지 않음). 끄기 G.mobileOpenLinkOff */
+ let pendingOpen='';
+ function readOpenLink(){
+  try{const u=new URL(w.location.href),v=String(u.searchParams.get('open')||'');if(!/^(inq|deal):[\w-]{1,80}$/.test(v))return;pendingOpen=v;u.searchParams.delete('open');w.history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''));}catch(e){}
+ }
+ function applyOpenLink(){
+  if(!pendingOpen||(w.G&&w.G.mobileOpenLinkOff)||!w.G?.user||!(w.LIVE||w.DEMO)||w.G.mode!=='rep')return;
+  const [kind,id]=pendingOpen.split(':');
+  if(kind==='inq'){const q=inquiry(id);if(!q){if(w.LIVE){pendingOpen='';w.toast('알림의 문의를 지금 목록에서 찾지 못했습니다(담당이 바뀌었거나 종결).');}return;}pendingOpen='';w.setTimeout(()=>{const r=w.MobileInquiryEntry?.open(q);if(!r?.ok)w.toast(r?.error||'문의 응대 연결을 확인해 주세요.');},0);return;}
+  if(kind==='deal'){if(!mine().some(d=>String(d.id)===id)){if(w.LIVE){pendingOpen='';w.toast('알림의 영업건을 지금 목록에서 찾지 못했습니다.');}return;}pendingOpen='';w.setTimeout(()=>{if(!resetDetail())return;S.returnTab='today';w.G.deal=id;w.G.sub=null;run();},0);}
+ }
  /* 2026-10-22 회의록 모바일 1단계: 로그인 뒤 운영 자료가 오기 전 = 오늘 화면과 같은 틀의 뼈대(스켈레톤). 예전 바깥 화면도, 빈 배경도 보이지 않는다. 숫자 · 현장은 만들지 않고 회색 자리만. */
  function showLoading(){
   const scr=w.document.getElementById('scr'),tab=w.document.getElementById('tabbar'),stage=w.document.getElementById('stage');if(!scr||!tab)return false;
@@ -292,6 +303,7 @@
   if(w.MobileInputFlow?.open(d,'I-3')){S.detailView='input';run();}else w.toast('연락처 입력을 열지 못했습니다. 계정·영업건 변경 또는 임시 보관 상태를 확인해 주세요.');
  }
  function boot(){
+  readOpenLink();
   // Retired contact forms must not reopen or submit stale consent snapshots.
   w.contactEditSheetM=openContactCard;
   w.saveContactM=unavailable;
