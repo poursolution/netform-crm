@@ -47,7 +47,8 @@
    t.p=dd<0?-2:-1;t.promise=true;t.why='🤝 고객 약속 · '+(dd<0?Math.abs(dd)+'일 지남':'오늘')+' — '+promiseText(a);
   });
   root.G._legacyM=legacy;
-  return out.sort((x,y)=>x.p-y.p||String(x.nm).localeCompare(String(y.nm),'ko')).slice(0,12);
+  /* 12건 한도는 예전 오늘 화면용. 승인 셸(v5 오늘 · 쪽당 20건)은 여기서 문의만 꺼내 쓰므로 한도를 두면 배정 문의가 빠진다(2026-10-22 회의록 점검) */
+  return out.sort((x,y)=>x.p-y.p||String(x.nm).localeCompare(String(y.nm),'ko')).slice(0,root.MobileGuideShell?500:12);
  };
 
  /* ④ 하루 마감 요약 — 서버 기록 기준(2026-09-26 대표 "모바일·PC 완벽 동기화"): PC에서 처리한 것도 같은 숫자로 보인다.
