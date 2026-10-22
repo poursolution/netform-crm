@@ -1,7 +1,8 @@
 /* 모바일 v6 1단계 (2026-10-22 docs/CLAUDE_MOBILE_DIRECTION_20261022.md · 대표 "파트너스 앱 흐름 차용 — 그대로 말고 흐름만")
    흐름 = 홈에서 숫자로 상황 → 누르면 그 목록 → 상세 맨 위에서 지금 몇 단계 · 언제 누가 바꿨나. 색 · 용어 · 판정은 지금 CRM 것 그대로.
    ① 오늘 맨 위 요약: 기한 지남 · 내 담당 · 오늘 방문(+관리자 겸직만 미배정). 숫자는 화면에 이미 있는 자료에서만, 0 이면 '아직 없음'. 붉은 계열은 기한 지남만.
-   ② 영업건 상세 진행: CRM 진행상태 6칸(PipelineStages 컨설팅 설계 → … → 수주) 바 + 단계 이력(stage_history: 바뀐 단계 · 시각 · 누가 · 사유).
+   ② 영업건 상세: 맨 위(현장 이름 아래)에는 CRM 진행상태 6칸 바만 얇게 — 지금 할 일이 첫 화면에 남게.
+      단계 이력(stage_history: 바뀐 단계 · 시각 · 누가 · 사유)은 '응대 이력' 바로 위. 흐름 = 진행 바 → 할 일 → 이력(파트너스 앱 순서).
       실주는 바 대신 '실주' 표시. 가벼운 첫 조회(crm_mobile_today_v1 · mobile_today_partial)만 온 동안은 '불러오는 중'.
    끄기: G.mobileV6Off=true → 요약 · 진행 칸 없이 지금 v5 화면 그대로. */
 (function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.MobileV6=api;})(typeof window!=='undefined'?window:globalThis,function(w){
@@ -9,6 +10,8 @@
  const h=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const on=()=>!(w.G&&w.G.mobileV6Off);
  const STEPS=['consulting','sent','relationship','competition','construction','won'];
+ /* 바 아래 이름은 짧게(360px 한 줄) — 정식 이름은 상세 첫 칸의 진행상태 칩 · 단계 이력에 그대로 */
+ const SHORT={consulting:'컨설팅',sent:'발송',relationship:'관계',competition:'경쟁',construction:'계약',won:'수주'};
  const HISTORY_MAX=5;
 
  /* ── ① 오늘 요약 ── n = {late, mine, visit, unassigned(관리자만, 아니면 null)} */
@@ -41,19 +44,25 @@
  function progress(d){
   const S=P();if(!S||!d)return null;
   const key=S.group(d.code,d.outcome),lost=key==='lost',cur=key==='expansion'?STEPS.length-1:STEPS.indexOf(key);
-  const steps=STEPS.map((k,i)=>({key:k,label:S.definition(k).label,state:lost||cur<0?'':i<cur?'done':i===cur?'cur':''}));
+  const steps=STEPS.map((k,i)=>({key:k,label:SHORT[k],full:S.definition(k).label,state:lost||cur<0?'':i<cur?'done':i===cur?'cur':''}));
   const all=history(d),loading=!all.length&&d.mobile_today_partial===true;
   const since=!all.length&&!loading&&d.stage_entered_at?[{to:d.code,at:String(d.stage_entered_at),who:'',why:'',label:stageName(d.code),entered:true}]:[];
   const rows=(all.length?all:since).slice(0,HISTORY_MAX);
-  return {lost,current:lost?S.definition('lost').label:cur>=0?steps[cur].label:stageName(d.code),steps,rows,older:Math.max(0,all.length-HISTORY_MAX),loading};
+  return {lost,current:lost?S.definition('lost').label:cur>=0?steps[cur].full:stageName(d.code),steps,rows,older:Math.max(0,all.length-HISTORY_MAX),loading};
  }
  const day=v=>{const s=String(v||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?s.slice(0,4)+'.'+s.slice(5,7)+'.'+s.slice(8,10):'';};
  const time=v=>{const n=Date.parse(v);if(!/T\d/.test(String(v))||!Number.isFinite(n))return '';const t=new Date(n+9*36e5);return String(t.getUTCHours()).padStart(2,'0')+':'+String(t.getUTCMinutes()).padStart(2,'0');};
- function progressHtml(m){
+ /* 상세 맨 위: 진행 바만(지금 단계 이름은 바로 위 진행상태 칩에 이미 있음) */
+ function barHtml(m){
   if(!m)return '';
-  const bar=m.lost?'<span class="mv6-lost">실주로 끝난 영업건입니다</span>':'<ol class="mv6-bar">'+m.steps.map(s=>'<li class="'+s.state+'"'+(s.state==='cur'?' aria-current="step"':'')+'><i></i><span>'+h(s.label)+'</span></li>').join('')+'</ol>';
-  const rows=m.loading?'<p class="mv6-none">단계 이력을 불러오는 중입니다</p>':m.rows.length?'<ul class="mv6-tl">'+m.rows.map(r=>'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.older?'<p class="mv6-none">이전 '+m.older+'건은 PC 상세 \'단계 이력\'에 있습니다</p>':''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
-  return '<section class="mv6-prog" aria-label="진행 단계"><header><b>진행 단계</b><span>'+h(m.current)+'</span></header>'+bar+rows+'</section>';
+  const bar=m.lost?'<span class="mv6-lost">실주로 끝난 영업건입니다</span>':'<ol class="mv6-bar">'+m.steps.map(s=>'<li class="'+s.state+'" title="'+h(s.full)+'"'+(s.state==='cur'?' aria-current="step"':'')+'><i></i><span>'+h(s.label)+'</span></li>').join('')+'</ol>';
+  return '<section class="mv6-prog" aria-label="진행 단계 · '+h(m.current)+'">'+bar+'</section>';
  }
- return Object.freeze({on,summary,summaryHtml,progress,progressHtml,history,STEPS});
+ /* '응대 이력' 바로 위: 단계 이력 */
+ function historyHtml(m){
+  if(!m)return '';
+  const rows=m.loading?'<p class="mv6-none">단계 이력을 불러오는 중입니다</p>':m.rows.length?'<ul class="mv6-tl">'+m.rows.map(r=>'<li><b>'+h(r.label)+(r.entered?' 진입':'')+'</b><span>'+h([day(r.at)+(time(r.at)?' '+time(r.at):''),r.who].filter(Boolean).join(' · ')||'날짜 미기록')+'</span>'+(r.why?'<small>'+h(r.why)+'</small>':'')+'</li>').join('')+'</ul>'+(m.older?'<p class="mv6-none">이전 '+m.older+'건은 PC 상세 \'단계 이력\'에 있습니다</p>':''):'<p class="mv6-none">단계 변경 기록이 없습니다</p>';
+  return '<section class="mv6-hist" aria-label="단계 이력"><header><b>단계 이력</b></header>'+rows+'</section>';
+ }
+ return Object.freeze({on,summary,summaryHtml,progress,barHtml,historyHtml,history,STEPS});
 });

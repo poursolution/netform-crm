@@ -280,8 +280,12 @@
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
   /* 2026-10-22 하자 사진 간이 접수: 상세 더보기 끝에 [하자 접수] 줄 하나(승인 원본 줄을 복제 · 서버 함수가 있을 때만) */
   if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
-  /* 모바일 v6 ②: 상세 첫 칸(현장 이름 · 진행상태) 바로 아래 '진행 단계' — 진행 바 + 단계 이력(mobile-v6.js). 승인 C 원본 칸은 그대로 두고 칸 하나만 더한다 */
-  if(d&&!S.detailView&&w.MobileV6&&w.MobileV6.on()){const id=scr.querySelector('.approved-detail-body')?.firstElementChild;if(id&&!scr.querySelector('.mv6-prog'))id.insertAdjacentHTML('afterend',w.MobileV6.progressHtml(w.MobileV6.progress(d)));}
+  /* 모바일 v6 ②: 상세 첫 칸(현장 이름 · 진행상태) 바로 아래 진행 바, '응대 이력' 칸 바로 위 단계 이력(mobile-v6.js). 승인 C 원본 칸은 그대로 두고 칸 두 개만 더한다 */
+  if(d&&!S.detailView&&w.MobileV6&&w.MobileV6.on()&&!scr.querySelector('.mv6-prog')){
+   const body=scr.querySelector('.approved-detail-body'),id=body?.firstElementChild,hist=body?.querySelector('[data-gs="history"]'),hb=hist&&[...body.children].find(n=>n.contains(hist)),m=w.MobileV6.progress(d);
+   if(id)id.insertAdjacentHTML('afterend',w.MobileV6.barHtml(m));
+   if(hb)hb.insertAdjacentHTML('beforebegin',w.MobileV6.historyHtml(m));
+  }
   /* 2026-10-22 실주 칸(내 현장 '전체' 목록 끝 한 줄): 누르면 실주 칩으로 — 숨긴 건수를 숫자로 알린다 */
   if(!d&&w.G.tab==='mine'&&!S.stage&&!S.q.trim()&&lostHide()){const n=lostCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-lost-note" data-gs="stage" data-value="lost" role="button" tabindex="0" aria-label="실주 '+n+'건 보기"><b>실주 '+n+'건</b><span>누르면 보입니다 ›</span></span>');}
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */

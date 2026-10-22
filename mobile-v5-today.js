@@ -112,8 +112,9 @@
   const it=M.items,first=it[0],second=it[1],rest=it.slice(1);
   let body='';
   /* extra.summary = mobile-v6 오늘 요약(숫자 칸)을 mobile-guide-shell 이 맨 위에 얹는다. 건수는 거기서 보이므로 한 줄에는 첫 건 시각만 */
+  /* 요약이 있으면 상자 대신 카드 위 작은 제목(mv6-lead) — 기한 지남이 맨 위면 제목만 남아 빈 상자처럼 보이던 것 */
   const top=!first?'지금 처리할 건이 없습니다':extra.summary?M.lead:M.line;
-  body+='<div class="mv5-top"><span>지금 먼저 할 일</span>'+(top?'<b>'+h(top)+'</b>':'')+'</div>';
+  body+='<div class="mv5-top'+(extra.summary&&first?' mv6-lead':'')+'"><span>지금 먼저 할 일</span>'+(top?'<b>'+h(top)+'</b>':'')+'</div>';
   if(S.area==='wait'||S.area==='fix'){
    body+='<div class="mv5-sub"><span data-gs="area" data-value="now" role="button" tabindex="0">‹ 오늘</span><b>'+(S.area==='wait'?'고객 회신 대기 '+M.wait:'기록 보완 '+M.fix)+'</b></div>'+(extra.zoneRows||'');
   }else if(first){
