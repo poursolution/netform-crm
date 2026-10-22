@@ -2,7 +2,12 @@
 (function(w){
  'use strict';
  const S={q:'',stage:'',page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1},detailView:'',evidencePage:1,v5more:false,v5page:1};
- const mine=()=>w.myDeals?w.myDeals():[];
+ /* 2026-10-22 회의록 10/2 '과거 이관 정체 건': PC 와 같은 기준(PipelineScope — 열려 있는데 현재 CRM 단계 값이 아닌 건)으로 과거 이관 · 분류 전 건은
+    모바일 목록 · 오늘 · 기록 보완 · 일정에서 뺀다. 재개는 PC 파이프라인 [과거 이관]. 끄기 G.mobileScopeOff(=예전처럼 전부 보임) */
+ const legacyM=d=>{const P=w.PipelineScope;if(!P||!P.on()||(w.G&&w.G.mobileScopeOff)||!d||d.outcome)return false;try{return P.isLegacy({code:d.stage_code!=null&&d.stage_code!==''?d.stage_code:d.code,stage_code:d.stage_code,outcome:d.outcome});}catch(e){return false;}};
+ const mineAll=()=>w.myDeals?w.myDeals():[];
+ const mine=()=>mineAll().filter(d=>!legacyM(d));
+ const legacyCount=()=>mineAll().filter(legacyM).length;
  const inquiries=()=>Array.isArray(w.ADMIN?.inquiries)?w.ADMIN.inquiries:[];
  const inquiry=id=>inquiries().find(q=>String(q.key||q.id||q.inquiry_id||'')===String(id));
  const next=d=>d?.nextAction?.status==='open'?d.nextAction:null;
@@ -257,6 +262,8 @@
   const scr=w.document.getElementById('scr'),tab=w.document.getElementById('tabbar');
   const views={mine:listing,today,pending,record:registration,'registration-match':registrationMatches,schedule,'day-close':dayClose};
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
+  /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */
+  if(!d&&w.G.tab==='mine'){const n=legacyCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-legacy-note">과거 이관 · 분류 전 '+n+'건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개</span>');}
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
   w.MobileApprovedBoot?.ready();loadRequests();w.setTimeout(()=>w.MobileRoute?.drawMap(),0);return true;
  }

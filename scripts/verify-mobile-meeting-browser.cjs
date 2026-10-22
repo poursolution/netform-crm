@@ -84,6 +84,18 @@ const MEASURE=()=>{
    assert.equal(sk.skel,1,width+'px 로딩 중 뼈대 화면 하나');assert.equal(sk.cards,3,'뼈대 카드 3장');assert.equal(sk.oldTabs,0,'예전 바깥 탭 없음');
    assert.equal(sk.view,'approved','승인 틀 보임(빈 배경 아님)');assert.equal(sk.text,'서버에서 오늘 업무를 불러오는 중입니다');assert.equal(sk.digits,false,'뼈대에 숫자 없음');assert.equal(sk.over,0,'뼈대 가로 넘침 없음');
    assert.equal(sk.offSkel,0,'끄기(G.mobileSkelOff)면 뼈대 없음');assert.equal(sk.back,1,'자료 오면 오늘 화면');
+   /* ⑥ 과거 이관 · 분류 전 건(PC 와 같은 PipelineScope): 내 현장 목록 · 오늘 기록 보완에서 빠지고 한 줄로 알림, 끄면(G.mobileScopeOff) 보임 */
+   const lg=await page.evaluate(()=>{closeSheet&&closeSheet();G.deal=null;G.mobileScopeOff=false;
+    DEALS.push({id:'p09',site_id:'p09s',nm:'합성 과거 이관 건',code:'qualified',stage_code:'qualified',stage_raw:'검증된 고객',sub:'방수',rep:G.user.nm,owner_id:Phase1.profile.user_id,brand:'POUR솔루션',version:0,amt:5e7,manager_name:'합성 소장',manager_role:'관리소장',manager_mobile:'01000000000',created_at:'2026-06-01T00:00:00Z',stageAt:'2026-06-01T00:00:00Z',lastAt:'2026-06-01T00:00:00Z',contactAt:'',activities:[],tl:[],nextAction:null});
+    G.tab='mine';MobileGuideShell.state.q='';MobileGuideShell.state.stage='';render();
+    const names=[...document.querySelectorAll('.approved-bc .approved-list [data-gs="deal"]')].map(n=>n.innerText.replace(/\s+/g,' ')),note=document.querySelector('.approved-bc .gs-legacy-note')?.innerText||'';
+    G.tab='today';render();const quiet=document.querySelector('.mv5 .mv5-quiet')?.innerText.replace(/\s+/g,' ')||'';
+    G.mobileScopeOff=true;G.tab='mine';render();const off=[...document.querySelectorAll('.approved-bc .approved-list [data-gs="deal"]')].some(n=>/합성 과거 이관 건/.test(n.innerText)),offNote=document.querySelectorAll('.approved-bc .gs-legacy-note').length;
+    G.mobileScopeOff=false;DEALS=DEALS.filter(d=>d.id!=='p09');G.tab='today';render();return {inList:names.some(t=>/합성 과거 이관 건/.test(t)),note,quiet,off,offNote};});
+   assert.equal(lg.inList,false,'과거 이관 건은 내 현장 목록에 없다');
+   assert.equal(lg.note,'과거 이관 · 분류 전 1건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개','한 줄 알림: '+lg.note);
+   assert.equal(lg.quiet,'고객 회신 대기 1 기록 보완 1','기록 보완에 과거 이관 건이 섞이지 않는다: '+lg.quiet);
+   assert.equal(lg.off,true,'끄면 보인다');assert.equal(lg.offNote,0,'끄면 알림 없음');
    /* ⑤ 문의 한도 */
    const cap=await page.evaluate(()=>{const base=ADMIN.inquiries[1];ADMIN.inquiries=[ADMIN.inquiries[0]].concat(Array.from({length:19},(_,i)=>{const raw={...base.raw,id:'bbbbbbbb-1111-4111-8111-0000000000'+String(i+10).padStart(2,'0'),site:'합성 문의 '+(i+10)};return Object.assign(inquiryViewM(raw),{raw,done:true,rep:G.user.nm,status:'배정완료'});}));const n=(buildToday()||[]).filter(t=>t.kind!=='deal').length;return n;});
    assert.equal(cap,20,'문의 20건이 12건에서 잘리지 않음: '+cap);
