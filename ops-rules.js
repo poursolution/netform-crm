@@ -137,7 +137,7 @@
   const t=transferOf(d);if(t.status==='approved')return 'won_transfer';if(t.status==='pending'||t.status==='awarded'||t.status==='cancelled'||t.status==='rejected')return 'transfer_pending';if(t.status==='lost')return 'lost';
   const w=winOf(d);if(w.type==='partner_tech')return 'won_partner_tech';if(w.type==='own')return 'won_own';
   let o='open';try{o=root.outcomeOf(d);}catch(e){}
-  if(o==='won')return 'won_own';if(o==='badfit')return 'bad_fit';if(o==='lost'||o==='nocontact'||o==='closed')return 'lost';return 'in_progress';
+  if(o==='won')return 'won_own';if(o==='badfit')return 'bad_fit';if(o==='support')return 'support_closed';/* 2026-10-22 지원 업무 종결: 수주도 실주도 아님 — 메이드율 분모 제외 */if(o==='lost'||o==='nocontact'||o==='closed')return 'lost';return 'in_progress';
  }
  /* 실적 금액(낙찰금액 · VAT 별도)을 직접 / 협약시공사 · 기술자문 / 타사 이관으로 나눠 합산 */
  function performance(ownAmount,transferAmount,partnerAmount){const own=Number(ownAmount)||0,tr=Number(transferAmount)||0,partner=Number(partnerAmount)||0;return {own,partner,transfer:tr,total:own+partner+tr,label:'수주실적'};}

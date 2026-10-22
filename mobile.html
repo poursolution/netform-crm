@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<link rel="stylesheet" href="./mobile-approved-boot.css?v=fr1"><script src="./mobile-approved-boot.js"></script><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=ps1"></script><script src="./transport.js?v=v5t1"></script>
+<link rel="stylesheet" href="./mobile-approved-boot.css?v=fr1"><script src="./mobile-approved-boot.js"></script><script src="./phase1-config.js"></script><script src="./operational-adapter.js?v=sp1"></script><script src="./transport.js?v=v5t1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
@@ -674,7 +674,8 @@ var STAGE_MASTER={
  badfit      :{name:'배드핏',           macro:'closed',order:99,prob:0,sla:0},
  badfit_lead :{name:'견적 배드핏',      macro:'closed',order:99,prob:0,sla:0},
  badfit_pipe :{name:'영업관리 배드핏',  macro:'closed',order:99,prob:0,sla:0},
- nocontact:{name:'연락두절', macro:'closed',order:99,prob:0,sla:0}
+ nocontact:{name:'연락두절', macro:'closed',order:99,prob:0,sla:0},
+ support  :{name:'지원 업무 종결',macro:'closed',order:99,prob:0,sla:0}
 };
 /* ══════════════════════════════════════════════════════════
    사업유형 — Stage 와 «별개» 축 (PC 와 같은 규칙, 2026-09-02)
@@ -707,7 +708,8 @@ var OUTCOMES={
  won      :{nm:'수주',    need:'amount',color:'g' },
  lost     :{nm:'실주',    need:'reason',color:'r' },
  badfit   :{nm:'배드핏',  need:'btype', color:'gr'},
- nocontact:{nm:'연락두절',need:'ncause',color:'gr'}
+ nocontact:{nm:'연락두절',need:'ncause',color:'gr'},
+ support  :{nm:'지원 종결',need:'reason',color:'gr'} /* 2026-10-22 회의록 10/1: PT 지원 등 비수주 지원 업무의 끝 상태 */
 };
 /* 영업기회는 준공 후 Closed Won에서 끝난다. 그 뒤 확장은 별도 고객 Pool이다. */
 var SALES_CODES=['first_contact','consulting','sent','rapport','silent','waiting','compete','imminent','bidding','contract'];
@@ -1611,7 +1613,7 @@ function nextSheet(){
    var win=isWinMove(n[0]);
    return '<button class="cchip '+(win?'g':'b')+'" onclick="moveTo('+i+')"><span class="cic">'+IC[win?'check':'chart']+'</span>'+n[1]+'</button>'}).join('');
  var close=d.outcome?'':'<div class="hint" style="margin:12px 2px 6px">종료 처리 — 사유가 있어야 저장됩니다</div>'
-  +'<div class="chiprow">'+['lost','badfit','nocontact'].map(function(o){
+  +'<div class="chiprow">'+['lost','badfit','nocontact','support'].map(function(o){
    return '<button class="cchip '+OUTCOMES[o].color+'" onclick="closeSheetFlow(\''+o+'\')">'+OUTCOMES[o].nm+'</button>'}).join('')+'</div>';
  if(d.outcome==='won')close='<div class="hint" style="margin:12px 2px 6px">수주 완료 — 확장관리에 자동 등록했습니다. 추가 니즈가 확인되면 확장관리에서 새 영업기회를 만드세요.</div>';
  openSheet(intro('var(--blue-50)','var(--blue-dark)',IC.chart,esc(d.nm),'지금 상황에 맞는 것 하나만 — 현재 «'+stageLabel(d.code)+'»'),fwd+close);
@@ -1642,7 +1644,8 @@ function moveToLegacy(i){
 function closeSheetFlow(o){
  var C={lost:{t:'실주 사유',d:'사유 없이 실주 처리는 안 됩니다 — 월별 분석의 원료예요',opt:['가격','일정','타업체 선정','내부 사정','기타']},
         badfit:{t:'배드핏 유형',d:'유입 개선 데이터로 쌓입니다',opt:['지역 밖','공사범위 밖','규모 미달','스팸·기타']},
-        nocontact:{t:'연락두절 처리 근거',d:'전화 한 번 안 받은 것은 연락두절이 아닙니다 — 3회 이상 시도 + 문자/카톡 후에만',opt:['3회 이상 시도','문자·카톡까지 무응답','번호 결번·변경','담당자 퇴사·교체']}}[o];
+        nocontact:{t:'연락두절 처리 근거',d:'전화 한 번 안 받은 것은 연락두절이 아닙니다 — 3회 이상 시도 + 문자/카톡 후에만',opt:['3회 이상 시도','문자·카톡까지 무응답','번호 결번·변경','담당자 퇴사·교체']},
+        support:{t:'지원 종류',d:'PT 지원 · 기술자문처럼 수주 · 실주로 끝나지 않는 지원 업무를 종결합니다 — 메이드율에서 빠집니다',opt:['PT 지원','기술자문 지원','자료 · 견적 지원','현장 확인 지원','기타']}}[o];
  openSheet(intro(o==='lost'?'var(--danger-bg)':'var(--bg)',o==='lost'?'#c22f3c':'var(--ink-2)',IC.alert,C.t+' <span style="font-size:12px">*필수</span>',C.d),
   '<div class="chiprow">'+C.opt.map(function(r){return '<button class="cchip '+(G.clKind===r?'b':'gr')+'" data-r="'+escAttr(r)+'" onclick="G.clKind=this.dataset.r;closeSheetFlow(\''+o+'\')">'+r+'</button>'}).join('')+'</div>'
   +'<div class="hint" style="margin:14px 0 6px">무슨 일이 있었는지 <span style="color:var(--danger)">*</span></div>'
@@ -2175,7 +2178,7 @@ function rSet(){
 function rClosed(){
  G.cl=G.cl||'won';
  var base=(G.mode==='admin'?DEALS:myDeals());
- var cnt={};['won','lost','badfit','nocontact'].forEach(function(o){cnt[o]=base.filter(function(d){return d.outcome===o}).length});
+ var cnt={};['won','lost','badfit','nocontact','support'].forEach(function(o){cnt[o]=base.filter(function(d){return d.outcome===o}).length});
  var list=base.filter(function(d){return d.outcome===G.cl})
    .sort(function(a,b){return String(b.closed_at||b.won_at||'').localeCompare(String(a.closed_at||a.won_at||''))});
  var rows=list.slice(0,60).map(function(d){
@@ -2187,7 +2190,7 @@ function rClosed(){
    +'<span class="badge '+(d.outcome==='won'?tg[0]:'badge-gray')+'">'+esc(d.outcome==='won'?tg[1]:(d.close_reason||OUTCOMES[d.outcome].nm))+'</span></div>';
  }).join('');
  scr.innerHTML=appbarS('종료 목록')+'<div class="body fadein">'
- +'<div class="seg">'+['won','lost','badfit','nocontact'].map(function(o){return '<button class="'+(G.cl===o?'on':'')+'" data-o="'+o+'" onclick="G.cl=this.dataset.o;render()">'+OUTCOMES[o].nm+' '+cnt[o]+'</button>'}).join('')+'</div>'
+ +'<div class="seg">'+['won','lost','badfit','nocontact','support'].map(function(o){return '<button class="'+(G.cl===o?'on':'')+'" data-o="'+o+'" onclick="G.cl=this.dataset.o;render()">'+OUTCOMES[o].nm+' '+cnt[o]+'</button>'}).join('')+'</div>'
  +'<div class="card tight" style="padding:4px 16px">'+(rows||'<div class="hint" style="padding:14px 2px">해당 건이 없습니다</div>')+'</div>'
  +(list.length>60?'<div class="hint" style="padding:6px 2px">최근 60건만 표시</div>':'')
  +'<div class="card" style="background:var(--blue-50);border-color:transparent"><div class="hint" style="color:var(--blue-dark)">'+(G.cl==='lost'?'실주는 «어느 단계에서 졌는지» 까지 남습니다 — 단계별 실주 분석의 원료':G.cl==='badfit'?'배드핏은 유입 개선 데이터 — 실주와 별도 집계':G.cl==='nocontact'?'연락두절은 3회 이상 시도 후에만 처리됩니다':'수의계약(≤500만)은 자동 분류됩니다')+'</div></div></div>';
@@ -2622,7 +2625,7 @@ reactivationHTMLM=function(){var A=reactivationM();if(!A.length)return '';return
 
    «로그인 기억» 은 Supabase 가 이미 해 준다. 이름만 로컬에 저장해 두고 바로
    들여보내면 토큰 없이 서버를 불러 «서버 연결 실패» 가 뜬다 — 실제로 그랬다. */
-</script><script src="./operational-overlay.js?v=mm1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
+</script><script src="./operational-overlay.js?v=sp1"></script><script>rToday=rTodayRoleM;if(!DEVVIEW)document.body.classList.add('svc');
 if(DEVVIEW){nav('flow')}
 else if(DEMO){G.user=REPS[0];G.mode='rep';nav('today')}
 else{
@@ -2634,7 +2637,7 @@ else{
 }
 </script>
 <link rel="stylesheet" href="stage-transition.css?v=20260926-polish-1">
-<script src="stage-transition.js?v=st7"></script>
+<script src="stage-transition.js?v=sp1"></script>
 <script src="stage-transition-ui.js?v=mm1"></script>
 <script src="./work-editor.js?v=20260907-buttons-1"></script><link rel="stylesheet" href="./mobile-loop.css?v=ml3-flow-3"><script src="./mobile-loop.js?v=mm1"></script><script src="./release-contract.js?v=rb2"></script><script>window.CRM_SCHEDULE_V1=true;</script><script src="./schedule-contract.js?v=schedule-live1"></script><script src="./schedule-flow.js?v=schedule-live1"></script><script src="./inquiry-flow.js?v=readonly1" data-read-only="true"></script><script src="./inquiry-b2b-client.js?v=1"></script><script src="./inquiry-response-contract.js?v=schedule-live1"></script><script src="./pc-inquiry-save.js?v=schedule-live1"></script><script src="./inquiry-schedule-flow.js?v=schedule-live1"></script><script src="./contact-entry.js?v=schedule-live1"></script><script src="./mobile-fields.js?v=quote-session5"></script><link rel="stylesheet" href="./mobile-requests.css?v=rq1"><script src="./mobile-requests.js?v=v5t1"></script><script src="./mobile-inquiry.js?v=lg1"></script><link rel="stylesheet" href="./mobile-route.css?v=mr1"><script src="./mobile-route.js?v=mr1"></script><link rel="stylesheet" href="./mobile-entry.css?v=rq1"><script src="./mobile-approved-d-source.js"></script><script src="./mobile-approved-mic-source.js"></script><script src="./mobile-contact-view.js?v=v5r1"></script><script src="./mobile-inquiry-entry.js?v=v5q1"></script><script src="./mobile-entry.js?v=mm1"></script><link rel="stylesheet" href="./mobile-v2.css?v=mv6"><script src="./mobile-v2.js?v=mh1"></script><link rel="stylesheet" href="./mobile-hub.css?v=mh2"><script src="./mobile-hub.js?v=mr1"></script><script>window.addEventListener('phase1:identity-cleared',function(){TOKEN=null;WRITE_Q=[];G.user=null;DEALS=[];BUNDLE=null;LIVE=false;});window.addEventListener('phase1:profile',function(){WRITE_Q=Phase1.queue.list();});window.addEventListener('phase1:queue',function(){WRITE_Q=Phase1.queue.list();});</script><link rel="stylesheet" href="./mobile-contact-view.css?v=claude-d1"><script src="./pipeline-stages.js"></script><script src="./list-pager.js"></script><link rel="stylesheet" href="./mobile-guide-shell.css?v=mm1"><script src="./mobile-approved-a-source.js"></script><script src="./mobile-approved-route-source.js"></script><script src="./mobile-approved-route.js"></script><script src="./mobile-approved-a.js"></script><script src="./mobile-approved-bc-source.js"></script><script src="./mobile-approved-bc.js"></script><script src="./mobile-pending-model.js"></script><script src="./mobile-pending-view.js"></script><script src="./mobile-registration-context.js"></script><script src="./mobile-approved-ej-source.js"></script><script src="./mobile-approved-ej.js"></script><script src="./mobile-approved-f-source.js"></script><script src="./mobile-approved-f.js?v=v5s1"></script><script src="./mobile-schedule-model.js?v=fx1"></script><script src="./mobile-approved-h-source.js"></script><script src="./mobile-approved-h.js"></script><script src="./mobile-approved-gj-source.js"></script><script src="./mobile-approved-gj.js"></script><script src="./mobile-approved-j1-source.js"></script><script src="./mobile-approved-j1.js"></script><script src="./mobile-stage-confirmation-model.js?v=fx1"></script><script src="./mobile-stage-review.js"></script><script src="./mobile-approved-quote-source.js"></script><script src="./mobile-approved-date-source.js"></script><script src="./mobile-approved-date.js"></script><script src="./mobile-approved-quote.js?v=quote-calendar1"></script><script src="./mobile-approved-quote-extra-source.js"></script><script src="./mobile-approved-quote-extra.js"></script><script src="./mobile-quote-review-model.js?v=quote-calendar1"></script><script src="./quote-amounts.js?v=qv1"></script><script src="./quote-calc.js?v=qv1"></script><script src="./quote-compose.js?v=qv1"></script><script src="./mobile-quick-entry.js?v=mq2"></script><script src="./mobile-quote-live.js?v=v5s1"></script><script src="./mobile-quote-flow.js?v=quote-calendar1"></script><script src="./mobile-approved-input-source.js"></script><script src="./mobile-approved-input.js?v=match1"></script><script src="./mobile-input-review-model.js?v=match1"></script><script src="./mobile-voice-session.js"></script><script src="./mobile-input-draft.js?v=recovery3"></script><script src="./mobile-card-recognition.js"></script><script src="./contact-match-reader.js?v=match1"></script><script src="./mobile-input-flow.js?v=recovery3"></script><script src="./day-zone-rules.js?v=sf6"></script><script src="./stage-card-rules.js?v=v5a"></script><link rel="stylesheet" href="./mobile-v5-today.css?v=v5t1"><script src="./mobile-v5-today.js?v=v5a"></script><script src="./mobile-v5-team.js?v=v5t1"></script><link rel="stylesheet" href="./mobile-v5-result.css?v=v5v1"><script src="./mobile-v5-result.js?v=v5q1"></script><script src="./mobile-guide-shell.js?v=mm1"></script><link rel="stylesheet" href="./call-summary.css?v=cs1"><script src="./call-summary.js?v=v5r1"></script></body>
 </html>

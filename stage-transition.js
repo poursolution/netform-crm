@@ -27,9 +27,11 @@
   /* stage7 ⑦: 끝 상태 · 실주일 · 원인 · 고객 반응 · 재영업 가능 여부(예 만 재접촉 할 일) · 경쟁사 정보(적용안) */
   lost:{label:'실주',fields:[f('close_reason','실주 사유','select',true,['타사 선정 (경쟁 패배)','가격 열세','기술·공법 열세','우리가 연락 못 함','견적 후 후속 지연','담당자 부재·인수인계 누락','고객 예산 무산','공사 시기 연기·취소','기타'],'conf'),f('close_detail','확인한 내용 · 고객 반응','text',true,undefined,'conf'),f('reengage','재영업 가능 여부','select',false,['예','아니오','미정'],'conf'),f('competitor','경쟁사','text',false,undefined,'prop'),f('lesson','배운 점'),f('recontact_possibility','재접촉 가능 시기')]},
   badfit_lead:{label:'배드핏',fields:[f('close_reason','배드핏 사유','select',true,['지역 밖','공사 범위 밖','규모 미달','예산 수준 불일치','기타']),f('close_detail','확인한 내용','text',true)]},
-  nocontact:{label:'연락두절',fields:[f('close_reason','연락두절 확인 근거','select',true,['3회 이상 시도 무응답','문자·카카오까지 무응답','번호 결번·변경','담당자 퇴사·교체']),f('close_detail','최근 연락 시도·확인 내용','text',true)]}
+  nocontact:{label:'연락두절',fields:[f('close_reason','연락두절 확인 근거','select',true,['3회 이상 시도 무응답','문자·카카오까지 무응답','번호 결번·변경','담당자 퇴사·교체']),f('close_detail','최근 연락 시도·확인 내용','text',true)]},
+  /* 2026-10-22 회의록 10/1: 지원 업무 종결 — PT 지원 · 기술자문 지원처럼 수주 · 실주로 끝나지 않는 건. 메이드율 분모에서 빠진다. 서버 sql/deal-close-support-v1-20261022.sql 과 같은 종류 목록 */
+  support:{label:'지원 업무 종결',fields:[f('close_reason','지원 종류','select',true,['PT 지원','기술자문 지원','자료 · 견적 지원','현장 확인 지원','기타']),f('close_detail','지원 내용 · 결과','text',true)]}
  };
- const terminal=['won','lost','badfit_lead','badfit','badfit_pipe','nocontact'];
+ const terminal=['won','lost','badfit_lead','badfit','badfit_pipe','nocontact','support'];
  const normal={first_contact:['consulting'],consulting:['sent'],sent:['rapport','silent','compete'],rapport:['silent','compete'],silent:['rapport','compete'],compete:['imminent','bidding'],imminent:['bidding','contract'],bidding:['contract'],contract:['construction'],construction:['completion'],completion:['won'],waiting:['first_contact','rapport','silent']};
  function choices(from){return terminal.includes(from)?[]:Object.keys(definitions).filter(k=>k!==from&&(k!=='won'||from==='completion'))}
  function isException(from,to){return !terminal.includes(to)&&to!=='waiting'&&!(normal[from]||[]).includes(to)}
