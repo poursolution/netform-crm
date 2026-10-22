@@ -217,9 +217,12 @@
     if(!current()||ta.value!==inputValue)return;
     if(!r.ok||!j||j.ok!==true||!j.suggestion)throw new Error({AI_DISABLED:'AI 제안이 꺼져 있습니다',AI_NOT_CONFIGURED:'AI 키가 서버에 없습니다',FORBIDDEN:'AI 제안을 쓸 권한이 없습니다',AI_UPSTREAM:'AI 서버가 응답하지 않았습니다',AI_BAD_OUTPUT:'AI 답을 읽지 못했습니다'}[j&&j.error]||'AI 정리를 받지 못했습니다');
     const s=j.suggestion.suggestion||{};if(!s.memo)throw new Error('AI가 정리할 내용을 찾지 못했습니다');
-    S.aiRaw=raw;S.memo=s.memo;S.ai={res:AI_NAME[s.result]||'',date:s.next&&s.next.date||''};
-    const nx=s.next&&s.next.date?'다음 확인 '+s.next.date.slice(5).replace('-','/')+(s.next.text?' · '+s.next.text:''):'';
-    S.aiHint='AI 정리(제안) — '+[AI_NAME[s.result]?'결과는 「'+AI_NAME[s.result]+'」':'',nx].filter(Boolean).join(' · ')+(S.ai.res||nx?' 로 추천합니다. ':'')+'상담 내용은 고칠 수 있고, 고르는 것은 직접 합니다.';
+    S.aiRaw=raw;S.ai={res:AI_NAME[s.result]||'',date:s.next&&s.next.date||''};
+    /* 2026-10-22 회의록 8/27 음성 메모 구조화: 핵심 이슈 · 경쟁사 · 결정 일정 · 요구가 있으면 상담 내용에 표식 줄로 함께 남긴다(원문에 있던 것만 · 고칠 수 있다) */
+    const lines=[s.memo];if(s.issue)lines.push('[핵심 이슈] '+s.issue);if(s.competitor)lines.push('[경쟁사] '+s.competitor);if(s.decision)lines.push('[결정 일정] '+s.decision);if(s.needs)lines.push('[고객 요구] '+s.needs);
+    S.memo=lines.join('\n');
+    const nx=s.next&&s.next.date?'다음 확인 '+s.next.date.slice(5).replace('-','/')+(s.next.text?' · '+s.next.text:''):'',tags=Array.isArray(s.tags)&&s.tags.length?'꼬리표 '+s.tags.join(' · '):'';
+    S.aiHint='AI 정리(제안) — '+[AI_NAME[s.result]?'결과는 「'+AI_NAME[s.result]+'」':'',nx,tags].filter(Boolean).join(' · ')+(S.ai.res||nx?' 로 추천합니다. ':'')+(lines.length>1?'이슈 · 경쟁사 · 결정 일정을 표식 줄로 넣었습니다. ':'')+'상담 내용은 고칠 수 있고, 고르는 것은 직접 합니다.';
    }catch(e){if(!current()||ta.value!==inputValue)return;S.aiHint=String(e&&e.message||e);}
    finally{if(current()){btn.disabled=false;btn.textContent='AI로 정리';}}
    if(current())paint(d,true);

@@ -533,7 +533,9 @@
     const g=r.suggestion||{},res={absent:'부재',promise:'연결됨',ongoing:'연결됨',recall:'회신대기'}[g.result];if(!res)return;
     const nx=NXT[res],date=g.next&&/^\d{4}-\d{2}-\d{2}$/.test(String(g.next.date||''))&&g.next.date>=KST(0)?g.next.date:KST(nx[1]),text=String(g.next&&g.next.text||nx[0]);
     S.cmp={raw,ch:inCh(raw),res,text,date,prog:{}};
-    sug.innerHTML='<em class="dv3-aitag">AI</em><span>'+h(S.cmp.ch+' · '+res)+'</span><b>→ 다음 행동: '+h(text+' · '+dd(date))+'</b>';sug.hidden=false;
+    /* 2026-10-22 구조화 칸(핵심 이슈 · 경쟁사 · 결정 일정 · 꼬리표)은 한 줄로 보여 주기만 — 저장은 응대 기록 글 그대로 */
+    const extra=[g.issue?'이슈 '+g.issue:'',g.competitor?'경쟁사 '+g.competitor:'',g.decision?'결정 '+dd(g.decision):'',Array.isArray(g.tags)&&g.tags.length?g.tags.join(' · '):''].filter(Boolean).join(' · ');
+    sug.innerHTML='<em class="dv3-aitag">AI</em><span>'+h(S.cmp.ch+' · '+res)+'</span><b>→ 다음 행동: '+h(text+' · '+dd(date))+'</b>'+(extra?'<small class="dv3-aiextra">'+h(extra)+'</small>':'');sug.hidden=false;
    }).catch(()=>{});
   },1100);
  }
