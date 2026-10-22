@@ -436,7 +436,7 @@ html.emb .ctl{display:none}
  const btns=[...document.querySelectorAll('.rail button')],pbs=btns.map(b=>b.querySelector('.pb i'));
  const play=$('#play'),pos=$('#pos');
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- let cur=0,t=0,run=false,all=false,last=0,raf=0,applied=0,done=false;
+ let cur=0,t=0,run=false,all=false,last=0,raf=0,applied=0,done=false;const TGT=+new URLSearchParams(location.search).get('tgt')||0;let SPD=1;try{if(TGT)SPD=Math.min(3,Math.max(1,SC.reduce((a,x)=>a+(x.dur||0),0)/TGT))}catch(_){}
  const setCls=(i,n,extra)=>{st.className='stage sc'+(i+1)+' '+SC[i].cues.slice(0,n).map(c=>c[1]).join(' ')+(extra?' '+extra:'')};
  const fadeIn=el=>{el.classList.remove('fade');void el.offsetWidth;el.classList.add('fade')};
  function ui(i){
@@ -457,7 +457,7 @@ html.emb .ctl{display:none}
  }
  function tick(now){
   if(!run)return;
-  t+=now-last;last=now;const s=SC[cur];
+  t+=(now-last)*SPD;last=now;const s=SC[cur];
   while(applied<s.cues.length&&s.cues[applied][0]<=t){st.classList.add(s.cues[applied][1]);applied++}
   pbs[cur].style.width=Math.min(100,t/s.dur*100)+'%';
   if(t>=s.dur){
