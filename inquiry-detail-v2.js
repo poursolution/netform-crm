@@ -268,7 +268,7 @@
   if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl=rec&&T[rec]?rec:'첫 인사';s.smsText=T[s.smsTpl]||'';}
   const text=s.smsText||'',has=!!text.trim(),bytes=smsBytes(text),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent),crm=crmSendable(digits);if(crm)loadSms(q);
   const owner=String(root.repDisplay(root.inquiryRoutedOwner(q)||root.ME?.name||'')||'').trim(),brand=String(q.brand||(root.inquiryBrandOf?root.inquiryBrandOf(q):'')||'').trim(),assigned=root.inquiryAssigned(q);
-  const foot=!digits?'연락처가 없어 보낼 수 없습니다':crm?'보내면 넷폼 발신번호로 바로 발송되고 응대 이력에 "문자 · 회신대기"로 남습니다':'문구 복사·앱 이동만으로 발송 이력이나 후속 업무를 등록하지 않습니다';
+  const foot=!digits?'연락처가 없어 보낼 수 없습니다':crm?'보내면 문의 브랜드의 등록 발신번호로 바로 발송되고 응대 이력에 "문자 · 회신대기"로 남습니다':'문구 복사·앱 이동만으로 발송 이력이나 후속 업무를 등록하지 않습니다';
   const go=crm?'<button type="button" data-idv="sms-send"'+(has?'':' disabled')+'>'+(mobile?'문자 앱으로':'복사해서')+' 직접 보내기</button><button type="button" class="go'+(s.smsConfirm?' idv-confirm':'')+'" data-idv="sms-crm"'+(s.smsBusy||!has?' disabled':'')+'>'+(s.smsBusy?'요청 중…':s.smsConfirm?'정말 보내기 · '+h(root.phoneFmt(digits)):'CRM에서 보내기')+'</button>'
    :'<button type="button" class="go" data-idv="sms-send"'+(digits&&has?'':' disabled')+'>'+(digits?(mobile?'문자로 이동':'문구 복사'):'연락처 없음')+'</button>';
   return '<div class="ds2 iq-ds2"><div class="ds2-hd"><b>문자 보내기</b><span>'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</span>'+(digits?'':'<em class="bad">연락처 없음</em>')+'<i></i></div>'
@@ -342,7 +342,7 @@
 
  function smsForm(q,s,digits,v3){if(v3&&!root.G.inqSmsV2Off)return smsForm3(q,s,digits);const T=smsTemplates(q);if(!s.smsTpl&&!(s.smsText||'').trim()){s.smsTpl='첫 인사';s.smsText=T['첫 인사']||'';}const bytes=smsBytes(s.smsText||''),mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
    const crm=crmSendable(digits);if(crm)loadSms(q);
-  return '<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>'+(crm?'[CRM에서 보내기]를 누르면 넷폼 발신번호로 고객 휴대폰에 바로 발송됩니다(대표 PC의 문자 실행기가 보냄 · 24시간 안 3건까지). 응대 이력에 «문자 · 회신대기»로 기록되고 전송 결과가 이력에 뜹니다.':'CRM 직접 발송은 '+(digits?'서버 적용 뒤에 열립니다.':'010 휴대폰 번호가 있어야 합니다.')+' 문구 복사·앱 이동은 발송 완료가 아니며, 응대 이력·후속 업무를 자동 등록하지 않습니다.')+'</span></div>'
+  return '<div class="idv-smsnote"><b>문구는 자동으로 만들어 둡니다 — 고칠 것만 고치고 아래 버튼 하나만 누르세요.</b><span>'+(crm?'[CRM에서 보내기]를 누르면 문의 브랜드의 등록 발신번호로 고객 휴대폰에 바로 발송됩니다(대표 PC의 문자 실행기가 브랜드별 번호로 보냄 · 24시간 안 3건까지). 응대 이력에 «문자 · 회신대기»로 기록되고 전송 결과가 이력에 뜹니다.':'CRM 직접 발송은 '+(digits?'서버 적용 뒤에 열립니다.':'010 휴대폰 번호가 있어야 합니다.')+' 문구 복사·앱 이동은 발송 완료가 아니며, 응대 이력·후속 업무를 자동 등록하지 않습니다.')+'</span></div>'
     +'<div class="idv-tpls"><span class="tag">AI</span><small>상황에 맞는 문구</small>'+Object.keys(T).map(k=>'<button type="button" class="idv-chip'+(s.smsTpl===k?' on':'')+'" data-idv="tpl" data-v="'+attr(k)+'">'+h(k)+'</button>').join('')+'</div>'
     +'<div class="idv-smsto"><span>받는 사람</span><b class="'+(digits?'':'bad')+'">'+h((q.contact_name||q.contact||'고객')+' · '+(digits?root.phoneFmt(digits):'연락처 없음'))+'</b><i></i><span>'+bytes+'byte · '+(bytes>90?'LMS':'SMS')+'</span></div>'
     +'<textarea id="spLogNote" rows="3" data-idv="smstext" placeholder="보낼 문자">'+h(s.smsText||'')+'</textarea>'

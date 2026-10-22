@@ -6,6 +6,7 @@ import {createAligoClient,AligoError} from './client.mjs';
 import {AligoDispatcher} from './dispatcher.mjs';
 import {protectConfig,unprotectConfig} from './windows-credentials.mjs';
 import {connectBackend,checkBackend} from './backend-connection.mjs';
+import {KNOWN_BRANDS,normalizeSenders} from './sender-lanes.mjs';
 
 const root=process.env.ALIGO_PRIVATE_DIR||join(process.env.LOCALAPPDATA||'','netform-crm','aligo');
 if(process.platform!=='win32'||!process.env.LOCALAPPDATA) throw Error('Windows user profile required');
@@ -22,6 +23,10 @@ function page(){
  return '<!doctype html><html lang="ko"><meta charset="utf-8"><title>영업운영 CRM · 알리고 연결</title><style>body{font:16px system-ui;max-width:760px;margin:40px auto;padding:20px;color:#14243a}label{display:block;margin:12px 0}input{display:block;width:95%;padding:10px}button{padding:12px;margin:8px 0;background:#173a70;color:white;border:0;border-radius:6px}pre{white-space:pre-wrap;background:#f1f5fa;padding:18px}</style><h1>영업운영 CRM · 알리고 연결</h1><p>이 컴퓨터 전용 설정입니다. 인증키는 Windows 사용자 암호화 저장소에 보관됩니다.</p>'
  +(config?'<p>계정: '+h(config.userId)+' · 발신번호: '+h(config.sender)+' · 테스트 수신번호: '+h(config.receiver)+'</p>':'<form method="post" action="/connect"><input type="hidden" name="csrf" value="'+csrf+'"><label>알리고 사용자 ID<input name="userId" autocomplete="off" required></label><label>알리고 API 키<input name="key" type="password" autocomplete="off" required></label><label>발신번호<input name="sender" required></label><label>테스트 수신번호<input name="receiver" required></label><button>인증 확인 및 암호화 저장</button></form>')
  +(config?form('/balance','API 연결 확인')+form('/dry-run','과금 없는 연동 시험')+form('/send','테스트 문자 1건 발송')+form('/status','실제 전송 결과 조회'):'')
+ /* 브랜드별 발신번호(2026-10-22 회의록 9/9): 큐 항목의 브랜드(캠페인 = 고객 영업건 유입 브랜드 · 문의 문자 = 문의 브랜드)에 맞는 번호로 보낸다. 비워 두면 기본 발신번호. 알리고에 미리 등록된 번호만 실제로 나간다 */
+ +(config?'<h2>브랜드별 발신번호</h2><p>고객이 아는 브랜드의 번호로 나가게 합니다. 비워 두면 기본 발신번호('+h(config.sender)+')를 씁니다. 알리고 관리 화면에 등록된 발신번호만 실제로 통합니다.</p><form method="post" action="/senders"><input type="hidden" name="csrf" value="'+csrf+'">'
+  +KNOWN_BRANDS.map(b=>'<label>'+h(b)+'<input name="sender_'+h(b)+'" value="'+h((config.senders||{})[b]||'')+'" placeholder="등록 발신번호(숫자만)" autocomplete="off"></label>').join('')
+  +'<button>브랜드별 발신번호 저장</button></form>'+(config.senders&&Object.keys(config.senders).length?'<p>지금 설정: '+h(Object.entries(config.senders).map(([b,n])=>b+' → '+n).join(' · '))+'</p>':'<p>지금은 전부 기본 발신번호로 나갑니다.</p>'):'')
  +(config?'<h2>CRM 서버 연결</h2><p>영업운영 CRM 전용입니다. 연결 확인은 조회만 수행하며 자동발송을 시작하지 않습니다.</p>'+(existsSync(backendProfile)?form('/backend-check','저장된 서버 연결 확인'):'<form method="post" action="/backend-connect"><input type="hidden" name="csrf" value="'+csrf+'"><label>CRM 서버 키<input name="backendKey" type="password" autocomplete="off" required></label><button>서버 인증 확인 및 암호화 저장</button></form>'):'')
  +'<p role="status">'+h(notice)+'</p>'+(result?'<pre>'+h(JSON.stringify(result,null,2))+'</pre>':'')+'<p>같은 테스트 요청은 반복 클릭해도 다시 발송하지 않습니다.</p></html>';
 }
@@ -60,7 +65,13 @@ const server=http.createServer(async(req,res)=>{
    }else{
     if(!config) throw Error('Not configured');
     const client=createAligoClient(config);
-    if(req.url==='/backend-connect'){
+    if(req.url==='/senders'){
+     /* 브랜드별 발신번호 저장: 번호 모양만 검사(알리고 사전 등록 여부는 실제 발송 때 공급자가 판정). 비우면 그 브랜드는 기본 발신번호 */
+     const raw={};for(const b of KNOWN_BRANDS)raw[b]=p.get('sender_'+b)||'';
+     const senders=normalizeSenders(raw);
+     protectConfig(profile,{...config,senders});config={...config,senders};
+     persistResult({operation:'senders',ok:true,brands:Object.keys(senders)});notice='브랜드별 발신번호를 저장했습니다. 실행기를 다시 시작하면 적용됩니다.';
+    }else if(req.url==='/backend-connect'){
      const checked=await connectBackend(p.get('backendKey'),{path:backendProfile,protect:protectConfig,unprotect:unprotectConfig,exists:existsSync});
      persistResult(checked);notice='CRM 서버 인증과 암호화 저장 완료. 자동발송은 꺼져 있습니다.';
     }else if(req.url==='/backend-check'){
