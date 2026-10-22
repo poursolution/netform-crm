@@ -8,6 +8,13 @@
  const mineAll=()=>w.myDeals?w.myDeals():[];
  const mine=()=>mineAll().filter(d=>!legacyM(d));
  const legacyCount=()=>mineAll().filter(legacyM).length;
+ /* 2026-10-22 대표 "실주는 최대한 안 보이게 · 실주 칸을 누르면 내용": '전체'에서는 실주 묶음(실주 · 배드핏 · 미연락 — PipelineStages 'lost')을 빼고
+    목록 끝 [실주 n건 ›] 칸 하나만. 누르면 실주 칩(S.stage='lost')으로 바뀌어 사유 · 종료일이 보인다. 검색어가 있으면 실주도 같이 찾는다. 끄기 G.mobileLostHideOff */
+ const lostM=d=>!!d.outcome&&w.PipelineStages?.group(d.code,d.outcome)==='lost';
+ const lostHide=()=>!(w.G&&w.G.mobileLostHideOff);
+ const lostCount=()=>mine().filter(lostM).length;
+ const closedTask=d=>{const r=String(d.close_reason||'').replace(/\s+/g,' ').trim();return r?(r.length>22?r.slice(0,21)+'…':r):'사유 미입력';};
+ const closedDue=d=>{const s=String(d.closed_at||d.won_at||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?'종료 '+s.slice(5).replace('-','.'):'종료';};
  const inquiries=()=>Array.isArray(w.ADMIN?.inquiries)?w.ADMIN.inquiries:[];
  const inquiry=id=>inquiries().find(q=>String(q.key||q.id||q.inquiry_id||'')===String(id));
  const next=d=>d?.nextAction?.status==='open'?d.nextAction:null;
@@ -119,11 +126,14 @@
   return w.MobilePendingView.render({...snapshot,groups},{names,page:S.pendingPage});
  }
  function listing(){
-  let rows=mine();if(S.stage)rows=rows.filter(d=>w.PipelineStages.group(d.code,d.outcome)===S.stage);
-  const needle=S.q.trim().toLocaleLowerCase();if(needle)rows=rows.filter(d=>{const c=w.contactInfoM(d);return [d.nm,d.address,d.addr,c.name,c.mobile,c.officeTel,work(d)].join(' ').toLocaleLowerCase().includes(needle);});
+  let rows=mine();const needle=S.q.trim().toLocaleLowerCase();
+  if(S.stage)rows=rows.filter(d=>w.PipelineStages.group(d.code,d.outcome)===S.stage);
+  else if(lostHide()&&!needle)rows=rows.filter(d=>!lostM(d));/* 전체 = 실주 숨김(목록 끝 [실주 n건 ›] 칸) */
+  if(needle)rows=rows.filter(d=>{const c=w.contactInfoM(d);return [d.nm,d.address,d.addr,c.name,c.mobile,c.officeTel,work(d)].join(' ').toLocaleLowerCase().includes(needle);});
   if(w.G.brandF&&w.G.brandF!=='전체')rows=rows.filter(d=>brand(d)===w.G.brandF);
   const pg=w.ListPager.cut(rows,w.ListPager.page(S));S.page=pg.page;
-  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,filterLabel:w.__approvedBCExample?.filterLabel||'필터',stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d)].filter(Boolean).join(' · '),color:color(d),task:next(d)?.text||'다음 업무 확인',due:due(d),dueColor:dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
+  /* 종료 건(실주 등)은 '다음 업무'가 없다 — 오른쪽 = 종료 사유 · 종료일 */
+  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,filterLabel:w.__approvedBCExample?.filterLabel||'필터',stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d)].filter(Boolean).join(' · '),color:d.outcome&&lostM(d)?'#9ca3af':color(d),task:d.outcome?closedTask(d):next(d)?.text||'다음 업무 확인',due:d.outcome?closedDue(d):due(d),dueColor:d.outcome?'#6b7280':dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
  }
  function detail(d){
   const c=w.contactInfoM(d),n=next(d),sid=d.site_id||d.cleanup_site_id;
@@ -265,6 +275,8 @@
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
   /* 2026-10-22 하자 사진 간이 접수: 상세 더보기 끝에 [하자 접수] 줄 하나(승인 원본 줄을 복제 · 서버 함수가 있을 때만) */
   if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
+  /* 2026-10-22 실주 칸(내 현장 '전체' 목록 끝 한 줄): 누르면 실주 칩으로 — 숨긴 건수를 숫자로 알린다 */
+  if(!d&&w.G.tab==='mine'&&!S.stage&&!S.q.trim()&&lostHide()){const n=lostCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-lost-note" data-gs="stage" data-value="lost" role="button" tabindex="0" aria-label="실주 '+n+'건 보기"><b>실주 '+n+'건</b><span>누르면 보입니다 ›</span></span>');}
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */
   if(!d&&w.G.tab==='mine'){const n=legacyCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-legacy-note">과거 이관 · 분류 전 '+n+'건은 이 목록 · 오늘에 넣지 않습니다 — PC 파이프라인 [과거 이관]에서 영업 재개</span>');}
   if(!d&&w.G.tab==='mine'&&listScroller())listScroller().scrollTop=S.scroll;
