@@ -74,12 +74,14 @@ const SHOT=process.env.SHOT_DIR||'';
    assert.match(rows.find(r=>/합성 문의 기준 넘김/.test(r)),/첫 연락 기준 오늘 09:00 지남 · 견적문의 첫 연락/,'문의 기준 넘김 · 머리 글은 "첫 연락"(배정이 아님)');
    /* 2026-10-22 대표: 담당 미배정 문의 = 회색(붉게 재촉 안 함) · 문의 요약 = 원문 토막 세 개까지 · 두 줄 */
    const iq=await page.evaluate(()=>{const now=Date.now(),mk=(done,body)=>MobileV5Today._item.inqItem({inq:{ref:'q',nm:'합성 요약 현장',kind:'inquiry'},late:true},{inquiry:()=>({raw:{at:'2026-06-30T04:10:00+09:00',contact_name:'합성 고객'},done,phone:'0328816611',body})},now);
-    const a=mk(false,'안녕하세요.\n- 올해 하반기 지하주차장 보수공사 예정\n- 설계.감리 진행 문의 및 견적 요청드립니다.\n감사합니다.'),b=mk(true,'지하주차장 누수로 문의 주심. 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음. 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 떨어져 피해를 보고 있는 상태. 담당자가 현장 와서 보고 자세한 상담 원하심.');
+    const a=mk(false,'안녕하세요.\n- 올해 하반기 지하주차장 보수공사 예정\n- 설계.감리 진행 문의 및 견적 요청드립니다.\n감사합니다.'),c=mk(true,'옥상 누수');
+    const b=MobileV5Today._item.inqItem({inq:{ref:'q2',nm:'합성 배정 현장',kind:'inquiry'},late:true},{inquiry:()=>({raw:{at:'2026-10-20T07:00:00+09:00',assigned_at:'2026-10-20T07:00:00+09:00',contact_name:'합성 고객'},done:true,phone:'0100000002',body:'지하주차장 누수로 문의 주심. 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음. 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 떨어져 피해를 보고 있는 상태. 담당자가 현장 와서 보고 자세한 상담 원하심.'})},now);
     const html=MobileV5Today.render({items:[a],line:'1건',wait:0,fix:0,late:1},{},{});const box=document.createElement('div');box.innerHTML=html;const card=box.querySelector('.mv5-card');
-    return {aHead:a.head,aColor:a.color,aGray:a.gray,aSrc:a.source,bHead:b.head,bColor:b.color,bSrc:b.source,cls:card.className,k:card.querySelector('.mv5-k').className,sum:MobileV5Today.summarize('문의드립니다. 옥상 누수.',90)};});
+    return {aHead:a.head,aColor:a.color,aGray:a.gray,aSrc:a.source,bHead:b.head,bColor:b.color,bSrc:b.source,cHead:c.head,cGray:c.gray,cls:card.className,k:card.querySelector('.mv5-k').className,sum:MobileV5Today.summarize('문의드립니다. 옥상 누수.',90)};});
    assert.equal(iq.aHead,'담당 미배정 · 견적문의');assert.equal(iq.aColor,'#9ca3af');assert.equal(iq.aGray,true);assert.equal(iq.cls,'mv5-card gray');assert.equal(iq.k,'mv5-k gray','미배정은 붉은 글이 아니다');
    assert.equal(iq.aSrc,'문의 요약: 올해 하반기 지하주차장 보수공사 예정 · 설계.감리 진행 문의 및 견적 요청드립니다','인사말 빼고 항목만: '+iq.aSrc);
-   assert.match(iq.bHead,/^첫 연락 기준 .+ 지남 · 견적문의 첫 연락$/);assert.equal(iq.bColor,'#15171c');
+   assert.equal(iq.cHead,'배정 기록 없음 · 견적문의 · 접수 6.30 (화)','담당 이름만 있고 배정일시가 없으면 회색 + 접수일: '+iq.cHead);assert.equal(iq.cGray,true);
+   assert.equal(iq.bHead,'첫 연락 기준 오늘 09:00 지남 · 견적문의 첫 연락','배정 기록이 있는 문의: '+iq.bHead);assert.equal(iq.bColor,'#15171c');
    assert.equal(iq.bSrc,'문의 요약: 지하주차장 누수로 문의 주심 · 10년차 아파트로, 이 전에 부분 인젝션 공사 한적 있음 · 지하2층 주차장에 누수가 심하게 발생하여 낙수, 석회물 등이 차에 …','문장 세 토막 · 90자: '+iq.bSrc);
    assert.equal(iq.sum,'옥상 누수');
    /* 요청 건을 맨 위로: 재연락 16:10 · 마감 그대로 */
