@@ -216,9 +216,14 @@
   /* 관리자: [내 오늘 | 팀] — 팀 = 기획 B(mobile-v5-team.js) */
   const T=w.MobileV5Team&&w.MobileV5Team.on()?w.MobileV5Team:null;
   if(T&&S.v5team){const tb=w.document.createElement('div');tb.innerHTML=T.render(T.model({prim:zonePrim}),S);return tb.innerHTML;}
-  const box=w.document.createElement('div');box.innerHTML=V.render(M,S,{zoneRows});
+  /* 모바일 v6 ①: 맨 위 '오늘의 업무 현황' 숫자 칸(mobile-v6.js) — 지금 화면의 같은 자료(zones · mine · 오늘 동선 · 미배정)에서만 센다 */
+  const V6=w.MobileV6&&w.MobileV6.on()&&S.area==='now'?w.MobileV6:null;
+  const summary=V6?V6.summaryHtml(V6.summary({late:M.lateItems,mine:mine().filter(d=>w.isOpen?.(d)).length,visit:w.MobileRoute?.stopsToday?.().length||0,unassigned:w.MobileV5Team?.canManage?.()?(w.ADMIN?.assign||[]).length:null})):'';
+  const box=w.document.createElement('div');box.innerHTML=V.render(M,S,{zoneRows,summary:!!summary});
   if(T)box.querySelector('.mv5-body')?.insertAdjacentHTML('afterbegin','<div class="mv5-seg" role="tablist"><span data-gs="v5team" data-value="0" role="tab" tabindex="0" aria-selected="true">내 오늘</span><span data-gs="v5team" data-value="1" role="tab" tabindex="0" aria-selected="false">팀</span></div>');
   if(S.area==='now')w.MobileRoute?.decorateApproved(box.firstElementChild);
+  /* 요약은 동선 토글 자리(본문 둘째 칸)를 건드리지 않게 꾸민 뒤에 맨 위([내 오늘 | 팀] 아래)에 얹는다 */
+  if(summary){const b=box.querySelector('.mv5-body'),seg=b&&b.querySelector(':scope>.mv5-seg');if(seg)seg.insertAdjacentHTML('afterend',summary);else b?.insertAdjacentHTML('afterbegin',summary);}
   const snapshot=pendingSnapshot();
   if(!(snapshot.ok&&snapshot.count===0&&snapshot.unlinked_operations===0))box.firstElementChild.firstElementChild.insertAdjacentHTML('afterend',w.MobilePendingView.banner(snapshot));
   return box.innerHTML;
@@ -275,6 +280,8 @@
   scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
   /* 2026-10-22 하자 사진 간이 접수: 상세 더보기 끝에 [하자 접수] 줄 하나(승인 원본 줄을 복제 · 서버 함수가 있을 때만) */
   if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
+  /* 모바일 v6 ②: 상세 첫 칸(현장 이름 · 진행상태) 바로 아래 '진행 단계' — 진행 바 + 단계 이력(mobile-v6.js). 승인 C 원본 칸은 그대로 두고 칸 하나만 더한다 */
+  if(d&&!S.detailView&&w.MobileV6&&w.MobileV6.on()){const id=scr.querySelector('.approved-detail-body')?.firstElementChild;if(id&&!scr.querySelector('.mv6-prog'))id.insertAdjacentHTML('afterend',w.MobileV6.progressHtml(w.MobileV6.progress(d)));}
   /* 2026-10-22 실주 칸(내 현장 '전체' 목록 끝 한 줄): 누르면 실주 칩으로 — 숨긴 건수를 숫자로 알린다 */
   if(!d&&w.G.tab==='mine'&&!S.stage&&!S.q.trim()&&lostHide()){const n=lostCount();const list=n?scr.querySelector('.approved-list'):null;if(list)list.insertAdjacentHTML('beforeend','<span class="approved-empty gs-lost-note" data-gs="stage" data-value="lost" role="button" tabindex="0" aria-label="실주 '+n+'건 보기"><b>실주 '+n+'건</b><span>누르면 보입니다 ›</span></span>');}
   /* 과거 이관 · 분류 전 건 알림(내 현장 목록 끝 한 줄) — 숫자만, 재개는 PC */

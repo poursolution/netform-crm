@@ -85,8 +85,9 @@
   const now=(opt&&opt.now)||Date.now();
   const items=order([...Z.late.map(x=>x.inq?inqItem(x,ctx,now):dealItem('late',x,ctx,now)),...Z.now.map(x=>x.inq?inqItem(x,ctx,now):dealItem('now',x,ctx,now))]);
   const first=items[0];
-  let line='';if(first){const t=first.late?'기한 지남 '+items.filter(i=>i.late).length+'건':first.mode==='visit'&&first.at?when(first.at,now)+' 방문':first.deadline?when(first.deadline,now)+' 마감':first.at?when(first.at,now):'오늘';line=items.length+'건 · '+t;}
-  return {items,line,wait:Z.wait.length,fix:Z.fix.length,late:Z.late.length};
+  let line='',lead='';if(first){const t=first.late?'기한 지남 '+items.filter(i=>i.late).length+'건':first.mode==='visit'&&first.at?when(first.at,now)+' 방문':first.deadline?when(first.deadline,now)+' 마감':first.at?when(first.at,now):'오늘';line=items.length+'건 · '+t;lead=first.late?'':t;}
+  /* lead = 맨 위 요약(mobile-v6)이 건수를 보여 줄 때 한 줄에 남기는 첫 건 시각(기한 지남이면 없음) */
+  return {items,line,lead,wait:Z.wait.length,fix:Z.fix.length,late:Z.late.length,lateItems:items.filter(i=>i.late).length};
  }
 
  /* ── 그리기 ── 승인 틀(approved-a)의 머리 · 본문 · 탭 세 칸 구조를 그대로 써서 MobileApprovedBoot · 동선 보기 · 쪽 번호가 같이 붙는다 */
@@ -110,7 +111,9 @@
   S=S||{};extra=extra||{};
   const it=M.items,first=it[0],second=it[1],rest=it.slice(1);
   let body='';
-  body+='<div class="mv5-top"><span>지금 먼저 할 일</span><b>'+h(first?M.line:'지금 처리할 건이 없습니다')+'</b></div>';
+  /* extra.summary = mobile-v6 오늘 요약(숫자 칸)을 mobile-guide-shell 이 맨 위에 얹는다. 건수는 거기서 보이므로 한 줄에는 첫 건 시각만 */
+  const top=!first?'지금 처리할 건이 없습니다':extra.summary?M.lead:M.line;
+  body+='<div class="mv5-top"><span>지금 먼저 할 일</span>'+(top?'<b>'+h(top)+'</b>':'')+'</div>';
   if(S.area==='wait'||S.area==='fix'){
    body+='<div class="mv5-sub"><span data-gs="area" data-value="now" role="button" tabindex="0">‹ 오늘</span><b>'+(S.area==='wait'?'고객 회신 대기 '+M.wait:'기록 보완 '+M.fix)+'</b></div>'+(extra.zoneRows||'');
   }else if(first){

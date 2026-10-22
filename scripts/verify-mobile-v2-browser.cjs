@@ -80,6 +80,11 @@ const shot=process.argv[2]||'';
       else{const expected=prev.cloneNode(true);expected.dataset.value='하자 접수';expected.children[0].textContent='하자 접수';expected.children[1].textContent='사진 1장 · 본사 알림 ›';expected.setAttribute('aria-label','하자 접수');tree(defect,expected,'C defect row');}
       defect.remove();
      }
+     // C may carry the 2026-10-22 mobile v6 '진행 단계' section (mobile-v6.js): one added section right after the identity block.
+     // It is not an approved source node — check its slot, then compare the rest against the source.
+     const progress=copy.querySelectorAll('.mv6-prog');
+     if(progress.length>1)differences.push('C v6 progress count '+progress.length+'/1');
+     else if(progress.length){if(progress[0].previousElementSibling!==copy.querySelector('.approved-detail-body').firstElementChild)differences.push('C v6 progress: expected right after the identity block');progress[0].remove();}
      tree(copy,source,screen);
     }else tree(actual,source,screen);
     for(const [label,a,b]of pairs){if(!a||!b){differences.push(label+': missing source/bound node');continue;}for(const key of new Set([...a.style,...b.style]))if(a.style.getPropertyValue(key)!==b.style.getPropertyValue(key))differences.push(label+': '+key+' '+a.style.getPropertyValue(key)+' / '+b.style.getPropertyValue(key));}
