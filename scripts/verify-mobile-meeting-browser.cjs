@@ -101,7 +101,29 @@ const MEASURE=()=>{
    assert.equal(cap,20,'문의 20건이 12건에서 잘리지 않음: '+cap);
    await c.close();
   }
+  /* ⑦ 잔디 알림 링크 → 앱 실행: mobile.html?open=inq:<id> 로 열면 로그인 · 자료 뒤 그 문의 응대 화면이 한 번 열리고, 주소에서 open 은 지워진다 · deal:<id> 는 상세 · 끄면(G.mobileOpenLinkOff) 안 열림 */
+  {
+   const c=await browser.newContext({viewport:{width:390,height:740},timezoneId:'Asia/Seoul'});
+   await c.route('**/*',r=>{const u=new URL(r.request().url());if(!['GET','HEAD'].includes(r.request().method()))return r.abort();return u.origin===origin?r.continue():r.abort();});
+   const page=await c.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push('open: '+String(e.message||e)));
+   await page.clock.setFixedTime(new Date(NOW));
+   await page.goto(origin+'/mobile.html?demo=1&review=hub&screen=B&open=inq%3Aaaaaaaaa-1111-4111-8111-000000000001',{waitUntil:'domcontentloaded'});await page.locator('.approved-b').waitFor();
+   assert.equal(await page.evaluate(()=>new URL(location.href).searchParams.get('open')),null,'주소에서 open 은 바로 지운다');
+   await page.evaluate(SEED);await page.waitForFunction(()=>window.MobileInquiryEntry&&MobileInquiryEntry.state()!==null,null,{timeout:5000});
+   assert.equal(await page.evaluate(()=>String(MobileInquiryEntry.state()?.target_id||'')),'aaaaaaaa-1111-4111-8111-000000000001','그 문의의 응대 화면이 열린다');
+   await page.evaluate(()=>{closeSheet&&closeSheet();MobileInquiryEntry.close?.();G.tab='today';render();});await page.waitForTimeout(200);
+   assert.equal(await page.evaluate(()=>MobileInquiryEntry.state()),null,'한 번만 연다');
+   await c.close();
+   const c2=await browser.newContext({viewport:{width:390,height:740},timezoneId:'Asia/Seoul'});
+   await c2.route('**/*',r=>{const u=new URL(r.request().url());if(!['GET','HEAD'].includes(r.request().method()))return r.abort();return u.origin===origin?r.continue():r.abort();});
+   const p2=await c2.newPage();p2.setDefaultTimeout(15000);p2.on('pageerror',e=>errors.push('open2: '+String(e.message||e)));
+   await p2.clock.setFixedTime(new Date(NOW));
+   await p2.goto(origin+'/mobile.html?demo=1&review=hub&screen=B&open=deal%3Ap03',{waitUntil:'domcontentloaded'});await p2.locator('.approved-b').waitFor();
+   await p2.evaluate(SEED);await p2.waitForFunction(()=>String(G.deal)==='p03');
+   assert.equal(await p2.locator('.approved-c').count(),1,'영업건 상세가 열린다');
+   await c2.close();
+  }
   assert.deepEqual(errors,[],'화면 오류 없음');
-  console.log(JSON.stringify({status:'PASS',widths:[320,360,390],screens:7,writes:0}));
+  console.log(JSON.stringify({status:'PASS',widths:[320,360,390],screens:7,writes:0,openLink:true}));
  }finally{if(browser)await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1);});

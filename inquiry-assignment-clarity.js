@@ -260,6 +260,8 @@
   var item=response&&response.data&&response.data.item;
   if(!item||String(item.id)!==id)throw assignmentError('저장 후 문의를 조회하지 못했습니다. 조회 권한과 현재 담당을 확인해 주세요.');
   var latest=root.OperationalUI.shell({inquiries:[item]}).inquiries[0],patch=root.detailPatchFor('inq',id);
+  /* 2026-10-22 잔디 사건 알림: 배정이 서버에 저장된 뒤에만 · 실패해도 배정 결과는 그대로(조용히) */
+  try{if(root.JandiEvents&&typeof root.JandiEvents.inquiryAssigned==='function')root.JandiEvents.inquiryAssigned(latest||q,to);}catch(error){}
   // Clear obsolete assignment-only patches; preserve response drafts and notes.
   ['assignee','assigned_to','assignee_name','sales_assignee','salesAssignee','assigned_at','sales_assigned_at','assigned_by','assignmentHistory','assignment_history','assignmentGroup','assignment_group','ownerGroup','owner_group','branchCode','branch_code','reportingGroup','reporting_group'].forEach(function(key){delete patch[key]});
   patch.status=latest.status;

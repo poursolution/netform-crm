@@ -5,9 +5,25 @@
    · 설정 jandi_enabled 가 켜져 있을 때만 동작한다(crm_ops_settings_v1).
    · 자동 발송(auto=true)은 같은 기간에 한 번만 — 이미 자동 발송한 기간이면 보내지 않고 skipped 로 돌려준다.
    · 영업 데이터는 바꾸지 않는다. 바뀌는 것은 그 기간 스냅샷의 payload(화면이 준 요약 + 발송 기록)와 promises(화면이 준 약속 목록)뿐이다.
-   순수 로직(이 파일)은 node 로 검사한다(tests/crm-jandi-handler.test.mjs). Deno 진입점은 index.ts. */
-export const KINDS=['weekly','monthly'];
+   2026-10-22 회의록(메신저 알림 → 앱 실행): kind 'event' — 문의 배정 · 지원 요청 · 하자 접수 같은 사건을 잔디로 알리고, 누르면 CRM(모바일 · PC)이 바로 열리는 링크를 붙인다.
+   · 사건 알림은 로그인한 CRM 사용자면 보낼 수 있다(배정은 관리자 · 하자 접수는 담당자). 저장하지 않는다(스냅샷 없음).
+   · 링크는 CRM 주소(허용 origin)만 받는다. 잔디 '버튼'은 링크 카드(connectInfo)로 — 메신저에서 바로 상태를 바꾸는 것은 아니다(앱이 열려 사람이 확정).
+   · 사건 전용 웹훅(JANDI_EVENT_WEBHOOK_URL)이 있으면 그리로, 없으면 브리핑 웹훅으로.
+   순수 로직(이 파일)은 node 로 검사한다(tests/crm-jandi-handler.test.mjs · tests/crm-jandi-events.test.mjs). Deno 진입점은 index.ts. */
+export const KINDS=['weekly','monthly','event'];
+export const EVENTS=['inquiry_assigned','deal_support_request','defect_reported','deal_handoff'];
 const json=(status,body,origin)=>new Response(status===204?null:JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','access-control-allow-origin':origin||'*','access-control-allow-headers':'authorization, content-type, apikey','access-control-allow-methods':'POST, OPTIONS','vary':'origin'}});
+const HOOK=/^https:\/\/wh\.jandi\.com\/connect-api\/webhook\//;
+/* 사건 알림 본문 · 링크 카드: 글은 길이만 자르고, 링크는 허용 origin 의 주소만 */
+export function eventMessage(body,allowedOrigins){
+ const event=String(body&&body.event||''),title=String(body&&body.title||'').trim().slice(0,80),text=String(body&&body.text||'').trim();
+ if(!EVENTS.includes(event)||text.length<5||text.length>1500)throw Object.assign(new Error('BAD_REQUEST'),{status:400});
+ const origins=(allowedOrigins||[]).map(o=>String(o).replace(/\/+$/,''));
+ const links=(Array.isArray(body.links)?body.links:[]).slice(0,3).map(l=>({title:String(l&&l.title||'열기').trim().slice(0,40),url:String(l&&l.url||'').trim()}))
+  .filter(l=>/^https:\/\/[^\s]+$/.test(l.url)&&l.url.length<=600&&origins.some(o=>l.url===o||l.url.startsWith(o+'/')));
+ const color={inquiry_assigned:'#2A52B8',deal_support_request:'#B45309',defect_reported:'#B42318',deal_handoff:'#7048E8'}[event];
+ return {event,payload:{body:(title?title+'\n':'')+text,connectColor:color,...(links.length?{connectInfo:links.map(l=>({title:l.title,description:l.url}))}:{})},links};
+}
 export function handler(env){
  const fetchFn=env.fetch||fetch,origins=String(env.allowedOrigins||'').split(',').map(s=>s.trim()).filter(Boolean),now=env.now||(()=>new Date().toISOString());
  return async function(req){
@@ -15,16 +31,25 @@ export function handler(env){
   if(req.method==='OPTIONS')return json(204,{},allow);
   if(req.method!=='POST')return json(405,{ok:false,error:'METHOD'},allow);
   const auth=req.headers.get('authorization')||'';if(!/^Bearer\s+\S+/.test(auth))return json(401,{ok:false,error:'AUTH_REQUIRED'},allow);
-  if(!/^https:\/\/wh\.jandi\.com\/connect-api\/webhook\//.test(String(env.webhookUrl||'')))return json(503,{ok:false,error:'JANDI_NOT_CONFIGURED'},allow);
+  if(!HOOK.test(String(env.webhookUrl||'')))return json(503,{ok:false,error:'JANDI_NOT_CONFIGURED'},allow);
   let body;try{body=await req.json();}catch(e){return json(400,{ok:false,error:'BAD_JSON'},allow);}
   const kind=String(body&&body.kind||''),key=String(body&&body.period_key||'').slice(0,20),text=String(body&&body.text||''),auto=body&&body.auto===true;
   const extra=body&&body.payload&&typeof body.payload==='object'&&!Array.isArray(body.payload)?body.payload:null,promises=body&&Array.isArray(body.promises)?body.promises:null;
-  if(!KINDS.includes(kind)||!/^\d{4}-\d{2}(-\d{2})?$/.test(key)||text.trim().length<10||text.length>6000||JSON.stringify(body).length>150000)return json(400,{ok:false,error:'BAD_REQUEST'},allow);
+  if(!KINDS.includes(kind)||JSON.stringify(body).length>150000)return json(400,{ok:false,error:'BAD_REQUEST'},allow);
+  if(kind!=='event'&&(!/^\d{4}-\d{2}(-\d{2})?$/.test(key)||text.trim().length<10||text.length>6000))return json(400,{ok:false,error:'BAD_REQUEST'},allow);
   const rpc=async(name,p)=>{const r=await fetchFn(env.supabaseUrl+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:env.anonKey,Authorization:auth,'content-type':'application/json'},body:JSON.stringify({p})});const j=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(new Error(j&&j.message||'RPC_FAILED'),{status:r.status});return j;};
   try{
    /* 1) 로그인한 CRM 사용자인지 + 잔디 발송이 켜져 있는지 */
    const s=await rpc('crm_ops_settings_v1',{});if(!s||s.ok!==true)return json(403,{ok:false,error:'FORBIDDEN'},allow);
    if(s.settings.jandi_enabled!==true)return json(409,{ok:false,error:'JANDI_DISABLED'},allow);
+   /* 사건 알림: 저장 없이 바로 웹훅(사건 전용 주소가 있으면 그리로) */
+   if(kind==='event'){
+    let msg;try{msg=eventMessage(body,origins.length?origins:['https://poursolution.github.io']);}catch(e){return json(400,{ok:false,error:'BAD_REQUEST'},allow);}
+    const hook=HOOK.test(String(env.eventWebhookUrl||''))?env.eventWebhookUrl:env.webhookUrl;
+    const r=await fetchFn(hook,{method:'POST',headers:{'Accept':'application/vnd.tosslab.jandi-v2+json','Content-Type':'application/json'},body:JSON.stringify(msg.payload)});
+    if(!r.ok)return json(502,{ok:false,error:'JANDI_UPSTREAM',status:r.status},allow);
+    return json(200,{ok:true,event:msg.event,links:msg.links.length,at:now()},allow);
+   }
    /* 2) 그 기간 스냅샷: 자동 발송은 한 번만 */
    const got=await rpc('crm_report_snapshot_get_v1',{kind,period_key:key,limit:1}),old=(got.snapshots||[])[0]||null;
    const p0=old&&old.payload&&typeof old.payload==='object'?old.payload:{},pr0=old&&Array.isArray(old.promises)?old.promises:[],j0=p0.jandi&&typeof p0.jandi==='object'?p0.jandi:{};

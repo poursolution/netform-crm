@@ -5,5 +5,7 @@ Deno.serve(handler({
   supabaseUrl: Deno.env.get('SUPABASE_URL')!,
   anonKey: Deno.env.get('SUPABASE_ANON_KEY')!,
   webhookUrl: Deno.env.get('JANDI_WEBHOOK_URL') || '',
+  // 2026-10-22 사건 알림(문의 배정 · 지원 요청 · 하자 접수) 전용 토픽 웹훅(선택) — 없으면 브리핑 웹훅으로
+  eventWebhookUrl: Deno.env.get('JANDI_EVENT_WEBHOOK_URL') || '',
   allowedOrigins: Deno.env.get('CRM_JANDI_ALLOWED_ORIGINS') || 'https://poursolution.github.io',
 }));
