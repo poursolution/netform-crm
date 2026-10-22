@@ -70,6 +70,17 @@ const shot=process.argv[2]||'';
      [['frame',actual,source],['head',actual.querySelector('.cd-head'),head],['back',actual.querySelector('.cd-back'),head.firstElementChild],['context',actual.querySelector('.cd-context'),ctx],['request',actual.querySelector('.cd-request'),req],['body',actual.querySelector('.cd-body'),body],['footer',actual.querySelector('.ce-foot'),foot],['memo',actual.querySelector('textarea'),body.children[1].children[1]],['next',actual.querySelector('.cd-next'),body.children[2].children[1]],['info',actual.querySelector('.ce-infobtn'),body.children[3]],['save',actual.querySelector('.ce-save'),foot.lastElementChild]].forEach(pair=>pairs.push(pair));
      const chips=body.children[0].children[1].children;
      actual.querySelectorAll('[data-ce="res"]').forEach(n=>pairs.push(['result '+n.textContent,n,chips[n.getAttribute('aria-pressed')==='true'?0:1]]));
+    }else if(screen==='C'){
+     // C may carry the 2026-10-22 defect-report row: a clone of the approved last "more" row
+     // (same inline declarations, only the two texts differ). Compare it against that row, then the rest against the source.
+     const copy=actual.cloneNode(true),defect=copy.querySelector('[data-gs="more"][data-value="하자 접수"]');
+     if(defect){
+      const prev=defect.previousElementSibling;
+      if(!prev||prev.dataset.gs!=='more')differences.push('C defect row: expected after the last approved more row');
+      else{const expected=prev.cloneNode(true);expected.dataset.value='하자 접수';expected.children[0].textContent='하자 접수';expected.children[1].textContent='사진 1장 · 본사 알림 ›';expected.setAttribute('aria-label','하자 접수');tree(defect,expected,'C defect row');}
+      defect.remove();
+     }
+     tree(copy,source,screen);
     }else tree(actual,source,screen);
     for(const [label,a,b]of pairs){if(!a||!b){differences.push(label+': missing source/bound node');continue;}for(const key of new Set([...a.style,...b.style]))if(a.style.getPropertyValue(key)!==b.style.getPropertyValue(key))differences.push(label+': '+key+' '+a.style.getPropertyValue(key)+' / '+b.style.getPropertyValue(key));}
     return {count:pairs.length,differences};
