@@ -66,7 +66,7 @@ test('단계 이력: 5건까지, 나머지는 PC 안내 한 줄', ()=>{
 
 test('단계 이력: 가벼운 첫 조회만 온 동안은 불러오는 중, 이력 없으면 진입일 한 줄 또는 없음 안내', ()=>{
  assert.match(V6.historyHtml(V6.progress({code:'sent',stage_history:[],mobile_today_partial:true})),/불러오는 중/);
- const since=V6.progress({code:'sent',stage_history:[],stage_entered_at:'2026-09-30T00:00:00Z'});
+ const since=V6.progress({code:'sent',stage_history:[],stage_entered_at:'2026-10-12T00:00:00Z'});
  assert.equal(since.rows.length,1);assert.match(V6.historyHtml(since),/자료 발송완료 진입/);
  assert.match(V6.historyHtml(V6.progress({code:'sent'})),/단계 변경 기록이 없습니다/);
 });
@@ -76,6 +76,25 @@ test('진행 바 칸에는 지금 단계 이름을 다시 쓰지 않는다(진�
  const bar=V6.barHtml(m);
  assert.ok(!/<header|단계 이력/.test(bar));assert.match(bar,/aria-current="step"><i><\/i><span>경쟁<\/span>/);
  assert.match(V6.historyHtml(m),/^<section class="mv6-hist"[^>]*><header><b>단계 이력<\/b>/);
+});
+
+test('이관일: 운영 시작(2026-10-01) 전 진입일은 PC 처럼 "이관 자료 · 실제 진입일 미확인"', ()=>{
+ const html=V6.historyHtml(V6.progress({code:'rapport',stage_history:[],stage_entered_at:'2026-08-31T15:04:00Z'}));
+ assert.match(html,/<li class="legacy"><b>관계관리<\/b><span>2026\.08\.31 \(이관일\)<\/span><small>이관 자료 · 실제 진입일 미확인<\/small>/);
+ assert.ok(!/관계관리 진입/.test(html),'이관일을 진입일처럼 쓰지 않는다');
+});
+
+test('이관일: 운영 시작 전이라도 사람이 바꾼 기록은 그대로, 시스템 · 이관 기록만 이관 자료', ()=>{
+ const m=V6.progress({code:'sent',stage_history:[{to:'sent',at:'2026-09-20T01:00:00Z',actor:'김영업',reason:'설계안 발송'},{to:'consulting',at:'2026-09-01T00:04:00Z',actor:'시스템 이관'}]});
+ assert.deepEqual(m.rows.map(r=>r.legacy),[false,true]);
+ const html=V6.historyHtml(m);
+ assert.match(html,/<li><b>자료 발송완료<\/b><span>2026\.09\.20 10:00 · 김영업/);
+ assert.match(html,/<li class="legacy"><b>컨설팅 설계단계<\/b><span>2026\.09\.01 \(이관일\)/);
+});
+
+test('이관일 기준은 OPS_RULES.liveFrom 이 있으면 그 값', ()=>{
+ globalThis.OPS_RULES={liveFrom:'2026-08-01'};
+ try{assert.equal(V6.progress({code:'rapport',stage_entered_at:'2026-08-31T15:04:00Z'}).rows[0].legacy,false);}finally{delete globalThis.OPS_RULES;}
 });
 
 test('글자는 그대로 넣지 않고 바꿔 넣는다(사유 · 이름)', ()=>{
