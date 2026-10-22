@@ -56,6 +56,10 @@ const SHOT=process.env.SHOT_DIR||'';
    assert.deepEqual(sum.slice(0,2),['late=3','mine=8'],'요약 숫자: '+JSON.stringify(sum));assert.equal(sum.length,3,'관리자 아님 = 3칸');
    assert.equal(await page.evaluate(()=>document.querySelector('.mv5 .mv5-body').firstElementChild.className),'mv6-sum','요약이 맨 위');
    assert.equal(v.top,'지금 먼저 할 일','맨 위 한 줄(기한 지남 = 제목만): '+v.top);
+   /* 회색(담당 미배정 · 배정 기록 없음) 문의는 기한 지남 숫자에 넣지 않는다 — 카드는 그대로 보임 */
+   const grayLate=await page.evaluate(()=>{const Z={late:[{inq:{ref:'g1',nm:'합성 미배정',kind:'inquiry'},late:true},{inq:{ref:'g2',nm:'합성 배정 기록 없음',kind:'inquiry'},late:true}],now:[],wait:[],fix:[]};
+    const M=MobileV5Today.model(Z,{inquiry:id=>id==='g1'?{raw:{at:'2026-06-30T04:10:00+09:00'},done:false}:{raw:{at:'2026-06-30T04:10:00+09:00'},done:true}});return [M.items.length,M.items.filter(i=>i.late).length,M.lateItems];});
+   assert.deepEqual(grayLate,[2,2,0],'회색 문의 2건은 카드로 보이되 기한 지남 숫자는 0: '+JSON.stringify(grayLate));
    await page.evaluate(()=>{G.mobileV6Off=true;render();});
    assert.match((await page.locator('.mv5 .mv5-top').innerText()).replace(/\s+/g,' ').trim(),/^지금 먼저 할 일 7건 · 기한 지남 3건$/,'v6 끄기 = 예전 한 줄');
    assert.equal(await page.locator('.mv5 .mv6-sum').count(),0,'v6 끄기 = 요약 없음');
