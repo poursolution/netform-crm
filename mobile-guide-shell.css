@@ -84,6 +84,8 @@ body.claude-shell #scr.gs-prospect .body{padding:12px 16px 40px}
 .gs-skel .mv5-nav span{color:#9ca3af}
 @keyframes gs-skel{0%,100%{opacity:1}50%{opacity:.45}}
 @media(prefers-reduced-motion:reduce){.gs-skel *{animation:none!important}}
+/* 과거 이관 · 분류 전 건은 모바일 목록에 없음(PipelineScope) — 내 현장 목록 끝 한 줄 */
+.approved-bc .approved-empty.gs-legacy-note{font-size:12px;color:#6b7280;padding:12px 16px 20px}
 /* 터치 영역 44px(회의록 · 48px 기준의 최소선): 보이는 모양은 승인 시안 그대로 두고 누르는 영역만 넓힌다 — 연락 결과 화면(D)의 button.cd-native::after 와 같은 방식 */
 .gs-screen [data-gs="tab"],.gs-screen [data-gs="stage"],.gs-screen [data-gs="stage-change"],.gs-screen [data-gs="history"],.gs-screen [data-gs="pending"],.gs-screen [data-gs="v5more"],.gs-screen [data-gs="v5perf"],.gs-screen [data-gs="area"],.gs-screen .approved-route-tabs button,.approved-d .cs-open,.approved-d a.ce-infobtn{position:relative}
 .gs-screen [data-gs="tab"]::after,.gs-screen [data-gs="stage"]::after,.gs-screen [data-gs="stage-change"]::after,.gs-screen [data-gs="history"]::after,.gs-screen [data-gs="pending"]::after,.gs-screen [data-gs="v5more"]::after,.gs-screen [data-gs="v5perf"]::after,.gs-screen [data-gs="area"]::after,.gs-screen .approved-route-tabs button::after,.approved-d .cs-open::after,.approved-d a.ce-infobtn::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(44px,100%);height:max(44px,100%)}
