@@ -31,6 +31,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
    DEALS[1].site_id='s1';DEALS[1].nm='합성 현장 01';DEALS[1].sub='도장';DEALS[1].construction_year='2027';/* 같은 단지 · 같은 이름 · 다른 공사 */
    DEALS.push(mk(24,{code:'won',outcome:'won',nextAction:null,won_at:'2026-10-10'}));
    DEALS.push(mk(25,{code:'lost',outcome:'lost',nextAction:null,close_reason:'예산 미확보',closed_at:'2026-10-11'}));
+   DEALS.push(mk(26,{site_id:'s3',nm:'합성 현장 03',code:'lost',outcome:'lost',nextAction:null,close_reason:'예전 실주',closed_at:'2026-09-01'}));/* 숨긴 실주 짝 — '같은 단지'로 세지 않는다 */
    render();
   });
   await page.locator('.approved-b .approved-row').first().waitFor();

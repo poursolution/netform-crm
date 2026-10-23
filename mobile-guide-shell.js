@@ -135,7 +135,8 @@
   if(w.G.brandF&&w.G.brandF!=='전체')rows=rows.filter(d=>brand(d)===w.G.brandF);
   const pg=w.ListPager.cut(rows,w.ListPager.page(S));S.page=pg.page;
   /* 2026-10-23 02 내 현장: 같은 단지(site_id)에 내 영업건이 여럿이면 줄마다 '같은 단지 n건' — 합치거나 접지 않고 각각 따로 보이되, 묶여 있다는 사실만 알린다(이름 · 주소로는 묶지 않음) */
-  const siteN=new Map();mineAll().forEach(d=>{const s=String(d.site_id||d.cleanup_site_id||'');if(s)siteN.set(s,(siteN.get(s)||0)+1);});
+  /* 셀 때는 목록에 보이는 영업건(과거 이관 · 실주 · 배드핏 제외)끼리만 — 2026-10-23 운영 실측: 이필선 89줄 중 61줄이 '같은 단지 2건'인데 짝은 대부분 숨긴 과거 이관 · 실주 건이었다 */
+  const siteN=new Map();mine().filter(d=>!lostM(d)).forEach(d=>{const s=String(d.site_id||d.cleanup_site_id||'');if(s)siteN.set(s,(siteN.get(s)||0)+1);});
   const same=d=>{const n=siteN.get(String(d.site_id||d.cleanup_site_id||''))||0;return n>1?'같은 단지 '+n+'건':'';};
   /* 빈 목록 이유를 나눈다: 불러오는 중 · 조회 실패 · 검색 결과 없음 · 그 단계 없음 · 진행 중 없음 · 담당 없음 */
   const failed=(w.LAST_OPERATIONAL_READ_ERROR||[]).some?.(f=>f.domain==='deal_core');
