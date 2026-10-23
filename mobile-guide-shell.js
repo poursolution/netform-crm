@@ -95,7 +95,17 @@
  function schedule(){
   if(typeof w.MobileApprovedFSource!=='string'||typeof w.MobileScheduleModel?.read!=='function')return '';
   const m=w.MobileScheduleModel?.read({selectedDay:S.scheduleDay||undefined,now:w.__approvedScheduleNow});
-  return w.MobileApprovedF?.render(m,{page:S.schedulePage})||'';
+  const html=w.MobileApprovedF?.render(m,{page:S.schedulePage})||'';
+  /* 2026-10-23 인계 05: 승인 F 틀에는 탭 바 · 주 넘기기가 없어 다른 탭으로 돌아갈 길이 안 보이고(제목을 눌러야 오늘) 이번 주 밖 일정을 못 봤다.
+     F 원본 칸은 그대로 두고 머리 오른쪽에 [‹ 지난주 · 이번 주 · 다음 주 ›], 맨 아래에 다른 화면과 같은 4탭을 덧붙인다. 끄기 G.mobileScheduleNavOff */
+  if(!html||(w.G&&w.G.mobileScheduleNavOff))return html;
+  const box=w.document.createElement('div');box.innerHTML=html;const f=box.firstElementChild,head=f&&f.firstElementChild;if(!head)return html;
+  /* 머리 전체가 '오늘' 버튼이던 것(보이지 않는 동작) → 아래 탭 바로 옮기고 머리는 버튼 아님(안에 주 넘기기 버튼이 들어가므로) */
+  delete head.dataset.gs;delete head.dataset.tab;head.removeAttribute('role');head.removeAttribute('tabindex');
+  const thisWeek=!S.scheduleDay||(m&&m.days&&m.days.some(d=>d.date===m.today));
+  head.insertAdjacentHTML('beforeend','<div class="gs-wk" role="group" aria-label="주 넘기기"><span data-gs="schedule-week" data-step="-1" role="button" tabindex="0" aria-label="지난주">‹</span><span data-gs="schedule-week" data-step="0" role="button" tabindex="0"'+(thisWeek?' aria-current="true"':'')+'>이번 주</span><span data-gs="schedule-week" data-step="1" role="button" tabindex="0" aria-label="다음 주">›</span></div>');
+  f.insertAdjacentHTML('beforeend','<nav class="gs-tabnav" aria-label="화면">'+[['today','오늘'],['mine','내 현장'],['record','기록 · 등록'],['schedule','일정']].map(([k,l])=>'<span data-gs="tab" data-tab="'+k+'" role="button" tabindex="0"'+(k==='schedule'?' aria-current="page" class="on"':'')+'>'+l+'</span>').join('')+'</nav>');
+  return box.innerHTML;
  }
  const guideOn=(d,x,i)=>x.auto?!!w.stageGuideAutoM(d,x.auto):!!((d.stage_checklist||{})[d.code]||{})[i];
  function dayData(){
@@ -425,6 +435,7 @@
     w.G.pnm=S.newQuery||'';w.G.deal=null;w.G.sub=null;S.returnTab='record';w.G.tab='prospect-form';run();
    }
    else if(k==='e-card'){if(!w.MobileQuick)return w.toast('이 기능을 불러오지 못했습니다. 새로고침해 주세요.');registrationContext();S.entryAction=b.dataset.entry==='materials'?'attach':'sched';S.returnTab='record';S.q='';S.stage='';S.page=1;S.scroll=0;w.G.brandF='전체';w.G.tab='mine';w.G.deal=null;run();w.toast(b.dataset.entry==='materials'?'사진 · 자료를 올릴 현장을 고르세요':'일정을 더할 현장을 고르세요');w.document.querySelector('[data-gs-query]')?.focus();}
+   else if(k==='schedule-week'){/* 지난주 · 다음 주 = 고른 날짜를 7일씩 · 이번 주 = 오늘 */const step=Number(b.dataset.step)||0;if(!step)S.scheduleDay='';else{const base=S.scheduleDay||(w.DayZoneRules?w.DayZoneRules.kst():new Date(Date.now()+9*36e5).toISOString().slice(0,10));S.scheduleDay=new Date(Date.parse(base+'T00:00:00Z')+step*7*864e5).toISOString().slice(0,10);}S.schedulePage=1;run();}
    else if(k==='schedule-day'){if(!w.MobileScheduleModel?.dateOnly(b.dataset.date))return;S.scheduleDay=b.dataset.date;S.schedulePage=1;run();}
    else if(k==='day-close')closeDay();
    else if(k==='day-close-page'){if(!Object.hasOwn(S.closePages,b.dataset.group))return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.closePages[b.dataset.group]=n;run();}}

@@ -90,6 +90,14 @@ body.claude-shell #scr.gs-prospect .body{padding:12px 16px 40px}
 .approved-bc .approved-empty.gs-lost-note{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:10px 16px;font-size:13.5px;color:#374151;border-top:1px solid #eef0f3;background:#f8f9fb;cursor:pointer}
 .approved-bc .approved-empty.gs-lost-note b{font-weight:700;color:#374151}
 .approved-bc .approved-empty.gs-lost-note span{font-size:12.5px;color:#6b7280}
+/* 2026-10-23 인계 05 일정: 머리 오른쪽 주 넘기기 · 맨 아래 4탭(다른 화면 mv5-nav 와 같은 모양) */
+.approved-f .gs-wk{margin-left:auto;display:flex;align-items:center;gap:2px}
+.approved-f .gs-wk span{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#2a52b8;border-radius:8px}
+.approved-f .gs-wk span[data-step="-1"],.approved-f .gs-wk span[data-step="1"]{font-size:20px;font-weight:500}
+.approved-f .gs-wk span[aria-current="true"]{color:#9ca3af}
+.approved-f .gs-tabnav{height:54px;flex:none;background:#fff;border-top:1px solid #eef0f3;display:grid;grid-template-columns:repeat(4,1fr)}
+.approved-f .gs-tabnav span{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#9ca3af}
+.approved-f .gs-tabnav span.on{font-weight:700;color:#2a52b8}
 /* 2026-10-23 오늘 요약 '내 담당 ›'으로 들어온 목록 = 진행 중만 · 맨 위 한 줄 */
 .approved-bc .approved-empty.gs-open-note{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:6px 16px;font-size:13px;color:#374151;border-bottom:1px solid #eef0f3;background:#f8f9fb}
 .approved-bc .approved-empty.gs-open-note b{font-weight:700}
