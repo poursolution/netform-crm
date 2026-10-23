@@ -156,7 +156,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   const expected=await page.evaluate(date=>myDeals().filter(d=>d.nextAction?.status==='open'&&d.nextAction.due===date).map(d=>d.id),otherDay);
   assert.deepEqual(await ids('.approved-f [data-task-id]'),expected);
   if(!expected.length)assert.match(await page.locator('.approved-f').innerText(),/선택한 날짜의 등록 일정 없음/);
-  await page.locator('.approved-f [data-gs="tab"]').click();await page.locator('.approved-a').waitFor();
+  await page.locator('.approved-f [data-gs="tab"][data-tab="today"]').click();await page.locator('.approved-a').waitFor();/* 2026-10-23 05: 머리 대신 아래 탭 바 '오늘' */
   await safe();assert.equal(await snapshot(),initial);checks.push('F: scoped dated tasks, unknown time retained, visit → approved D with exact task → C re-entry → schedule; original task preserved without writes or legacy forms');
 
   // 5. Contact save is a real approved D interaction, with ACK withheld and a retryable failure.
