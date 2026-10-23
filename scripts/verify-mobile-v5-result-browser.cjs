@@ -119,6 +119,34 @@ const SHOT=process.env.SHOT_DIR||'';
    const done=await after().innerText();assert.match(done,/끝난 일[\s\S]*방문[\s\S]*견적 요청 1 · 이 방문에 연결[\s\S]*방문 업무 완료/);assert.doesNotMatch(done,/기존 일정 "현장 실측"/,'끝난 방문은 남은 일에 없음');assert.match(done,/견적 도착 확인 · 견적팀 예정일 미정 · 고객 약속/);
    if(SHOT)await page.screenshot({path:path.join(SHOT,'mobile-v5-visit-done.png')});
   });
+  /* 2026-10-23 인계 04: 견적 요청을 '나중에'로 미뤄도 이미 저장된 방문 기록은 그대로 · 견적 요청 · 고객 약속 일정은 만들지 않는다 */
+  await run('방문 · 만남 · 견적 지금 요청 → [나중에 · 방문 기록만] = 방문 기록만 남고 견적 요청 · 일정 없음',async({page,view,read,save,success,after})=>{
+   await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());Object.assign(DEALS[0].nextAction,{type:'방문',text:'현장 실측'});DEALS[0].nextActionObj=DEALS[0].nextAction;MobileRequests.state().list=[];
+    window.__fields=[];const rpc=Phase1.rpc;Phase1.rpc=async(name,args)=>{if(name==='crm_deal_stage_fields_update_v1'){__fields.push(structuredClone(args.p));return {ok:true,version:2,stage_context:{to:'consulting',fields:args.p.fields}};}return rpc(name,args);};
+    const a=DEALS[0].nextAction;MobileEntry.open({ch:'방문',existing:{id:a.id,text:a.text,due:a.due,type:'방문',promise:false}});});await view.waitFor();
+   await view.locator('[data-ce="res"][data-v="연결됨"]').click();await view.locator('.v5r-ck').first().click();
+   await view.locator('.v5r-chip[data-ce="v5quote"][data-v="now"]').click();
+   await save();await success();
+   const q=after();await q.locator('[data-v5a="qlater"]').click();await page.waitForFunction(()=>/정리됨/.test(document.querySelector('#sheetcard .approved-v5a')?.innerText||''));
+   const a=await read(),F=await page.evaluate(()=>__fields);
+   assert.deepEqual(a.rows.map(r=>r.operation),['activity','next_action_complete'],'방문 기록 1 + 방문 업무 완료만 — 견적 요청 · 고객 약속 일정 없음');
+   assert.equal(F.length,0,'견적 요청(단계 정보) 저장 호출 없음');
+   assert.doesNotMatch(await after().innerText(),/견적 요청 1/,'정리됨에 견적 요청 없음');
+  });
+  /* 2026-10-23 인계 03: 상세 '영업 조건'(J-1) 항목 줄을 누르면 연락 결과가 같은 항목을 '영업 조건에서'로 이어받는다(다시 입력 없음) · 일반 진입은 단계 기준 그대로 */
+  await run('영업 조건 항목 → 연락 결과 · 확인할 것 = 영업 조건 항목 그대로',async({page,view})=>{
+   const labels=await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());MobileRequests.state().list=[];Object.assign(DEALS[0].nextAction,{type:'전화',text:'연락'});
+    G.tab='mine';G.deal=DEALS[0].id;MobileGuideShell.state.detailView='confirmation';render();return [...document.querySelectorAll('.approved-j1 [data-gs="stage-confirmation-item"]')].map(r=>r.children[1].children[0].textContent);});
+   assert.ok(labels.length>0,'아직 확인 안 된 항목 줄 = 누를 수 있음');
+   await page.locator('.approved-j1 [data-gs="stage-confirmation-item"]').first().click();await view.waitFor();
+   await view.locator('[data-ce="res"][data-v="연결됨"]').click();
+   assert.match(await view.locator('.v5r-ck-h').innerText(),/확인할 것 · 영업 조건에서/);
+   assert.deepEqual(await view.locator('.v5r-ck span').allInnerTexts(),labels,'영업 조건 화면의 같은 항목');
+   await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());MobileGuideShell.state.detailView='';render();});
+   await page.locator('.approved-c [data-gs="contact"]').first().click();await view.waitFor();await view.locator('[data-ce="res"][data-v="연결됨"]').click();
+   assert.doesNotMatch(await view.locator('.v5r-ck-h').innerText(),/영업 조건에서/,'상세 [연락 결과 기록]으로 열면 이어받지 않음');
+   await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());});
+  });
   await run('방문 취소 · 연기 = 고른 방문 업무의 날짜만 변경(응대 결과 만들지 않음)',async({page,view,read})=>{
    await page.evaluate(()=>{closeSheet();MobileSaveJournal.drop('contact',DEALS[0].id,MobileSaveJournal.owner());Object.assign(DEALS[0].nextAction,{type:'방문',text:'현장 실측'});DEALS[0].nextActionObj=DEALS[0].nextAction;const a=DEALS[0].nextAction;MobileEntry.open({ch:'방문',existing:{id:a.id,text:a.text,due:a.due,type:'방문',promise:false}});});await view.waitFor();
    await view.locator('[data-ce="v5cancel"]').click();

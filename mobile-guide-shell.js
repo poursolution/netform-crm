@@ -38,12 +38,15 @@
   const job=Promise.resolve().then(()=>w.MobileRequests.load()).catch(()=>{});
   requestRead=job;job.finally(()=>{if(requestRead===job)requestRead=null;});return job;
  }
- async function openContact(){
+ /* labels = 상세 '영업 조건'(J-1)에서 열 때 그 화면의 확인 항목 — 결과 화면 '확인할 것 · 영업 조건에서'로 이어받는다. 그 밖의 진입은 지운다 */
+ async function openContact(labels){
   const owner=requestOwner(),id=String(w.G?.deal||'');
+  w.MobileV5Result?.setFocus?.(labels&&labels.length?id:'',labels||null);
   await loadRequests();
   if(owner!==requestOwner()||w.G?.mode!=='rep'||String(w.G.deal||'')!==id||!mine().some(d=>String(d.id)===id))return;
   w.MobileEntry.open();
  }
+ const conditionLabels=()=>{const d=mine().find(x=>String(x.id)===String(w.G?.deal));try{return d&&w.MobileStageConfirmationModel?.read(d).checks.map(c=>c.label)||[];}catch(e){return [];}};
  async function openRequestedTask(id,requestId,click){
   const owner=requestOwner(),tab=w.G.tab,deal=w.G.deal;
   if(!mine().some(d=>String(d.id)===id)||!w.MobileRequests?.forDeal(id)?.some(r=>r.id===requestId))return w.toast('현재 현장에 연결된 요청을 다시 확인해 주세요.');
@@ -155,7 +158,12 @@
   if(typeof w.MobileApprovedJ1Source!=='string'||typeof w.MobileStageConfirmationModel?.read!=='function'||typeof w.MobileApprovedJ1?.render!=='function')return '';
   const example=w.__approvedStage6Example,owner=w.MobileSaveJournal?.owner();
   const approvedExample=w.DEMO===true&&owner&&example?.owner===owner&&example.dealId===String(d.id)?example.confirmation:null;
-  return w.MobileApprovedJ1.render(approvedExample||w.MobileStageConfirmationModel.read(d));
+  const html=w.MobileApprovedJ1.render(approvedExample||w.MobileStageConfirmationModel.read(d));
+  /* 2026-10-23 인계 03: 아직 확인 안 된 항목 줄 = 누르면 연락 결과(같은 항목 이어받음). 승인 J-1 줄 모양은 그대로, 누르는 동작만 붙인다 */
+  if(approvedExample)return html;
+  const box=w.document.createElement('div');box.innerHTML=html;
+  box.querySelectorAll('.approved-j1 [data-confirmed="false"]').forEach(row=>{row.dataset.gs='stage-confirmation-item';row.setAttribute('role','button');row.tabIndex=0;row.setAttribute('aria-label',(row.children[1]?.children[0]?.textContent||'확인 항목')+' · 연락 결과에서 확인');});
+  return box.innerHTML;
  }
  function detailScreen(d){
   if(S.detailView==='input')return w.MobileInputFlow?.render(d)||'';
@@ -423,7 +431,8 @@
    else if(k==='stage'||k==='area'){S[k]=b.dataset.value;if(k==='stage')S.openOnly=false;S.page=1;S.areaPage=1;S.scroll=0;run();}
    else if(k==='areapage'){S.areaPage=Number(b.dataset.page)||1;run();}
    else if(k==='page'){w.ListPager.set(S,null,b.dataset.page);S.scroll=0;run();}
-   else if(k==='contact')openContact();
+   else if(k==='contact')openContact(S.detailView==='confirmation'?conditionLabels():null);/* 영업 조건 화면의 [연락하고 확인] = 그 화면 항목을 이어받음 */
+   else if(k==='stage-confirmation-item')openContact(conditionLabels());
    else if(k==='contact-card')openContactCard();
    else if(k==='pending-task'){
     const d=mine().find(x=>String(x.id)===String(w.G.deal)),n=next(d);
