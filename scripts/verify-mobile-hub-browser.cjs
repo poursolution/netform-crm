@@ -97,7 +97,7 @@ const one=value=>String(value||'').replace(/\s+/g,' ').trim();
   await page.locator('[data-gs-query]').fill('검증로 46');
   assert.equal(await page.evaluate(()=>MobileGuideShell.state.page),1);assert.deepEqual(await ids('.approved-b [data-gs="deal"]'),[data.all[45]]);
   await page.locator('[data-gs-query]').fill('없는 검색어');
-  assert.equal(await page.locator('.approved-b [data-gs="deal"]').count(),0);assert.match(await page.locator('.approved-empty').innerText(),/해당하는 영업건이 없습니다/);
+  assert.equal(await page.locator('.approved-b [data-gs="deal"]').count(),0);assert.match(await page.locator('.approved-empty').innerText(),/'없는 검색어' 검색 결과가 없습니다/);/* 2026-10-23 02: 빈 목록 이유 구분 */
   await page.locator('[data-gs-query]').fill('합성 현장');await page.locator('[data-gs="page"][aria-label="2쪽"]').click();
   await page.locator('.approved-list').evaluate(node=>{node.scrollTop=300;});
   const position=await page.evaluate(()=>({q:MobileGuideShell.state.q,page:MobileGuideShell.state.page,scroll:document.querySelector('.approved-list').scrollTop}));
