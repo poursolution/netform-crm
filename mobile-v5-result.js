@@ -24,9 +24,16 @@
    const list=asks.length?asks:(r.kind==='first'?firstItems:ruleItems),contact=!!(api&&(itemOn(api)?api.itemized(r):api.isContact&&api.isContact(r)));
    list.forEach((label,i)=>out.push({key:r.id+':'+i,label,rid:r.id,from:asks.length?'요청':'기준',contact}));
   });
+  /* 2026-10-23 인계 03: 상세 '영업 조건'(J-1)에서 들어오면 그 화면의 같은 항목을 이어받는다(같은 확인 근거 · 다시 입력하지 않게).
+     요청 항목이 있으면 요청이 먼저. 확인 표시는 응대 기록의 [확인] 줄로 남고, 영업 조건 화면의 '확인됨' 반영은 서버 근거 연결 뒤(Codex) */
+  const fx=focus&&String(focus.dealId)===String(d.id)?focus.labels:null;
+  if(!out.length&&fx&&fx.length)fx.forEach((label,i)=>out.push({key:'cond:'+i,label,rid:'',from:'조건',contact:false}));
   if(!out.length)ruleItems.forEach((label,i)=>out.push({key:'rule:'+i,label,rid:'',from:'기준',contact:false}));
   return out;
  }
+ /* 영업 조건에서 연 결과 화면이면 그 항목들(영업건 하나에만 · 일반 [연락 결과 기록]으로 열면 지운다) */
+ let focus=null;
+ function setFocus(dealId,labels){focus=dealId&&Array.isArray(labels)&&labels.length?{dealId:String(dealId),labels:labels.map(String).filter(Boolean)}:null;}
  const checked=(s,it)=>!!(s.v5chk&&s.v5chk[it.key]);
  const QUOTE={now:'필요 · 지금 요청',later:'나중에',no:'필요 없음'};
  const quoteAsk=(s,d)=>s.ch==='방문'&&s.res==='연결됨'&&String(d.code)==='consulting'&&!d.outcome;
@@ -119,7 +126,7 @@
   const attempt=!!(s.res&&ce.isAttempt(s.res)),L=items(d,requests,api);
   /* 확인할 것 */
   if(results&&L.length&&!attempt&&!ce.isBadfit(s.res||'')&&!s.v5cancel){
-   const n=L.filter(it=>checked(s,it)).length,from=L.some(it=>it.from==='요청')?'요청에서':'이 단계 기준';
+   const n=L.filter(it=>checked(s,it)).length,from=L.some(it=>it.from==='요청')?'요청에서':L.some(it=>it.from==='조건')?'영업 조건에서':'이 단계 기준';
    const box=document.createElement('div');box.className='v5r-checks';
    box.innerHTML='<div class="v5r-ck-h"><b>'+(s.ch==='방문'?'확인한 것':'확인할 것 · '+from)+'</b><span class="'+(n&&n===L.length?'ok':'')+'">'+n+' / '+L.length+' 확인</span></div><div class="v5r-ck-list">'
     +L.map(it=>'<button type="button" class="cd-native v5r-ck" data-ce="v5chk" data-v="'+h(it.key)+'" aria-pressed="'+checked(s,it)+'"><i aria-hidden="true">'+(checked(s,it)?'✓':'')+'</i><span>'+h(it.label)+'</span></button>').join('')+'</div>'
@@ -250,5 +257,5 @@
   });
   document.addEventListener('input',e=>{const t=e.target.closest&&e.target.closest('#sheetcard [data-v5a-in]');if(!t||!A||!A.quote||A.quote.busy)return;if(t.dataset.v5aIn==='req')A.quote.req=t.value;else if(t.dataset.v5aIn==='wish'){A.quote.wish=t.value;if(!t.value)A.quote.accept=false;paintQuote();}});
  }
- w.MobileV5Result=Object.freeze({on,items,syncRequests,memoOf,retry,preview,decorate,after,requestBody,state:()=>A});
+ w.MobileV5Result=Object.freeze({on,items,setFocus,syncRequests,memoOf,retry,preview,decorate,after,requestBody,state:()=>A});
 })(window);
