@@ -18,12 +18,13 @@
  function summary(n){
   const cell=(key,label,v,go,red)=>({key,label,value:Number(v)||0,go,red:!!red&&Number(v)>0});
   /* 기한 지남 = 바로 아래 카드 · 줄이 그 목록(누를 곳 없음). 내 담당 → 내 현장 탭, 오늘 방문 → 오늘 동선 */
-  const cells=[cell('late','기한 지남',n.late,null,true),cell('mine','내 담당',n.mine,{gs:'tab',tab:'mine'}),cell('visit','오늘 방문',n.visit,{mr:'view',v:'route'})];
+  /* 내 담당 = 진행 중 영업건 수 → 도착 목록도 같은 조건(진행 중만, scope=open)으로 연다(수주 · 실주 섞이지 않게) */
+  const cells=[cell('late','기한 지남',n.late,null,true),cell('mine','내 담당',n.mine,{gs:'tab',tab:'mine',scope:'open'}),cell('visit','오늘 방문',n.visit,{mr:'view',v:'route'})];
   if(n.unassigned!=null)cells.push(cell('unassigned','미배정',n.unassigned,null));
   return {cells};
  }
  function summaryHtml(m){
-  const go=g=>!g?'':g.mr?' data-mr="'+h(g.mr)+'" data-v="'+h(g.v)+'" role="button" tabindex="0"':' data-gs="'+h(g.gs)+'"'+(g.tab?' data-tab="'+h(g.tab)+'"':'')+(g.value?' data-value="'+h(g.value)+'"':'')+' role="button" tabindex="0"';
+  const go=g=>!g?'':g.mr?' data-mr="'+h(g.mr)+'" data-v="'+h(g.v)+'" role="button" tabindex="0"':' data-gs="'+h(g.gs)+'"'+(g.tab?' data-tab="'+h(g.tab)+'"':'')+(g.scope?' data-scope="'+h(g.scope)+'"':'')+(g.value?' data-value="'+h(g.value)+'"':'')+' role="button" tabindex="0"';
   return '<div class="mv6-sum" style="grid-template-columns:repeat('+m.cells.length+',1fr)" aria-label="오늘의 업무 현황">'+m.cells.map(c=>'<span class="mv6-cell'+(c.red?' red':'')+(c.value?'':' none')+'" data-v6="'+h(c.key)+'"'+go(c.go)+'><b>'+(c.value?h(c.value):'아직 없음')+'</b><small>'+h(c.label)+'</small></span>').join('')+'</div>';
  }
 

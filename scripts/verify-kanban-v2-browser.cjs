@@ -13,7 +13,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.PipelineWorkspace&&window.StageTransitionUI);
   await page.evaluate(()=>{
-   const day=d=>new Date(Date.now()+d*864e5).toISOString().slice(0,10);
+   /* 한국 날짜(화면 판정과 같은 기준). toISOString(UTC)이면 한국 0~9시에 하루 어긋나 '4일 지남'이 '5일 지남'이 됐다 */
+   const day=d=>new Date(Date.now()+d*864e5+9*36e5).toISOString().slice(0,10);
    const mk=(id,code,amt,extra)=>Object.assign({id,site:'현장 '+id,assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-05-01',code,stage_code:code,grp:'영업·관리',amt},extra||{});
    const deals=[mk('ok-big','consulting',9e8,{next_action:{id:'n1',text:'통화',due:day(5),status:'open'}}),mk('none-small','consulting',1e8),mk('none-big','consulting',5e8),mk('over','consulting',1e7,{next_action:{id:'n2',text:'통화',due:day(-4),status:'open'}}),mk('sent-1','sent',2e8,{assignee:'황윤선',brand:'석민이앤씨'})];
    for(let i=0;i<14;i++)deals.push(mk('rel-'+i,'rapport',1e7*(i+1)));
@@ -27,7 +28,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* pipeline_list ④(2026-10-20): 정렬 = 확인된 기한 급한 순(지남 → 가까운 날) → 기한 없음(금액 큰 순) · 셋째 줄 = 먼저 볼 이유(항상 보임 · 어떤 기한인지) */
   assert.deepEqual(await col('consulting').locator('.ps-kcard').evaluateAll(ns=>ns.map(n=>n.dataset.value)),['over','ok-big','none-big','none-small']);
   assert.deepEqual(await col('consulting').locator('.ps-kdot').evaluateAll(ns=>ns.map(n=>n.className.replace('ps-kdot ',''))),['over','ok','none','none']);
-  assert.deepEqual(await col('consulting').locator('.ps-kr3').evaluateAll(ns=>ns.map(n=>[n.textContent,n.classList.contains('r')])),[['연락 약속 '+(()=>{const d=new Date(Date.now()-4*864e5);return (d.getMonth()+1)+'.'+d.getDate();})()+' · 4일 지남',true],['연락 약속 · '+(()=>{const d=new Date(Date.now()+5*864e5);return (d.getMonth()+1)+'/'+d.getDate();})()+'까지',false],['판정 불가 · 이관 전 기록 확인',false],['판정 불가 · 이관 전 기록 확인',false]],'셋째 줄 = 먼저 볼 이유 · 기한 지남만 빨강');
+  assert.deepEqual(await col('consulting').locator('.ps-kr3').evaluateAll(ns=>ns.map(n=>[n.textContent,n.classList.contains('r')])),[['연락 약속 '+(()=>{const d=new Date(Date.now()-4*864e5+9*36e5);return (d.getUTCMonth()+1)+'.'+d.getUTCDate();})()+' · 4일 지남',true],['연락 약속 · '+(()=>{const d=new Date(Date.now()+5*864e5+9*36e5);return (d.getUTCMonth()+1)+'/'+d.getUTCDate();})()+'까지',false],['판정 불가 · 이관 전 기록 확인',false],['판정 불가 · 이관 전 기록 확인',false]],'셋째 줄 = 먼저 볼 이유 · 기한 지남만 빨강');
   /* 칸마다 한 쪽 최대 20건 + 쪽 번호('+n건 더보기' 없음) · 실주도 같은 규칙(최근 종료 순) */
   assert.equal(await col('relationship').locator('.ps-kcard').count(),14);
   assert.equal(await page.locator('.ps-kmore').count(),0,'더보기 단추 없음');

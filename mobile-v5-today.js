@@ -46,8 +46,10 @@
   /* 2026-10-22 대표 "배정 안 된 건 회색": 담당이 없거나(미배정) 배정 기록(배정일시)이 없는 문의는 회색 띠 · 회색 머리 글(붉게 재촉하지 않음).
      운영에서 담당 이름만 있고 배정일시가 빈 문의가 많다(시트 이관) — 그건 '배정 기록 없음'. 배정 기록이 있는 문의 머리 글은 '견적문의 첫 연락' */
   const unassigned=v.done===false,noDate=!unassigned&&!arrivedOk(raw.sales_assigned_at||raw.assigned_at||raw.assignedAt),gray=unassigned||noDate;
-  return {kind:'inquiry',id:t.ref,late:!!x.late,deadline,at:deadline,arrived:base,gray,
-   head:unassigned?'담당 미배정 · 견적문의':noDate?'배정 기록 없음 · 견적문의'+(deadline&&x.late?' · 접수 '+when(deadline,now).replace(/ \d{2}:\d{2}$/,''):''):(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 첫 연락',
+  /* 회색 = 기한 근거(배정 시각)가 없다 — 마감 시각을 만들지 않고 접수일만 적는다(2026-10-23 '배정일 미확인 ≠ 지연') */
+  const recv=arrivedOk(raw.at||raw.created_at)?' · 접수 '+dayWord(parts(arrived(raw.at||raw.created_at)).day,now):'';
+  return {kind:'inquiry',id:t.ref,late:!!x.late&&!gray,deadline:gray?null:deadline,at:gray?null:deadline,arrived:base,gray,
+   head:unassigned?'담당 미배정 · 견적문의'+recv:noDate?'배정 기록 없음 · 견적문의'+recv:(deadline?(x.late?'첫 연락 기준 '+when(deadline,now)+' 지남':when(deadline,now)+'까지'):x.late?'첫 연락 기준 넘김':'오늘')+' · 견적문의 첫 연락',
    site:t.nm||v.nm||'견적문의',contact:[who||'고객',phone].filter(Boolean).join(' · '),
    check:R.check,source:v.body?'문의 요약: '+summarize(v.body,90):'',done:R.done,
    button:phone?'전화하기':'응대 기록',mode:phone?'call':'open',color:gray?'#9ca3af':'#15171c',phone};
