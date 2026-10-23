@@ -175,7 +175,7 @@
  function resetDetail(options={}){
   if(w.MobileInputFlow?.reset(options)?.ok===false&&!options.force){run();w.toast('임시 보관을 확인하지 못해 현재 입력 화면을 유지합니다.');return false;}
   if(w.MobileQuoteFlow?.reset(options)?.ok===false&&!options.force){run();w.toast('임시 보관을 확인하지 못해 현재 견적 입력을 유지합니다.');return false;}
-  S.detailView='';S.evidencePage=1;w.MobileStageReview?.reset();return true;
+  S.detailView='';S.evidencePage=1;S.v6histPage=1;w.MobileStageReview?.reset();return true;
  }
  /* six_fixes ③: 오늘 화면 4구역 = PC 와 같은 판정 함수(DayZoneRules) · 같은 이름(오늘 처리 · 기한 초과 · 고객 회신 대기 · 기록 보완) · 한국 날짜.
     예전에는 12건에서 자르고 정규식으로 '회신 대기 · 약속'을 따로 골라 PC 와 숫자가 달랐다. 구역마다 한 쪽 20건 + 쪽 번호 */
@@ -292,7 +292,7 @@
   if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
   /* 모바일 v6 ②: 상세 첫 칸(현장 이름 · 진행상태) 바로 아래 진행 바, '응대 이력' 칸 바로 위 단계 이력(mobile-v6.js). 승인 C 원본 칸은 그대로 두고 칸 두 개만 더한다 */
   if(d&&!S.detailView&&w.MobileV6&&w.MobileV6.on()&&!scr.querySelector('.mv6-prog')){
-   const body=scr.querySelector('.approved-detail-body'),id=body?.firstElementChild,hist=body?.querySelector('[data-gs="history"]'),hb=hist&&[...body.children].find(n=>n.contains(hist)),m=w.MobileV6.progress(d);
+   const body=scr.querySelector('.approved-detail-body'),id=body?.firstElementChild,hist=body?.querySelector('[data-gs="history"]'),hb=hist&&[...body.children].find(n=>n.contains(hist)),m=w.MobileV6.progress(d,{page:S.v6histPage||1});
    if(id)id.insertAdjacentHTML('afterend',w.MobileV6.barHtml(m));
    if(hb)hb.insertAdjacentHTML('beforebegin',w.MobileV6.historyHtml(m));
   }
@@ -464,6 +464,8 @@
     if(k==='phone'&&phone&&!w.G.mobileCallSheetOff)openContact();
    }else unavailable();
   });
+  /* 상세 '단계 이력' 쪽 번호(mobile-v6 · 한 쪽 5건) — 화면 위치는 그대로 두고 그 칸만 다시 그린다 */
+  w.document.addEventListener('click',e=>{const b=e.target.closest('[data-v6h="page"]');if(!b)return;const n=Number(b.dataset.page);if(!Number.isInteger(n)||n<1)return;const sc=w.document.querySelector('.approved-detail-body'),top=sc?sc.scrollTop:0;S.v6histPage=n;run();const s2=w.document.querySelector('.approved-detail-body');if(s2)s2.scrollTop=top;});
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-pending="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){S.pendingPage=n;run();}});
   w.document.addEventListener('click',e=>{const b=e.target.closest('[data-schedule="page"],[data-registration="page"]');if(!b)return;const n=Number(b.dataset.page);if(Number.isInteger(n)&&n>0){if(b.hasAttribute('data-schedule'))S.schedulePage=n;else S.registrationPage=n;run();}});
   w.document.addEventListener('input',e=>{const r=e.target.closest('[data-quote-live]');if(!r||S.detailView!=='qlive')return;w.MobileQuoteLive.preview(r,mine().find(x=>String(x.id)===String(w.G.deal)),e.target);});
