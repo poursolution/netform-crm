@@ -13,7 +13,8 @@
  const lostM=d=>!!d.outcome&&w.PipelineStages?.group(d.code,d.outcome)==='lost';
  const lostHide=()=>!(w.G&&w.G.mobileLostHideOff);
  const lostCount=()=>mine().filter(lostM).length;
- const closedTask=d=>{const r=String(d.close_reason||'').replace(/\s+/g,' ').trim();return r?(r.length>22?r.slice(0,21)+'…':r):'사유 미입력';};
+ /* 끝난 건 오른쪽 글: 실주 = 사유(없으면 '사유 미입력'), 수주 = '수주'(사유를 요구하지 않음 — 2026-10-23 02 '종료 건에 경고를 달지 않는다') */
+ const closedTask=d=>{const r=String(d.close_reason||'').replace(/\s+/g,' ').trim();if(!r&&String(d.outcome)==='won')return '수주';return r?(r.length>22?r.slice(0,21)+'…':r):'사유 미입력';};
  const closedDue=d=>{const s=String(d.closed_at||d.won_at||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(s)?'종료 '+s.slice(5).replace('-','.'):'종료';};
  const inquiries=()=>Array.isArray(w.ADMIN?.inquiries)?w.ADMIN.inquiries:[];
  const inquiry=id=>inquiries().find(q=>String(q.key||q.id||q.inquiry_id||'')===String(id));
@@ -133,8 +134,14 @@
   if(needle)rows=rows.filter(d=>{const c=w.contactInfoM(d);return [d.nm,d.address,d.addr,c.name,c.mobile,c.officeTel,work(d)].join(' ').toLocaleLowerCase().includes(needle);});
   if(w.G.brandF&&w.G.brandF!=='전체')rows=rows.filter(d=>brand(d)===w.G.brandF);
   const pg=w.ListPager.cut(rows,w.ListPager.page(S));S.page=pg.page;
+  /* 2026-10-23 02 내 현장: 같은 단지(site_id)에 내 영업건이 여럿이면 줄마다 '같은 단지 n건' — 합치거나 접지 않고 각각 따로 보이되, 묶여 있다는 사실만 알린다(이름 · 주소로는 묶지 않음) */
+  const siteN=new Map();mineAll().forEach(d=>{const s=String(d.site_id||d.cleanup_site_id||'');if(s)siteN.set(s,(siteN.get(s)||0)+1);});
+  const same=d=>{const n=siteN.get(String(d.site_id||d.cleanup_site_id||''))||0;return n>1?'같은 단지 '+n+'건':'';};
+  /* 빈 목록 이유를 나눈다: 불러오는 중 · 조회 실패 · 검색 결과 없음 · 그 단계 없음 · 진행 중 없음 · 담당 없음 */
+  const failed=(w.LAST_OPERATIONAL_READ_ERROR||[]).some?.(f=>f.domain==='deal_core');
+  const empty=w.MOBILE_TODAY_FIRST?'전체 목록을 불러오는 중입니다.':failed?'영업건을 불러오지 못했습니다. 새로고침해 주세요.':needle?'\''+S.q.trim()+'\' 검색 결과가 없습니다.':S.stage?(w.PipelineStages.definition(S.stage)?.label||'이 단계')+' 영업건이 없습니다.':S.openOnly?'진행 중인 영업건이 없습니다.':mineAll().length?'해당하는 영업건이 없습니다.':'담당 영업건이 없습니다.';
   /* 종료 건(실주 등)은 '다음 업무'가 없다 — 오른쪽 = 종료 사유 · 종료일 */
-  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,filterLabel:w.__approvedBCExample?.filterLabel||'필터',stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d)].filter(Boolean).join(' · '),color:d.outcome&&lostM(d)?'#9ca3af':color(d),task:d.outcome?closedTask(d):next(d)?.text||'다음 업무 확인',due:d.outcome?closedDue(d):due(d),dueColor:d.outcome?'#6b7280':dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
+  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,empty,filterLabel:w.__approvedBCExample?.filterLabel||'필터',stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d),same(d)].filter(Boolean).join(' · '),color:d.outcome&&lostM(d)?'#9ca3af':color(d),task:d.outcome?closedTask(d):next(d)?.text||'다음 업무 확인',due:d.outcome?closedDue(d):due(d),dueColor:d.outcome?'#6b7280':dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
  }
  function detail(d){
   const c=w.contactInfoM(d),n=next(d),sid=d.site_id||d.cleanup_site_id;

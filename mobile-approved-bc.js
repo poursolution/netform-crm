@@ -14,7 +14,7 @@
   const template=list.firstElementChild.cloneNode(true);list.replaceChildren();list.className='gs-list approved-list';
   model.rows.forEach(item=>{const n=template.cloneNode(true);n.className='gs-row approved-row';n.style.borderLeftColor=item.color;const [left,right]=n.children;left.children[0].textContent=item.name;left.children[1].textContent=item.subtitle;right.children[0].textContent=item.task;right.children[1].textContent=item.due;right.children[1].style.color=item.dueColor;action(n,'deal',{id:item.id});list.append(n);});
   if(model.pager)list.insertAdjacentHTML('beforeend',model.pager);
-  if(!model.rows.length){const empty=document.createElement('span');empty.className='approved-empty';empty.textContent='해당하는 영업건이 없습니다.';list.append(empty);}
+  if(!model.rows.length){const empty=document.createElement('span');empty.className='approved-empty';empty.textContent=model.empty||'해당하는 영업건이 없습니다.';list.append(empty);}
   nav(tabs);return box.innerHTML;
  }
  function detail(model){
