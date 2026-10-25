@@ -30,7 +30,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html#p=pipe&deal=d-2`);await page.waitForFunction(()=>window.PCRouter);
   await page.evaluate(()=>{const mk=(id,code)=>({id,site:'현장 '+id,assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-09-01',code,stage_code:code,grp:'영업·관리',amt:1e8});B={deals:[mk('d-1','consulting'),mk('d-2','sent')],inquiries:[],activities:[]};LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};document.getElementById('authGate').classList.remove('on');window.pushWrite=()=>{};});
   await page.waitForFunction(()=>G.page==='pipe'&&CUR_DETAIL&&CUR_DETAIL.key==='d-2'&&document.getElementById('detailView').classList.contains('on'),null,{timeout:8000});
+  /* 2026-10-25: 로그인 화면에서 60초 넘게 있다가 로그인해도 공유 링크 화면으로 열린다(예전: 60초 뒤 포기 → 오늘) */
+  const ctx2=await browser.newContext({viewport:{width:1500,height:900},timezoneId:'Asia/Seoul'});
+  await ctx2.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
+  const p2=await ctx2.newPage();p2.on('pageerror',e=>errs.push(e.message));await p2.clock.install();
+  await p2.goto(`http://127.0.0.1:${srv.address().port}/crm.html#p=pipe`);await p2.waitForFunction(()=>window.PCRouter);
+  assert.equal(await p2.evaluate(()=>document.getElementById('authGate').classList.contains('on')),true,'로그인 화면');
+  await p2.clock.runFor(90000);
+  await p2.evaluate(()=>{const mk=(id,code)=>({id,site:'현장 '+id,assignee:'이필선',brand:'POUR솔루션',created:CUR_Y+'-09-01',code,stage_code:code,grp:'영업·관리',amt:1e8});B={deals:[mk('d-1','consulting')],inquiries:[],activities:[]};LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};document.getElementById('authGate').classList.remove('on');window.pushWrite=()=>{};});
+  await p2.clock.runFor(2000);
+  assert.equal(await p2.evaluate(()=>G.page),'pipe','90초 뒤 로그인해도 #p=pipe 화면');
+  await ctx2.close();
   assert.deepEqual(errs,[],'페이지 오류 없음');
-  console.log(JSON.stringify({status:'PASS',back_closes_detail:true,back_restores_page:true,deep_link:true}));
+  console.log(JSON.stringify({status:'PASS',back_closes_detail:true,back_restores_page:true,deep_link:true,deep_link_after_slow_login:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

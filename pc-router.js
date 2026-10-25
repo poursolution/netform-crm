@@ -43,9 +43,11 @@
   ['goPage','nav','drwDeal','drwInq','closeDetail','closeDrw'].forEach(wrap);
   ['open','close','dismiss','openFrom'].forEach(n=>wrapObj(root.InquiryWorkbench,n));
   root.addEventListener('popstate',()=>apply(location.hash));
-  /* 처음 들어올 때 해시가 있으면(공유 링크) 자료가 준비된 뒤 그 화면을 연다 */
+  /* 처음 들어올 때 해시가 있으면(공유 링크) 자료가 준비된 뒤 그 화면을 연다
+     2026-10-25: 로그인 화면이 떠 있는 동안은 기다린 시간을 세지 않는다(로그인이 60초를 넘기면 해시를 버리고 오늘로 열리던 것) */
   const initial=location.hash;let tries=0;
-  (function wait(){if(root.B&&(root.B.deals||[]).length){if(initial&&initial!==current())apply(initial);else sync();return;}if(++tries<120)setTimeout(wait,500);})();
+  const gateOn=()=>!!document.getElementById('authGate')?.classList.contains('on');
+  (function wait(){if(root.B&&(root.B.deals||[]).length){if(initial&&initial!==current())apply(initial);else sync();return;}if(gateOn())tries=0;if(++tries<120)setTimeout(wait,500);})();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
  root.PCRouter={sync,apply,current,parse,replace};
