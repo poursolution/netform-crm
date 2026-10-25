@@ -42,6 +42,9 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   const row=page.locator('.approved-f [data-task-id]').first();
   assert.match((await row.innerText()).replace(/\s+/g,' '),/^10:30 합성 다음 주 방문/);
   assert.equal(await page.locator('[data-gs="schedule-week"][data-step="0"]').getAttribute('aria-current'),null,'다음 주에서는 [이번 주]가 눌러짐');
+  /* 2026-10-25 운영 확인: 다른 주로 넘기면 이름도 그 주(숫자는 고른 주 기준) · 가운데 = [이번 주로] */
+  {const t=await page.locator('.approved-f').innerText();assert.match(t,/내 다음 주 · /);assert.match(t,/다음 주 연락/);assert.doesNotMatch(t,/내 이번 주|이번 주 연락/);
+   assert.equal((await page.locator('[data-gs="schedule-week"][data-step="0"]').innerText()).trim(),'이번 주로');}
   /* 일정 줄 → 원래 영업건 상세 → 뒤로 = 같은 날짜 일정 */
   await row.click();await page.locator('.approved-c').waitFor();
   assert.equal(await page.evaluate(()=>String(G.deal)),'2');
@@ -53,6 +56,7 @@ const {launchOptions}=require('../review-preview/review-environment.cjs');
   assert.equal(await page.evaluate(()=>MobileGuideShell.state.scheduleDay),days.today);
   await page.locator('[data-gs="schedule-week"][data-step="1"]').click();await page.locator('[data-gs="schedule-week"][data-step="0"]').click();await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>MobileGuideShell.state.scheduleDay),'','[이번 주] = 오늘로');
+  {const t=await page.locator('.approved-f').innerText();assert.match(t,/내 이번 주 · /);assert.match(t,/이번 주 연락/);}
   /* 탭 바로 다른 화면 */
   await page.locator('.approved-f .gs-tabnav [data-tab="mine"]').click();await page.locator('.approved-b').waitFor();
   assert.equal(await page.evaluate(()=>G.tab),'mine');
