@@ -227,12 +227,28 @@
  /* admin_request C(2026-10-10): 요청자 화면 '보낸 요청' — 전체 · 미확인 · 진행 · 회신 대기 · 기한 초과 · 완료. 줄 = 현장 · 담당 · 할 일 · 상태 · 기한(최근 30일 · 한 쪽 20건). '답 기다리는 중' 카드는 그대로 두고 그 아래에 덧붙인다 */
  const SENT_TABS=[['all','전체'],['new','미확인'],['run','진행'],['wait','회신 대기'],['late','기한 초과'],['done','완료']],SENT_PILL={new:['미확인','amb'],run:['진행 중','amb'],wait:['고객 회신 대기','amb'],late:['기한 초과','bad'],done:['완료','ok'],cancel:['취소','']};
  function sentKind(r){if(r.status==='cancelled')return 'cancel';if(r.status==='done'||r.status==='replied')return 'done';if(overdue(r))return 'late';if(r.status==='absent'||(r.status==='working'&&/부재/.test(String(r.result||''))))return 'wait';return r.status==='sent'?'new':'run';}
+ /* 2026-10-25 받는 사람별 확인(Flow 공지 '확인 여부 한눈에' 차용): 열린 요청만 · 받는 사람마다 '아직 안 봄' / '확인함'으로 나눠 이름 칩.
+    봄 = 받은 사람이 열어 봄(seen_at) — 처리 · 완료가 아니다. 칩을 누르면 아래 목록 · 탭 숫자가 그 사람 것만(다시 누르면 전체). 끄기 G.wrqSeenOff */
+ const seenOn=()=>!(R.G&&R.G.wrqSeenOff);
+ function ago(v){const t=Date.parse(v||'');if(!Number.isFinite(t))return '';const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<60?m+'분째':m<2880?Math.round(m/60)+'시간째':Math.round(m/1440)+'일째';}
+ function seenLine(r){if(!seenOn()||!isOpen(r))return '';return r.status==='sent'?'안 봄 '+ago(r.created_at):'봄'+(r.seen_at?' '+whenTxt(r.seen_at):'');}
+ function seenBoard(all,S){
+  if(!seenOn())return '';const open=all.filter(isOpen);if(!open.length)return '';const by=new Map();
+  open.forEach(r=>{const k=r.to_name||'담당 미정';const g=by.get(k)||by.set(k,{name:k,n:0,un:0,old:''}).get(k);g.n++;if(r.status==='sent'){g.un++;if(!g.old||String(r.created_at)<g.old)g.old=String(r.created_at);}});
+  const G=[...by.values()],no=G.filter(g=>g.un).sort((a,b)=>a.old.localeCompare(b.old)),yes=G.filter(g=>!g.un).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const chip=(g,un)=>'<button type="button" class="wrq-who'+(un?' un':'')+'" data-wr="sentto" data-v="'+attr(g.name)+'" aria-pressed="'+(S.sentTo===g.name)+'" title="'+attr(g.name+' · 열린 요청 '+g.n+'건'+(un?' · 안 봄 '+g.un+'건 · 가장 오래된 것 '+ago(g.old):' · 모두 열어 봄'))+'"><b>'+h(g.name)+'</b><span>'+(un?'안 봄 '+g.un+(g.n>g.un?' / '+g.n:'')+' · '+h(ago(g.old)):g.n+'건')+'</span></button>';
+  return '<div class="wrq-seen" aria-label="받는 사람별 확인"><div class="sh"><b>받는 사람별 확인</b><small>열린 요청 '+open.length+'건 · 봄 = 열어 봄(처리 아님)</small></div>'
+   +'<div class="col"><em class="no">아직 안 봄 <b>'+no.length+'명</b></em><div>'+(no.length?no.map(g=>chip(g,true)).join(''):'<span class="all">모두 열어 봤습니다</span>')+'</div></div>'
+   +(yes.length?'<div class="col"><em>확인함 <b>'+yes.length+'명</b></em><div>'+yes.map(g=>chip(g,false)).join('')+'</div></div>':'')+'</div>';
+ }
  function sentHtml(){
-  const S=st(),all=S.list.filter(r=>r.by_me).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));if(!all.length)return '';
+  const S=st(),mine=S.list.filter(r=>r.by_me).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));if(!mine.length)return '';
+  if(S.sentTo&&!mine.some(r=>(r.to_name||'담당 미정')===S.sentTo&&isOpen(r)))S.sentTo='';
+  const all=S.sentTo&&seenOn()?mine.filter(r=>(r.to_name||'담당 미정')===S.sentTo):mine;
   const tab=SENT_TABS.some(t=>t[0]===S.sentTab)?S.sentTab:'all',cnt=k=>k==='all'?all.length:all.filter(r=>sentKind(r)===k).length,rows=tab==='all'?all:all.filter(r=>sentKind(r)===tab);
   const P=R.ListPager,pg=P?P.cut(rows,P.page(S,'sent')):{rows:rows.slice(0,20),pages:1};
-  return '<section class="wrq-sent"><header><b>보낸 요청</b><span>최근 30일 · '+all.length+'건</span></header><div class="wrq-stabs" role="tablist">'+SENT_TABS.map(t=>'<button type="button" role="tab" data-wr="senttab" data-v="'+t[0]+'" aria-selected="'+(tab===t[0])+'">'+t[1]+' <b>'+cnt(t[0])+'</b></button>').join('')+'</div>'
-   +(pg.rows.length?pg.rows.map(r=>{const p=SENT_PILL[sentKind(r)],ask=(r.asks||[]).join(' · ')||r.label;return '<div class="wrq-sr"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site||'현장명 미입력')+'</b><span class="wrq-pill '+p[1]+'">'+h(p[0])+'</span></div><span class="l2" title="'+attr(ask)+'">'+h((r.to_name||'담당 미정')+' · '+ask)+'</span><small>기한 '+h(dueTxt(r))+'</small></div>';}).join(''):'<p class="none">해당하는 요청이 없습니다</p>')
+  return '<section class="wrq-sent"><header><b>보낸 요청</b><span>최근 30일 · '+mine.length+'건'+(all!==mine?' · '+h(S.sentTo)+' '+all.length+'건만':'')+'</span></header>'+seenBoard(mine,S)+'<div class="wrq-stabs" role="tablist">'+SENT_TABS.map(t=>'<button type="button" role="tab" data-wr="senttab" data-v="'+t[0]+'" aria-selected="'+(tab===t[0])+'">'+t[1]+' <b>'+cnt(t[0])+'</b></button>').join('')+'</div>'
+   +(pg.rows.length?pg.rows.map(r=>{const p=SENT_PILL[sentKind(r)],ask=(r.asks||[]).join(' · ')||r.label;return '<div class="wrq-sr"><div class="l1"><i style="background:'+(BRAND[r.brand]||'#9aa0ab')+'"></i><b title="'+attr(r.site)+'">'+h(r.site||'현장명 미입력')+'</b><span class="wrq-pill '+p[1]+'">'+h(p[0])+'</span></div><span class="l2" title="'+attr(ask)+'">'+h(r.to_name||'담당 미정')+(seenLine(r)?' <em class="'+(r.status==='sent'?'un':'sn')+'">'+h(seenLine(r))+'</em>':'')+h(' · '+ask)+'</span><small>기한 '+h(dueTxt(r))+'</small></div>';}).join(''):'<p class="none">해당하는 요청이 없습니다</p>')
    +(P&&pg.pages>1?P.html(pg,{ns:'wr',v:'sent',small:true,info:false}):'')+'</section>';
  }
  function sideHtml(){
@@ -516,6 +532,7 @@
   if(a==='state'&&M){M.state=b.dataset.v;M.memo=stateMemo(M);return drawModal();}
   if(a==='cause'&&M){M.cause=M.cause===b.dataset.v?'':b.dataset.v;M.err='';return drawModal();}
   if(a==='senttab'){S.sentTab=b.dataset.v;if(R.ListPager)R.ListPager.set(S,'sent',1);return repaint();}
+  if(a==='sentto'){S.sentTo=S.sentTo===b.dataset.v?'':b.dataset.v;if(R.ListPager)R.ListPager.set(S,'sent',1);return repaint();}
   if(a==='page'){if(R.ListPager)R.ListPager.set(S,b.dataset.v,b.dataset.page);return repaint();}
   if(a==='send')return send();
   if(a==='reask')return reask(id);
