@@ -69,6 +69,7 @@
   else if(contractMissing&&team){rk='contract';urg='now';}
   else if(sentDays!==null&&sentDays>=7&&(x.overdue||x.missingNext||(lastDays!==null&&lastDays>=7))){rk=amt>=BIG()?'stallbig':'silent';urg='now';}
   else if(x.responseLate){rk='first';urg='today';}
+     else if(x.noAssignTime){rk='first';urg='today';}/* 배정 기록 없는 첫 연락 전 문의 — 지연 아님 · 오늘 할 일(첫 연락 · 기한 미확인) */
   else if(x.overdue&&!(expansionReview&&expansionReview.kind==='fix')){rk='promise';urg='today';}
   else if(code==='consulting'&&f['consulting.quote_due']&&daysTo(f['consulting.quote_due'])<0){rk='quote';urg='today';}/* 물량 산출 기한(견적 예정일)이 지난 건만 — 기한이 없는 건을 체류일 3일로 세지 않는다(PipelineJudge 와 같은 기준) */
   else if(code==='construction'&&lastDays!==null&&lastDays>=7&&(()=>{const n=since(f['construction.start_date']);return n!==null&&n>=0;})()){rk='site';urg='today';}/* 착공일이 입력된 현장만(계약 · 시공 화면 · KPI 와 같은 조건) */
