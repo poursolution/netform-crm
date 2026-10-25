@@ -2507,9 +2507,10 @@ var RESPONDED_ST=/현장\s*방문|전화|응대|방문/;   /* 응대완료 — �
 var OPS_RULES={responseSlaHours:2,contactWarnDays:7,longContactDays:90,loopContactDays:30,stallDays:7,liveFrom:'2026-10-01'};/* liveFrom: 운영 KPI Live 기준일(2026-09-25 대표 확정) — 이후 생성·조치된 영업만 운영 KPI 분모, 이전 이관분은 정상화율로 따로 */
 var INQUIRY_RESPONSE_SLA_HOURS=OPS_RULES.responseSlaHours;
 function todayHoursFrom(value){var t=value&&new Date(value).getTime();return Number.isFinite(t)?Math.max(0,(Date.now()-t)/36e5):null}
-/* 최초응대 SLA는 모든 관리자 화면에서 같은 기준을 사용한다. 배정시각이 없으면
-   준수 여부를 증명할 수 없으므로 누락 위험으로 함께 올린다. */
-function inquiryResponseLate(q){if(window.InquiryMemo&&InquiryMemo.confirmedCallDay(q))return false;if(window.InquiryListV3&&InquiryListV3.contactReview&&InquiryListV3.contactReview(q).required)return false;if(!inquiryAssigned(q)||inquiryResponded(q))return false;var h=todayHoursFrom(inquiryAssignedAt(q)||inquiryCreatedAt(q));return h===null||h>=INQUIRY_RESPONSE_SLA_HOURS}
+/* 최초응대 SLA는 모든 관리자 화면에서 같은 기준을 사용한다.
+   2026-10-25 모바일 인계 01 '배정일 미확인 ≠ 지연'(모바일과 같은 판정): 배정 시각이 없으면 접수 시각으로 지연을 확정하지 않는다 — '배정 기록 없음'으로 오늘 할 일에만.
+   예전처럼(배정 시각 없으면 접수 시각 · 누락 위험으로 지연) 보려면 G.inqLateNoAssignKeep=true */
+function inquiryResponseLate(q){if(window.InquiryMemo&&InquiryMemo.confirmedCallDay(q))return false;if(window.InquiryListV3&&InquiryListV3.contactReview&&InquiryListV3.contactReview(q).required)return false;if(!inquiryAssigned(q)||inquiryResponded(q))return false;var at=inquiryAssignedAt(q)||q.sales_assigned_at||'';if(!at&&!(window.G&&G.inqLateNoAssignKeep))return false;var h=todayHoursFrom(at||inquiryCreatedAt(q));return h===null||h>=INQUIRY_RESPONSE_SLA_HOURS}
 function todayDaysUntil(value){if(!value)return null;var d=new Date(String(value).slice(0,10)+'T00:00:00'),n=new Date();n.setHours(0,0,0,0);return Number.isFinite(d.getTime())?Math.round((d-n)/864e5):null}
 
 /* ══════════════════════════════════════════════════════════════
