@@ -103,7 +103,9 @@
   /* 머리 전체가 '오늘' 버튼이던 것(보이지 않는 동작) → 아래 탭 바로 옮기고 머리는 버튼 아님(안에 주 넘기기 버튼이 들어가므로) */
   delete head.dataset.gs;delete head.dataset.tab;head.removeAttribute('role');head.removeAttribute('tabindex');
   const thisWeek=!S.scheduleDay||(m&&m.days&&m.days.some(d=>d.date===m.today));
-  head.insertAdjacentHTML('beforeend','<div class="gs-wk" role="group" aria-label="주 넘기기"><span data-gs="schedule-week" data-step="-1" role="button" tabindex="0" aria-label="지난주">‹</span><span data-gs="schedule-week" data-step="0" role="button" tabindex="0"'+(thisWeek?' aria-current="true"':'')+'>이번 주</span><span data-gs="schedule-week" data-step="1" role="button" tabindex="0" aria-label="다음 주">›</span></div>');
+  /* 2026-10-25 운영 확인: 다른 주로 넘겨도 '내 이번 주 · …' · '이번 주 연락'으로 남던 것 — 숫자는 고른 주 기준이라 이름만 맞춘다. 가운데 단추 = [이번 주로] */
+  if(!thisWeek&&m){const gap=(a,b)=>Math.ceil((Date.parse(a)-Date.parse(b))/(7*864e5)),n=m.start>m.today?gap(m.start,m.today):m.end<m.today?-gap(m.today,m.end):0,word=n===1?'다음 주':n===-1?'지난주':n>1?n+'주 뒤':n<-1?(-n)+'주 전':'고른 주';[...f.querySelectorAll('*')].forEach(e=>{if(e.children.length)return;const t=e.textContent;if(/^내 이번 주 · /.test(t))e.textContent=t.replace('내 이번 주','내 '+word);else if(t==='이번 주 연락')e.textContent=word+' 연락';});}
+  head.insertAdjacentHTML('beforeend','<div class="gs-wk" role="group" aria-label="주 넘기기"><span data-gs="schedule-week" data-step="-1" role="button" tabindex="0" aria-label="지난주">‹</span><span data-gs="schedule-week" data-step="0" role="button" tabindex="0"'+(thisWeek?' aria-current="true">이번 주':'>이번 주로')+'</span><span data-gs="schedule-week" data-step="1" role="button" tabindex="0" aria-label="다음 주">›</span></div>');
   f.insertAdjacentHTML('beforeend','<nav class="gs-tabnav" aria-label="화면">'+[['today','오늘'],['mine','내 현장'],['record','기록 · 등록'],['schedule','일정']].map(([k,l])=>'<span data-gs="tab" data-tab="'+k+'" role="button" tabindex="0"'+(k==='schedule'?' aria-current="page" class="on"':'')+'>'+l+'</span>').join('')+'</nav>');
   return box.innerHTML;
  }
