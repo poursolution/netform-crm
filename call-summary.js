@@ -30,45 +30,54 @@
   return {summary,request,promise,next,count:S.length};
  }
  /* ── 화면(어디서 열든 같은 것) ── */
- let M=null;/* {deal, onApply, onTranscriptSave, file, text, ex, err} */
+ let M=null;/* {deal, onApply, onTranscriptSave, file, text, ex, err, auto} — auto = 글이 서버 자동 변환에서 왔는지(붙여 넣은 글과 구분) */
+ /* 2026-10-25 인계 07: 닫아도 쓰던 글은 그 영업건에 남긴다(이 화면 안에서만 · 저장 아님). [응대 기록 입력칸에 넣기]를 하면 지운다 */
+ const drafts=new Map();
+ const autoReady=()=>typeof R.CallSummary?.transcribe==='function';
  function html(){
-  const x=M.ex,n=x&&x.next;
+  const x=M.ex,n=x&&x.next,src=M.auto?'자동 변환된 글':'붙여 넣은 글';
+  /* 단계: 녹음 파일을 실제로 고른 경우에만 ① 완료. 글만 붙여 넣었으면 ① 대신 '붙여 넣은 글'(파일 · 자동 변환을 거친 것처럼 보이지 않게) */
+  const step1=M.file?'<li class="done">녹음 파일</li>':M.text?'<li class="done">붙여 넣은 글</li>':'<li class="on">녹음 파일 · 글</li>';
+  const fileNote=M.file&&!autoReady()?'<b class="cs-wait">'+esc(M.file)+' · 자동 변환 연결 전</b> — 파일은 올리지 않습니다. 통화 앱의 텍스트 변환 결과를 아래에 붙여 넣어 주세요':M.file&&M.busy?'<b>'+esc(M.file)+'</b> · 글로 바꾸는 중…':(M.file?esc(M.file)+' · ':'')+'음성 → 글 자동 변환은 서버 연결 후 사용 · 지금은 통화 앱의 텍스트 변환 결과를 아래에 붙여 넣기';
   return '<div class="cs-ovl" role="dialog" aria-label="통화 녹음 → 응대 기록"><div class="cs-box">'
    +'<header><b>통화 녹음 → 응대 기록</b><span>'+esc(M.site||'')+'</span><button type="button" class="cs-x" data-cs="close" aria-label="닫기">✕</button></header>'
-   +'<ol class="cs-steps"><li class="'+(M.file||M.text?'done':'on')+'">녹음 파일</li><li class="'+(x?'done':M.text?'on':'')+'">글 · 요약</li><li class="'+(x?'on':'')+'">확인 · 수정</li><li>응대 기록</li></ol>'
-   +'<label class="cs-file"><span>녹음 파일</span><input type="file" accept="audio/*" data-cs="file"><small>'+esc(M.file?M.file+' · ':'')+'음성 → 글 자동 변환은 서버 연결 후 사용 · 지금은 통화 앱의 텍스트 변환 결과를 아래에 붙여 넣기</small></label>'
-   +'<label class="cs-tr"><span>통화 내용(글)</span><textarea data-cs="text" rows="6" placeholder="통화 앱에서 변환한 글을 붙여 넣으세요">'+esc(M.text||'')+'</textarea></label>'
+   +'<ol class="cs-steps">'+step1+'<li class="'+(x?'done':M.text?'on':'')+'">글 · 요약</li><li class="'+(x?'on':'')+'">확인 · 수정</li><li>응대 기록</li></ol>'
+   +'<label class="cs-file"><span>녹음 파일</span><input type="file" accept="audio/*" data-cs="file"><small>'+fileNote+'</small></label>'
+   +'<label class="cs-tr"><span>통화 내용(글)'+(M.text?' · '+src:'')+'</span><textarea data-cs="text" rows="6" placeholder="통화 앱에서 변환한 글을 붙여 넣으세요">'+esc(M.text||'')+'</textarea></label>'
    +'<div class="cs-act"><button type="button" class="cs-p" data-cs="sum"'+(String(M.text||'').trim()?'':' disabled')+'>요약하기</button></div>'
    +(x?'<section class="cs-sum"><b>자동으로 추린 것 · 확인 전 <em>제안</em></b>'
     +'<label><span>3줄 요약</span><textarea data-cs-f="summary" rows="3">'+esc(x.summary.join('\n'))+'</textarea></label>'
     +'<label><span>고객 요청</span><input data-cs-f="request" value="'+esc(x.request)+'" placeholder="없음"></label>'
     +'<label><span>약속</span><input data-cs-f="promise" value="'+esc(x.promise)+'" placeholder="없음"></label>'
     +'<label><span>다음 행동</span><input data-cs-f="next" value="'+esc(n?n.text:'')+'" placeholder="없음"><input type="date" data-cs-f="due" value="'+esc(n&&n.due||'')+'"><small class="cs-chk">날짜 확인 필요</small></label>'
-    +'<p class="cs-note">업무를 자동으로 완료하지 않습니다 · [응대 기록 입력칸에 넣기] 뒤 결과를 고르고 저장해야 기록됩니다 · 전사 원문은 내부 메모로 따로 남습니다</p>'
+    +'<p class="cs-note">업무를 자동으로 완료하지 않습니다 · 날짜는 고객 약속으로 저장되지 않습니다(다음 할 일에서 직접 고름) · [응대 기록 입력칸에 넣기] 뒤 결과를 고르고 저장해야 기록됩니다 · '+src+' 원문은 내부 메모로 따로 남습니다</p>'
     +'<div class="cs-act"><button type="button" class="cs-g" data-cs="close">닫기</button><button type="button" class="cs-p" data-cs="apply">응대 기록 입력칸에 넣기</button></div></section>':'')
+   +(M.restored&&!x?'<p class="cs-note">닫기 전에 쓰던 글을 다시 불러왔습니다(아직 저장 전)</p>':'')
    +(M.err?'<p class="cs-err">'+esc(M.err)+'</p>':'')+'</div></div>';
  }
  function draw(){let el=document.getElementById('cs-root');if(!M){if(el)el.remove();return;}if(!el){el=document.createElement('div');el.id='cs-root';document.body.append(el);}
   const act=document.activeElement,f=act&&el.contains(act)?act.getAttribute('data-cs')||act.getAttribute('data-cs-f'):'';el.innerHTML=html();if(f){const n=el.querySelector('[data-cs="'+f+'"],[data-cs-f="'+f+'"]');if(n){n.focus();try{n.setSelectionRange(n.value.length,n.value.length);}catch(e){}}}}
- function open(o){if(!on())return false;M={deal:o.deal,site:o.site||(o.deal&&(o.deal.site||o.deal.nm))||'',onApply:o.onApply,onTranscriptSave:o.onTranscriptSave,file:'',text:'',ex:null,err:''};draw();return true;}
- function close(){M=null;draw();}
- /* 응대 기록 입력칸에 넣을 글: 3줄 요약 + 요청 · 약속 · 다음(날짜 확인 필요) — 사람이 고친 값 그대로 */
- function noteOf(F){const lines=String(F.summary||'').split('\n').map(s=>s.trim()).filter(Boolean);const extra=[F.request&&!lines.some(l=>l.includes(F.request))?'고객 요청: '+F.request:'',F.promise&&!lines.some(l=>l.includes(F.promise))?'약속: '+F.promise:''].filter(Boolean);return ['[통화 녹음 요약]'].concat(lines,extra).join('\n');}
+ const keyOf=d=>String(d&&(d.id||d.opportunity_id)||'');
+ function open(o){if(!on())return false;const k=keyOf(o.deal),dr=k?drafts.get(k):null;M={deal:o.deal,site:o.site||(o.deal&&(o.deal.site||o.deal.nm))||'',onApply:o.onApply,onTranscriptSave:o.onTranscriptSave,file:dr?dr.file:'',text:dr?dr.text:'',auto:dr?!!dr.auto:false,ex:null,err:'',restored:!!(dr&&dr.text)};draw();return true;}
+ /* 닫기 = 쓰던 글을 그 영업건에 남김(저장 아님) */
+ function close(keep){if(M&&keep!==false){const k=keyOf(M.deal);if(k&&String(M.text||'').trim())drafts.set(k,{text:M.text,file:M.file,auto:M.auto});}M=null;draw();}
+ /* 응대 기록 입력칸에 넣을 글: 3줄 요약 + 요청 · 약속 · 다음(날짜 확인 필요) — 사람이 고친 값 그대로. 머리에 글의 출처(자동 변환 / 붙여 넣은 글) */
+ function noteOf(F,auto){const lines=String(F.summary||'').split('\n').map(s=>s.trim()).filter(Boolean);const extra=[F.request&&!lines.some(l=>l.includes(F.request))?'고객 요청: '+F.request:'',F.promise&&!lines.some(l=>l.includes(F.promise))?'약속: '+F.promise:''].filter(Boolean);return ['[통화 녹음 요약'+(auto?' · 자동 변환':' · 붙여 넣은 글')+']'].concat(lines,extra).join('\n');}
  async function apply(){
   const box=document.getElementById('cs-root');if(!M||!box)return;const F={};box.querySelectorAll('[data-cs-f]').forEach(n=>{F[n.getAttribute('data-cs-f')]=n.value;});
-  const note=noteOf(F),next=F.next?{text:F.next.trim(),due:F.due||''}:null,deal=M.deal,text=String(M.text||'').trim(),saveTr=M.onTranscriptSave,go=M.onApply,file=M.file;
-  close();
+  const note=noteOf(F,M.auto),next=F.next?{text:F.next.trim(),due:F.due||''}:null,deal=M.deal,text=String(M.text||'').trim(),saveTr=M.onTranscriptSave,go=M.onApply,file=M.file,auto=M.auto;
+  drafts.delete(keyOf(deal));close(false);
   try{if(go)go(note,next);}catch(e){}
-  if(text&&saveTr){try{await saveTr(deal,'[통화 전사'+(file?' · '+file:'')+'] '+text.slice(0,4000));}catch(e){try{R.toast&&R.toast('전사 원문을 내부 메모로 남기지 못했습니다 · 응대 기록 입력은 그대로','warn');}catch(x){}}}
+  if(text&&saveTr){try{await saveTr(deal,'['+(auto?'통화 전사':'통화 글 · 붙여 넣음')+(file?' · '+file:'')+'] '+text.slice(0,4000));}catch(e){try{R.toast&&R.toast('전사 원문을 내부 메모로 남기지 못했습니다 · 응대 기록 입력은 그대로','warn');}catch(x){}}}
  }
  if(typeof document!=='undefined'){
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#cs-root [data-cs]');if(!b||!M)return;const a=b.getAttribute('data-cs');
    if(a==='close'){e.preventDefault();return close();}
    if(a==='sum'){e.preventDefault();M.ex=extract(M.text);M.err=M.ex.count?'':'요약할 문장을 찾지 못했습니다 · 통화 내용을 확인해 주세요';return draw();}
    if(a==='apply'){e.preventDefault();return apply();}},true);
-  document.addEventListener('input',e=>{const t=e.target;if(!M||!t.closest||!t.closest('#cs-root'))return;if(t.getAttribute('data-cs')==='text'){M.text=t.value;const b=document.querySelector('#cs-root [data-cs="sum"]');if(b)b.disabled=!t.value.trim();}},true);
+  document.addEventListener('input',e=>{const t=e.target;if(!M||!t.closest||!t.closest('#cs-root'))return;if(t.getAttribute('data-cs')==='text'){M.text=t.value;M.auto=false;/* 손으로 고치거나 붙여 넣은 글 = 자동 변환 아님 */const lab=document.querySelector('#cs-root .cs-tr span');if(lab)lab.textContent='통화 내용(글)'+(t.value?' · 붙여 넣은 글':'');const b=document.querySelector('#cs-root [data-cs="sum"]');if(b)b.disabled=!t.value.trim();}},true);
   document.addEventListener('change',e=>{const t=e.target;if(!M||!t.closest||!t.closest('#cs-root')||t.getAttribute('data-cs')!=='file')return;const f=t.files&&t.files[0];M.file=f?f.name:'';
-   if(f&&typeof R.CallSummary.transcribe==='function'){M.err='';draw();Promise.resolve(R.CallSummary.transcribe(f,M.deal)).then(txt=>{if(M&&txt){M.text=String(txt);M.ex=extract(M.text);draw();}}).catch(x=>{if(M){M.err='글로 바꾸지 못했습니다: '+String(x&&x.message||x);draw();}});}else draw();},true);
+   if(f&&autoReady()){M.err='';M.busy=true;draw();Promise.resolve(R.CallSummary.transcribe(f,M.deal)).then(txt=>{if(M){M.busy=false;if(txt){M.text=String(txt);M.auto=true;M.ex=extract(M.text);}draw();}}).catch(x=>{if(M){M.busy=false;M.err='글로 바꾸지 못했습니다: '+String(x&&x.message||x)+' · 다시 고르거나 통화 앱의 텍스트 변환 결과를 붙여 넣어 주세요';draw();}});}else draw();},true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&M){e.stopPropagation();close();}},true);
  }
  /* ── PC 영업건 상세: 연락 결과 입력칸 머리에 [통화 녹음] 단추 ── */
