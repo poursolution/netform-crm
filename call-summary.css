@@ -25,4 +25,5 @@
 #cs-root .cs-p,#cs-root .cs-g{border:0;border-radius:12px;padding:11px 18px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;min-height:0;width:auto;box-shadow:none}
 #cs-root .cs-p{background:#3B6CE4;color:#fff}#cs-root .cs-p:disabled{background:#e2e8f1;color:#94a3b8;cursor:default}#cs-root .cs-g{background:#f2f4f6;color:#0f172a}
 #cs-root .cs-err{margin:0;color:#b42318;font-size:13px}
+#cs-root .cs-wait{color:#b42318;font-weight:700}
 @media(max-width:560px){#cs-root .cs-box{padding:16px}#cs-root .cs-steps{grid-template-columns:repeat(2,minmax(0,1fr))}#cs-root .cs-sum label{grid-template-columns:minmax(0,1fr)}#cs-root .cs-sum label>*{grid-column:1/-1!important}}
