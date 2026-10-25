@@ -9,6 +9,7 @@
  let currentActor='',managerRequests=[];
 
  function dueDays(date){if(!date||!Number.isFinite(Date.parse(date)))return null;const n=root.daysTo(date);return Number.isFinite(n)?n:null}
+ /* 2026-10-25 담당은 있는데 배정 시각이 없고 아직 첫 연락 전인 문의(G.inqLateNoAssignKeep 이면 예전처럼 지연 쪽에서 잡힌다) */ function noAssignTime(q){try{if(root.G&&root.G.inqLateNoAssignKeep)return false;return !!root.inquiryRoutedOwner(q)&&!(root.inquiryAssignedAt(q)||q.sales_assigned_at)&&!root.inquiryResponded(q)&&!root.inqCtlFirstResponseAt(q);}catch(e){return false}}
  function contactEntry(d){
   const meta=root.relationshipMeta(d),a=root.actionObj(d,root.itemPatch(d,'deal')),due=dueDays(meta.due),days=meta.days;
   let reason='',next=a&&a.text||'고객에게 연락하고 상담 내용과 다음 할 일 날짜 기록';
@@ -95,7 +96,7 @@
   const base=root.todayHomeData(),me=root.todayOwner();
   // Include overdue first responses even when the original recent-inquiry window has elapsed.
   const inquiry=base.Q.map(q=>base.inquiry.find(x=>x.key==='inq:'+root.inqKey(q))||
-   ((reviewOf(q).required||root.inquiryResponseLate(q))?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'첫 연락 지연',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:null)).filter(Boolean);
+   ((reviewOf(q).required||root.inquiryResponseLate(q))?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'첫 연락 지연',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0}:noAssignTime(q)?{key:'inq:'+root.inqKey(q),type:'inq',item:q,owner:root.repN(root.inquiryRoutedOwner(q)),stage:'배정완료',reason:'배정 기록 없음',next:'고객에게 연락하고 첫 연락 결과 기록',recent:root.todayRecent(q,'inq'),delay:0,noAssignTime:true}:null)).filter(Boolean);
   const pipeline=base.D.filter(d=>!relationship(d)).map(d=>{
    const entry=base.pipeline.find(x=>x.key==='deal:'+root.dealKey(d));if(entry)return entry;
    const a=root.actionObj(d,root.itemPatch(d,'deal')),meta=root.relationshipMeta(d),missing=!a||!a.text||dueDays(a.due)===null;
