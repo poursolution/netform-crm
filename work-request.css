@@ -98,6 +98,19 @@
 .wrq-sr .l2{font-size:12px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wrq-sr small{font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wrq-sent .none{margin:0;padding:14px 16px;font-size:12px;color:#6b7280}
+/* 2026-10-25 받는 사람별 확인 — 안 봄(붉은 글자) / 확인함(회색) 이름 칩 · 누르면 목록이 그 사람만 */
+.wrq-seen{margin:0 12px 10px;padding:9px 10px;border:1px solid #eceef2;border-radius:8px;background:#fafbfc;display:flex;flex-direction:column;gap:7px}
+.wrq-seen .sh{display:flex;flex-direction:column;gap:1px;min-width:0}
+.wrq-seen .sh b{font-size:12px}.wrq-seen .sh small{font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wrq-seen .col{display:flex;flex-direction:column;gap:4px}
+.wrq-seen .col>em{font-style:normal;font-size:11px;font-weight:600;color:#6b7280}.wrq-seen .col>em.no{color:#b42318}
+.wrq-seen .col>div{display:flex;flex-wrap:wrap;gap:4px}
+.wrq-seen .all{font-size:11.5px;color:#6b7280}
+.wrq-who{display:inline-flex;align-items:baseline;gap:5px;height:24px;min-height:0;width:auto;max-width:100%;padding:0 8px;border:1px solid #e3e6ec;border-radius:12px;background:#fff;color:#374151;font:inherit;font-size:11.5px;box-shadow:none;cursor:pointer;white-space:nowrap;line-height:22px}
+.wrq-who b{font-weight:700;overflow:hidden;text-overflow:ellipsis}.wrq-who span{color:#6b7280;font-variant-numeric:tabular-nums}
+.wrq-who.un{border-color:#f3c9c4}.wrq-who.un span{color:#b42318}
+.wrq-who[aria-pressed="true"]{background:#15171c;border-color:#15171c;color:#fff}.wrq-who[aria-pressed="true"] span{color:#e5e7eb}
+.wrq-sr .l2 em{font-style:normal;font-weight:600;color:#6b7280}.wrq-sr .l2 em.un{color:#b42318}
 .wrq-dlg .wrq-states{flex-wrap:wrap;border:0;border-radius:0;overflow:visible;gap:5px}
 .wrq-dlg .wrq-states button{border:1px solid #e3e6ec;border-radius:7px}
 .wrq-dlg .wrq-third{display:block;margin-top:5px;font-size:11.5px;font-weight:600;color:#b42318}
