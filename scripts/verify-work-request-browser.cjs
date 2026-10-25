@@ -112,7 +112,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   {const sent=v.locator('.tv3-side>section.wrq-sent');assert.equal(await sent.count(),1);assert.equal(await v.locator('.tv3-side>section').nth(1).evaluate(n=>n.classList.contains('wrq-sent')),true,'답 기다리는 중 바로 아래');
    assert.deepEqual((await sent.locator('.wrq-stabs button').allInnerTexts()).map(one),['전체 1','미확인 1','진행 0','회신 대기 0','기한 초과 0','완료 0']);
    const sr=await sent.locator('.wrq-sr').evaluateAll(l=>l.map(n=>[n.querySelector('.l1 b').textContent,n.querySelector('.wrq-pill').textContent,n.querySelector('.l2').textContent,n.querySelector('small').textContent]));
-   assert.equal(sr.length,1);assert.deepEqual(sr[0].slice(0,3),['[경북 경주] 전원하이빌','미확인','경남지사장 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인']);assert.match(sr[0][3],/^기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · /);
+   assert.equal(sr.length,1);assert.deepEqual(sr[0].slice(0,3),['[경북 경주] 전원하이빌','미확인','경남지사장 안 봄 0분째 · 실담당 지정 확인 · 고객 첫 연락 진행 확인 · 영업 진행 여부 확인']);assert.match(sr[0][3],/^기한 \d{4}\.\d{1,2}\.\d{1,2} \([일월화수목금토]\) 12:00 · /);
    await sent.locator('[data-wr="senttab"][data-v="done"]').click();await page.waitForTimeout(250);assert.equal(one(await v.locator('.wrq-sent .none').innerText()),'해당하는 요청이 없습니다');await v.locator('.wrq-sent [data-wr="senttab"][data-v="all"]').click();await page.waitForTimeout(250);}
   assert.equal(await v.locator('.wrq-wait>.ft').innerText(),'답변 대기 중엔 같은 요청 잠금 · 기한이 지나야 [재확인 요청] · 지사 건은 [본사 회수 검토]');
   /* 4. 요청 창(내부 담당): 고객 번호 · 문의 · 처리 기한(오늘 17:00 / 오늘 중 / 직접 지정) · 완료 조건 3줄 · 지연일이 든 메모 */
