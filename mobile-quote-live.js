@@ -28,10 +28,16 @@
   const A=versions(d),last=A[A.length-1];
   /* 견적 진행 · 도착 확인: 요청(단계 입력 quote_request · quote_due) → 견적팀 작업 → 기준금액 도착(견적 버전) → 제출금액 확정 */
   const F=ctxOf(d),due=String(F.quote_due||''),dd=/^\d{4}-\d{2}-\d{2}$/.test(due)?Math.round((Date.parse(due+'T00:00:00Z')-Date.parse(kst(0)+'T00:00:00Z'))/864e5):null;
-  const stTxt=last?(done(last)?['제출금액 확정 · V'+esc(last.version_no),'#1f7a4d']:['견적 도착 · V'+esc(last.version_no)+' — 제출금액을 만들 차례','#2a52b8']):F.quote_request?(dd!==null&&dd<0?['예정일 '+(-dd)+'일 지남 · 아직 도착 전 — 견적팀에 확인','#b42318']:['견적팀 작업 중 — '+(dd===0?'오늘':dd!==null?dd+'일 뒤':'예정일 미정')+' 도착 예정','#6b7280']):null;
-  const prog=F.quote_request||last?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:6px;font-size:13.5px"><b style="font-size:12px;color:#6b7280">견적 진행</b>'
+  /* 2026-10-25 인계 06: ① 요청만 있고 접수 · 착수 근거가 없으면 '견적팀 작업 중'이라 하지 않는다(요청함 · 접수 확인 전).
+     ② 확정한 뒤 새 수정본이 오면 '다시 확인할 차례' — 이전 수정본의 제출금액을 이 수정본 것처럼 쓰지 않는다.
+     ③ 고객 약속일(quote_customer_due)과 견적팀 예정일(quote_due · 내부)을 따로 적는다. */
+  const prevDone=last&&!done(last)?A.slice(0,-1).reverse().find(done):null;
+  const stTxt=last?(done(last)?['제출금액 확정 · V'+esc(last.version_no),'#1f7a4d']:prevDone?['새 수정본 V'+esc(last.version_no)+' 도착 — 제출금액을 다시 확인할 차례','#b42318']:['견적 도착 · V'+esc(last.version_no)+' — 제출금액을 만들 차례','#2a52b8']):F.quote_request?(dd!==null&&dd<0?['견적팀 예정일 '+(-dd)+'일 지남 · 아직 도착 전 — 견적팀에 확인','#b42318']:['견적 요청함 · 견적팀 접수 확인 전','#6b7280']):null;
+  const cdue=String(F.quote_customer_due||'');
+  const prog=F.quote_request||last||cdue?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:6px;font-size:13.5px"><b style="font-size:12px;color:#6b7280">견적 진행</b>'
    +(F.quote_request?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">요청</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(F.quote_request)+'</span></div>':'')
-   +(due?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">예정일</span><b style="color:'+(dd!==null&&dd<0&&!last?'#b42318':'#15171c')+'">'+esc(due.slice(5).replace('-','.'))+(dd===null?'':dd<0?' · '+(-dd)+'일 지남':dd===0?' · 오늘':' · D-'+dd)+'</b></div>':'')
+   +(/^\d{4}-\d{2}-\d{2}$/.test(cdue)?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">고객 약속</span><b style="color:#b42318">'+esc(cdue.slice(5).replace('-','.'))+' 견적서 전달</b></div>':'')
+   +(due?'<div style="display:flex;gap:8px"><span style="flex:none;color:#6b7280">견적팀 예정일</span><b style="color:'+(dd!==null&&dd<0&&!last?'#b42318':'#15171c')+'">'+esc(due.slice(5).replace('-','.'))+(dd===null?'':dd<0?' · '+(-dd)+'일 지남':dd===0?' · 오늘':' · D-'+dd)+'</b></div>':'')
    +(stTxt?'<b style="color:'+stTxt[1]+'">'+stTxt[0]+'</b>':'')+'</div>'
    :(d.code==='consulting'?'<span data-ql-act="toreq" role="button" tabindex="0" style="min-height:48px;border-radius:12px;border:1px solid #d9dde4;background:#fff;color:#15171c;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">견적 요청 등록</span>':'');
   const rows=A.slice().reverse().map(v=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #eef0f3;font-size:14px"><b>V'+esc(v.version_no)+'</b><span style="color:#6b7280">기준 '+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(v):v.amount)+'</span><b style="color:'+(done(v)?'#15171c':'#b42318')+'">'+(done(v)?won(v.submit_amount||v.amount):'제출금액 미확정')+'</b></div>').join('');
@@ -40,7 +46,7 @@
   else if(done(last))body='<p style="font-size:14px;line-height:1.6;color:#374151">V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)이 확정되어 있습니다. 새 기준금액 수정본이 올라오면 다시 가산할 수 있습니다.</p><span data-ql-act="tosend" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">고객 발송 기록</span>';
   else{
    const f=(k,l,ph,m)=>'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">'+l+'<input data-ql="'+k+'" inputmode="decimal" placeholder="'+ph+'" style="height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px"></label>';
-   body='<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px">V'+esc(last.version_no)+' 적산 기준금액 <b>'+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(last):last.amount)+'</b><div style="font-size:12.5px;color:#6b7280;margin-top:4px">기준금액은 고칠 수 없습니다. 배수 → ㎡당 → 정액 순서로 가산합니다.</div></div>'
+   body='<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px">V'+esc(last.version_no)+' 적산 기준금액 <b>'+won(w.QuoteAmounts?w.QuoteAmounts.baseOf(last):last.amount)+'</b>'+(prevDone?'<div style="font-size:12.5px;color:#b42318;margin-top:4px">V'+esc(prevDone.version_no)+' 제출금액 '+won(prevDone.submit_amount||prevDone.amount)+'은 이전 수정본 기준입니다. 이 수정본으로 다시 확정해야 고객에게 보낼 수 있습니다.</div>':'')+'<div style="font-size:12.5px;color:#6b7280;margin-top:4px">기준금액은 고칠 수 없습니다. 배수 → ㎡당 → 정액 순서로 가산합니다.</div></div>'
     +f('mul','배수','예: 1.52')+f('ar','㎡당 공과잡비(원)','예: 17000')+f('are','적용 면적(㎡)','예: 1000')+f('fl','정액 더하기(원)','예: 5000000')
     +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">가산 메모(선택)<input data-ql="note" maxlength="200" style="height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px"></label>'
     +'<div data-ql="preview" style="background:#f5f6f8;border-radius:12px;padding:12px;font-size:14px;line-height:1.55">가산을 입력하면 제출금액이 계산됩니다. 입력이 없으면 기준금액 그대로 제출합니다.</div>'
@@ -79,9 +85,9 @@
  function renderReq(d){
   const f=ctxOf(d),Q=Number(w.PipelineJudge?.rules?.().quote)||3;
   const inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
-  return shell(d,(f.quote_request?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">이미 등록된 요청: '+esc(f.quote_request)+(f.quote_due?'<br>견적 예정일 '+esc(f.quote_due):'')+'</div>':'')
+  return shell(d,(f.quote_request?'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">이미 등록된 요청: '+esc(f.quote_request)+(f.quote_due?'<br>견적팀 예정일 '+esc(f.quote_due):'')+'</div>':'')
    +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">요청 범위 · 메모(필수)<textarea data-ql="req" rows="4" maxlength="500" placeholder="예: 옥상 방수 1,200㎡ · 우레탄 도막 · 11월 착공 희망" style="border:1px solid #d9dde4;border-radius:10px;padding:10px 12px;font-size:16px;background:#fff">'+esc(f.quote_request||'')+'</textarea></label>'
-   +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">견적 예정일 (기본: 오늘 + '+Q+'일)<input data-ql="due" type="date" value="'+esc(f.quote_due||kst(Q))+'" style="'+inp+'"></label>'
+   +'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">견적팀 예정일(내부 · 고객 약속 아님 · 기본: 오늘 + '+Q+'일)<input data-ql="due" type="date" value="'+esc(f.quote_due||kst(Q))+'" style="'+inp+'"></label>'
    +'<div style="font-size:12.5px;color:#6b7280">등록하면 견적 요청 기록과 견적 예정일이 저장되고, 견적팀이 기준금액을 올리면 제출금액을 만들 수 있습니다.</div>'
    +'<span data-ql-act="req" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">견적 요청 등록</span>');
  }
@@ -99,7 +105,7 @@
    if(!r||r.ok!==true||!r.stage_context)throw Error('서버 확인 응답이 올바르지 않습니다.');
    d.stage_contexts=Object.assign({},d.stage_contexts||{},{consulting:r.stage_context});d.stageContexts=d.stage_contexts;
    if(r.version!=null)d.version=r.version;
-   msg='견적 요청을 등록했습니다. 견적 예정일 '+due;
+   msg='견적 요청을 등록했습니다. 견적팀 예정일 '+due;
   }catch(e){msg=String(e&&e.message||e);}
   busy=false;after();
  }
@@ -107,10 +113,13 @@
  const FU=/견적.*(확인|후속|반응)|발송\s*후\s*확인/;
  const addDay=(k,n)=>new Date(Date.parse(k+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
  function openFollow(d){const L=(Array.isArray(d.openNextActions)?d.openNextActions:[]).concat([d.nextActionObj,d.nextAction]).filter(a=>a&&a.status==='open'&&FU.test(String(a.text||a.title||'')));return L[0]||null;}
+ /* 보낸 견적 = 제출금액이 확정된 가장 최근 수정본(확정 안 된 수정본의 금액을 제출금액처럼 적지 않는다 · 2026-10-25 인계 06) */
+ const sentOf=d=>versions(d).slice().reverse().find(done)||null;
  function renderSend(d){
-  const A=versions(d),last=A[A.length-1],inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
+  const A=versions(d),last=A[A.length-1],s=sentOf(d),inp='height:46px;border:1px solid #d9dde4;border-radius:10px;padding:0 12px;font-size:16px;background:#fff';
   const lab=(l,h)=>'<label style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:#374151">'+l+h+'</label>';
-  return shell(d,'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">'+(last?'V'+esc(last.version_no)+' 제출금액 <b>'+won(last.submit_amount||last.amount)+'</b>(VAT 별도)':'등록된 견적 없음')+'</div>'
+  return shell(d,'<div style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55">'+(s?'V'+esc(s.version_no)+' 제출금액 <b>'+won(s.submit_amount||s.amount)+'</b>(VAT 별도)'+(last&&last!==s?'<br><span style="color:#b42318;font-size:12.5px">새 수정본 V'+esc(last.version_no)+'은 제출금액이 아직 확정되지 않았습니다</span>':''):last?'<span style="color:#b42318">제출금액이 확정된 견적이 없습니다 — 먼저 제출금액을 확정해 주세요</span>':'등록된 견적 없음')+'</div>'
+   +'<div style="font-size:12.5px;color:#6b7280">담당자가 남기는 발송 기록입니다(문자 · 메일 실제 발송 내역과 따로).</div>'
    +lab('발송일','<input data-ql="sdate" type="date" value="'+kst(0)+'" max="'+kst(0)+'" style="'+inp+'">')
    +lab('받는 사람(필수)','<input data-ql="sto" maxlength="60" placeholder="예: 관리소장 김OO" style="'+inp+'">')
    +lab('보낸 방법','<select data-ql="sway" style="'+inp+'"><option>이메일</option><option>카카오톡</option><option>문자</option><option>직접 전달</option></select>')
@@ -129,8 +138,8 @@
   if(!fu&&(!/^\d{4}-\d{2}-\d{2}$/.test(nx)||nx<sd||nx<kst(0))){msg='다음 확인일은 오늘 이후로 입력해 주세요.';return after();}
   if(typeof w.queueMobileContactOperation!=='function'){msg='이 기기에서는 기록을 저장할 수 없습니다.';return after();}
   try{
-   const last=versions(d)[versions(d).length-1],cur=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null;
-   w.queueMobileContactOperation('activity',{opportunity_id:String(d.id),intent:'standalone',type:'견적발송',note:(last?'견적 V'+last.version_no+' ':'')+'발송 · '+way+' · 받는 사람 '+to+' · 발송일 '+sd,occurred_at:new Date().toISOString(),meaningful_contact:false});
+   const last=sentOf(d),cur=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null;
+   w.queueMobileContactOperation('activity',{opportunity_id:String(d.id),intent:'standalone',type:'견적발송',note:(last?'견적 V'+last.version_no+' ':'')+'발송 · '+way+' · 받는 사람 '+to+' · 발송일 '+sd+' · 담당자 기록',occurred_at:new Date().toISOString(),meaningful_contact:false});
    if(!fu)w.queueMobileContactOperation('next_action',{opportunity_id:String(d.id),intent:'standalone',type:'전화',text:'견적 발송 후 확인 연락',due_at:nx});
    msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). '+(fu?'후속은 기존 업무 그대로':'다음 확인 '+nx);
   }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
