@@ -16,6 +16,9 @@
 #today-v2 .tv6-left{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:12px}
 #today-v2 .tv6-right{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:10px}
 #today-v2 .tv6-box{background:#fff;border:1px solid #e8eaef;border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+/* 2026-10-26 관리자만: 목록 아래 '답 기다리는 중 · 보낸 요청'(v3 오른쪽 칸 것 그대로) — 넓으면 두 칸, 좁으면 한 칸 */
+#today-v2 .tv6-wrq{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px;align-items:start}
+#today-v2 .tv6-wrq>section{background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden;min-width:0;display:flex;flex-direction:column}
 #today-v2 .tv6-box>header{display:flex;align-items:baseline;gap:8px}
 #today-v2 .tv6-box>header b{font-size:15px}#today-v2 .tv6-box>header span{font-size:12px;color:#9ca3af}
 #today-v2 .tv6-now{background:#f8f9fb;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:7px}
