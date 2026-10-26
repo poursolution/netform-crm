@@ -30,6 +30,132 @@
  const listScroller=()=>w.document.querySelector('.approved-list');
  let requestRead=null,requestReadOwner='',pcRedirected=false,taskClick=0;
  const requestOwner=()=>{const p=w.Phase1?.profile;return p?.auth_uid&&p?.user_id?p.auth_uid+':'+p.user_id+':'+(w.MobileSaveJournal?.session?.()||''):'';};
+ let mineFilter=null,mineFilterOwnerSeen='',mineFilterBackground=[],mineFilterHistory=null,mineFilterHistoryLast=null,mineFilterHistorySeq=0;
+ const mineFilterHistoryKey='__crmMineFilter',mineFilterHistoryNamespace=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+ const mineFilterOwner=()=>{const owner=requestOwner(),u=w.G?.user;return owner&&u&&w.G.mode==='rep'?owner+':'+String(u.id||u.nm||''):'';};
+ const mineFilterOptions=()=>w.MobileMineFilterModel.options(mine(),w.PipelineStages?.definitions||[],brand);
+ function mineFilterHistoryFingerprint(value,seen=new Set()){
+  if(value===null)return 'null';const type=typeof value;
+  if(type!=='object')return JSON.stringify([type,type==='number'&&Object.is(value,-0)?'-0':String(value)]);
+  if(seen.has(value))throw Error('HISTORY_STATE_UNSUPPORTED');seen.add(value);
+  const kind=Object.prototype.toString.call(value);let result;
+  if(kind==='[object Date]')result=JSON.stringify(['date',String(value.getTime())]);
+  else if(kind==='[object Object]'||Array.isArray(value))result=JSON.stringify([kind,Array.isArray(value)?value.length:null,Object.keys(value).sort().map(key=>[key,mineFilterHistoryFingerprint(value[key],seen)])]);
+  else throw Error('HISTORY_STATE_UNSUPPORTED');
+  seen.delete(value);return result;
+ }
+ function openMineFilterHistory(){
+  try{
+   const h=w.history,url=String(w.location.href),state=h.state;
+   if(typeof h.pushState!=='function'||typeof h.replaceState!=='function'||typeof w.structuredClone!=='function'||state&&typeof state==='object'&&Object.hasOwn(state,mineFilterHistoryKey))throw Error('HISTORY_UNAVAILABLE');
+   const base=w.structuredClone(state);
+   const baseFingerprint=mineFilterHistoryFingerprint(state),reuse=mineFilterHistory&&!mineFilterHistory.open&&mineFilterHistory.url===url&&mineFilterHistory.length===h.length&&mineFilterHistory.baseFingerprint===baseFingerprint;
+   const token=mineFilterHistoryNamespace+':'+(++mineFilterHistorySeq),tagged={...(base&&typeof base==='object'&&!Array.isArray(base)?base:{}),[mineFilterHistoryKey]:token};
+   const fingerprint=mineFilterHistoryFingerprint(tagged);
+   if(reuse)h.replaceState(tagged,'',url);else h.pushState(tagged,'',url);
+   mineFilterHistory={token,url,base,baseFingerprint,fingerprint,length:h.length,open:true};mineFilterHistoryLast=mineFilterHistory;mineFilter.historySupported=true;
+  }catch(e){mineFilterHistory=null;mineFilter.historySupported=false;mineFilter.error='이 브라우저에서는 뒤로가기로 닫을 수 없어요. 취소나 닫기를 눌러 주세요.';}
+ }
+ function clearMineFilterHistory(record=mineFilterHistory){
+  if(!record?.open)return;
+  try{
+   const h=w.history,state=h.state,url=String(w.location.href);
+   if(!state||state[mineFilterHistoryKey]!==record.token){mineFilterHistory=null;return;}
+   if(url===record.url&&mineFilterHistoryFingerprint(state)===record.fingerprint){
+    h.replaceState(record.base,'',url);record.open=false;record.baseFingerprint=mineFilterHistoryFingerprint(h.state);record.length=h.length;
+   }else{
+    const clean={...state};delete clean[mineFilterHistoryKey];h.replaceState(clean,'',url);mineFilterHistory=null;
+   }
+  }catch(e){mineFilterHistory=null;}
+ }
+ function unlockMineFilter(){for(const item of mineFilterBackground)item.el.inert=item.inert;mineFilterBackground=[];}
+ function discardMineFilter(){clearMineFilterHistory();unlockMineFilter();mineFilter=null;w.document.querySelector('[data-mine-filter-root]')?.remove();}
+ function syncMineFilter(){
+  const owner=mineFilterOwner();
+  if(mineFilterOwnerSeen&&mineFilterOwnerSeen!==owner){
+   discardMineFilter();if(w.G)w.G.brandF='전체';S.q='';S.stage='';S.openOnly=false;S.page=1;S.scroll=0;
+  }
+  mineFilterOwnerSeen=owner;
+  if(mineFilter&&(!owner||owner!==mineFilter.owner||w.G.tab!=='mine'||w.G.deal!=null||w.G.sub))discardMineFilter();
+ }
+ function filterCurrent(el){
+  const was=mineFilter;syncMineFilter();
+  if(!mineFilter){if(was)run();return false;}
+  return !!el&&!!w.document.querySelector('[data-mine-filter-root]')?.contains(el);
+ }
+ function filterFocusables(root){return [...root.querySelectorAll('button,input,select,textarea,a[href],[tabindex]')].filter(el=>!el.disabled&&el.tabIndex>=0&&!el.hidden&&el.getAttribute('aria-hidden')!=='true');}
+ function captureMineFilterFocus(){
+  if(!mineFilter||mineFilter.focus||mineFilter.owner!==mineFilterOwner())return;
+  const root=w.document.querySelector('[data-mine-filter-root]'),active=w.document.activeElement;if(!root?.contains(active))return;
+  if(active.dataset?.mineFilterField)mineFilter.restoreFocus={field:active.dataset.mineFilterField,value:String(active.value||'')};
+  else if(active.dataset?.mineFilterAction){const action=active.dataset.mineFilterAction;mineFilter.restoreFocus={action,index:filterFocusables(root).filter(el=>el.dataset.mineFilterAction===action).indexOf(active)};}
+  else mineFilter.restoreFocus={dialog:true};
+ }
+ function renderMineFilter(scr){
+  if(!mineFilter)return;
+  const owner=mineFilter.owner,root=scr.querySelector('.approved-bc');
+  if(!root||owner!==mineFilterOwner()||typeof w.MobileApprovedMineFilter?.render!=='function')return;
+  const model={...mineFilterOptions(),draft:{...mineFilter.draft},error:mineFilter.error},box=w.document.createElement('div');
+  if(owner!==mineFilterOwner()){syncMineFilter();return;}
+  box.innerHTML=w.MobileApprovedMineFilter.render(model);const overlay=box.firstElementChild;
+  if(!overlay?.hasAttribute('data-mine-filter-root'))return;
+  unlockMineFilter();
+  mineFilterBackground=[...root.children].map(el=>({el,inert:el.inert===true}));for(const item of mineFilterBackground)item.el.inert=true;
+  root.append(overlay);
+  const items=filterFocusables(overlay),saved=mineFilter.restoreFocus;
+  const restored=saved?.field?items.find(el=>el.dataset.mineFilterField===saved.field&&String(el.value||'')===saved.value):saved?.action?items.filter(el=>el.dataset.mineFilterAction===saved.action)[saved.index]:null;
+  if(mineFilter.focus||saved)(mineFilter.focus?items[0]:restored||overlay.querySelector('[data-mine-filter-dialog]'))?.focus();
+  mineFilter.focus=false;mineFilter.restoreFocus=null;
+ }
+ function openMineFilter(){
+  syncMineFilter();const owner=mineFilterOwner();
+  if(!owner||w.G.tab!=='mine'||w.G.deal!=null||w.G.sub)return;
+  if(typeof w.MobileMineFilterModel?.validate!=='function'||typeof w.MobileApprovedMineFilter?.render!=='function')return w.toast('필터를 불러오지 못했습니다. 새로고침해 주세요.');
+  S.scroll=listScroller()?.scrollTop||0;
+  if(mineFilter)return;
+  mineFilter={owner,draft:w.MobileMineFilterModel.draft({brand:w.G.brandF,stage:S.stage,openOnly:S.openOnly}),error:'',focus:true};openMineFilterHistory();run();
+ }
+ function closeMineFilter(){
+  const owner=mineFilter?.owner;clearMineFilterHistory();unlockMineFilter();mineFilter=null;run();
+  if(owner&&owner===mineFilterOwner())w.document.querySelector('.approved-bc [data-gs="filter"]')?.focus();
+ }
+ function bindMineFilter(){
+  w.addEventListener('popstate',()=>{
+   const record=mineFilterHistory||mineFilterHistoryLast;let ownEntry=false;
+   try{ownEntry=!!record&&w.history.state?.[mineFilterHistoryKey]===record.token;}catch(e){}
+   if(mineFilter){if(!mineFilterHistory||mineFilterHistory.url===String(w.location.href))closeMineFilter();else discardMineFilter();}
+   else clearMineFilterHistory(mineFilterHistoryLast);
+   mineFilterHistory=ownEntry&&!record.open?record:null;
+  });
+  w.document.addEventListener('change',e=>{
+   const el=e.target.closest('[data-mine-filter-field]');if(!el||!filterCurrent(el)||el.type==='radio'&&!el.checked)return;
+   const key=el.dataset.mineFilterField;if(!['brand','stage','openOnly'].includes(key))return;
+   mineFilter.draft[key]=key==='openOnly'?el.checked===true:el.value;mineFilter.error='';
+  });
+  w.document.addEventListener('click',e=>{
+   const el=e.target.closest('[data-mine-filter-action]');if(!el||!filterCurrent(el))return;
+   e.preventDefault();const action=el.dataset.mineFilterAction;
+   if(action==='cancel')return closeMineFilter();
+   if(action==='reset'){mineFilter.draft={brand:'',stage:'',openOnly:false};mineFilter.error='';mineFilter.focus=true;run();return;}
+   if(action!=='apply')return;
+   const owner=mineFilter.owner,result=w.MobileMineFilterModel.validate(mineFilter.draft,mineFilterOptions());
+   if(owner!==mineFilterOwner()){syncMineFilter();run();return;}
+   if(!result.ok){mineFilter.error=result.error;mineFilter.focus=true;run();return;}
+   w.G.brandF=result.value.brand||'전체';S.stage=result.value.stage;S.openOnly=result.value.openOnly;S.page=1;S.scroll=0;closeMineFilter();
+  });
+  w.document.addEventListener('keydown',e=>{
+   if(!mineFilter)return;
+   const overlay=w.document.querySelector('[data-mine-filter-root]');if(!overlay||!filterCurrent(overlay))return;
+   if(e.key==='Escape'){e.preventDefault();closeMineFilter();return;}
+   if(e.key==='Tab'){
+    const items=filterFocusables(overlay),first=items[0],last=items[items.length-1],active=w.document.activeElement;
+    if(!first){e.preventDefault();overlay.querySelector('[data-mine-filter-dialog]')?.focus();return;}
+    if(!overlay.contains(active)||e.shiftKey&&active===first||!e.shiftKey&&active===last){e.preventDefault();(e.shiftKey?last:first).focus();}return;
+   }
+   const action=e.target.closest('[data-mine-filter-action]');
+   if((e.key==='Enter'||e.key===' ')&&action&&overlay.contains(action)&&action.getAttribute('aria-hidden')!=='true'){e.preventDefault();action.click();}
+  });
+ }
  function loadRequests(){
   const owner=requestOwner();
   if(!owner||!w.G?.user||w.G.mode!=='rep'||(!w.LIVE&&!w.DEMO)||typeof w.MobileRequests?.load!=='function')return Promise.resolve();
@@ -144,8 +270,8 @@
  function listing(){
   let rows=mine();const needle=S.q.trim().toLocaleLowerCase();
   if(S.stage)rows=rows.filter(d=>w.PipelineStages.group(d.code,d.outcome)===S.stage);
-  else if(S.openOnly)rows=rows.filter(d=>w.isOpen?.(d));/* 오늘 요약 '내 담당 ›'에서 옴 = 그 숫자와 같은 조건(진행 중만) */
-  else if(lostHide()&&!needle)rows=rows.filter(d=>!lostM(d));/* 전체 = 실주 숨김(목록 끝 [실주 n건 ›] 칸) */
+  if(S.openOnly)rows=rows.filter(d=>w.isOpen?.(d));/* 오늘 요약 '내 담당 ›'에서 옴 = 그 숫자와 같은 조건(진행 중만). 단계와 함께 고르면 두 조건 모두 적용 */
+  else if(!S.stage&&lostHide()&&!needle)rows=rows.filter(d=>!lostM(d));/* 전체 = 실주 숨김(목록 끝 [실주 n건 ›] 칸) */
   if(needle)rows=rows.filter(d=>{const c=w.contactInfoM(d);return [d.nm,d.address,d.addr,c.name,c.mobile,c.officeTel,work(d)].join(' ').toLocaleLowerCase().includes(needle);});
   if(w.G.brandF&&w.G.brandF!=='전체')rows=rows.filter(d=>brand(d)===w.G.brandF);
   const pg=w.ListPager.cut(rows,w.ListPager.page(S));S.page=pg.page;
@@ -157,7 +283,8 @@
   const failed=(w.LAST_OPERATIONAL_READ_ERROR||[]).some?.(f=>f.domain==='deal_core');
   const empty=w.MOBILE_TODAY_FIRST?'전체 목록을 불러오는 중입니다.':failed?'영업건을 불러오지 못했습니다. 새로고침해 주세요.':needle?'\''+S.q.trim()+'\' 검색 결과가 없습니다.':S.stage?(w.PipelineStages.definition(S.stage)?.label||'이 단계')+' 영업건이 없습니다.':S.openOnly?'진행 중인 영업건이 없습니다.':mineAll().length?'해당하는 영업건이 없습니다.':'담당 영업건이 없습니다.';
   /* 종료 건(실주 등)은 '다음 업무'가 없다 — 오른쪽 = 종료 사유 · 종료일 */
-  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,empty,filterLabel:w.__approvedBCExample?.filterLabel||'필터',stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d),same(d)].filter(Boolean).join(' · '),color:d.outcome&&lostM(d)?'#9ca3af':color(d),task:d.outcome?closedTask(d):next(d)?.text||'다음 업무 확인',due:d.outcome?closedDue(d):due(d),dueColor:d.outcome?'#6b7280':dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
+  const filterCount=w.MobileMineFilterModel?.count({brand:w.G.brandF,stage:S.stage,openOnly:S.openOnly})||0;
+  return w.MobileApprovedBC.listing({query:S.q,stage:S.stage,empty,filterLabel:w.__approvedBCExample?.filterLabel||(filterCount?'필터 '+filterCount:'필터'),stages:[{key:'',label:'전체'},...w.PipelineStages.definitions.filter(d=>d.key!=='expansion').map(d=>({key:d.key,label:d.label}))],rows:pg.rows.map(d=>({id:d.id,name:d.nm,subtitle:[d.address_dong,work(d),d.construction_year||d.planned_year,label(d),same(d)].filter(Boolean).join(' · '),color:d.outcome&&lostM(d)?'#9ca3af':color(d),task:d.outcome?closedTask(d):next(d)?.text||'다음 업무 확인',due:d.outcome?closedDue(d):due(d),dueColor:d.outcome?'#6b7280':dueColor(d),...(w.__approvedBCExample?.rows?.[d.id]||{})})),pager:w.ListPager.html(pg,{ns:'gs',unit:'건'})});
  }
  function detail(d){
   const c=w.contactInfoM(d),n=next(d),sid=d.site_id||d.cleanup_site_id;
@@ -293,6 +420,8 @@
   return box.innerHTML;
  }
  function show(){
+  captureMineFilterFocus();
+  syncMineFilter();
   if(!w.G?.user||(!w.LIVE&&!w.DEMO)||w.G.mode!=='rep'||w.G.sub)return false;
   const d=w.G.deal!=null?mine().find(x=>String(x.id)===String(w.G.deal)):null;
   if(!d&&w.G.tab==='prospect-form'&&typeof w.rProspect==='function'){
@@ -308,7 +437,11 @@
   w.document.getElementById('stage').style.display='';
   const scr=w.document.getElementById('scr'),tab=w.document.getElementById('tabbar');
   const views={mine:listing,today,pending,record:registration,'registration-match':registrationMatches,schedule,'day-close':dayClose};
-  scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();tab.innerHTML='';tab.classList.add('gs-tabhost');
+  scr.classList.add('gs-screen','gs-approved-frame');scr.classList.toggle('gs-approved-a',!d&&w.G.tab==='today');scr.innerHTML=d?detailScreen(d):views[w.G.tab]();
+  if(!d&&w.G.tab==='mine'){
+   const filterButton=scr.querySelector('.approved-bc [data-gs="filter"]');filterButton?.setAttribute('aria-haspopup','dialog');filterButton?.setAttribute('aria-expanded',mineFilter?'true':'false');renderMineFilter(scr);
+  }
+  tab.innerHTML='';tab.classList.add('gs-tabhost');
   /* 2026-10-22 하자 사진 간이 접수: 상세 더보기 끝에 [하자 접수] 줄 하나(승인 원본 줄을 복제 · 서버 함수가 있을 때만) */
   if(d&&!S.detailView&&w.MobileDefect&&w.MobileDefect.on()){const more=scr.querySelector('.approved-detail-body')?.lastElementChild,last=more&&more.lastElementChild;if(last&&last.dataset.gs==='more'&&!more.querySelector('[data-value="하자 접수"]')){const n=last.cloneNode(true);n.dataset.value='하자 접수';n.children[0].textContent='하자 접수';n.children[1].textContent='사진 1장 · 본사 알림 ›';n.setAttribute('aria-label','하자 접수');more.append(n);}}
   /* 모바일 v6 ②: 상세 첫 칸(현장 이름 · 진행상태) 바로 아래 진행 바, '응대 이력' 칸 바로 위 단계 이력(mobile-v6.js). 승인 C 원본 칸은 그대로 두고 칸 두 개만 더한다 */
@@ -363,16 +496,19 @@
  }
  function boot(){
   readOpenLink();
+  bindMineFilter();
   // Retired contact forms must not reopen or submit stale consent snapshots.
   w.contactEditSheetM=openContactCard;
   w.saveContactM=unavailable;
   w.addEventListener('phase1:identity-cleared',()=>{
    requestRead=null;requestReadOwner='';pcRedirected=false;taskClick++;
+   discardMineFilter();mineFilterOwnerSeen='';if(w.G)w.G.brandF='전체';
    Object.assign(S,{q:'',stage:'',openOnly:false,page:1,pendingPage:1,scroll:0,returnTab:'mine',area:'now',entryAction:'',scheduleDay:'',schedulePage:1,newQuery:'',selectedSite:'',registrationPage:1,registrationOwner:'',registrationError:'',closePages:{done:1,open:1,tomorrow:1}});resetDetail({force:true});
    try{const prefix=w.MobileRegistrationContext?.draftPrefix||'crm:mobile-registration:v1:';Object.keys(w.sessionStorage).filter(k=>k.startsWith(prefix)).forEach(k=>w.sessionStorage.removeItem(k));}catch(e){}
   });
   const previous=w.render;
   w.render=function(){
+   captureMineFilterFocus();
    if(!mobileMode())return;
    w.MobileInputFlow?.syncContext();
    w.MobileQuoteFlow?.syncContext();
@@ -392,7 +528,8 @@
    taskClick++;
    if((k==='e-newsite'||k.startsWith('j4-'))&&!registrationOwnerMatches())return;
    if(b.tagName==='A')e.preventDefault();if(b.getAttribute('aria-disabled')==='true'){if(b.title)w.toast(b.title);return;}
-   if(k==='deal'){
+   if(k==='filter')openMineFilter();
+   else if(k==='deal'){
     if(!mine().some(d=>String(d.id)===b.dataset.id))return w.toast('현재 조회 범위의 영업건을 다시 선택해 주세요.');
     if(!resetDetail())return;S.scroll=listScroller()?.scrollTop||0;S.returnTab=w.G.tab;w.G.deal=b.dataset.id;w.G.sub=null;const entry=S.entryAction;S.entryAction='';run();if(entry==='contact')openContact();else if(entry==='attach')w.MobileQuick?.attach('photo');else if(entry==='sched')w.MobileQuick?.schedule();else if(b.dataset.taskId)openVisit(mine().find(d=>String(d.id)===b.dataset.id),b.dataset.taskId);
    }

@@ -1,0 +1,77 @@
+/* 내 현장 필터 선택창 — 승인 B(guide42 B/C 원본) 규격 재사용
+   근거: reference/mobile-approved-bc-source.js (B 칩·검색·필터 버튼, C 주 버튼·보조 버튼),
+         reference/mobile-guide-shell.css (글꼴, 초점선, 44px 터치 영역 방식).
+   모든 규칙은 .approved-mine-filter 아래로 한정한다 (다른 화면 영향 없음). */
+.approved-mine-filter{
+  position:fixed;inset:0;z-index:60;
+  font-family:ClaudeMobilePretendard,Pretendard,'Malgun Gothic',sans-serif;
+  letter-spacing:normal;color:#15171c;-webkit-font-smoothing:antialiased
+}
+.approved-mine-filter[hidden]{display:none}
+.approved-mine-filter *{box-sizing:border-box}
+.approved-mine-filter button{font:inherit;border:0;background:none;cursor:pointer;color:inherit;padding:0;margin:0}
+.approved-mine-filter button:focus-visible{outline:2px solid #3b6ce4;outline-offset:2px}
+
+/* 배경 */
+.approved-mine-filter .amf-scrim{position:absolute;inset:0;background:rgba(21,23,28,.45);animation:amf-fade .2s ease}
+
+/* 시트 — 셸과 같이 폭 100% · 최대 480 가운데 */
+.approved-mine-filter .amf-card{position:absolute;left:0;right:0;bottom:0;margin:0 auto;width:100%;max-width:480px;max-height:86%;
+  display:flex;flex-direction:column;background:#fff;border-radius:14px 14px 0 0;overflow:hidden;outline:none;
+  animation:amf-up .26s cubic-bezier(.2,.8,.3,1)}
+.approved-mine-filter .amf-card:focus-visible{box-shadow:inset 0 0 0 2px #3b6ce4}
+.approved-mine-filter .amf-grip{width:36px;height:4px;border-radius:4px;background:#d9dde4;margin:8px auto 0;flex:none}
+
+/* 머리 — B 머리줄(56px · 17px 굵게 · 아래 #eef0f3) */
+.approved-mine-filter .amf-head{display:flex;align-items:center;gap:8px;min-height:52px;padding:0 4px 0 16px;border-bottom:1px solid #eef0f3;flex:none}
+.approved-mine-filter .amf-title{flex:1;min-width:0;margin:0;font-size:17px;font-weight:700}
+/* 초기화 — C '단계 바꾸기'와 같은 모양, 누르는 영역만 44px(셸 ::after 방식) */
+.approved-mine-filter .amf-reset{position:relative;flex:none;font-size:13px;font-weight:600;border:1px solid #d9dde4;border-radius:8px;padding:6px 10px;background:#fff;color:#15171c}
+.approved-mine-filter .amf-reset::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(44px,100%);height:max(44px,100%)}
+.approved-mine-filter .amf-close{flex:none;width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:#15171c}
+.approved-mine-filter .amf-close svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.approved-mine-filter .amf-hint{margin:10px 16px 0;font-size:12.5px;line-height:1.5;color:#6b7280;flex:none;overflow-wrap:anywhere}
+
+/* 본문 */
+.approved-mine-filter .amf-body{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:4px 16px 8px;-webkit-overflow-scrolling:touch}
+.approved-mine-filter .amf-alert{margin:10px 0 2px;padding:10px 12px;border-left:3px solid #b42318;border-radius:0 10px 10px 0;background:#f8f9fb;color:#b42318;font-size:13px;font-weight:600;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
+.approved-mine-filter .amf-group{border:0;margin:0;padding:12px 0 6px;min-width:0}
+.approved-mine-filter .amf-group+.amf-group{border-top:1px solid #f0f1f4}
+.approved-mine-filter .amf-legend{padding:0;margin:0 0 4px;font-size:14px;font-weight:700;color:#15171c}
+.approved-mine-filter .amf-empty{margin:4px 0 0;font-size:12.5px;line-height:1.5;color:#6b7280}
+
+/* 칩 — B 단계 칩 그대로(36px · 13px/600 · 둥근 끝).
+   안 고름 = 흰 바탕 #374151 글자 #d9dde4 테두리 / 고름 = #15171c 채움 흰 글자.
+   칩을 감싸는 label 자체가 44px라 줄이 바뀌어도 누르는 영역이 겹치지 않는다.
+   긴 이름은 자르지 않고 줄바꿈해 전부 보인다. */
+.approved-mine-filter .amf-chips{display:flex;flex-wrap:wrap;gap:0 6px;min-width:0}
+.approved-mine-filter .amf-chip{position:relative;display:inline-flex;align-items:center;min-height:44px;max-width:100%;min-width:44px;cursor:pointer}
+.approved-mine-filter .amf-chip input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.approved-mine-filter .amf-chip span{display:inline-block;min-height:36px;max-width:100%;padding:8px 12px;border-radius:18px;
+  border:1px solid #d9dde4;background:#fff;color:#374151;font-size:13px;font-weight:600;line-height:18px;
+  white-space:normal;overflow-wrap:anywhere;word-break:keep-all}
+.approved-mine-filter .amf-chip input:checked+span{background:#15171c;border-color:#15171c;color:#fff}
+.approved-mine-filter .amf-chip input:focus-visible+span{outline:2px solid #3b6ce4;outline-offset:2px}
+
+/* 진행 중만 — 스위치(켜짐 = 선택 칩과 같은 #15171c) */
+.approved-mine-filter .amf-switch{position:relative;display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.approved-mine-filter .amf-switch-text{flex:1;min-width:0;font-size:14.5px;font-weight:700}
+.approved-mine-filter .amf-switch input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.approved-mine-filter .amf-switch-ui{position:relative;flex:none;width:46px;height:28px;border-radius:999px;background:#d9dde4;transition:background .15s}
+.approved-mine-filter .amf-switch-ui::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(21,23,28,.25);transition:transform .15s}
+.approved-mine-filter .amf-switch input:checked~.amf-switch-ui{background:#15171c}
+.approved-mine-filter .amf-switch input:checked~.amf-switch-ui::after{transform:translateX(18px)}
+.approved-mine-filter .amf-switch input:focus-visible~.amf-switch-ui{outline:2px solid #3b6ce4;outline-offset:2px}
+
+/* 아래 버튼 — C 주 버튼(46px · 모서리 10 · #15171c · 14px/700) + 같은 크기 보조 버튼(#d9dde4 테두리) */
+.approved-mine-filter .amf-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px;padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid #eef0f3;flex:none}
+.approved-mine-filter .amf-btn{display:flex;align-items:center;justify-content:center;min-width:0;height:46px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:700}
+.approved-mine-filter .amf-btn-line{background:#fff;color:#15171c;border:1px solid #d9dde4}
+.approved-mine-filter .amf-btn-primary{background:#15171c;color:#fff}
+
+@keyframes amf-fade{from{opacity:0}to{opacity:1}}
+@keyframes amf-up{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .approved-mine-filter .amf-scrim,.approved-mine-filter .amf-card{animation:none}
+  .approved-mine-filter .amf-switch-ui,.approved-mine-filter .amf-switch-ui::after{transition:none}
+}
