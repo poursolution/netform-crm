@@ -111,7 +111,9 @@
   const rows='<div class="tv6-list"><div class="tv6-lh"><b>처리할 업무 <span>'+list.length+'건</span></b><small>기한 지남 → 고객 약속 · 마감 → 들어온 순서 · 줄을 누르면 결과 기록 · 기한 기준 = 확인된 업무 기한(고객 약속 · 요청 마감 · 다음 업무 날짜)</small></div>'
    +'<div class="tv6-colh" aria-hidden="true"><span>현장 · 기한 기준</span><span>이번 할 일</span><span>마지막 기록 · 요청</span><span></span></div>'+(pg.rows.length?pg.rows.map(([i,z])=>row(i,z,ctx)).join(''):'<p class="tv6-empty">'+empty+'</p>')+'</div>'
    +(P&&pg.pages>1?P.html(pg,{ns:'t6',small:true}):'');
-  return title+tabs+'<div class="tv6-body">'+diag+'<div class="tv6-right">'+cards+rows+(ctx.back||'')+'</div></div>';
+  /* 2026-10-26 관리자(팀 화면)만: v3 오른쪽 칸에 있던 '답 기다리는 중 · 보낸 요청'을 목록 아래로(v6 로 바뀌며 빠졌던 것) — 끄기 G.t6WrqOff */
+  const wrq=ctx.wrq?'<div class="tv6-wrq" aria-label="내가 보낸 요청">'+ctx.wrq+'</div>':'';
+  return title+tabs+'<div class="tv6-body">'+diag+'<div class="tv6-right">'+cards+rows+(ctx.back||'')+wrq+'</div></div>';
  } /* 동작: 상세 창(가운데 새 창)으로. 내 건 = 응대 기록부터, 다른 담당 건(팀 화면) = 상세 */
  function onClick(e){
   const b=e.target.closest('#today-v2 [data-t6]');if(!b)return;e.stopPropagation();
