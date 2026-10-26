@@ -92,6 +92,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 끄기 */
   await page.evaluate(()=>{G.wrqSeenOff=true;paint();});await page.waitForTimeout(300);assert.equal(await v.locator('.wrq-seen').count(),0);assert.equal((await smalls()).some(t=>/봄/.test(t)),false);
   
-  assert.deepEqual(errs,[]);console.log(JSON.stringify({status:'PASS',seen_board:true,filter_by_person:true,done_excluded:true,off_switch:true}));
+  /* 2026-10-26 지금 운영 화면(오늘 업무 v6): 관리자는 목록 아래에 '답 기다리는 중 · 보낸 요청' — 담당자 화면엔 없음 · 끄기 G.t6WrqOff */
+  await page.evaluate(()=>{G.wrqSeenOff=false;G.dayZonesOff=false;G.todayV6Off=false;G.today3=null;paint();});await page.waitForTimeout(700);await page.evaluate(()=>paint());await page.waitForTimeout(300);
+  const t6=page.locator('#today-v2 .tv6');assert.equal(await t6.count(),1,'v6 화면');
+  const wq=t6.locator('.tv6-right>.tv6-wrq');assert.equal(await wq.count(),1,'목록 아래 요청 칸');
+  assert.equal(await t6.locator('.tv6-right>*').last().evaluate(n=>n.classList.contains('tv6-wrq')),true,'목록 · 카드 뒤 맨 아래');
+  assert.equal(await wq.locator('section.wrq-sent .wrq-seen').count(),1,'받는 사람별 확인도 같이');assert.equal(await wq.locator('section.wrq-wait').count(),1,'답 기다리는 중');
+  assert.deepEqual(await wq.locator('.wrq-who').allInnerTexts().then(a=>a.map(one)),['이필선 안 봄 1 / 2 · 2일째','김성민 1건']);
+  assert.deepEqual(await wq.evaluate(n=>[...n.querySelectorAll('.wrq-who, .wrq-seen .sh b, .wrq-w .l1 b')].filter(e=>e.scrollWidth>e.clientWidth+1&&!e.matches('.wrq-w .l1 b')).map(e=>e.textContent)),[],'잘림 없음');
+  if(shot)await t6.locator('.tv6-right').screenshot({path:shot+'-v6.png'});
+  await page.evaluate(()=>{G.t6WrqOff=true;paint();});await page.waitForTimeout(300);assert.equal(await page.locator('#today-v2 .tv6-wrq').count(),0,'끄기');
+  await page.evaluate(()=>{G.t6WrqOff=false;ME={id:'10000000-0000-4000-8000-000000000001',name:'이필선',role:'rep'};G.today3=null;G.tower=null;G.towerRole=null;G.workReq=null;paint();});await page.waitForTimeout(700);await page.evaluate(()=>paint());await page.waitForTimeout(300);
+  assert.equal(await page.locator('#today-v2 .tv6-wrq').count(),0,'담당자 화면엔 요청 칸 없음');
+  assert.deepEqual(errs,[]);console.log(JSON.stringify({status:'PASS',seen_board:true,filter_by_person:true,done_excluded:true,off_switch:true,v6_admin_below_list:true,v6_rep_none:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
