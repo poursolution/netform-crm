@@ -270,7 +270,7 @@
   try{root.DayWord&&root.DayWord.bell();}catch(e){}
   /* design_handoff_pc_today_v6: 4구역 화면(영업사원 · 팀장 · 상무 · 대표)은 파이프라인 단계 화면과 같은 틀(today-v6.js) — 끄기 G.todayV6Off 면 아래 v3 */
   if(Z&&root.TodayV6&&root.TodayV6.on()){let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}
-   return '<div class="tv3 tv6'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+root.TodayV6.html({Z,S,role,team,me,pass,week,back:backHtml,word:root.DayWord&&role!=='mgr'?root.DayWord.lineHtml(V.me):''})+'</div>';}
+   return '<div class="tv3 tv6'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+root.TodayV6.html({Z,S,role,team,me,pass,week,back:backHtml,wrq:WR&&team&&!(root.G&&root.G.t6WrqOff)?WR.sideHtml():'',word:root.DayWord&&role!=='mgr'?root.DayWord.lineHtml(V.me):''})+'</div>';}
   return '<div class="tv3'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';
  }
  /* ── 동작: 전부 기존 경로 ── */
