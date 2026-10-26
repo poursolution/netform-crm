@@ -7,12 +7,14 @@
  function day(v){const d=dateOnly(v);if(d)return d;const n=typeof v==='number'?v:timestamp(v);return n!==null&&Number.isFinite(n)?new Date(n+9*36e5).toISOString().slice(0,10):null;}
  function add(d,n){return new Date(Date.parse(d+'T00:00:00Z')+n*dayMs).toISOString().slice(0,10);}
  function calendar(selected){const wd=new Date(selected+'T00:00:00Z').getUTCDay(),monday=add(selected,-((wd+6)%7));return Array.from({length:7},(_,i)=>({date:add(monday,i),weekday:weekdays[i],day:Number(add(monday,i).slice(8)),selected:add(monday,i)===selected}));}
- const unavailableMetrics=()=>['이번 주 연락','다음 할 일 등록','약속 지킨 비율'].map(label=>({label,value:null,numerator:null,denominator:null,percent:null,state:'unknown',reason:'공통 주간 측정값 연결 필요'}));
+ const unavailableMetrics=(weekLabel='이번 주')=>[weekLabel+' 연락','다음 할 일 등록','약속 지킨 비율'].map(label=>({label,value:null,numerator:null,denominator:null,percent:null,state:'unknown',reason:'공통 주간 측정값 연결 필요'}));
  function read(options){
   const opt=options||{},now=opt.now===undefined?Date.now():opt.now,today=day(now),selected=dateOnly(opt.selectedDay)||today;
   if(!today||!selected||(opt.selectedDay!==undefined&&!dateOnly(opt.selectedDay)))return {ok:false,status:'read-error',error:'CALENDAR_DATE_INVALID',days:[],rows:[],metrics:unavailableMetrics()};
   const days=calendar(selected),start=days[0].date,end=days[6].date;
-  const base={today,selectedDay:selected,start,end,days,metrics:unavailableMetrics(),unit:'업무',coverage:{scope:'current-rep-loaded-deals',missingDateCount:0,invalidDateCount:0,unknownCompletionCount:0,missingTaskIdCount:0,requests:'unknown',weekly:'unavailable'}};
+  const weekOffset=Math.round((Date.parse(start)-Date.parse(calendar(today)[0].date))/(7*dayMs));
+  const weekLabel=weekOffset===0?'이번 주':weekOffset===1?'다음 주':weekOffset===-1?'지난주':weekOffset>1?weekOffset+'주 뒤':(-weekOffset)+'주 전';
+  const base={today,selectedDay:selected,start,end,days,weekLabel,metrics:unavailableMetrics(weekLabel),unit:'업무',coverage:{scope:'current-rep-loaded-deals',missingDateCount:0,invalidDateCount:0,unknownCompletionCount:0,missingTaskIdCount:0,requests:'unknown',weekly:'unavailable'}};
   try{
    if(!root.G?.user||typeof root.myDeals!=='function')throw Error('SCHEDULE_SCOPE_UNAVAILABLE');
    const actor=root.Phase1?.profile,actorKey=actor?.auth_uid+':'+actor?.user_id;
@@ -56,12 +58,13 @@
    rows.sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'99:99').localeCompare(b.time||'99:99')||a.name.localeCompare(b.name,'ko')||a.id.localeCompare(b.id));
    days.forEach(d=>{d.count=rows.filter(r=>r.date===d.date&&r.state!=='completed').length;});
    const past=rows.filter(r=>r.overdue),alert=past.length?{label:'처리 확인 필요',text:past.length+'건 · '+past[0].date+' '+past[0].name+' '+past[0].title,target_id:past[0].target_id,task_id:past[0].task_id,count:past.length}:null;
-   const weekRows=rows.filter(r=>r.date>=start&&r.date<=end),meas=(label,num,den,reason)=>den>0?{label,value:num+' / '+den+(label==='이번 주 연락'?'곳':''),numerator:num,denominator:den,percent:Math.round(num/den*100),state:'measured'}:{label,value:null,numerator:null,denominator:null,percent:null,state:'unknown',reason};
+   const weekRows=rows.filter(r=>r.date>=start&&r.date<=end),meas=(label,num,den,reason)=>den>0?{label,value:num+' / '+den+(label===weekLabel+' 연락'?'곳':''),numerator:num,denominator:den,percent:Math.round(num/den*100),state:'measured'}:{label,value:null,numerator:null,denominator:null,percent:null,state:'unknown',reason};
    const openDeals=root.myDeals().filter(d=>typeof root.isOpen==='function'?root.isOpen(d):!d.outcome);
    const touched=openDeals.filter(d=>{const c=day(d.lastMeaningfulContactAt||d.last_meaningful_contact_at||d.contactAt);return c&&c>=start&&c<=end;}).length;
    const planned=openDeals.filter(d=>d.nextAction&&d.nextAction.status==='open').length;
    const pastW=weekRows.filter(r=>r.date<=today&&(r.state==='completed'||r.overdue)),kept=pastW.filter(r=>r.state==='completed').length;
-   const metrics=[meas('이번 주 연락',touched,openDeals.length,'진행 중인 영업건이 없습니다'),meas('다음 할 일 등록',planned,openDeals.length,'진행 중인 영업건이 없습니다'),meas('약속 지킨 비율',kept,pastW.length,'이번 주 지난 일정이 없습니다')];
+   const noPastReason=(start>today?'선택한 주는 아직 지나지 않았습니다':'선택한 주의 지난 일정이 없습니다')+' ('+start+' ~ '+end+')';
+   const metrics=[meas(weekLabel+' 연락',touched,openDeals.length,'진행 중인 영업건이 없습니다'),meas('다음 할 일 등록',planned,openDeals.length,'진행 중인 영업건이 없습니다'),meas('약속 지킨 비율',kept,pastW.length,noPastReason)];
    return {...base,ok:true,status:'ready',rows:rows.filter(r=>r.date===selected),weekRows,alert,metrics};
   }catch(e){return {...base,ok:false,status:'read-error',error:String(e.message||'SCHEDULE_READ_FAILED'),rows:[],weekRows:[],alert:null};}
  }

@@ -18,7 +18,7 @@
   if(m.ok&&!rows.length){const empty=card.cloneNode(true);empty.firstElementChild.textContent='—';empty.children[1].firstElementChild.textContent='선택한 날짜의 등록 일정 없음';empty.children[1].lastElementChild.textContent='현재 불러온 내 업무 기준';body.insertBefore(empty,metrics);}
   if(pg.pages>1&&root.ListPager?.html){const pager=root.document.createElement('div');pager.innerHTML=root.ListPager.html(pg,{ns:'schedule',unit:'건'});body.insertBefore(pager,metrics);}
   [...metrics.children].slice(1).forEach((row,i)=>{const metric=m.metrics?.[i];row.firstElementChild.firstElementChild.textContent=metric?.label||row.firstElementChild.firstElementChild.textContent;row.firstElementChild.lastElementChild.textContent=metric?.state==='measured'?metric.value:'확인 필요';const bar=row.lastElementChild.firstElementChild;bar.style.width=metric?.state==='measured'&&Number.isFinite(metric.percent)?Math.max(0,Math.min(100,metric.percent))+'%':'0%';bar.style.visibility=metric?.state==='measured'?'visible':'hidden';row.title=metric?.reason||'';});
-  metrics.firstElementChild.textContent='내 이번 주 · '+(m.start||'')+' ~ '+(m.end||'');body.style.overflowY='auto';
+  metrics.firstElementChild.textContent='내 '+(m.weekLabel||'이번 주')+' · '+(m.start||'')+' ~ '+(m.end||'');body.style.overflowY='auto';
   return box.innerHTML;
  }
  root.MobileApprovedF=Object.freeze({render});
