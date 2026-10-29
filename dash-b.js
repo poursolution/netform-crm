@@ -63,7 +63,9 @@
   /* 협약시공사 수주 · 기술자문(낙찰일 기준 · 낙찰금액): 이 화면에서 확정한 건 + 확정된 기술자문 낙찰실적. 수주실적 = 직접 + 협약 · 기술자문 + 타사 이관 */
   const DW=R.DealWin&&R.DealWin.enabled()?R.DealWin:null,pt=DW?DW.partnerIn(P.a,P.b,target):{count:0,amount:0,revenue:0,unknown:0,list:[]},made=L.ready?B.made(con.count,loss.length+tfLost,tf.count,pt.count):null;
   const names=(target?[target]:(R.PERFORMANCE_TARGET_NAMES||[])).slice(),A=acts(deals,K);
-  return {B,K,P,target,AD,AQ,L,inR,rows,deals,active,risk,cnt,q,bad,fit,loss,con,made,names,A,DT,tf,tfLost,DW,pt,won:con.count+pt.count+tf.count,perf:con.net+pt.amount+tf.amount};
+  /* 2026-10-29 대표 "기술자문이랑 합친 실적": 실적 표에는 기술자문 확정 담당(외부영업 · 퇴사자 등 CRM 담당 목록 밖)도 넣는다 — 활동 · 진행 칸은 기존 담당 목록 그대로 */
+  const perfNames=names.slice();if(!target&&!(R.G&&R.G.advMergeOff))(pt.list||[]).forEach(x=>{if(x.owner&&!perfNames.includes(x.owner))perfNames.push(x.owner);});
+  return {B,K,P,target,AD,AQ,L,inR,rows,deals,active,risk,cnt,q,bad,fit,loss,con,made,names,perfNames,A,DT,tf,tfLost,DW,pt,won:con.count+pt.count+tf.count,perf:con.net+pt.amount+tf.amount};
  }
  /* 기술자문 낙찰(확정분 · 낙찰확정일 기준 · VAT 별도) — 계약 원장과 겹치는 건은 기존 규칙대로 뺀다. 관리자 화면에서만 읽힌다 */
  function advisory(C){
@@ -84,7 +86,7 @@
  }
  /* 담당자별: 계약 · 메이드율 · 진행 · 손볼 건 · 마지막 기록 + 꼬리표(막힘 / 접촉 끊김 / 메이드율 낮음 / 정상)와 그 이유 */
  function people(C){
-  const {B,P,L,active,loss,A,names}=C,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);/* 계약 = 자사 계약실적 + 인정된 타사 이관 수주 */
+  const {B,P,L,active,loss,A}=C,names=C.perfNames||C.names,W=week(P),ms=mk(P.ty,P.tm),me=mk(P.ty,P.tm+1);/* 계약 = 자사 계약실적 + 인정된 타사 이관 수주 */
   return names.map(n=>{
    const mine=active.filter(d=>d.owner===n),c=B.contractsIn(L,P.a,P.b,n,'direct'),cm=B.contractsIn(L,ms,me,n,'direct'),l=loss.filter(d=>R.repN(d.assignee)===n),tfp=C.DT?C.DT.wonIn(P.a,P.b,n):{count:0,amount:0},tfm=C.DT?C.DT.wonIn(ms,me,n):{count:0,amount:0},ptp=C.DW?C.DW.partnerIn(P.a,P.b,n):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,me,n):{count:0,amount:0},w=c.count+ptp.count+tfp.count;
    const made=L.ready&&(w+l.length)?B.made(c.count,l.length,tfp.count,ptp.count):null;
@@ -252,13 +254,15 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    +'<div class="db-two"><div class="g"><b>견적문의 '+h(B.closedText(bad))+' <span>· 영업 실패 아님 · 메이드율 제외</span></b><p>'+h(top(bad,B.badfitReason))+'</p></div><div class="r"><b>파이프라인 실주 '+loss.length+'건 <span>· 영업기회 상실 · 메이드율 포함</span></b><p>'+h(top(loss,B.lossReason))+'</p></div></div></section>';
   const funnel=R.G.dashFunnelOff?funnelOld():funnelV2(C)+weekTable(C);
   /* 월별 계약실적 · 견적문의 */
-  const y=P.y,M=[];for(let m=1;m<=12;m++){const a=mk(y,m),b=mk(y,m+1),c=B.contractsIn(L,a,b),qn=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),a,b)).length;M.push({m,net:c.net,qn,cur:y===P.ty&&m===P.tm,fut:y>P.ty||(y===P.ty&&m>P.tm)});}
+  /* 2026-10-29: 월 막대 = 계약 원장 + 원장에 아직 없는 기술자문 확정분(낙찰확정일) — 합친 실적 */
+  const advM=(a,b)=>C.DW&&C.DW.advOnlyIn?C.DW.advOnlyIn(a,b,C.target).amount:0;
+  const y=P.y,M=[];for(let m=1;m<=12;m++){const a=mk(y,m),b=mk(y,m+1),c0=B.contractsIn(L,a,b),c={net:c0.net+advM(a,b)},qn=AQ.filter(x=>inR(K(R.inquiryCreatedAt(x)),a,b)).length;M.push({m,net:c.net,qn,cur:y===P.ty&&m===P.tm,fut:y>P.ty||(y===P.ty&&m>P.tm)});}
   const past=M.filter(x=>!x.fut&&!x.cur),max=Math.max(1,...M.filter(x=>!x.fut).map(x=>x.net)),qmax=Math.max(1,...M.map(x=>x.qn)),avg=past.length?past.reduce((s,x)=>s+x.net,0)/past.length:0;
   const hi=past.slice().sort((a,b)=>b.net-a.net)[0],lo=past.slice().sort((a,b)=>a.net-b.net)[0],cur=M.find(x=>x.cur);
   const col=x=>{const label=x.fut?'':x.cur?(x.net>0?eok(x.net):'진행 중'):(x.net>0?eok(x.net):'없음'),px=x.fut?0:x.cur?Math.max(10,Math.round(x.net/max*72)):x.net>0?Math.max(2,Math.round(x.net/max*72)):0;return '<button type="button" class="db-col'+(x.cur?' cur':'')+(x.fut?' fut':'')+(!x.fut&&!x.cur&&!(x.net>0)?' zero':'')+'" data-db="cs-month" data-v="'+x.m+'"'+(x.fut?' disabled':'')+' aria-label="'+x.m+'월 계약실적 '+(label||'없음')+'"><span>'+label+'</span><i style="height:'+px+'px"></i></button>';};
   const qcol=x=>'<button type="button" class="db-qcol'+(x.cur?' cur':'')+'" data-db="inq-month" data-v="'+x.m+'"'+(x.fut?' disabled':'')+' aria-label="'+x.m+'월 견적문의 '+x.qn+'건"><i style="height:'+(x.fut?0:Math.max(2,Math.round(x.qn/qmax*18)))+'px"></i><span>'+(x.fut?'':x.qn+'건')+'</span></button>';
   const foot=!L.ready?'계약 원장을 불러오는 중입니다.':(hi&&hi.net>0?'최고 '+hi.m+'월 '+eok(hi.net)+' · 최저 '+lo.m+'월 '+(lo.net>0?eok(lo.net):'없음'):'지난 달 계약실적이 아직 없습니다')+(cur?' · <b>'+cur.m+'월은 '+P.td+'일째라 진행 중</b> (점선 막대)':'');
-  const chart='<section class="db-card db-month"><div class="db-ch"><b>월별 계약실적 · 견적문의</b><span>계약 체결일 · 문의 접수일 기준 · 월 클릭 = 근거</span><i class="db-sp"></i><span class="db-leg"><span><i style="background:#3b6ce4"></i>계약실적</span><span><i style="background:#8fd1ac"></i>견적문의</span><span><i class="db-dl"></i>월평균 '+(avg>0?eok(avg):'없음')+'</span></span></div>'
+  const chart='<section class="db-card db-month"><div class="db-ch"><b>월별 매출 실적 · 견적문의</b><span>계약 체결일 · 기술자문 낙찰확정일 · 문의 접수일 기준 · 월 클릭 = 근거</span><i class="db-sp"></i><span class="db-leg"><span><i style="background:#3b6ce4"></i>매출(계약 + 기술자문)</span><span><i style="background:#8fd1ac"></i>견적문의</span><span><i class="db-dl"></i>월평균 '+(avg>0?eok(avg):'없음')+'</span></span></div>'
    +'<div class="db-bars"><span class="avg" style="bottom:'+Math.round(avg/max*72)+'px"'+(avg>0?'':' hidden')+'></span>'+M.map(col).join('')+'</div><div class="db-qbars">'+M.map(qcol).join('')+'</div><div class="db-mlab">'+M.map(x=>'<span class="'+(x.cur?'cur':x.fut?'fut':'')+'">'+x.m+'월</span>').join('')+'</div><p>'+foot+'</p></section>';
   const BRW=brandRows(C),tot=BRW.reduce((s,b)=>s+Math.max(0,b.net),0);
   const brand='<section class="db-card db-brand"><div class="db-ch"><b>브랜드별 계약실적</b><i class="db-sp"></i><span>'+h((P.thisYear?'올해 누적 ':P.label+' ')+(L.ready?(tot>0?won(tot):'아직 없음'):'불러오는 중'))+'</span></div><div class="db-share">'+BRW.map(b=>'<span style="width:'+(tot>0?Math.max(0,b.net)/tot*100:0).toFixed(1)+'%;background:'+b.c+'"></span>').join('')+'</div>'
