@@ -70,3 +70,18 @@ body.shell-v2 .apage:not(#pg-dash):not(#pg-control):not(#pg-perf)>.mgmtbar.blue{
  body.shell-v2 .exec-ask-btn::after{content:none}
 }
 @media(min-width:941px) and (max-width:1300px){body.shell-v2 .mhead .sub{display:none}body.shell-v2 .sh-name small{display:none}}
+/* ⑤ 휴대폰 폭(900px 이하 — 휴대폰 '오늘'의 [성과 ›]가 이 PC 화면을 연다): 왼쪽 메뉴를 위쪽 한 줄 가로 스크롤로.
+   하위 메뉴(전체 현황 · 컨트롤타워 · 성과 분석 · 파이프라인 단계)가 한 글자씩 세로로 꺾이지 않게, 메뉴 자리의 흰 띠도 없앤다.
+   900px 은 crm.html 반응형 규칙(.dash 1열 · .side 가로)과 같은 경계 — 그보다 넓은 PC 화면은 바꾸지 않는다 */
+@media(max-width:900px){
+ #sales-analysis-menu,#pipeline-stage-menu{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:2px;margin:0;flex:none}
+ #sales-analysis-menu button,#pipeline-stage-menu button{white-space:nowrap;flex:none;padding:8px 10px}
+ #pipeline-stage-menu button.plv-mi>span{overflow:visible}
+ .side .menu{flex-wrap:nowrap;align-items:center;gap:2px}
+ .side .mi{flex:none;white-space:nowrap}
+ body.shell-v2 .dash{background:var(--bg)}
+ body.shell-v2 .side{border-right:0;border-bottom:1px solid #eceef2;padding:8px 12px;scrollbar-width:none}
+ body.shell-v2 .brandlogo{padding:0 8px 0 0;flex:none}
+ body.shell-v2 .sh-logo small{display:none}
+ body.shell-v2 .sh-logo img{height:20px}
+}
