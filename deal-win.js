@@ -59,7 +59,24 @@
    const d=dealOf(r.deal_id);
    out.push({src:'contract',key:events[0].effective_date,owner:r.sales_owner_name,brand:r.brand,company:m.company||'시공사 미기록',amount:events.reduce((s,e)=>s+e.amount_delta,0),signedCount:events.filter(e=>e.kind==='signed').length,site:d?siteOf(d):m.site||r.site_name||'현장명 미확인',tech:m.tech,revenue:events.some(e=>e.kind==='signed')?m.revenue:0,revKnown:m.revKnown&&events.every(e=>e.kind==='signed'),deal:d,dealId:String(r.deal_id),events});
   });
+  if(selected)advOnlyIn(a,b,owner).list.forEach(x=>out.push(x));
   return {ready:!!selected,count:out.reduce((s,x)=>s+x.signedCount,0),amount:out.reduce((s,x)=>s+x.amount,0),revenue:out.reduce((s,x)=>s+x.revenue,0),unknown:out.filter(x=>!x.revKnown).length,list:out};
+ }
+ /* 2026-10-29 대표 "기술자문이랑 합친 실적": 확정된 기술자문 낙찰실적 중 계약 원장에 아직 없는 건(낙찰확정일 · 낙찰금액 VAT 별도 · 확정 담당).
+    원장에 같은 기술자문(advisory_id)이 있거나, 연결 영업건(source_deal_id) 원장 금액과 5% 안이면 원장 쪽만 센다(advDup 과 같은 규칙 — 한 번만).
+    끄기 G.advMergeOff = 예전처럼 원장에 옮긴 건만 */
+ function advOnlyIn(a,b,owner){
+  const out=[];if(R.G&&R.G.advMergeOff)return {count:0,amount:0,list:out};
+  const items=(R.ContractSalesData?.state?.().items)||[],brand=R.G.brand||'전체',o=owner&&owner!=='전체'?owner:'';
+  const bal=r=>r.balance!=null?Number(r.balance)||0:(r.events||[]).reduce((s,e)=>s+(Number(e.amount_delta)||0),0);
+  const inLedger=t=>items.some(r=>!r.cancelled&&(String(r.advisory_id||'')===String(t.advisory_id)||(t.source_deal_id&&String(r.deal_id)===String(t.source_deal_id)&&bal(r)>0&&Math.abs(bal(r)-Number(t.bid_amount))/Math.max(bal(r),Number(t.bid_amount))<=0.05)));
+  advRows().forEach(t=>{
+   if(t.decision!=='confirmed')return;const k=String(t.bid_confirmed_at||'').slice(0,10),amt=Number(t.bid_amount)||0;if(!amt||!(k>=a&&k<b))return;
+   const n=R.repN?R.repN(t.performance_owner):t.performance_owner;if(o&&n!==o)return;
+   if(brand!=='전체'&&brand!=='기술자문'&&t.origin_business!==brand)return;if(inLedger(t))return;
+   out.push({src:'advisory',key:k,owner:n,brand:t.origin_business||'기술자문',company:t.contractor||'시공사 미기록',amount:amt,signedCount:1,site:t.site_name||'현장명 미확인',tech:true,revenue:0,revKnown:false,deal:t.source_deal_id?dealOf(t.source_deal_id):null,dealId:String(t.source_deal_id||''),advisoryId:String(t.advisory_id),events:[]});
+  });
+  return {count:out.length,amount:out.reduce((s,x)=>s+x.amount,0),list:out};
  }
  /* ── 상세 머리: 영업 경로 / 영업 담당 / 결과 / 낙찰 시공사 · 낙찰금액 + 연결 계약 ── */
  function cur(){const c=R.CUR_DETAIL;return c&&c.kind==='deal'&&c.item?c.item:null;}
@@ -206,5 +223,5 @@
  /* 계약 단계 창의 계약금액 미리 채움에 쓰는 낙찰금액 */
  const amountOf=d=>{const w=of(d);return w&&w.win_status==='confirmed'?Number(w.award_amount)||0:0;};
  const basePaint=R.paint;if(typeof basePaint==='function')R.paint=function(){try{attach();}catch(e){}const r=basePaint.apply(this,arguments);try{warm();}catch(e){}return r;};
- root.DealWin={enabled,available,load,of,resultOf,partnerIn,isPartnerDeal,advisoryOf:id=>advRows().find(t=>t&&t.decision==='confirmed'&&String(t.source_deal_id)===String(id))||null,/* 그 영업건에 연결된 확정 기술자문 줄(성과 분석 기술자문 탭) */headHtml,decorate,intercept,open:openDlg,editOf,noteOf,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
+ root.DealWin={enabled,available,load,of,resultOf,partnerIn,advOnlyIn,isPartnerDeal,advisoryOf:id=>advRows().find(t=>t&&t.decision==='confirmed'&&String(t.source_deal_id)===String(id))||null,/* 그 영업건에 연결된 확정 기술자문 줄(성과 분석 기술자문 탭) */headHtml,decorate,intercept,open:openDlg,editOf,noteOf,close:closeDlg,amountOf,TYPES,SHORT,RPC,_take:take};
 })(window);
