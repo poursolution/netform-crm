@@ -47,9 +47,9 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ── 전체 현황: 직원들이 지금 어떻게 영업하고 있나 ── */
   const D=page.locator('#si-dash .dv');assert.equal(await D.count(),1,'시각화 화면');assert.equal(await page.locator('#si-dash .db-kpis').count(),0,'예전 숫자 카드 대신');
   assert.equal(await page.locator('#pg-dash>.cf-bar').isVisible(),true,'공통 필터줄');const topDash=await top('dash');assert.match(topDash,/2026년 연간 접수 · 계약실적 \/ 파이프라인 · 조치 필요는 현재 기준 .*연간 1분기 2분기 3분기 4분기 LIVE 10\.07 10:00/);
-  assert.match(one(await D.locator('.dv-hero').innerText()),/^10월 계약실적 0 계약 0건 월 목표값 입력 후 막대 표시 · 계약 원장 체결일 기준$/,'이번 달 계약실적(원장) · 목표 없으면 지어내지 않음');
+  assert.match(one(await D.locator('.dv-hero').innerText()),/^10월 매출 실적 0 계약 0건 월 목표값 입력 후 막대 표시 · 계약 체결일 · 기술자문 낙찰확정일 기준$/,'이번 달 매출 실적(계약 + 기술자문 · 2026-10-29 합산) · 목표 없으면 지어내지 않음');
   assert.match(one(await D.locator('.dv-made').innerText()),/^40\.0% 메이드율 수주 2 실주 3 수주 2 ÷ \(수주 2 \+ 실주 3\) · 결과 확정 건 · 배드핏 제외 · 2026년 연간$/,'메이드율 + 산식 그대로');
-  assert.match(one(await D.locator('.dv-ytd').innerText()),/계약실적 8억 · 2건 기술자문 낙찰 \(별도\) 아직 없음/,'계약실적 ≠ 기술자문 낙찰');
+  assert.match(one(await D.locator('.dv-ytd').innerText()),/매출 합계 8억 · 2건 계약실적 8억 · 2건 기술자문 낙찰 아직 없음/,'매출 합계 = 계약실적 + 기술자문 낙찰(구성 따로 보임)');
   const flow=await D.locator('.dv-flow .dv-fs button').evaluateAll(l=>l.map(b=>[b.querySelector('span').textContent,b.querySelector('b').textContent,b.querySelector('small').textContent]));
   assert.deepEqual(flow.map(f=>f[0]),['견적문의','컨설팅 설계','자료 발송','관계관리','경쟁 · 입찰','계약 · 시공','수주'],'영업 흐름 7칸');
   const C=await page.evaluate(()=>{const c=DashB.core();return {active:c.active.length,con:c.con.count};});
@@ -84,7 +84,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* ── 성과 분석: 성과가 어디서 나왔고 어떤 차이가 있나 ── */
   await page.locator('#si-control .db-tool [data-db="go"][data-v="perf"]').click();await page.waitForTimeout(500);
   const Pf=page.locator('#si-perf .dv');assert.equal(await Pf.count(),1);assert.equal(await top('perf'),topDash,'세 화면 상단 같음');
-  assert.match(one(await Pf.locator('.dv-hero').innerText()),/^올해 계약실적 8억 계약 2건 기술자문 낙찰\(별도 · 합산 안 함\) 없음/);
+  assert.match(one(await Pf.locator('.dv-hero').innerText()),/^올해 매출 실적 8억 2건 계약실적 8억 · 2건 \+ 기술자문 낙찰 없음/);
   {const fm=/^문의 4 적합 3 견적 발송 (\d+) 계약 (\d+)$/.exec(one(await Pf.locator('.dv-fun').innerText()));assert.ok(fm,'문의 전환');assert.ok(Number(fm[1])<=3&&Number(fm[2])<=3,'같은 문의 집단');}
   assert.match(one(await Pf.locator('.dv-fun+.dv-mut').innerText()),/결과 확정 \d+\(계약 \d+ · 실주 \d+\) · 진행 중 \d+ · 배드핏 1/,'결과 확정과 진행 중 구분');
   assert.match(one(await Pf.locator('.dv-row3').first().locator('.dv-card').nth(2).innerText()),/^실주 원인 가격 열세 2 담당자 부재·인수인계 누락 1/);
