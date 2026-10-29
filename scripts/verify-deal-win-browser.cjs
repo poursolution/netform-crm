@@ -44,7 +44,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const v=page.locator('#detailView.dv3');assert.equal(await v.count(),1);
   /* 0. 확정 전: 머리 4칸 없음. 예전 기술자문 낙찰(확정분)은 이미 협약 · 기술자문 수주로 집계된다 */
   assert.equal(await page.locator('#wn-head').count(),0,'수주 전에는 머리 4칸 없음');
-  assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [C.pt.count,C.pt.amount,C.perf,C.won,C.made];}),[0,0,500000000,1,50],'낙찰확정만으로 계약실적에 합산하지 않는다');
+  /* 2026-10-29 대표 "기술자문이랑 합친 실적": 확정된 기술자문 낙찰은 원장에 아직 없어도 합산(낙찰확정일 · 낙찰금액) — 원장에 같은 건이 들어오면 원장 쪽만(아래 6) */
+  assert.deepEqual(await page.evaluate(()=>{const C=DashB.core();return [C.pt.count,C.pt.amount,C.perf,C.won,C.made];}),[1,885000000,1385000000,2,66.7],'확정된 기술자문 낙찰은 원장 전에도 합산');
+  assert.deepEqual(await page.evaluate(()=>{G.advMergeOff=true;const C=DashB.core();G.advMergeOff=false;return [C.pt.count,C.pt.amount,C.perf];}),[0,0,500000000],'끄기 = 예전(원장만)');
   /* 1. 단계 바꾸기 → [수주]: 입찰 단계에서도 누를 수 있고, 수주 처리 창이 먼저 뜬다 */
   await v.locator('.dv3-headact .mv').click();await page.waitForTimeout(200);
   const wonBtn=v.locator('.dv3-moves [data-stage="won"]');assert.equal(await wonBtn.getAttribute('aria-disabled'),null,'수주 버튼이 잠겨 있지 않음');
@@ -83,7 +85,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.locator('#wn-head .wn-boxes>div').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent.trim()))),[['영업 경로 (브랜드)','석민이앤씨'],['영업 담당','이필선'],['결과','수주 · 기술자문'],['낙찰 시공사 · 낙찰금액','코지건설 · 10.4억']]);
   assert.match(await page.locator('#wn-head .wn-links').innerText(),/^연결 계약\s*기술자문 4\.3억 · 코지건설\s*\|\s*POUR 계약 1\.4억\s*수주 정보 고치기$/);
   if(shot)await page.screenshot({path:shot+'-head.png'});
-  assert.equal(await page.evaluate(()=>DashB.core().perf),500000000,'수주 정보 저장만으로 실적 확정 안 함');
+  assert.equal(await page.evaluate(()=>DashB.core().perf),1385000000,'수주 정보 저장만으로 실적 확정 안 함(원장 5억 + 확정 기술자문 8.85억만)');
   // Simulate separately verified apartment construction contracts. No advisory fee is posted.
   await page.evaluate(()=>{const row=(id,at,amount)=>({deal_id:id,brand:'석민이앤씨',sales_owner_name:'이필선',contract_date:at,balance:amount,events:[{kind:'signed',effective_date:at,amount_delta:amount}]});__contracts.push(row(D1,'2026-10-02',1043900000),row('legacy-verified','2026-07-31',885000000));});
   /* 4. 집계: 실적 = 낙찰금액만(연결 계약은 더하지 않는다) · 메이드율 성공 · 같은 함수 */
