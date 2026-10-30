@@ -275,3 +275,6 @@ html:not(.crm-solo) #detailView.ddv.dv3{inset:16px max(16px,calc((100vw - 1640px
 .dv3-ce-sub,.dv3-ce-note{font-size:11.5px;color:#6b7280;line-height:1.5}
 .dv3-ce-prev{font-size:12px;line-height:1.5;color:#1d3f99;font-weight:600}.dv3-ce-prev.off{color:#9ca3af;font-weight:500}
 .dv3-ce-prev b{color:#15171c}
+/* 내부 메모 삭제(2026-10-30 · md1): 메모 줄 오른쪽 작은 글자 버튼 · 한 번 더 누르면 삭제 */
+.idv-mdel{order:99;margin-left:4px;border:0;background:none;padding:0 2px;font:inherit;font-size:11px;color:#9ca3af;cursor:pointer}
+.idv-mdel:hover,.idv-mdel.on{color:#d93a3a}.idv-mdel.on{font-weight:700}.idv-mdel:disabled{cursor:default;opacity:.6}

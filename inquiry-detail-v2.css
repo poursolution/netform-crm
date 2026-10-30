@@ -180,3 +180,6 @@
 .idv-nowbox small+small{margin-top:4px}
 /* 경남지사 세부 창(예전 배치 .idv 만 쓰는 창)도 파이프라인 영업건 상세 창과 같은 크기 · 칸 폭(2026-10-05 대표 "경남지사 창도 파이프라인 창처럼 동일하게") */
 @media(min-width:1001px){#inq-inbox-dialog.idv:not(.idv3){padding:16px!important}#inq-inbox-dialog.idv:not(.idv3) .inq-dialog{width:min(1640px,calc(100vw - 32px))!important;height:calc(100vh - 32px)!important;max-height:calc(100vh - 32px)!important}#inq-inbox-dialog.idv:not(.idv3) .idv-body{grid-template-columns:minmax(260px,340px) minmax(380px,1fr) minmax(280px,380px)}}
+/* 내부 메모 삭제(2026-10-30 · md1): 메모 줄 오른쪽 작은 글자 버튼 · 한 번 더 누르면 삭제 */
+.idv-mdel{margin-left:8px;border:0;background:none;padding:0 2px;font:inherit;font-size:11px;color:#9ca3af;cursor:pointer}
+.idv-mdel:hover,.idv-mdel.on{color:#d93a3a}.idv-mdel.on{font-weight:700}

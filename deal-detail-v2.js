@@ -37,7 +37,7 @@
     if(prev){if(/→/.test(first)&&!/→/.test(prev.first)){prev.first=first;prev.item.text=[first].concat(rest?[rest]:[]).join('\n');}return;}
     const item={kind,label,who:x.who||'',at:x.at,text:[first].concat(rest?[rest]:[]).join('\n')||label};stageSeen.push({id:x.id,day,rest,first,item});out.push(item);return;
    }
-   out.push({kind,label,who:x.who||'',at:x.at,text:text||label});
+   out.push({kind,label,who:x.who||'',at:x.at,text:text||label,id:ttl==='메모'?x.id:undefined});
   });
   /* 연락 한 번 연결(contact-link.js): 같은 현장의 다른 건에 남긴 원본 기록이 이 건을 가리키면 '연결 기록'으로 보인다(복사 아님 · 원본 현장 표시) */
   try{const CL=root.ContactLink;if(CL&&CL.on()){CL.linkedInto('deal:'+d.id).forEach(x=>out.push({kind:'out',label:'연결 기록',who:x.who||'',at:x.at,text:'원본: '+(x.site||'다른 건')+' · '+say(x.text),linked:true}));}}catch(e){}
@@ -45,9 +45,34 @@
  }
  /* 2026-10-03 대표: 기록마다 해당 연도까지 보이게(오래된 견적문의 접수가 올해 것처럼 보이던 문제) */
  const fmt=v=>{try{const x=new Date(v);return v&&!isNaN(x)?x.getFullYear()+'.'+(x.getMonth()+1)+'.'+x.getDate()+' '+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0'):'미기록';}catch(e){return String(v||'').slice(0,10);}};
+ /* 내부 메모 삭제(2026-10-30 대표): 서버에 저장된 메모(UUID)만 · 쓴 본인 또는 관리자 · 판정 표식 메모('[관계 상태] …' 등)는 상태 판정 근거라 제외('[통화 …]' 전사 원문은 지울 수 있음).
+    서버는 메모를 지우지 않고 보관 표로 옮긴다(crm_activity_memo_hide_v1 · 숨김 삭제). 서버에 함수가 없으면 버튼을 숨긴다. */
+ const MEMO_HIDE='crm_activity_memo_hide_v1',UUIDRE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ function canHideMemo(b){
+  if(b.kind!=='memo'||!b.id||!UUIDRE.test(String(b.id))||b.linked)return false;
+  if(/^\s*\[/.test(b.text||'')&&!/^\s*\[통화/.test(b.text||''))return false;
+  if(root.CRMRelease?.has?.(MEMO_HIDE)===false||!root.SB?.rpc)return false;
+  const me=root.ME||{},rn=v=>root.repN?root.repN(v):String(v||'').trim();
+  return me.role==='admin'||(!!b.who&&!!me.name&&rn(b.who)===rn(me.name));
+ }
+ async function hideMemo(btn){
+  const d=root.CUR_DETAIL?.item,id=btn.dataset.id;if(!d||!id||btn.disabled)return;
+  if(btn.dataset.armed!=='1'){btn.dataset.armed='1';btn.textContent='삭제 확인';btn.classList.add('on');clearTimeout(btn.__t);btn.__t=setTimeout(()=>{btn.dataset.armed='';btn.textContent='삭제';btn.classList.remove('on');},4000);return;}
+  clearTimeout(btn.__t);btn.disabled=true;btn.textContent='삭제 중…';
+  try{
+   const r=await root.SB.rpc(MEMO_HIDE,{p:{activity_id:id}});
+   if(r.error){if(r.error.code==='PGRST202')root.CRMRelease?.noteMissing?.(MEMO_HIDE);throw Error(r.error.message||'삭제하지 못했습니다');}
+   if(!r.data||r.data.ok!==true)throw Error('서버 확인 응답이 올바르지 않습니다.');
+   const drop=a=>String(a&&a.id)!==String(id);
+   if(Array.isArray(d.activities))d.activities=d.activities.filter(drop);
+   if(Array.isArray(d.activity_signals))d.activity_signals=d.activity_signals.filter(drop);
+   try{const p=root.currentPatch?root.currentPatch():null;if(p&&Array.isArray(p.activities))p.activities=p.activities.filter(drop);}catch(e){}
+   root.saveLocal?.();root.renderDetail?.();toast('내부 메모를 삭제했습니다');
+  }catch(e){btn.disabled=false;btn.dataset.armed='';btn.textContent='삭제';btn.classList.remove('on');toast(String(e.message||e),'warn');}
+ }
  function talk(d,closed){
   const list=bubbles(d),cls={in:'in',out:'out',memo:'memo',sys:'sys'};
-  const thread=list.length?list.map(b=>'<div class="idv-msg '+cls[b.kind]+(b.linked?' cl-linked':'')+'"><div class="idv-meta"><em>'+h(b.label)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span></div><div class="idv-bubble">'+h(b.text)+'</div></div>').join(''):'<p class="ddv-nothing">아직 기록이 없습니다 — 첫 연락 결과부터 여기에 쌓입니다</p>';
+  const thread=list.length?list.map(b=>'<div class="idv-msg '+cls[b.kind]+(b.linked?' cl-linked':'')+'"><div class="idv-meta"><em>'+h(b.label)+'</em>'+(b.who?'<span>'+h(b.who)+'</span>':'')+'<span>'+h(fmt(b.at))+'</span>'+(canHideMemo(b)?'<button type="button" class="idv-mdel" data-ddv-mdel data-id="'+h(b.id)+'" aria-label="이 내부 메모 삭제">삭제</button>':'')+'</div><div class="idv-bubble">'+h(b.text)+'</div></div>').join(''):'<p class="ddv-nothing">아직 기록이 없습니다 — 첫 연락 결과부터 여기에 쌓입니다</p>';
   const composer=closed?'<div class="idv-composer idv-locked">종료된 영업건입니다 — 기록은 읽기만 할 수 있습니다</div>'
    :'<div class="idv-composer" id="ddvComposer"><div class="idv-ctabs"><div role="tablist" aria-label="기록 종류">'+[['전화','통화 기록'],['메모','내부 메모']].map((t,i)=>'<button type="button" role="tab" data-type="'+t[0]+'" aria-selected="'+(i===0)+'">'+t[1]+'</button>').join('')+'</div><button type="button" class="idv-toggle" data-ddv="full">다음 할 일까지 함께 기록 ▸</button></div><div class="idv-input"><textarea rows="1" aria-label="기록 내용" placeholder="예: 관리소장과 통화 — 예산 확정은 12월 입대의 이후"></textarea><button type="button" class="idv-save" data-ddv="save">저장</button></div><div class="idv-err" role="alert"></div></div>';
   const sec=el('section','ddv-talk','<div class="idv-chead"><b>고객과 주고받은 내용</b><span>'+list.length+'건</span><em>시간순 · 최신이 아래</em></div><div class="idv-thread">'+thread+'</div>'+composer);
@@ -72,6 +97,7 @@
   }catch(e){err.textContent=String(e.message||e);save.disabled=false;save.textContent='저장';delete box.dataset.saving;}
  }
  function bindTalk(sec){
+  sec.querySelector('.idv-thread')?.addEventListener('click',e=>{const b=e.target.closest('[data-ddv-mdel]');if(b){e.preventDefault();hideMemo(b);}});
   const box=sec.querySelector('#ddvComposer');if(!box)return;
   const ta=box.querySelector('textarea'),save=box.querySelector('.idv-save');
   const grow=()=>{ta.style.height='auto';ta.style.height=Math.min(140,ta.scrollHeight+2)+'px';save.classList.toggle('on',!!ta.value.trim());};
