@@ -46,7 +46,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.keyboard.press('Escape');
   await page.evaluate(()=>goPage('dash'));assert.equal(await page.evaluate(()=>SalesInsights.data().deals.every(d=>d.owner==='이필선')),true);
   assert.equal(await page.locator('.menu [data-admin-nav]:visible').count(),0);// rep 메뉴 축소(2026-09-25 ⑨): 분석·대시보드·발송·지사는 관리자 전용
-  assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리']);
+  assert.deepEqual(await page.locator('.menu>.sec:visible').allTextContents(),['오늘','영업','고객관리','분석']);// 2026-10-30 대표: 분석(문자메시지 관리 · 공종 분석) 영업사원에게도 공개
   assert.equal(await page.locator('.menu [data-manager-nav]:visible').count(),0);
 
   // Shared employee scope affects metrics, stage inventory, drills and navigation, not just options.
@@ -75,7 +75,7 @@ const {chromium}=require('playwright'),root=path.resolve(__dirname,'..');
   await page.locator('#si-perf [data-sf-type="INTERNAL"]').click();
   assert.equal(await page.evaluate(()=>SalesScope.state().owner),'전체');
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),1);
-  assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),8);/* 2026-09-30 조재연 영업담당 추가 */
+  assert.equal(await page.evaluate(()=>SalesScope.candidates().length+1),9);/* 2026-09-30 조재연 영업담당 추가 · 2026-10-30 이란 추가 */
   await page.locator('#si-perf [data-sf-type="all"]').click();
   await page.evaluate(()=>{G.dashBOff=true;/* 예전 대시보드 화면 검사 — 새 화면은 verify-dash-b */SalesScope.change('assignment','unassigned');paint()});
   assert.equal(await page.evaluate(()=>SalesInsights.data().active.length),2);

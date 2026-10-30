@@ -639,11 +639,11 @@ function tile(icon,fg,bg){return '<span class="ic" style="background:'+bg+';colo
 /* ── 데이터 (예시) ── */
 /* user_id 와 role 을 함께 들고 다닌다 — 모든 조회·기록이 이 id 를 owner 로 쓴다.
    ⚠ PIN 검증은 서버 Auth(JWT) 로 옮겨야 한다. 지금은 화면 진입만 막는 수준 */
-var REP_INTERNAL=['황윤선','이필선','한준엽','정정훈','김성민','조현식'];
+var REP_INTERNAL=['황윤선','이필선','한준엽','정정훈','김성민','조현식','이란'];
 var REPS=[
  {id:'u_hys',nm:'황윤선',role:'dual'},{id:'u_lps',nm:'이필선',role:'rep'},
  {id:'u_hjy',nm:'한준엽',role:'rep'},{id:'u_jjh',nm:'정정훈',role:'rep'},
- {id:'u_ksm',nm:'김성민',role:'rep'},{id:'u_chs',nm:'조현식',role:'rep'},
+ {id:'u_ksm',nm:'김성민',role:'rep'},{id:'u_chs',nm:'조현식',role:'rep'},{id:'u_lr',nm:'이란',role:'rep'},
  {id:'u_lsw',nm:'이승우',role:'dual'},{id:'u_sbr',nm:'송보람',role:'admin'}
 ];
 /* ══════════════════════════════════════════════════════════════════════
@@ -885,7 +885,7 @@ var SB=null, TOKEN=null;
 /* 화면과 서버가 같은 표를 써야 한다 — PC 의 LOGIN_ID 와 글자까지 동일 */
 var LOGIN_ID={'황윤선':'hwangyunseon','이필선':'ipilseon','한준엽':'hanjunyeop',
   '정정훈':'jeongjeonghun','김성민':'kimseongmin','이승우':'iseungwoo',
-  '송보람':'songboram','조현식':'johyeonsik','조재연':'jojaeyeon',
+  '송보람':'songboram','조현식':'johyeonsik','조재연':'jojaeyeon','이란':'iran',
   '주현진':'juhyeonjin','한인규':'haningyu','경남지사':'gyeongnam'};
 var LOGIN_DOMAIN='@crm.netform.co.kr';
 function loginEmailOf(name){return Phase1.loginEmail(name);}
@@ -2300,7 +2300,7 @@ function rRpt(head){
    웹에서 특정 전화번호의 카카오 1:1 채팅을 바로 열 수 없으므로 번호와 문구를
    복사한 뒤 카카오 앱을 연다. 실제 발송 여부는 복귀 후 반드시 사람이 확정한다.
    ══════════════════════════════════════════════════════════════ */
-var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375','조현식':'010-8981-1831'},REL_FREE_OPTOUT_M=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
+var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375','조현식':'010-8981-1831','이란':'010-8830-1130'},REL_FREE_OPTOUT_M=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
 function rmBool(v){return v===true||v===1||v==='1'||v==='true'}
 var _rmContactInfoM=contactInfoM;
 contactInfoM=function(d){var o=_rmContactInfoM(d),box=(d&&d.contact)||{},raw=((d&&d.contacts)||[]).filter(function(x){return (o.personKey&&x.person_key===o.personKey)||phoneN(x.mobile||x.phone)===phoneN(o.mobile)})[0]||{};o.smsConsent=rmBool(box.smsConsent!=null?box.smsConsent:(raw.sms_consent!=null?raw.sms_consent:d&&d.sms_consent));o.kakaoConsent=rmBool(box.kakaoConsent!=null?box.kakaoConsent:(raw.kakao_consent!=null?raw.kakao_consent:d&&d.kakao_consent));o.consentAt=box.consentAt||raw.consent_at||d&&d.consent_at||'';o.optOutAt=box.optOutAt||raw.opt_out_at||d&&d.opt_out_at||'';o.sendBlocked=rmBool(box.sendBlocked!=null?box.sendBlocked:(raw.send_blocked!=null?raw.send_blocked:d&&d.send_blocked))||!!o.optOutAt;o.sendBlockedReason=box.sendBlockedReason||raw.send_blocked_reason||d&&d.send_blocked_reason||'';return o};
