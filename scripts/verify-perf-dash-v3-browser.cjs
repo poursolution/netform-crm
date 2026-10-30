@@ -62,7 +62,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    assert.deepEqual((await T.locator('.pf3-pr').allInnerTexts()).map(o),['평가 · 이 4칸으로 판단 참고','담당 수주실적 메이드율 (수주 · 실주) 약속 이행 2시간 첫 연락 진행 손볼 건 왜','이필선 6.6억 75% 수주 3 · 실주 1 — 0% 1 0 막힌 곳 없음','황윤선 3억 33% 수주 1 · 실주 2 — — 5 5 기한 지난 건 5건 · 최장 17일 — 자료 발송완료 단계에 5건 몰림'],'평가 4칸 + 참고 2칸 + 왜');
    assert.deepEqual(await T.locator('.pf3-pr.grp>span').evaluateAll(l=>l.slice(1,3).map(n=>getComputedStyle(n).borderBottomColor)),['rgb(21, 23, 28)','rgb(201, 205, 213)'],'평가 = 검은 줄 · 참고 = 회색 줄');
    assert.equal(await T.locator('.pf3-pr:not(.hd):not(.grp)').first().locator('.mb s').evaluate(n=>n.style.left),'57%','점선 = 팀 메이드율');
-   assert.equal(o(await T.locator('.pf3-pn').innerText()),'황윤선 33%는 팀 57%보다 24%p 이상 낮습니다. 진행 · 수주 기록 없음: 한준엽 · 정정훈 · 김성민 · 조현식 · 조재연(B2B 협약 전담)');
+   assert.equal(o(await T.locator('.pf3-pn').innerText()),'황윤선 33%는 팀 57%보다 24%p 이상 낮습니다. 진행 · 수주 기록 없음: 한준엽 · 정정훈 · 김성민 · 조현식 · 이란 · 조재연(B2B 협약 전담)');
    const M=page.locator('#si-perf .pf3-money');
    assert.match(o(await M.locator('.top').innerText()),/^올해 수주실적 · 낙찰금액 4건 9\.6억 → 그중 회사에 들어오는 돈 8\.6억 90% 빠지는 9,906만은 협약 · 기술자문 건 — 시공사\(여름건설 · 코지건설\)가 낙찰받고 우리는 기술자문료만 받는 구조 · 매출 미입력 1건은 0으로 셈$/);
    assert.deepEqual((await M.locator('.pf3-mc').allInnerTexts()).map(o),['석민이앤씨로 들어온 것 1건 5억 → 매출 5억 · 100% 직접 수주 1건 5억 · 전액 매출 건별 보기 →','POUR솔루션으로 들어온 것 3건 4.6억 → 매출 3.6억 · 78% 직접 수주 1건 3억 · 전액 매출 여름건설 낙찰 1건 8,810만 → 매출 5,904만 코지건설 낙찰 1건 7,000만 → 매출 미입력 건별 보기 →','기술자문 낙찰실적 2건 · 수주실적에 포함 1.6억 귀속 상위 · 이필선 2건 1.6억 건별 보기 →'],'돈 3칸');
