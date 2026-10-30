@@ -141,16 +141,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 활동: 날짜별 묶음 · 종류 꼬리표 */
   await page.locator('#si-dash .db-secs [data-v="act"]').click();await page.waitForTimeout(200);
   /* 보강: 빨간 띠 → 숫자 5칸 → 담당자별 → 활동이 결과로 이어졌나 → 최근 활동 */
-  assert.equal(one(await page.locator('#si-dash .db-actband').innerText()),'이번 주 영업 기록 2건 — 7명 중 6명이 0건 활동이 없었던 게 아니라 CRM에 안 남았을 가능성이 큽니다. 기록이 없으면 아래 전환율도 잴 수 없습니다. 6명에게 기록 요청');
+  assert.equal(one(await page.locator('#si-dash .db-actband').innerText()),'이번 주 영업 기록 2건 — 8명 중 7명이 0건 활동이 없었던 게 아니라 CRM에 안 남았을 가능성이 큽니다. 기록이 없으면 아래 전환율도 잴 수 없습니다. 7명에게 기록 요청');
   assert.equal(await page.locator('#si-dash .db-actband').evaluate(n=>getComputedStyle(n).borderLeftColor),'rgb(209, 74, 63)');
-  assert.deepEqual(await page.locator('#si-dash .db-ak').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['통화','1','전화 시도 1 · 실제 연결 1'],['문자 · 카카오','0','응대 기록 기준'],['현장 방문','1','1차 미팅 · 재방문'],['견적 · 자료 발송','0','견적 · 제안서'],['기록 없는 날','19일','7명 × 3영업일 = 21일 중']],'숫자 5칸 — 주간 활동 카드와 같은 기록');
+  assert.deepEqual(await page.locator('#si-dash .db-ak').evaluateAll(l=>l.map(n=>[...n.children].map(c=>c.textContent))),[['통화','1','전화 시도 1 · 실제 연결 1'],['문자 · 카카오','0','응대 기록 기준'],['현장 방문','1','1차 미팅 · 재방문'],['견적 · 자료 발송','0','견적 · 제안서'],['기록 없는 날','22일','8명 × 3영업일 = 24일 중']],'숫자 5칸 — 주간 활동 카드와 같은 기록');
   const ap=await page.locator('#si-dash .db-ap').evaluateAll(l=>l.map(n=>[n.children[0].textContent,n.children[2].textContent,n.children[3].textContent,n.querySelectorAll('i u').length]));
-  assert.deepEqual(ap[0],['황윤선','0','마지막 기록 36일 전 (9/1)',0],'기록 없는 사람 먼저 · 마지막 기록 오래된 순');assert.deepEqual(ap[ap.length-1],['이필선','2','마지막 기록 어제 (10/6)',2]);assert.equal(ap.length,7);assert.ok(ap.slice(1,6).every(x=>x[1]==='0'&&x[2]==='마지막 기록 없음'));
+  assert.deepEqual(ap[0],['황윤선','0','마지막 기록 36일 전 (9/1)',0],'기록 없는 사람 먼저 · 마지막 기록 오래된 순');assert.deepEqual(ap[ap.length-1],['이필선','2','마지막 기록 어제 (10/6)',2]);assert.equal(ap.length,8);assert.ok(ap.slice(1,7).every(x=>x[1]==='0'&&x[2]==='마지막 기록 없음'));
   assert.deepEqual((await page.locator('#si-dash .db-apleg span').allInnerTexts()).map(one),['통화','문자 · 카카오','방문','견적 · 자료']);
   assert.deepEqual(await page.locator('#si-dash .db-conv').evaluateAll(l=>l.map(n=>[n.querySelector('div span').textContent,n.querySelector('div b').textContent,n.querySelector('small').textContent])),[['전화 시도 → 실제 연결','100%','1건 중 1건'],['연결 → 다음 할 일 등록','100%','연결된 현장 2곳 중 2곳'],['방문 → 3일 안 견적 요청','—','견적 전 단계 방문 0건 · 측정 대상 없음'],['견적 발송 → 7일 안 후속','—','이번 주 발송 0건 · 측정 대상 없음']]);
   await page.evaluate(require('./kpi-request-browser-fixture.cjs'));
   await page.evaluate(()=>{__writes.length=0;const mem={};Phase1.storage.getItem=k=>k in mem?mem[k]:null;Phase1.storage.setItem=(k,v)=>{mem[k]=String(v);};});await page.locator('#si-dash .db-actband button').click();await page.waitForTimeout(250);
-  assert.equal(await page.locator('#si-dash .db-actband button').innerText(),'요청 보냄 ✓');assert.equal(await page.locator('#si-dash .db-actband button').isDisabled(),true);assert.equal(await page.evaluate(()=>__deliveries.length),6,'0건인 6명의 오늘 업무에 한 줄씩(관리팀 KPI 요청과 같은 길)');
+  assert.equal(await page.locator('#si-dash .db-actband button').innerText(),'요청 보냄 ✓');assert.equal(await page.locator('#si-dash .db-actband button').isDisabled(),true);assert.equal(await page.evaluate(()=>__deliveries.length),7,'0건인 7명의 오늘 업무에 한 줄씩(관리팀 KPI 요청과 같은 길)');
   if(shot)await page.screenshot({path:shot+'-dash-act.png',fullPage:true});
   // v3: 최근 활동 = 표(날짜 · 담당 · 현장 · 한 일 · 결과 · 다음 행동 · 금액) · 최근 7일
   assert.equal(one(await page.locator('#si-dash .db-fd .db-ch').innerText()),'최근 활동 최근 7일 2건 · 실제 연결 2 · 연락 시도만 0 · 다음 행동 없음 0 전체 보기 →');
