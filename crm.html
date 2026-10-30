@@ -5289,19 +5289,30 @@ function normSite(s){return String(s||'').replace(/\[[^\]]*\]/g,'').replace(/\s+
 /* 문의 출처는 명시적 참조로만 판정한다. 현장명/현장 ID/최신 영업은 출처 증거가 아니다. */
 function inquiryDealRefs(q){return Array.from(new Set([q&&q.deal_id,q&&q.opportunity_id,q&&q.originOpportunityId,q&&q.origin_opportunity_id].filter(Boolean).map(String)))}
 function dealInquiryRefs(d){return Array.from(new Set([d.origin_inquiry_id,d.originInquiryId,d.fromInquiry].filter(Boolean).map(String)))}
+/* 렉 줄이기(2026-10-30): 화면 한 번 그리는 동안(paintBatch)만 문의 → 영업건 색인을 쓴다. 그리기는 데이터를 고치지 않으므로 결과는 예전 전체 훑기와 같다.
+   그리기가 끝나면 버리고, 그 밖(저장 · 판정 직후 등)은 예전처럼 매번 전체를 훑는다. */
+var _paintBatch=0,_ldIdx=null,_relMetaMemo=null;
+function paintBatch(fn,self,args){if(_paintBatch++===0){_ldIdx=null;_relMetaMemo=typeof WeakMap==='function'?new WeakMap():null;}try{return fn.apply(self,args)}finally{if(--_paintBatch===0){_ldIdx=null;_relMetaMemo=null;}}}
+function linkedDealIndex(rows){
+  if(_ldIdx&&_ldIdx.rows===rows&&_ldIdx.len===rows.length)return _ldIdx;
+  var byInq=new Map(),byId=new Map(),refsOf=new Map();
+  rows.forEach(function(d){var r=dealInquiryRefs(d);refsOf.set(d,r);r.forEach(function(k){var a=byInq.get(k);if(a)a.push(d);else byInq.set(k,[d])});var id=String(d.id||d.opportunity_id),b=byId.get(id);if(b)b.push(d);else byId.set(id,[d])});
+  _ldIdx={rows:rows,len:rows.length,byInq:byInq,byId:byId,refsOf:refsOf};return _ldIdx;
+}
 function linkedDeal(q){
   if(!q)return null;
   // A site can have several unrelated projects. Names are candidates, never linkage evidence.
   var refs=inquiryDealRefs(q),rows=(typeof DashboardData!=='undefined'&&DashboardData.active()?DashboardData.source():B).deals||[],key=String(q.id||q.inquiry_id||inqKey(q));
-  var matches=rows.filter(function(d){return dealInquiryRefs(d).indexOf(key)>=0});
+  var ix=typeof _paintBatch!=='undefined'&&_paintBatch>0?linkedDealIndex(rows):null,refsOfDeal=function(d){return ix?ix.refsOf.get(d):dealInquiryRefs(d)};
+  var matches=ix?(ix.byInq.get(key)||[]):rows.filter(function(d){return dealInquiryRefs(d).indexOf(key)>=0});
   if(refs.length){
    if(refs.length!==1||matches.some(function(d){return String(d.id||d.opportunity_id)!==refs[0]}))return null;
-   var targets=rows.filter(function(d){return String(d.id||d.opportunity_id)===refs[0]});
+   var targets=ix?(ix.byId.get(refs[0])||[]):rows.filter(function(d){return String(d.id||d.opportunity_id)===refs[0]});
    if(targets.length!==1)return null;
-   var origins=dealInquiryRefs(targets[0]);
+   var origins=refsOfDeal(targets[0]);
    return origins.length===0||(origins.length===1&&origins[0]===key)?targets[0]:null;
   }
-  return matches.length===1&&dealInquiryRefs(matches[0]).length===1?matches[0]:null;
+  return matches.length===1&&refsOfDeal(matches[0]).length===1?matches[0]:null;
 }
 function inquiryLinkUnresolved(q){
  if(!q)return false;
@@ -8222,7 +8233,9 @@ function touchCustomer(p,type,at,meaningful){
  p.lastMeaningfulContactAt=p.last_meaningful_contact_at=at||isoNow();
  p.lastCustomerContact=p.lastMeaningfulContactAt;return true;
 }
-function relationshipMeta(d){
+/* 렉 줄이기(2026-10-30): 화면 한 번 그리는 동안(paintBatch)만 영업건마다 한 번 계산해 재사용(복사본을 돌려줌) — 그리기가 끝나면 버린다 */
+function relationshipMeta(d){if(typeof _relMetaMemo==='undefined'||!_relMetaMemo||!d||typeof d!=='object')return relationshipMetaRaw(d);var m=_relMetaMemo.get(d);if(!m){m=relationshipMetaRaw(d);_relMetaMemo.set(d,m);}return Object.assign({},m)}
+function relationshipMetaRaw(d){
  var p=itemPatch(d,'deal'),derived=deriveMeaningfulAt(d,p),meaningful=p.lastMeaningfulContactAt||p.last_meaningful_contact_at||d.lastMeaningfulContactAt||d.last_meaningful_contact_at||d.contactAt||derived||p.lastCustomerContact||d.last_customer_contact_at||'',
   outbound=p.lastOutboundAt||p.last_outbound_at||d.lastOutboundAt||d.last_outbound_at||'',attempts=Number(p.outboundAttempts||p.outbound_attempts||d.outboundAttempts||d.outbound_attempts||0)||0,
   waitReason=p.waitingReason||p.waiting_reason||d.waitingReason||d.waiting_reason||'',wake=p.wakeUpAt||p.wake_up_at||d.wakeUpAt||d.wake_up_at||(typeof wakeUpOf==='function'?wakeUpOf(d):'')||'',
@@ -8430,7 +8443,7 @@ function execAskExample(q){var e=$('#execAskInput');if(e)e.value=q;runExecAsk()}
 function runExecAsk(){var e=$('#execAskInput'),q=e&&e.value.trim(),r=execAskQuery(q);EXEC_ASK_CACHE=r.list;var b=$('#execAskBody');b.innerHTML='<div class="exec-ask-summary"><b>'+esc(r.title)+'</b><span>'+r.list.length+'건 · '+(r.amountKind==='quote'?'견적금액':'예상금액')+' 큰 순</span></div>'+(r.list.length?r.list.map(function(d,i){return '<button class="exec-ask-row" onclick="openExecAskResult('+i+')"><span><strong>'+esc(d.site||'현장명 미입력')+'</strong><small>'+esc(repN(d.assignee))+' · '+esc(stageNoLabel(dealStage(d)))+'</small></span><span>'+(r.amountKind==='quote'?'견적금액 · ':'예상금액 · ')+((r.amountKind==='quote'?quoteAmt(d):oppAmt(d))?fmtAmt(r.amountKind==='quote'?quoteAmt(d):oppAmt(d)):'미입력')+'</span><span>'+esc(bizOf(d))+'</span><span>'+esc(dealWorkSummary(d))+'</span></button>'}).join(''):'<div class="detailnotice">조건에 맞는 영업기회가 없습니다.</div>')}
 function openExecAskResult(i){var d=EXEC_ASK_CACHE[i];if(!d)return;closeExecAsk();drwDeal(JSON.stringify(d))}
 var _execPaint=paint;
-paint=function(){var r=_execPaint.apply(this,arguments);installExecAsk();return r};
+paint=function(){var r=paintBatch(_execPaint,this,arguments);installExecAsk();return r};
 
 /* ══════════════════════════════════════════════════════════════
    v7.0 현장 파일 · 사용자별 빠른 현장 · 데이터 기반 체크 · 읽기 전용 질의
