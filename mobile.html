@@ -2300,7 +2300,7 @@ function rRpt(head){
    웹에서 특정 전화번호의 카카오 1:1 채팅을 바로 열 수 없으므로 번호와 문구를
    복사한 뒤 카카오 앱을 연다. 실제 발송 여부는 복귀 후 반드시 사람이 확정한다.
    ══════════════════════════════════════════════════════════════ */
-var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375'},REL_FREE_OPTOUT_M=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
+var RM_M=null,REL_REP_PHONE_M={'이필선':'010-3004-7953','정정훈':'010-8003-6900','김성민':'010-2840-6375','조현식':'010-8981-1831'},REL_FREE_OPTOUT_M=(function(){try{return Phase1.storage.getItem('nf_rel_free_optout')||''}catch(e){return ''}})();
 function rmBool(v){return v===true||v===1||v==='1'||v==='true'}
 var _rmContactInfoM=contactInfoM;
 contactInfoM=function(d){var o=_rmContactInfoM(d),box=(d&&d.contact)||{},raw=((d&&d.contacts)||[]).filter(function(x){return (o.personKey&&x.person_key===o.personKey)||phoneN(x.mobile||x.phone)===phoneN(o.mobile)})[0]||{};o.smsConsent=rmBool(box.smsConsent!=null?box.smsConsent:(raw.sms_consent!=null?raw.sms_consent:d&&d.sms_consent));o.kakaoConsent=rmBool(box.kakaoConsent!=null?box.kakaoConsent:(raw.kakao_consent!=null?raw.kakao_consent:d&&d.kakao_consent));o.consentAt=box.consentAt||raw.consent_at||d&&d.consent_at||'';o.optOutAt=box.optOutAt||raw.opt_out_at||d&&d.opt_out_at||'';o.sendBlocked=rmBool(box.sendBlocked!=null?box.sendBlocked:(raw.send_blocked!=null?raw.send_blocked:d&&d.send_blocked))||!!o.optOutAt;o.sendBlockedReason=box.sendBlockedReason||raw.send_blocked_reason||d&&d.send_blocked_reason||'';return o};

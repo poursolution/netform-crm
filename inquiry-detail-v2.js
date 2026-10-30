@@ -206,6 +206,7 @@
  const inferRes=t=>{if(!FL())return inferRes0(t);if(/번호 ?오류|없는 ?번호|결번|잘못된 ?번호/.test(t))return '번호오류';if(/통화 ?불가|전원 ?꺼|통화 ?중/.test(t))return '통화불가';if(/회신 ?(받|옴|왔)|답장|전화 ?주심|연락 ?주심/.test(t))return '고객 회신';const r=inferRes0(t);return r==='거절'||r==='회신대기'?'연결됨':r==='보류'?'검토중':r;};
  const inferRes0=t=>/부재|안 ?받|연결 ?안|통화 ?불가/.test(t)?'부재':/거절|안 하기로|타 ?업체 ?계약|필요 ?없/.test(t)?'거절':/보류/.test(t)?'보류':/검토/.test(t)?'검토중':/자료|도면|사진/.test(t)?'자료요청':/견적/.test(t)?'견적요청':/회신|답 ?주/.test(t)?'회신대기':'연결됨';
  const HEAD=/^\[(전화|카카오|문자|이메일|방문|기타) · ([^\]]{1,12})\]\s*/;
+ const MEMO_LOCAL=/^mm-\d+$/;/* 이 PC 에서 남긴 내부 메모(InquiryCommand memo)만 삭제 버튼 */
  function parseEntry(a){
   const type=String(a.type||''),note=String(a.note||''),result=String(a.result||'');
   const isCall=/^고객 응대 기록/.test(note)&&result;const body=isCall?result:[note,result].filter(v=>v&&String(v).trim()).join(' · ');
@@ -220,7 +221,7 @@
   else if(/배정|담당|상태|단계|데이터정리|다음 ?할 ?일|다음행동등록|파이프라인 인계|일정|기한|후속확인/.test(type)||/^(다음 할 일|현장방문 · 기한|견적서 (발송|발송 후))/.test(body)){kind='system';}
   else kind='memo';
   if(a.type==='체크')return null;
-  return {kind,ch,res,text:m?text:(text||type),who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
+  return {kind,ch,res,text:m?text:(text||type),aid:a.id,who:a.actor||a.actor_name||'',at:a.at||a.occurred_at||a.created_at,src:a.source==='mobile'||/모바일/.test(String(a.source||''))?'모바일':'CRM',next:a.next||''};
  }
   /* CRM 직접 발송(2026-10-03 대표 "진행해"): 문의 응대 문자 큐 — 함수가 운영에 있고 로그인 상태이며 번호가 010 이면 [CRM에서 보내기]. 전송은 대표 PC 실행기(ALIGO_INQUIRY_REPLIES)가 한다 */
   const SMS_RPC='crm_inquiry_sms_request_v1',SMS_LIST='crm_inquiry_sms_list_v1';
@@ -482,7 +483,7 @@
   const L=allScope?(()=>{const T=x=>Date.parse(x.at)||0,desc=L0.length>1&&T(L0[0])>T(L0[L0.length-1]);return L0.concat(IS().timeline(q)).sort((a,b)=>desc?T(b)-T(a):T(a)-T(b));})():L0;
   const contacts=L0.filter(e=>e.kind==='contact'||(e.kind==='work'&&e.ch)),conN=contacts.filter(e=>isConn(e.res)).length,tryN=FL()?contacts.filter(e=>isTry(e.res)).length:contacts.length;
   const body=L.map(e=>{const con=e.kind==='contact'||e.kind==='work',tag=e.kind==='memo'?'내부 메모':[e.ch,e.res?resShow(e.res):''].filter(Boolean).join(' · '),by=e.kind==='system'?(e.src&&e.src!=='CRM'?e.src:e.who):e.who;
-   return '<div class="idv3-ev'+(con?' ct':e.kind==='memo'?' mm':e.kind==='site'?' st':'')+'"><i></i><div><span class="m">'+h(fmt(e.at))+(by?' · '+h(by):'')+(tag?' · <b>'+h(tag)+'</b>':'')+(e.kind==='site'&&e.tag?'<em class="isd-tag">'+h(e.tag)+'</em>':'')+'</span>'+(e.text?'<span class="t'+(e.kind==='system'||e.kind==='site'?(e.red?' r':''):' box')+'">'+h(e.text)+'</span>':'')+(e.next?'<span class="n">→ 다음 행동: '+h(String(e.next).replace(/(\d{4})-(\d{2})-(\d{2})/,(x,y,mo,dd)=>Number(mo)+'.'+Number(dd)))+'</span>':'')+'</div></div>';}).join('');
+   return '<div class="idv3-ev'+(con?' ct':e.kind==='memo'?' mm':e.kind==='site'?' st':'')+'"><i></i><div><span class="m">'+h(fmt(e.at))+(by?' · '+h(by):'')+(tag?' · <b>'+h(tag)+'</b>':'')+(e.kind==='site'&&e.tag?'<em class="isd-tag">'+h(e.tag)+'</em>':'')+(e.kind==='memo'&&MEMO_LOCAL.test(String(e.aid||''))&&!/^\s*\[/.test(e.text||'')?'<button type="button" class="idv-mdel'+(s.mdel===e.aid?' on':'')+'" data-idv="mdel" data-v="'+h(e.aid)+'" aria-label="이 내부 메모 삭제">'+(s.mdel===e.aid?'삭제 확인':'삭제')+'</button>':'')+'</span>'+(e.text?'<span class="t'+(e.kind==='system'||e.kind==='site'?(e.red?' r':''):' box')+'">'+h(e.text)+'</span>':'')+(e.next?'<span class="n">→ 다음 행동: '+h(String(e.next).replace(/(\d{4})-(\d{2})-(\d{2})/,(x,y,mo,dd)=>Number(mo)+'.'+Number(dd)))+'</span>':'')+'</div></div>';}).join('');
   let form;
   if(s.tab==='sms')form=smsForm(q,s,String(q.phone||q.contact_phone||q.raw?.['문의자 연락처']||'').replace(/\D/g,''),true);
   else if(s.tab==='memo')form='<input id="spLogNote" class="idv3-in" data-idv="text" placeholder="내부에서만 보는 메모 (고객에게 보이지 않음)" value="'+attr(s.text)+'"><div class="idv3-foot"><span class="idv3-sug">팀 내부용 · 고객에게 보이지 않습니다</span><button type="button" class="idv-save'+(s.text.trim()?' on':'')+'" data-idv="save">저장</button></div><select id="spLogType" hidden><option selected>기타</option></select>';
@@ -598,6 +599,9 @@
  function onClick(e){
   const b=e.target.closest('[data-idv]');if(!b||!curKey)return;const k=b.dataset.idv,v=b.dataset.v,s=st(curKey),q=root.inqCtlFind(curKey,false);if(!q)return;
   if(closedStatus(q)&&['save','handoff','dial','sms-crm','sms-send','reassign','step'].includes(k))return;
+  /* 내부 메모 삭제(2026-10-30 대표): 견적문의 메모는 이 PC 브라우저에만 저장된다(서버 명령에 메모가 없음) → 이 PC 기록에서 뺀다 · 한 번 더 눌러야 삭제 */
+  if(k==='mdel'){if(s.mdel!==v){s.mdel=v;return reskinFrom();}s.mdel='';const p=root.itemPatch(q,'inq');if(p&&Array.isArray(p.activities))p.activities=p.activities.filter(a=>String(a&&a.id)!==v);if(Array.isArray(q.activities))q.activities=q.activities.filter(a=>String(a&&a.id)!==v);root.saveLocal?.();reskinFrom();toast('내부 메모를 삭제했습니다');return;}
+  if(k!=='mdel'&&s.mdel)s.mdel='';
   if(k==='edit'){s.editField=v;s.editDraft='';return reskinFrom();}
   if(k==='workcancel'){s.editField='';s.editDraft='';closeWorkPick();return reskinFrom();}
   if(k==='workdone')return saveWorkPick(q,s);
