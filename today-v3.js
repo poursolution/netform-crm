@@ -198,6 +198,15 @@
   const KC={'공지':'#6b7280','업무 요청':'#3b6ce4','코칭':'#1f7a4d'};
   return '<div class="tv3-word" title="'+attr(lines.join('\n'))+'"><b>관리자 한마디</b><small>'+h([c.created_by||c.createdBy||'관리자',at].filter(Boolean).join(' · '))+'</small><div>'+show.map(l=>{const [k,t]=kindOf(l);return '<span><i class="tv3-wk" style="color:'+KC[k]+'">'+h(k)+'</i>'+h(t)+'</span>';}).join('')+(lines.length>3?'<em>외 '+(lines.length-3)+'줄</em>':'')+'</div></div>';
  }
+ /* 왼쪽 메뉴 '오늘 업무' 숫자 = 이 화면의 큰 숫자 하나(기한 지남 + 오늘 처리 · 2026-11-05). 쓰는 곳은 setBadge 하나. ownsBadge = 오늘 업무를 이 화면으로 그리는 조건(today-v2 render 와 같음) */
+ const setBadge=total=>{const b=document.getElementById('todayBadge');if(b){b.textContent=total||'';b.style.display=total?'':'none';}};
+ const ownsBadge=()=>{const G=root.G;return !!(G&&!G.todayV2Off&&enabled()&&TT().enabled&&TT().enabled());};
+ /* 다른 화면에 있을 때(저장 직후 · 자료를 새로 받은 뒤) 화면을 그리지 않고 숫자만 다시 센다 — 범위는 오늘 업무 화면과 같음(current) */
+ function syncBadge(){
+  if(!ownsBadge()||!root.B)return;
+  const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;
+  setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);
+ }
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
   const all=V.groups.filter(g=>!g.aux).flatMap(g=>g.items);
@@ -266,7 +275,7 @@
   const side='<aside class="tv3-side">'+(WR&&team?WR.sideHtml():'')+'<section><header><b>'+schedT+'</b><span>지금 '+new Date().toTimeString().slice(0,5)+'</span></header>'+(sc.length?sc.map(e=>'<div class="tv3-ev" role="button" tabindex="0" data-t3="open" data-key="'+attr(e.key)+'"><b>'+h(e.t)+'</b><i></i><div><small>'+h(e.kind)+'</small><b>'+h(e.site)+'</b><span>'+h(e.note)+'</span>'+(e.risk?'<em>'+h(e.risk)+'</em>':'')+'</div></div>').join(''):'<p class="none">오늘 날짜로 잡힌 일정이 없습니다</p>')+'</section>'
    +'<section><header><b>'+dueT+'</b></header>'+(du.length?du.map(x=>'<div class="tv3-due"><span class="'+(x.hot?'hot':'')+'">'+h(x.dd)+'</span><p><b>'+h(siteShort(x.site))+'</b> <small>'+h(x.what)+'</small></p></div>').join(''):'<p class="none">7일 안 마감(입찰 · 결정 일정)이 없습니다</p>')+'</section>'
    +'<section><header><b>'+weekT+'</b></header>'+wk.map(w=>{const red=w.bad&&w.pct<50;return '<div class="tv3-wk"><div><span>'+h(w.label)+'</span><b'+(red?' class="r"':'')+'>'+h(w.v)+'</b></div><u><i style="width:'+Math.max(1,Math.round(w.pct))+'%;background:'+(red?'#d14a3f':'#15171c')+'"></i></u><small>'+h(w.goal)+'</small></div>';}).join('')+(root.DayWord&&role!=='mgr'?root.DayWord.coachHtml(V.me):'')+'</section></aside>';
-  const badge=document.getElementById('todayBadge');if(badge){badge.textContent=total||'';badge.style.display=total?'':'none';}
+  setBadge(total);
   try{root.DayWord&&root.DayWord.bell();}catch(e){}
   /* design_handoff_pc_today_v6: 4구역 화면(영업사원 · 팀장 · 상무 · 대표)은 파이프라인 단계 화면과 같은 틀(today-v6.js) — 끄기 G.todayV6Off 면 아래 v3 */
   if(Z&&root.TodayV6&&root.TodayV6.on()){let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}
@@ -276,7 +285,7 @@
  /* ── 동작: 전부 기존 경로 ── */
  function dial(digits){if(!digits){toast('전화번호가 없습니다 — 상세에서 연락처를 등록해 주세요','warn');return;}const a=document.createElement('a');a.href='tel:'+digits;a.style.display='none';document.body.append(a);a.click();a.remove();}
  const openKey=(key,action)=>T().open(key,action);
- function current(){const X=T().data(),G=root.G,owner=X.admin?(G.todayQueueOwner||'전체'):'전체',q=String(G.todayQueueSearch||'').trim().toLowerCase(),brand=G.brand&&G.brand!=='전체'?G.brand:'';
+ function current(X0){const X=X0||T().data(),G=root.G,owner=X.admin?(G.todayQueueOwner||'전체'):'전체',q=String(G.todayQueueSearch||'').trim().toLowerCase(),brand=G.brand&&G.brand!=='전체'?G.brand:'';
   const scoped=x=>(owner==='전체'||x.owner===owner)&&(!brand||String(x.item.brand||'')===brand)&&(!q||[x.item.site,x.item.site_name,x.owner,x.reason,x.next,x.item.contact_name,x.item.phone].join(' ').toLowerCase().includes(q));
   return build(X,X.rows.filter(scoped),(X.backlog||[]).filter(scoped));}
  /* 요청 버튼 이름(2026-10-06 집계 · 판정 정리 ⑦): [요청 보내기] = 요청 엔진(crm_work_request_create_v1)으로 담당 오늘 업무에 등록 + 알림 / [문구 복사] = 클립보드만 */
@@ -349,5 +358,5 @@
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
  /* 화면의 큰 숫자와 같은 묶음 항목의 브랜드 목록(브랜드 칩 건수용) */
  function brandItems(X,rows,legacy){return build(X,rows,legacy).groups.filter(g=>!g.aux).flatMap(g=>g.items).map(i=>i.brand||(i.x&&i.x.item&&(i.x.item.brand||(root.inquiryBrandOf&&root.inquiryBrandOf(i.x.item))))||'');}
- root.TodayV3={loadWord,enabled,html,build,brandItems,isBack,STG,current,execQueue:()=>EXQ.map(x=>x.i.key)};
+ root.TodayV3={loadWord,enabled,html,build,brandItems,isBack,STG,current,ownsBadge,syncBadge,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
