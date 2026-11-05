@@ -98,6 +98,8 @@
   const old=document.getElementById('today-home-root');if(!old)return;let t=null;
   new MutationObserver(()=>{if(t)return;t=setTimeout(()=>{t=null;renderReady();},0);}).observe(old,{childList:true});
   const base=root.paintTodayHome;if(typeof base==='function')root.paintTodayHome=function(){const r=base.apply(this,arguments);renderReady();return r;};
+  /* 다른 화면으로 시작해도 왼쪽 메뉴 숫자가 비지 않게: 자료를 새로 받았을 때 한 번만 숫자를 센다(2026-11-05) */
+  let countedB=null;const basePaint=root.paint;if(typeof basePaint==='function')root.paint=function(){const r=basePaint.apply(this,arguments);if(root.B&&root.B!==countedB&&root.G.page!=='today'){countedB=root.B;setTimeout(()=>{try{root.TodayV3&&root.TodayV3.syncBadge();}catch(e){}},0);}return r;};
   /* 저장된 로그인으로 자료가 먼저 도착하면 관찰 시작 전의 변경은 통지되지 않는다. */
   renderReady();
  }

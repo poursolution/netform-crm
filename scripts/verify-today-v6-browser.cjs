@@ -77,6 +77,17 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.deepEqual(await page.evaluate(()=>__open[__open.length-1]),['deal:late3','contact']);
   assert.equal(await page.locator('#today-v2 .tv6 .open,#today-v2 .tv6 .fold,#today-v2 .tv6 [data-t3="sms"],#today-v2 .tv6 [data-tel]').count(),0,'펼침 · 전화 · 문자 없음');
   assert.equal(await V.evaluate(v=>[...v.querySelectorAll('.tv6-row span,.tv6-row b')].every(s=>s.scrollWidth<=s.clientWidth+1||getComputedStyle(s).textOverflow==='ellipsis'||getComputedStyle(s.parentElement).textOverflow==='ellipsis')),true,'글 잘림 없음');
+  /* 2026-11-05 대표 "262 > 79": 왼쪽 메뉴 숫자는 언제 다시 그려도 하나 — 예전 목록(TodayWorkQueue)이 전체 건수로 덮어쓰지 않는다 */
+  const want=String(n.late+n.now),rowsAll=await page.evaluate(()=>TodayWorkQueue.data().rows.length);assert.notEqual(rowsAll,n.late+n.now,'검사 자료: 전체 건수와 숫자가 달라야 덮어쓰기를 잡는다');
+  await page.evaluate(()=>{window.__bw=[];const b=document.getElementById('todayBadge');window.__bo=new MutationObserver(()=>__bw.push(b.textContent));__bo.observe(b,{childList:true,characterData:true,subtree:true});});
+  const seen=async(why)=>{await page.waitForTimeout(300);const r=await page.evaluate(()=>({now:document.getElementById('todayBadge').textContent,w:__bw.splice(0)}));assert.equal(r.now,want,why+' 뒤 숫자');assert.ok(r.w.every(v=>v===want),why+' 중 다른 숫자가 보임: '+JSON.stringify(r.w));};
+  await page.evaluate(()=>TodayWorkQueue.setManagerRequests([]));await seen('관리자 요청 도착');
+  await page.evaluate(()=>TodayWorkQueue.render());await seen('오늘 업무에서 다시 그리기');
+  await page.evaluate(()=>goPage('pipe'));await seen('파이프라인으로 이동');
+  await page.evaluate(()=>TodayWorkQueue.render());await seen('다른 화면에서 저장 뒤 다시 그리기');
+  await page.evaluate(()=>{const b=document.getElementById('todayBadge');__bo.disconnect();b.textContent='';B=Object.assign({},B);paint();});await page.waitForTimeout(300);assert.equal(await page.locator('#todayBadge').textContent(),want,'다른 화면에서 자료를 새로 받아도 숫자가 비지 않음');
+  await page.evaluate(()=>{const b=document.getElementById('todayBadge');__bw.length=0;__bo.observe(b,{childList:true,characterData:true,subtree:true});goPage('today');});await seen('다시 오늘 업무 클릭');
+  await page.evaluate(()=>__bo.disconnect());
   if(process.env.T6_SHOT)await page.locator('#today-v2').screenshot({path:process.env.T6_SHOT});
   await page.evaluate(()=>{G.todayV6Off=true;TodayV2.render();});await page.waitForTimeout(300);
   assert.equal(await page.locator('#today-v2 .tv6').count(),0);assert.ok(await page.locator('#today-v2 .tv3 .dz').count()>=1,'끄기 = 예전 화면');
