@@ -174,12 +174,16 @@
  let returnPage=null,returnScroll=0;
  /* 다른 화면(오늘 업무 등)에서 연 문의 상세 — 견적문의의 같은 전체 상세로 열고, 닫으면 원래 화면으로 돌아간다 */
  function openFrom(key,from){const q=root.inqCtlFind(key,false);if(!allowed(q))return false;const back=from&&from!=='inq'?from:null,y=window.scrollY||0;if(root.G.page!=='inq')root.goPage('inq');returnPage=back;returnScroll=y;open(key);return !!modalKey;}
+ /* 영업건 상세에서 원래 문의를 열 때(journey-path.js): 문의를 닫으면 보던 영업건으로 돌아온다. 드러난 상세는 먼저 닫아 문의 창이 뒤에 깔리지 않게 한다 */
+ let returnDeal=null;
+ function openFromDeal(key,d){const q=root.inqCtlFind(key,false);if(!allowed(q))return false;const from=root.G.page;try{if(d&&typeof root.closeDetail==='function')root.closeDetail();}catch(e){}const ok=openFrom(key,from);if(ok)returnDeal=d||null;return ok;}
+ function backToDeal(d){if(!d)return;root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}
  /* 메뉴 이동·역할 전환 등 화면이 바뀔 때: 되돌아가지 않고 조용히 닫는다 */
- function dismiss(){returnPage=null;if(!modalKey&&!document.getElementById('inq-inbox-dialog'))return;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');}
+ function dismiss(){returnPage=null;returnDeal=null;if(!modalKey&&!document.getElementById('inq-inbox-dialog'))return;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');}
  function defaultAct(q){if(storeOnly(q))return null;const t=task(q);if(t.action==='assign')return root.inqCtlRoleView()==='admin'?'rep':null;/* 2026-09-29 컨설턴트 4차: 열자마자 입력 — 배정된 건은 '연락 결과'(다음 할 일·날짜 포함)가 기본, 전환 판단 건만 전환 결정 */
   return t.action==='decision'?'decision':['process','next'].includes(t.action)?'process':null}
  function open(key,action){action=action==='log'?'process':action;const q=root.inqCtlFind(key,false);if(!allowed(q))return;if(root.DetailWindow&&typeof root.DetailWindow.openInquiry==='function'&&root.DetailWindow.openInquiry(String(q.id||''),action))return;/* 2026-09-26 대표: 견적문의 상세도 새 창 */returnFocus=document.activeElement;modalKey=root.inqKey(q);root.G.inqSelKey=modalKey;root.G.inqAct=action===undefined?defaultAct(q):(action==null||action==='none'?null:action);root.G.iqForm=root.G.inqAct==='process'?'next':null;root.paint();document.querySelector('#inq-inbox-dialog .inq-dialog-close')?.focus()}
- function close(){const back=returnPage,y=returnScroll;returnPage=null;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');if(back){root.goPage(back);requestAnimationFrame(()=>window.scrollTo(0,y));return}if(returnFocus?.isConnected)returnFocus.focus();else document.querySelector('.inq-work-counts button')?.focus()}
+ function close(){const back=returnPage,y=returnScroll,rd=returnDeal;returnPage=null;returnDeal=null;modalKey=null;root.G.inqAct=null;root.G.iqForm=null;document.getElementById('inq-inbox-dialog')?.remove();document.body.classList.remove('inq-dialog-open');if(back){root.goPage(back);requestAnimationFrame(()=>window.scrollTo(0,y));backToDeal(rd);return}if(rd)return backToDeal(rd);if(returnFocus?.isConnected)returnFocus.focus();else document.querySelector('.inq-work-counts button')?.focus()}
  function dialog(){
   const q=root.inqCtlFind(modalKey,false);if(root.G.page!=='inq'||!allowed(q)){dismiss();return}
   const previous=document.getElementById('inq-inbox-dialog'),draft={},focused=document.activeElement?.id;const sameAction=previous?.dataset.action===String(root.G.inqAct||'');if(sameAction)previous.querySelectorAll('input[id],select[id],textarea[id]').forEach(e=>draft[e.id]=e.value);
@@ -265,5 +269,5 @@
  /* 배정·보류·이관 등 작은 창도 같은 문의 요약으로 시작(처리 창 '⋯'은 자체 머리말이 있어 제외) */
  const baseModal=root.inqCtlModal;
  if(typeof baseModal==='function')root.inqCtlModal=function(title,html){const m=root.INQ_CTL_MODAL||{},keys=m.keys||(m.key?[m.key]:[]);if(m.mode!=='menu'&&keys.length===1){const q=root.inqCtlFind(keys[0],false);if(q&&allowed(q))html=context(q,true)+html}return baseModal.call(this,title,html)};
- root.InquiryWorkbench={saveProcess,related,openRelated,originalText,gist,context,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,dismiss};
+ root.InquiryWorkbench={saveProcess,related,openRelated,originalText,gist,context,sourceFields,task,matches,compare,run,set,delayed,primaryAction,selectBrand,view,open,close,openFrom,openFromDeal,dismiss};
 })(window);

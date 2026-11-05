@@ -438,7 +438,7 @@
   const names=['접수','담당 배정','현장방문 / 견적','파이프라인 전환'];
   return '<div class="idv3-top"><div class="r1"><i class="bar" style="background:'+bc+'"></i><b style="color:'+bc+'">'+h(brand||'브랜드 미지정')+'</b><span>'+h([work].concat((TIDY()?TIDY().currentTags(String(sum).split(' · ').map(x=>x.trim()),W().originalText(q)||''):String(sum).split(' · ').map(x=>x.trim())).filter(x=>x&&!work.includes(x)&&x!=='견적 요청'),[inflow?(/문의$/.test(inflow)?inflow:inflow+' 문의'):'']).filter(v=>v&&String(v).trim()).join(' · '))+'</span><i class="sp"></i>'+(conWarn?'<span class="idv3-pill amb idv3-conwarn" title="최초 응대 시각과 응대 이력의 연결 기록이 맞지 않습니다 — 실제 연결 여부를 확인해 주세요">'+h(conWarn)+'</span>':'')+'<span class="idv3-pill '+pill[0]+'">'+h(pill[1])+'</span><button type="button" class="inq-dialog-close idv-close idv3-x" aria-label="닫기" onclick="InquiryWorkbench.close()">×</button></div>'
    +'<div class="r2"><h2 id="inq-dialog-title">'+h(q.site||'현장명 미입력')+'</h2><span>'+h(customer)+(ph.text?' · <b>'+h(ph.text)+'</b>':'')+'</span><small>'+h(dateOnly(S0.created)+' 접수 · 담당 '+owner)+'</small></div>'
-   +(V5()?root.InquiryV5.stepsHtml(q):'<div class="idv3-steps">'+stepsOf(q).map((x,i)=>'<div class="'+(x.done?'done':x.cur?'cur':'')+'"><i></i><span>'+(x.cur?'지금 · ':'')+names[i]+'</span></div>').join('')+'</div>')+'</div>';
+   +(V5()?root.InquiryV5.stepsHtml(q):'<div class="idv3-steps">'+stepsOf(q).map((x,i)=>'<div class="'+(x.done?'done':x.cur?'cur':'')+'"><i></i><span>'+(x.cur?'지금 · ':'')+names[i]+'</span></div>').join('')+'</div>')+(root.JourneyPath?root.JourneyPath.inquiryHtml(q):'')+'</div>';
  }
  function col13(q,s){
   const f=new Map(W().sourceFields(q)),r0=q.raw&&typeof q.raw==='object'?q.raw:{},can=fieldEditable(),can2=need2Editable();

@@ -14,7 +14,7 @@
  const h=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
  const V5=()=>root.InquiryV5,W=()=>root.InquiryWorkbench,LP=()=>root.ListPager,L3=()=>root.InquiryListV3;
  const on=()=>!(root.G&&root.G.inqTossOff)&&!!V5()&&V5().on()&&!!V5().lib;
- const DEF={st:null,wf:'',sel:'',page:1};
+ const DEF={st:null,wf:'',sel:'',page:1,handed:false};
  function st(){const g=root.G;if(!g.inqToss||!g.inqToss._t)g.inqToss=Object.assign({},DEF,{_t:true});return g.inqToss;}
  const pad=n=>String(n).padStart(2,'0');
  const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());};
@@ -97,7 +97,27 @@
    out+=rowHtml(m,S);});
   return out+'</div>'+LP().html(pg,{ns:'tq',unit:'건'});
  }
- function sideHtml(m){
+ /* 영업건으로 넘어간 문의 찾기(2026-11-05): 진행 중 숫자 · 단계 칸에는 넣지 않는 별도 보기. 담당 · 브랜드 · 검색 범위는 목록과 같다(inqCtlScope) */
+ function handedRows(){
+  let L=[];try{L=root.inqCtlScope(root.operationalInquiries((root.B&&root.B.inquiries)||[]),false).filter(root.inqCtlConverted);}catch(e){}
+  const at=q=>{try{return String(root.inquiryCreatedAt(q)||'');}catch(e){return '';}};
+  return L.slice().sort((a,b)=>at(b).localeCompare(at(a)));
+ }
+ function handedRow(q){
+  const JP=root.JourneyPath,d=JP?JP.dealOf(q):null,key=root.inqKey(q);let work='',recv='',owner='';
+  try{work=root.inqCtlWorkLabel(q)||'';}catch(e){}try{recv=md(root.inquiryCreatedAt(q));}catch(e){}try{owner=repName(root.inquiryRoutedOwner(q));}catch(e){}
+  const sub=[q.brand,/미분류/.test(work)?'':work,d?JP.stageName(d):'영업건 안 보임'].filter(Boolean).join(' · ');
+  return '<div class="tq-row" role="button" tabindex="0" data-tq="full" data-v="'+attr(key)+'"><span class="tq-d"><b>넘어감</b></span><span class="tq-m"><b class="tq-nm">'+h(q.site||'현장명 미입력')+'</b><span class="tq-ds">'+h(sub)+'</span></span>'
+   +'<span class="tq-c">'+h(owner||'미배정')+'</span><span class="tq-c">'+h(recv?recv+' 접수':'')+'</span>'
+   +(d?'<button type="button" class="tq-btn" data-tq="deal" data-v="'+attr(key)+'">영업건 보기</button>':'<span class="tq-c"></span>')+'</div>';
+ }
+ function handedHtml(S,L){
+  const pg=LP().cut(L,LP().page(S));
+  if(!pg.rows.length)return '<div class="tq-group"><div class="tq-empty">영업건으로 넘어간 문의가 없어요</div></div>';
+  return '<div class="tq-group"><p class="tq-gt">영업건으로 넘어간 문의<em>'+L.length+'</em></p>'+pg.rows.map(handedRow).join('')+'</div>'+LP().html(pg,{ns:'tq',unit:'건'});
+ }
+ function sideHtml(m,handed){
+  if(handed)return '<aside class="tq-side"><p class="tq-k">영업건으로 넘어간 문의</p><p class="tq-none">줄을 누르면 문의 상세가 열리고, [영업건 보기]를 누르면 지금 진행 중인 영업건이 열려요</p></aside>';
   if(!m)return '<aside class="tq-side"><p class="tq-k">고른 문의</p><p class="tq-none">왼쪽 목록에서 문의를 고르면 여기에 요약이 나와요</p></aside>';
   const g=m._g,d=due(m),a=action(m,g),STG=lib().STG();let miss=[];try{miss=L3().missing(m.q);}catch(e){}
   const kv=(k,v,cls)=>v?'<div class="tq-kv"><span>'+h(k)+'</span><span'+(cls?' class="'+cls+'"':'')+'>'+h(v)+'</span></div>':'';
@@ -124,13 +144,13 @@
   if(!on()){page.classList.remove('inq-toss');if(host){const t=host.__tools,s=document.querySelector('#inq-v5 .i5-more-slot');if(t&&s)s.append(t);host.remove();}return;}
   page.classList.add('inq-toss');
   if(!host){host=document.createElement('div');host.id='inq-toss';const v5=document.getElementById('inq-v5');if(v5)v5.after(host);else page.append(host);host.addEventListener('click',onClick);host.addEventListener('keydown',onKey);}
-  const S=st(),V=compute(),keep=host.__tools;if(keep&&host.contains(keep))keep.remove();
+  const S=st(),V=compute(),HL=handedRows(),keep=host.__tools;if(keep&&host.contains(keep))keep.remove();
   const pg=LP().cut(V.list,LP().page(S));if(!pg.rows.some(m=>m.key===S.sel))S.sel=pg.rows.length?pg.rows[0].key:'';
   const cur=V.list.find(m=>m.key===S.sel)||null,STG=lib().STG();
   const stages='<div class="tq-stages" role="group" aria-label="견적문의 단계">'+STG.map((g,i)=>{const o=S.st===i;return '<button type="button" class="tq-stg'+(o?' on':'')+'" data-tq="st" data-v="'+i+'" aria-pressed="'+o+'"><span>'+h(g[1])+'</span><b>'+V.cols[i].length+'</b><small>'+h(note(i))+'</small></button>';}).join('')+'</div>';
   const chips=V5().CHIPS.filter(k=>V.warn[k]||S.wf===k).map(k=>{const w=lib().warn(k),o=S.wf===k;return '<button type="button" class="tq-chip'+(o?' on':'')+'" data-tq="wf" data-v="'+k+'" aria-pressed="'+o+'" title="'+attr(w.why)+'">'+h(w.chip)+' '+V.warn[k]+'</button>';}).join('');
-  const line='<div class="tq-line">'+(chips?'<span class="tq-lb">확인 필요</span>'+chips:'<span class="tq-lb">확인이 필요한 문의는 없어요</span>')+(S.st!=null||S.wf?'<button type="button" class="tq-clear" data-tq="clear">전체 보기</button>':'')+'<i></i><span class="tq-more-slot"></span></div>';
-  host.innerHTML='<div class="tq-wrap"><section class="tq-main">'+hero(V)+stages+line+listHtml(V,S)+'</section>'+sideHtml(cur)+'</div>';
+  const line='<div class="tq-line">'+(chips?'<span class="tq-lb">확인 필요</span>'+chips:'<span class="tq-lb">확인이 필요한 문의는 없어요</span>')+(S.st!=null||S.wf||S.handed?'<button type="button" class="tq-clear" data-tq="clear">전체 보기</button>':'')+'<i></i>'+(HL.length||S.handed?'<button type="button" class="tq-chip'+(S.handed?' on':'')+'" data-tq="handed" aria-pressed="'+!!S.handed+'">영업건으로 넘어간 문의 '+HL.length+'</button>':'')+'<span class="tq-more-slot"></span></div>';
+  host.innerHTML='<div class="tq-wrap"><section class="tq-main">'+hero(V)+stages+line+(S.handed?handedHtml(S,HL):listHtml(V,S))+'</section>'+sideHtml(cur,S.handed)+'</div>';
   host.__tools=keep;tools(host);
  }
  function open(key,act){const w=W();if(!w||!key)return;if(act==='assign')return w.open(key,root.inqCtlRoleView&&root.inqCtlRoleView()==='admin'?'rep':undefined);return w.open(key);}
@@ -138,10 +158,12 @@
   const b=e.target.closest('[data-tq]');if(!b||b.disabled)return;const k=b.dataset.tq,v=b.dataset.v,S=st();
   if(k==='act'){e.stopPropagation();const m=VIEW.list.find(x=>x.key===v);return open(v,m?action(m,m._g).act:'open');}
   if(k==='full')return open(v);
+  if(k==='deal'){e.stopPropagation();const q=root.inqCtlFind(v,false),d=q&&root.JourneyPath?root.JourneyPath.dealOf(q):null;if(d&&L3().openDeal)L3().openDeal(d);return;}
   if(k==='row'){if(S.sel===v)return open(v);S.sel=v;return render();}
-  if(k==='st'){const i=Number(v);S.st=S.st===i?null:i;S.wf='';LP().reset(S);S.sel='';}
-  else if(k==='wf'){S.wf=S.wf===v?'':v;S.st=null;LP().reset(S);S.sel='';}
-  else if(k==='clear'){S.st=null;S.wf='';LP().reset(S);S.sel='';}
+  if(k==='handed'){S.handed=!S.handed;S.st=null;S.wf='';LP().reset(S);S.sel='';}
+  else if(k==='st'){const i=Number(v);S.st=S.st===i?null:i;S.wf='';S.handed=false;LP().reset(S);S.sel='';}
+  else if(k==='wf'){S.wf=S.wf===v?'':v;S.st=null;S.handed=false;LP().reset(S);S.sel='';}
+  else if(k==='clear'){S.st=null;S.wf='';S.handed=false;LP().reset(S);S.sel='';}
   else if(k==='page'){LP().set(S,null,Number(b.dataset.page)||1);S.sel='';}
   else return;
   render();

@@ -1,0 +1,29 @@
+/* 문의 → 영업 → 계약 → 시공 경로 한 줄(journey-path.js). 색 = DESIGN.md 토큰, 아래 진행 띠가 강조를 맡으므로 여기는 글자색 위주로 조용하게 */
+.jp{min-width:0}
+.jp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line2);border-radius:8px;background:var(--card);overflow:hidden}
+.jp-s{position:relative;display:flex;flex-direction:column;gap:1px;min-width:0;margin:0;padding:6px 12px;height:auto;border:0;border-radius:0;box-shadow:none;background:transparent;font:inherit;text-align:left;color:var(--sub2)}
+.jp-s+.jp-s{border-left:1px solid var(--line2)}
+.jp-s>small{font-size:11px;font-weight:600;color:var(--sub2)}
+.jp-s>b{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jp-s.done>b{color:var(--ink)}
+.jp-s.cur{background:var(--blue-50)}
+.jp-s.cur>small,.jp-s.cur>b{color:var(--blue-d)}
+.jp-s.chk>b{color:var(--blue-d)}
+.jp-s.end>b{color:var(--sub)}
+.jp-go{cursor:pointer;padding-right:22px}
+.jp-go::after{content:'›';position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--sub2)}
+.jp-go:hover{background:var(--bg)}
+.jp-go.cur:hover{background:var(--blue-100)}
+.jp-go:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.jp-list{display:flex;flex-wrap:wrap;gap:6px;padding-top:6px}
+.jp-list[hidden]{display:none}
+.jp-list>button{margin:0;height:auto;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--card);box-shadow:none;font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
+.jp-list>button:hover{background:var(--bg)}
+/* 놓는 자리: 영업건 상세 = 머리 줄 아래 · 진행 띠 위 / 문의 상세 = 진행 띠 아래 */
+#detailView.ddv.dv3 .dv3-subrow>.jp,#detailView.ddv.dv3.dvt.dv7 .dv3-subrow>.jp{order:11;flex:1 0 100%;padding-top:6px}
+#inq-inbox-dialog .idv3-top>.jp{margin-top:8px}
+@media(max-width:560px){
+ .jp-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .jp-s:nth-child(3){border-left:0}
+ .jp-s:nth-child(n+3){border-top:1px solid var(--line2)}
+}
