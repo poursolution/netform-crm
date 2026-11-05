@@ -136,7 +136,31 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(()=>__missed),['crm_site_history_list_v1']);assert.equal(await page.locator('#detailView .sth .sth-row').count(),3);assert.equal(await page.locator('#detailView .sth [data-sth="edit"],#detailView .sth .sth-add').count(),0,'서버 적용 전에는 보기만');
   await page.evaluate(()=>{window.__shMissing=false;CRMRelease.noteMissing=__relKeep[0];CRMRelease.has=__relKeep[1];G.siteHistoryOff=true;renderDetail();});await page.waitForTimeout(500);
   assert.equal(await page.locator('#detailView .sth').count(),0);assert.deepEqual(await page.locator('#detailView .dv3-left .dv3-sec>header b').allInnerTexts(),['같은 현장 다른 영업','담당 정보','자료','다른 연락처'],'끄면 예전 칸');
+  /* 같은 단지의 Bad Fit 문의(2026-11-05): 보기만 하는 줄 · 금액 없음 · [수정] 없음 · 누르면 그 문의 상세. 다른 단지 · 다른 종결은 빠진다. 예전 · 정돈안 · 7단계 틀 모두 */
+  const BFI='55555555-5555-4555-8555-555555555551';
+  const bfRow=()=>page.locator('#detailView .sth .sth-row[data-key^="q:"]');
+  await page.evaluate(id=>{const mk=(x,site,status,o)=>Object.assign({id:x,site,site_id:'aaaaaaaa-0000-4000-8000-000000000001',status,at:'2025-11-03T10:00:00+09:00',created_at:'2025-11-03T10:00:00+09:00',brand:'POUR솔루션',phone:'010-1111-3333',work_type:'옥상 방수',assignee:'황윤선',assigned_to:'황윤선',assigned_at:'2025-11-03T10:30:00+09:00',raw:{}},o);
+   B.inquiries=[mk(id,'[서울 도봉] 창동동아그린아파트','배드핏',{close_reason:'배드핏(부적합) · 수행불가 공종 — 우레탄만 가능'}),mk('55555555-5555-4555-8555-555555555552','[서울 도봉] 창동동아그린아파트','종결',{close_reason:'상담종결 · 계획 없음'}),mk('55555555-5555-4555-8555-555555555553','다른 현장','배드핏',{site_id:'bbbbbbbb-0000-4000-8000-000000000001'})];
+   G.siteHistoryOff=false;SiteHistory.reset();renderDetail();},BFI);await page.waitForTimeout(500);
+  assert.equal(await bfRow().count(),1,'이 단지 Bad Fit 문의 한 줄만');
+  assert.deepEqual(await bfRow().evaluate(n=>[n.classList.contains('link'),n.dataset.sth,n.querySelector('.sth-l1 em').textContent,n.querySelector('.sth-l1 em').className,n.querySelector('.sth-l2').textContent,n.querySelector('.sth-l3').textContent,!!n.querySelector('[data-sth="edit"]')]),[true,'openq','배드핏','t4','2025.11 접수 · 황윤선','문의 종결 · 수행불가 공종 · 우레탄만 가능',false]);
+  assert.equal(await page.evaluate(()=>SiteHistory.rowsOf(CUR_DETAIL.item).filter(r=>r.tag==='수주').some(r=>r.inq)),false,'수주 합계에 들어가지 않는다');
+  /* 줄을 누르면 그 문의 상세 · 닫으면 있던 메뉴로 */
+  const pageBefore=await page.evaluate(()=>G.page);
+  await bfRow().click();await page.waitForSelector('#inq-inbox-dialog .inq-dialog');
+  assert.deepEqual(await page.evaluate(id=>[G.page,G.inqSelKey===inqKey(B.inquiries.find(x=>x.id===id)),!!(CUR_DETAIL&&CUR_DETAIL.kind==='deal'),document.getElementById('detailView').classList.contains('on')],BFI),['inq',true,false,false],'그 문의 상세 · 영업건 상세는 닫힘');assert.equal(await page.locator('#inq-inbox-dialog').evaluate(n=>{const r=n.getBoundingClientRect(),t=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return n.contains(t);}),true,'창이 맨 위에 보인다');
+  if(shot)await page.screenshot({path:shot+'-badfit-open.png'});
+  await page.locator('#inq-inbox-dialog .inq-dialog-close').click();await page.waitForTimeout(250);
+  assert.deepEqual(await page.evaluate(()=>[G.page,!!document.getElementById('inq-inbox-dialog')]),[pageBefore,false],'닫으면 있던 메뉴');
+  await page.evaluate(()=>{G._detailPopup=true;drwDeal(JSON.stringify(B.deals[0]));});await page.waitForTimeout(500);
+  assert.equal(await bfRow().count(),1,'영업건 상세를 다시 열어도 그대로');
+  /* 정돈안 · 7단계 틀: 같은 줄 · 금액 칸 비움 */
+  await page.evaluate(()=>{G.dealTidyOff=false;renderDetail();});await page.waitForTimeout(500);
+  assert.equal(await bfRow().count(),1,'정돈안에도');assert.deepEqual(await bfRow().evaluate(n=>[n.dataset.sth,n.querySelector('.amt').textContent,!!n.querySelector('[data-sth="edit"]'),/문의 종결 · 수행불가 공종/.test(n.querySelector('.sth-t2').textContent)]),['openq','',false,true]);
+  /* Bad Fit 만 있는 단지: '첫 영업'이라고 하지 않는다 */
+  assert.equal(await page.evaluate(()=>{const D=CUR_DETAIL.item,keep=B.deals;B.deals=[D];const off=document.createElement('div');off.innerHTML=SiteHistory.html(D);const t=off.querySelector('.sth-ai').textContent;B.deals=keep;return t;}),'AI이 단지에는 2025년 옥상(옥상 방수) 건이 배드핏으로 종결된 기록이 있습니다. 이번 건도 같은 이유인지 먼저 확인하세요.');
+  assert.equal(await page.evaluate(()=>{G.siteBadFitOff=true;const n=SiteHistory.rowsOf(CUR_DETAIL.item).filter(r=>r.inq).length;G.siteBadFitOff=false;return n;}),0,'끄기 스위치');
   assert.deepEqual(errs,[]);
-  console.log(JSON.stringify({status:'PASS',title_and_summary:true,timeline_current_first:true,ai_line_from_history:true,past_row_opens_deal:true,inline_edit_six_fields:true,edit_logs_and_recalculates:true,lost_needs_reason:true,add_manual_entry:true,delete_two_step_past_only:true,deal_itself_untouched:true,server_missing_read_only:true,switch:true}));
+  console.log(JSON.stringify({status:'PASS',badfit_inquiry_row:true,title_and_summary:true,timeline_current_first:true,ai_line_from_history:true,past_row_opens_deal:true,inline_edit_six_fields:true,edit_logs_and_recalculates:true,lost_needs_reason:true,add_manual_entry:true,delete_two_step_past_only:true,deal_itself_untouched:true,server_missing_read_only:true,switch:true}));
  }finally{await browser.close();srv.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

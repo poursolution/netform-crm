@@ -14,7 +14,10 @@
  const O=()=>R.OpsStore,T=()=>R.TodayWorkQueue;
  const ready=()=>{try{return !R.G.workRequestOff&&!!O()&&O().has(RPC.list)&&O().has(RPC.create)&&O().has(RPC.reply);}catch(e){return false;}};
  /* 저장소가 실제로 한 번 응답한 뒤에만 켠다 — 서버에 아직 없으면(SQL 적용 전) 예전 [독촉] 화면 그대로 */
- const enabled=()=>{if(!ready())return false;const S=st();if(!S.loaded){load();return false;}return true;};
+ let QUIET=0;
+ const enabled=()=>{if(!ready())return false;const S=st();if(!S.loaded){if(!QUIET)load();return false;}return true;};
+ /* 판정만 하고 서버는 부르지 않을 때(다른 메뉴에서 왼쪽 숫자 다시 세기 · TodayV3.syncBadge) — 그 메뉴에 없던 호출이 늘지 않게 한다 */
+ const quiet=fn=>{QUIET++;try{return fn();}finally{QUIET--;}};
  const st=()=>R.G.workReq||(R.G.workReq={list:[],at:0,busy:false,loaded:false,modal:null,card:{},closing:{},seen:{}});
  const toast=(m,k)=>{if(typeof R.toast==='function')R.toast(m,k);};
  const rep=v=>{try{return R.repN(v)||'';}catch(e){return String(v||'').trim();}};
@@ -567,5 +570,5 @@
  function markSeen(id){const S=st(),r=S.list.find(x=>x.id===id);if(!r||!r.to_me||r.status!=='sent'||S.closing['seen:'+id])return;S.closing['seen:'+id]=true;O().rpc(RPC.reply,{id,action:'seen'}).then(x=>{put(x.request);bell();}).catch(()=>{}).finally(()=>{delete S.closing['seen:'+id];});}
  /* 종 알림: 미확인 요청 n — 누르면 오늘 업무로 */
  function bell(){try{const el=document.querySelector('.ib');if(!el)return;const n=enabled()?incoming().filter(r=>r.status==='sent').length:0;let b=el.querySelector('.wrq-belln');if(!n){if(b)b.remove();el.classList.remove('wrq-bell-on');if(el.dataset.wrqT){el.title=el.dataset.wrqT;}return;}if(!el.dataset.wrqT)el.dataset.wrqT=el.title||'';el.title='미확인 요청 '+n+'건 · 누르면 오늘 업무로';el.classList.add('wrq-bell-on');el.setAttribute('role','button');el.tabIndex=0;if(!b){b=document.createElement('b');b.className='wrq-belln';el.append(b);}b.textContent='미확인 요청 '+n;if(!el.__wrq){el.__wrq=true;el.addEventListener('click',()=>{try{if(R.DayZones){const Z=R.DayZones.state();Z.zone='now';Z.rs='';Z.closing=false;}R.goPage('today');}catch(e){}});}}catch(e){}}
- root.WorkRequest={enabled,load,inlineHtml,isImportant,isSpecial,markSeen,bell,incoming:()=>incoming(),reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,objectives,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
+ root.WorkRequest={enabled,quiet,load,inlineHtml,isImportant,isSpecial,markSeen,bell,incoming:()=>incoming(),reqFor,locked,cell,sideHtml,topHtml,history,autoClose,evidence,decorate,steps,dueTxt,NIGHT_FROM,NIGHT_HOUR,HANDOVER_LABEL,RECEIPT_LABEL,isHandover,isReceipt,KIND,RPC,objectives,state:st,_dueAt:dueAt,_lineReq:lineReq,_lineEnd:lineEnd};
 })(window);

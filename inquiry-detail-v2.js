@@ -629,6 +629,8 @@
   if(k==='scope'){s.scope=v==='all'?'all':'now';return reskinFrom();}
   if(k==='need-toggle'){s.needOpen=!s.needOpen;return reskinFrom();}
   if(k==='site-open'){const d=(root.B&&root.B.deals||[]).find(x=>root.dealKey(x)===v);if(d){W().close();L3().openDeal(d);}return;}
+  /* 이 단지 영업 이력의 Bad Fit 문의 → 그 문의 상세. close 는 다른 메뉴에서 온 창이면 그 메뉴로 돌아가 버려 새 창이 뜨지 않으므로 dismiss 로 닫는다 */
+  if(k==='site-open-inq'){let q=null;try{q=root.inqCtlFind(v,false);if(q&&!root.inqCtlRoleMatch(q))q=null;}catch(e){q=null;}if(!q){if(typeof root.toast==='function')root.toast('이 문의는 지금 역할에서 열 수 없습니다','warn');return;}W().dismiss();W().open(v);return;}
   if(k==='site-new'){if(s.siteBusy||!L3().link)return;s.siteBusy=true;s.siteErr='';reskinFrom();Promise.resolve(L3().link(q,'new')).catch(()=>{}).then(()=>{s.siteBusy=false;if(!(L3().linkOf(q)||{}).isNew)s.siteErr='저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요.';reskinFrom();});return;}
   if(k==='site-reopen')return;/* 서버 적용 뒤에 열린다(버튼이 잠겨 있다) */
   if(k==='act'){s.act=v;return reskinFrom();}
