@@ -62,16 +62,22 @@
   const when=ym(date)?ym(date)+' '+label:'';
   return {key:'d:'+x.id,dealId:String(x.id),entryId:'',manual:false,cur:!!isCur,work,tag,when,amount:amount>0?amount:null,who:rep(x.assignee)||'미배정',hint,lost:'',sort:String(date||'').slice(0,7)};
  }
+ /* 같은 단지의 Bad Fit 문의(2026-11-05 대표 · inquiry-site.js badFits 한 곳) — 영업건이 없는 줄이라 보기만: [수정] 없음(이력 저장은 영업건 대상) · 금액 칸 없음 · 누르면 그 문의 상세. 끄기 G.siteBadFitOff */
+ function badFitRows(d){
+  let L=[];try{L=R.InquirySite&&R.InquirySite.badFits?R.InquirySite.badFits(d):[];}catch(e){}
+  return L.map(x=>({key:'q:'+x.key,dealId:'',inqKey:x.key,entryId:'',manual:false,inq:true,cur:false,work:x.work,tag:'배드핏',when:ym(x.date)?ym(x.date)+' 접수':'',amount:null,who:x.who&&x.who!=='미배정'?x.who:'',hint:'문의 종결 · '+[x.reason,x.detail].filter(Boolean).join(' · '),lost:'',sort:String(x.date||'').slice(0,7)}));
+ }
  function rowsOf(d){
   const S=st(d),ov=new Map(S.entries.filter(e=>e.deal_id).map(e=>[String(e.deal_id),e]));
   const fromAny=(x,isCur)=>{const b=fromDeal(x,isCur),e=ov.get(String(x.id));if(!e)return b;if(e.hidden)return isCur?b:null;
    return Object.assign(b,{entryId:String(e.id),edited:true,work:e.work||b.work,tag:e.result||b.tag,when:e.when_text||'',amount:e.amount!=null&&Number(e.amount)>0?Number(e.amount):null,who:e.owner_name||'',hint:e.note||'',lost:e.lost_reason||'',sort:sortOf(e.when_text)||b.sort});};
   const past=same(d).map(x=>fromAny(x,false)).filter(Boolean)
    .concat(S.entries.filter(e=>!e.deal_id&&!e.hidden).map(e=>({key:'e:'+e.id,dealId:'',entryId:String(e.id),manual:true,cur:false,work:e.work||'공종 미기록',tag:e.result||'수주',when:e.when_text||'',amount:e.amount!=null&&Number(e.amount)>0?Number(e.amount):null,who:e.owner_name||'',hint:e.note||'',lost:e.lost_reason||'',sort:sortOf(e.when_text)||String(e.created_at||'').slice(0,7)})))
+   .concat(badFitRows(d))
    .sort((a,b)=>String(b.sort).localeCompare(String(a.sort)));
   return [fromAny(d,true)].concat(past);
  }
- const amtT=r=>fmt(r.amount)||'금액 미정';
+ const amtT=r=>r.inq?'':fmt(r.amount)||'금액 미정';
  /* 아래 AI 한 줄: 이력에 있는 사실만으로(없는 것을 지어내지 않는다) */
  function aiLine(rows){
   const past=rows.filter(r=>!r.cur),yr=r=>(/(\d{4})/.exec(r.when||r.sort||'')||[])[1]||'';
@@ -80,6 +86,7 @@
   if(won)return '이 단지는 '+(yr(won)?yr(won)+'년 ':'')+won.work+'를 맡긴 기존 고객입니다. 첫 통화에서 "'+won.work+' 공사 이후 문제 없으셨는지"부터 여쭤보세요.';
   if(lost)return '이 단지는 '+(yr(lost)?yr(lost)+'년 ':'')+lost.work+' 건을 놓친 곳입니다'+(lost.hint?'('+lost.hint+')':'')+'. 첫 통화에서 그때 무엇을 보고 결정하셨는지부터 확인하세요.';
   if(open)return '이 단지에는 진행 중인 다른 영업('+open.work+(open.who?' · '+open.who:'')+')이 있습니다. 같은 공사인지 먼저 확인하세요.';
+  const bad=past.find(r=>r.tag==='배드핏');if(bad)return '이 단지에는 '+(yr(bad)?yr(bad)+'년 ':'')+(/^공종 (미분류|미기록)$/.test(bad.work)?'':bad.work+' ')+'건이 배드핏으로 종결된 기록이 있습니다. 이번 건도 같은 이유인지 먼저 확인하세요.';
   return '이 단지와는 이번이 첫 영업입니다. 지난 공사(시공 시기 · 업체)를 먼저 여쭤보고 [+ 이력 추가]로 남겨 두세요.';
  }
  function people(d,curName){
@@ -110,10 +117,10 @@
   const dot='<span class="sth-dot"><i style="background:'+(r.cur?'#15171c':'#fff')+';border-color:'+ring+'"></i>'+(i<n-1?'<u></u>':'')+'</span>';
   if(ed)return '<div class="sth-row ed" data-key="'+attr(r.key)+'">'+dot+formHtml(d,r,S)+'</div>';
   const open=!r.cur&&r.dealId;
-  return '<div class="sth-row'+(r.cur?' cur':' past')+(open?' link':'')+'" data-key="'+attr(r.key)+'"'+(open?' data-sth="open" data-id="'+attr(r.dealId)+'" role="button" tabindex="0"':'')+'>'+dot
+  return '<div class="sth-row'+(r.cur?' cur':' past')+(open||r.inq?' link':'')+'" data-key="'+attr(r.key)+'"'+(open?' data-sth="open" data-id="'+attr(r.dealId)+'" role="button" tabindex="0"':r.inq?' data-sth="openq" data-id="'+attr(r.inqKey)+'" role="button" tabindex="0"':'')+'>'+dot
    +'<div class="sth-v"><div class="sth-l1"><b>'+h(r.work)+'</b><em class="'+(r.cur?'cur':'t'+TAGS.indexOf(r.tag))+'">'+h(r.cur?'지금 보는 건 · '+r.tag:r.tag)+'</em>'+(r.manual?'<small class="sth-man" title="CRM 밖 과거 공사를 직접 적은 이력">수기</small>':'')+'<i></i>'
-   +(edit?'<button type="button" class="sth-edit" data-sth="edit" data-key="'+attr(r.key)+'">수정</button>':'')+'</div>'
-   +'<span class="sth-l2">'+h([r.when||'날짜 미기록',amtT(r),r.who||'담당 미기록'].join(' · '))+'</span>'
+   +(edit&&!r.inq?'<button type="button" class="sth-edit" data-sth="edit" data-key="'+attr(r.key)+'">수정</button>':'')+'</div>'
+   +'<span class="sth-l2">'+h([r.when||'날짜 미기록',amtT(r),r.who||'담당 미기록'].filter(Boolean).join(' · '))+'</span>'
    +(r.hint?'<span class="sth-l3'+(r.cur&&/없음/.test(r.hint)?' warn':'')+'">'+h(r.hint)+'</span>':'')+'</div></div>';
  }
  /* ── 영업건 상세 정돈안(2026-10-06 design_handoff_deal_detail_tidy): 줄 = 점 · 시기 · 상태 · 금액(오른쪽) + 회색 설명 한 줄(상자 없음).
@@ -123,9 +130,9 @@
   if(S.edit===r.key)return '<div class="sth-row ed" data-key="'+attr(r.key)+'">'+formHtml(d,r,S)+'</div>';
   const c=r.cur?['#15171c','#15171c','지금 이 건']:(TC[r.tag]||['#6b7280','#c9cdd5',r.tag]),open=!r.cur&&!!r.dealId,on=peek?(!r.cur&&r.dealId===peek):r.cur;
   const work=/^공종 (미분류|미기록)$/.test(r.work)?'공종 미정':r.work,desc=[r.hint,work,r.cur?'':r.who].filter(Boolean).join(' · ');
-  return '<div class="sth-row t'+(r.cur?' cur':' past')+(open||r.cur?' link':'')+(on?' on':'')+'" data-key="'+attr(r.key)+'"'+(open?' data-sth="open" data-id="'+attr(r.dealId)+'" role="button" tabindex="0"':r.cur?' data-sth="cur" role="button" tabindex="0"':'')+'>'
+  return '<div class="sth-row t'+(r.cur?' cur':' past')+(open||r.cur||r.inq?' link':'')+(on?' on':'')+'" data-key="'+attr(r.key)+'"'+(open?' data-sth="open" data-id="'+attr(r.dealId)+'" role="button" tabindex="0"':r.inq?' data-sth="openq" data-id="'+attr(r.inqKey)+'" role="button" tabindex="0"':r.cur?' data-sth="cur" role="button" tabindex="0"':'')+'>'
    +'<span class="sth-t1"><i style="background:'+c[1]+'"></i><b>'+h(r.when||'날짜 미기록')+'</b><em style="color:'+c[0]+'">'+h(c[2])+'</em>'+(r.manual?'<small class="sth-man" title="CRM 밖 과거 공사를 직접 적은 이력">수기</small>':'')+'<span class="amt">'+h(amtT(r))+'</span></span>'
-   +'<span class="sth-t2"><span>'+h(desc)+'</span>'+(edit?'<button type="button" class="sth-edit" data-sth="edit" data-key="'+attr(r.key)+'">수정</button>':'')+'</span></div>';
+   +'<span class="sth-t2"><span>'+h(desc)+'</span>'+(edit&&!r.inq?'<button type="button" class="sth-edit" data-sth="edit" data-key="'+attr(r.key)+'">수정</button>':'')+'</span></div>';
  }
  function htmlTidy(d,S,rows,edit,isNew,won,sum){
   let peek='',W=null;try{peek=R.DealDetailV3.peekOf(d)||'';W=R.DealDetailV3.wonRow(d);}catch(e){}
@@ -218,6 +225,8 @@
   if(a==='open'||a==='cur'){if(e.target.closest('button'))return;
    if(tidy()&&R.DealDetailV3.peek){R.DealDetailV3.peek(a==='cur'?'':b.dataset.id);return;}/* 정돈안: 가운데 칸만 그 영업건 요약으로 */
    if(a==='cur')return;const x=((R.B&&R.B.deals)||[]).find(z=>String(z.id)===String(b.dataset.id));if(x){R.G._detailPopup=true;R.drwDeal(JSON.stringify(x));}return;}
+  /* Bad Fit 문의 줄 → 그 문의 상세. 문의 상세 창은 견적문의 화면에서만 뜨므로(inquiry-workbench dialog) 이 상세를 닫고 넘어가고, 닫으면 있던 메뉴로 돌아온다 */
+  if(a==='openq'){if(e.target.closest('button'))return;const W=R.InquiryWorkbench,key=b.dataset.id;let q=null;try{q=R.inqCtlFind(key,false);if(q&&!R.inqCtlRoleMatch(q))q=null;}catch(x){q=null;}if(!W||!q){toast('이 문의는 지금 역할에서 열 수 없습니다','warn');return;}const back=R.G.page;R.closeDetail();W.openFrom(key,back);return;}
   e.preventDefault();e.stopPropagation();
   if(a==='add'){if(S.edit)return;S.edit='new';S.arm='';S.form={work:'',tag:'수주',when:'',amt:'',who:rep(d.assignee),hint:'',lost:'',lostCat:''};paint();setTimeout(()=>{const n=document.querySelector('#detailView .sth .sth-row.new [data-sthf="work"]');if(n)n.focus();},0);return;}
   if(a==='edit'){const r=rowsOf(d).find(x=>x.key===b.dataset.key);if(!r)return;let cat='';try{cat=r.lost&&R.CRMRules&&R.CRMRules.lostCategory?R.CRMRules.lostCategory(r.lost)||'':'';}catch(x){}

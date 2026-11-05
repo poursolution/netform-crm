@@ -41,6 +41,27 @@
   let wonSum=0;won.forEach(x=>{try{wonSum+=root.hasWonAmt(x.d)?Number(root.wonAmt(x.d))||0:0;}catch(e){}});
   return {D,won,lost,open,other,wonSum};
  }
+ /* 같은 단지에서 Bad Fit 으로 종결된 문의(2026-11-05 대표) — 영업건이 생기지 않아 이력에서 빠지던 것을 상세의 '이 단지 영업 이력'에 보여 준다.
+    x = 문의 또는 영업건. 같은 단지 판정은 InquiryListV3.siteDeals 와 같다(현장 ID 같음, 또는 한쪽에 ID 가 없고 현장명 같음). 영업건으로 넘어간 문의 · 자기 자신은 뺀다.
+    날짜 = 접수일(문의의 종결일 칸은 믿을 수 없어 쓰지 않는다). 사유가 아직 안 읽혔거나 없으면 '사유 미기록'. 끄기 G.siteBadFitOff
+    목록 줄마다 부르는 summary · badge 에는 넣지 않는다(문의 전체를 훑으므로 상세에서만) */
+ const sidOf=o=>String(o&&(o.cleanup_site_id||o.site_id||o.siteId)||'');
+ const nsOf=o=>{const n=root.normSite?root.normSite(o&&o.site||''):'';return n.length>=2?n:'';};
+ function closeInfo(q){const F=root.InquiryFlow;if(F&&F.on&&F.on()&&F.closeOf){const c=F.closeOf(q);return c&&c.kind==='bad_fit'?c:null;}return String(q.status||'')==='배드핏'?{reason:'',detail:''}:null;}
+ function badFits(x){
+  if(root.G&&root.G.siteBadFitOff)return [];
+  const sid=sidOf(x),ns=nsOf(x);if(!sid&&!ns)return [];let Q=[];try{Q=root.operationalInquiries(root.B&&root.B.inquiries||[]);}catch(e){return [];}
+  const out=[];Q.forEach(q=>{if(q===x)return;const qs=sidOf(q);if(!((sid&&qs===sid)||(ns&&(!sid||!qs)&&nsOf(q)===ns)))return;
+   let c=null;try{c=closeInfo(q);if(c&&root.inqCtlConverted&&root.inqCtlConverted(q))c=null;}catch(e){c=null;}if(!c)return;
+   const text=root.InquiryFlow&&root.InquiryFlow.closeReasonText?root.InquiryFlow.closeReasonText(q):'',m=/ — (.+?)(?: · 이전 상태:.*)?$/.exec(text);
+   let date='';try{date=String(root.inquiryCreatedAt(q)||'');}catch(e){}
+   out.push({q,id:String(q.id||''),key:root.inqKey(q),date,work:inqWork(q)||'공종 미분류',who:rep(root.inquiryRoutedOwner(q)),brand:String(q.brand||''),reason:String(c.reason||'').trim()||'사유 미기록',detail:String(c.detail||(m&&m[1])||'').trim()});});
+  return out.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ }
+ function badCard(x){
+  const K=KIND.badfit,meta=[ym(x.date)?ym(x.date)+' 접수':'',x.who,x.brand].filter(Boolean).join(' · ');
+  return '<div class="isd-card badfit"><div class="t"><i style="background:'+K[3]+'"></i><b>'+h(x.work)+'</b><em style="color:'+K[1]+';background:'+K[2]+'">'+K[0]+'</em><span class="sp"></span><button type="button" class="lnk" data-idv="site-open-inq" data-v="'+attr(x.key)+'">열기</button></div><span class="m">'+h(meta)+'</span><span class="s">'+h('문의 종결 · '+[x.reason,x.detail].filter(Boolean).join(' · '))+'</span></div>';
+ }
  /* 목록 줄 꼬리표: 진행 중인 건이 있으면 그것부터, 없으면 가장 최근 건의 결과 */
  function badge(q){
   if(!on())return null;const S=summary(q);if(!S.D.length)return null;
@@ -74,16 +95,18 @@
   if(open)return '이 단지에는 진행 중인 영업('+open.work+' · '+rep(open.d.assignee)+')이 있습니다. 통화 전에 같은 공사인지부터 확인하세요.';
   if(lost){const F=lostFacts(lost.d),y=yr(lost.date);return (y?y+'년 ':'지난 ')+lost.work+' 건은 '+(F.reason?F.reason+' 사유로 ':'')+'실주했습니다'+(F.competitor?'(경쟁사 '+F.competitor+')':'')+'. 이번 문의가 같은 공종이면 실주 건을 다시 열어 이력을 이어 가고, 다른 공종이면 새 공사로 보되 첫 통화에서 그때 건의 재추진 여부도 함께 물어보세요.';}
   if(won){const y=yr(won.date);return '이 단지는 '+(y?y+'년 ':'')+won.work+'를 맡긴 기존 고객입니다. 첫 통화에서 그 공사 이후 문제 없으셨는지부터 여쭤보세요.';}
+  const bad=badFits(q)[0];if(bad){const y=yr(bad.date);return '이 단지에는 '+(y?y+'년 ':'')+(bad.work==='공종 미분류'?'':bad.work+' ')+'문의가 Bad Fit 으로 종결된 기록이 있습니다'+(bad.reason==='사유 미기록'?'':'('+bad.reason+')')+'. 이번 문의도 같은 이유인지 먼저 확인하세요.';}
   if(S.other.length)return '이 단지에는 지난 자료가 '+S.other.length+'건 있습니다(진행 · 수주 · 실주 아님). 통화 전에 예전 기록을 확인하세요.';
   return '';
  }
  function historyHtml(q){
   if(!on())return '';const S=summary(q);let recv='';try{recv=ymd(String(root.inquiryCreatedAt(q)||'').slice(0,10));}catch(e){}
   const now='<div class="isd-card now"><div class="t"><i style="background:#3b6ce4"></i><b>'+h(inqWork(q)||'공종 미분류')+'</b><em style="color:#1d3f99;background:#eef3fe">지금 문의</em></div><span class="m">'+h([recv?recv+' 접수':'',rep(root.inquiryRoutedOwner(q)),q.brand||''].filter(Boolean).join(' · '))+'</span></div>';
-  if(!S.D.length)return '<section class="isd-hist"><header><b>이 단지 영업 이력</b><span>1건</span></header><span class="isd-sum">지난 영업 기록이 없습니다 · 지금 문의 1건</span>'+now+'</section>';
-  const sum='누적 수주 <b>'+(S.won.length?h((amt(S.wonSum)||'금액 미정')+' ('+S.won.length+'건)'):'없음')+'</b>'+(S.lost.length?' · 실주 <b class="r">'+S.lost.length+'건</b>':'')+(S.open.length?' · 진행 <b>'+S.open.length+'건</b>':'')+(S.other.length?' · 지난 자료 '+S.other.length+'건':'')+' · 지금 문의 1건';
-  const ai=aiLine(q,S);
-  return '<section class="isd-hist"><header><b>이 단지 영업 이력</b><span>'+(S.D.length+1)+'건</span></header><span class="isd-sum">'+sum+'</span>'+S.D.slice(0,6).map(card).join('')+(S.D.length>6?'<span class="isd-more">외 '+(S.D.length-6)+'건</span>':'')+now+(ai?'<div class="isd-ai"><b>AI</b>'+h(ai)+'</div>':'')+'</section>';
+  const BF=badFits(q);
+  if(!S.D.length&&!BF.length)return '<section class="isd-hist"><header><b>이 단지 영업 이력</b><span>1건</span></header><span class="isd-sum">지난 영업 기록이 없습니다 · 지금 문의 1건</span>'+now+'</section>';
+  const sum='누적 수주 <b>'+(S.won.length?h((amt(S.wonSum)||'금액 미정')+' ('+S.won.length+'건)'):'없음')+'</b>'+(S.lost.length?' · 실주 <b class="r">'+S.lost.length+'건</b>':'')+(S.open.length?' · 진행 <b>'+S.open.length+'건</b>':'')+(S.other.length?' · 지난 자료 '+S.other.length+'건':'')+(BF.length?' · Bad Fit 문의 '+BF.length+'건':'')+' · 지금 문의 1건';
+  const ai=aiLine(q,S),all=S.D.map(x=>({date:x.date,html:()=>card(x)})).concat(BF.map(x=>({date:x.date,html:()=>badCard(x)}))).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  return '<section class="isd-hist"><header><b>이 단지 영업 이력</b><span>'+(all.length+1)+'건</span></header><span class="isd-sum">'+sum+'</span>'+all.slice(0,6).map(x=>x.html()).join('')+(all.length>6?'<span class="isd-more">외 '+(all.length-6)+'건</span>':'')+now+(ai?'<div class="isd-ai"><b>AI</b>'+h(ai)+'</div>':'')+'</section>';
  }
  /* 단지 전체 응대 이력: 같은 단지 다른 영업건의 기록(영업건 꼬리표 = 연도 + 공종) */
  function timeline(q){
@@ -448,6 +471,6 @@
  }
  const DEAL_CTX={compact:()=>{try{return !!(root.DealDetailV3&&root.DealDetailV3.tidy&&root.DealDetailV3.tidy());}catch(e){return false;}},host:()=>document.getElementById('detailView'),alive:q=>{const c=root.CUR_DETAIL,v=document.getElementById('detailView');return !!(c&&c.kind==='deal'&&c.item===q.__deal&&v&&v.classList.contains('on'));}};
  const dealNear={html:(d,s)=>nearHtml(dealSubject(d),s,'',DEAL_CTX),mount:host=>mount(host),action:(k,v,b,d,s)=>onAction(k,v,b,dealSubject(d),s)};
- root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
+ root.InquirySite={dealNear,on,KIND,REOPEN_RPC,deals,summary,badge,badFits,lostFacts,historyHtml,aiLine,timeline,hasHistory,openerClue,relationHtml,nearList,nearHtml,reopenReady,shortWork,
   REOPEN_STAGES,GEO_LIST,GEO_SAVE,MAP_CFG,km:KM,kmText,nearBy,mapMode,mount,onAction,regionTokens,nameHints,GEO_RULE,cleanAddr,fxSearch,_map:M,_resetMap:resetMap};
 })(window);
