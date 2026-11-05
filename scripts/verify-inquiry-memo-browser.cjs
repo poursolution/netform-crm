@@ -15,6 +15,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>{const u=new URL(r.request().url());return u.hostname==='127.0.0.1'?r.continue():r.abort()});
   const page=await ctx.newPage(),errs=[];page.on('pageerror',e=>errs.push(e.message));
+  await page.clock.setFixedTime(new Date('2026-10-20T12:00:00+09:00'));/* 합성 자료의 고정 날짜(2026.1.7 통화)와 오늘 사이 일수를 고정 — 안 고치면 2026-11-03 부터 300일이 넘어 '2\d\d일' 단정이 실패했다 */
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.InquiryListV3&&window.InquiryDetailV2&&window.InquiryWorkbench&&window.InquiryMemo&&window.InquiryV4);
   await page.evaluate(()=>{
    const kd=n=>InquiryMemo.addDays(InquiryMemo.today(),n),at=(d,h)=>new Date(Date.now()-d*864e5-(h||0)*36e5).toISOString();
@@ -100,7 +101,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await det.locator('[data-i4="memo-call"]').isDisabled(),true);assert.equal(one(await det.locator('[data-i4="memo-call"]').innerText()),'1.7 통화로 보완됨');
   assert.match(await det.locator('.i4-log').innerText(),/\[메모 통화 보완\] 메모에서 찾은 1\.7 통화로 실제 연결일을 보완했습니다 — 원래 값: 1\.6 \(접수일 복사\)/,'응대 이력에 원래 값과 함께 남음');
   assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · /);assert.doesNotMatch(await det.locator('.i4-pill').innerText(),/확인 필요/);
-  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 실제 연결 후 2\d\d일 · 1\.7 통화$/,'보완한 날짜를 실제 연결로 센다');
+  assert.match(one(await det.locator('.i4-pill').innerText()),/^후속 연락 필요 · 실제 연결 후 286일 · 1\.7 통화$/,'보완한 날짜를 실제 연결로 센다');/* 2026.1.7 → 고정한 오늘 2026.10.20 = 286일 */
   {const call=await page.evaluate(()=>__rpc.filter(x=>x[0]==='crm_inquiry_memo_review_v1').map(x=>x[1].p));assert.equal(call.length,1);assert.deepEqual([call[0].type,call[0].on_date,call[0].inquiry_id,/^c-/.test(call[0].item_key)],['call_supplement','2026-01-07',ANS_ID(),true]);}
   function ANS_ID(){return '22222222-2222-4222-8222-222222222222';}
   /* 약속: 미완료 = 지금 할 일 등록 · 완료 = 기록만 · 확인 불가 = 첫 통화에서 물어볼 것 */
