@@ -85,6 +85,35 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(one(await d.locator('.isd-sum').innerText()),'지난 영업 기록이 없습니다 · 지금 문의 1건');
   assert.deepEqual([await d.locator('.isd-scope').count(),await d.locator('.isd-rel').count(),await d.locator('.isd-card').count()],[0,0,1]);
   assert.match(one(await d.locator('.idv3-opener').innerText()),/문의 주신 옥상\(옥상 방수\) 건으로 연락드렸습니다/);
+  /* 같은 단지의 Bad Fit 문의(2026-11-05): 영업건이 없어도 이력 카드로 보인다 · 다른 종결과 다른 단지는 빼고 · 꼬리표 · 첫마디 · 기존 건과 관계 · 범위 전환은 그대로 */
+  await page.evaluate(()=>{InquiryWorkbench.close();
+   const mk=(id,site,status,at,x)=>Object.assign({id,site,status,at,created_at:at,brand:'POUR솔루션',phone:'010-1111-3333',work_type:'옥상 방수',assignee:'황윤선',assigned_to:'황윤선',assigned_at:at,raw:{'문의내용':'옥상 방수 견적 문의'}},x);
+   const NEW='[경기 용인] 새로운마을',ONE='[경기 화성] 한빛마을2차아파트';
+   window.BF='44444444-4444-4444-8444-444444444441';window.BF2='44444444-4444-4444-8444-444444444445';
+   window.KEEP=B.inquiries.slice();B.inquiries=B.inquiries.concat([
+    mk(BF,NEW,'배드핏','2025-11-03T10:00:00+09:00',{close_reason:'배드핏(부적합) · 수행불가 공종 — 우레탄만 가능'}),
+    mk('44444444-4444-4444-8444-444444444442',NEW,'종결','2025-10-03T10:00:00+09:00',{close_reason:'상담종결 · 계획 없음'}),
+    mk('44444444-4444-4444-8444-444444444443',NEW,'연락두절','2025-09-03T10:00:00+09:00',{}),
+    mk('44444444-4444-4444-8444-444444444444','[경기 용인] 다른마을','배드핏','2025-08-03T10:00:00+09:00',{close_reason:'배드핏(부적합) · 규모 부적합'}),
+    mk(BF2,ONE,'배드핏','2025-12-03T10:00:00+09:00',{})]);
+   InquiryWorkbench.open(N);});
+  await page.waitForSelector('#inq-inbox-dialog.idv3 .isd-card.badfit');
+  assert.equal(one(await d.locator('.isd-hist>header').innerText()),'이 단지 영업 이력 2건');assert.equal(one(await d.locator('.isd-sum').innerText()),'누적 수주 없음 · Bad Fit 문의 1건 · 지금 문의 1건');
+  assert.equal(one(await d.locator('.isd-card.badfit .t').innerText()),'옥상(옥상 방수) Bad Fit 열기');assert.equal(one(await d.locator('.isd-card.badfit .m').innerText()),'2025.11 접수 · 황윤선 · POUR솔루션');assert.equal(one(await d.locator('.isd-card.badfit .s').innerText()),'문의 종결 · 수행불가 공종 · 우레탄만 가능');
+  assert.match(one(await d.locator('.isd-ai').innerText()),/^AI ?이 단지에는 2025년 옥상\(옥상 방수\) 문의가 Bad Fit 으로 종결된 기록이 있습니다\(수행불가 공종\)\. 이번 문의도 같은 이유인지 먼저 확인하세요\.$/);
+  assert.deepEqual([await d.locator('.isd-scope').count(),await d.locator('.isd-rel').count(),await page.evaluate(()=>[InquirySite.summary(B.inquiries.find(x=>x.id===N)).D.length,InquirySite.badge(B.inquiries.find(x=>x.id===N)),InquirySite.openerClue(B.inquiries.find(x=>x.id===N))])],[0,0,[0,null,'']],'영업건 기준 판단은 그대로');
+  if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'inqsite-badfit.png')});
+  await d.locator('[data-idv="site-open-inq"]').click();await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>G.inqSelKey===inqKey(B.inquiries.find(x=>x.id===BF))),true,'[열기] = 그 문의 상세');assert.equal(await page.locator('#inq-inbox-dialog').count(),1);
+  /* 그 Bad Fit 문의 안에서는 자기 자신이 카드로 나오지 않는다 */
+  assert.equal(await d.locator('.isd-card.badfit').count(),0);
+  /* 지난 영업 + Bad Fit: 날짜순으로 섞인다 · 사유 없으면 '사유 미기록' · 조언은 실주가 먼저 · 실주 건 다시 열기 그대로 */
+  await page.evaluate(()=>{InquiryWorkbench.close();InquiryWorkbench.open(A);});await page.waitForSelector('#inq-inbox-dialog.idv3 .isd-card.badfit');
+  assert.deepEqual(await d.locator('.isd-hist .isd-card').evaluateAll(l=>l.map(n=>n.className.replace('isd-card ',''))),['badfit','lost','now']);
+  assert.equal(one(await d.locator('.isd-sum').innerText()),'누적 수주 없음 · 실주 1건 · Bad Fit 문의 1건 · 지금 문의 1건');assert.equal(one(await d.locator('.isd-card.badfit .s').innerText()),'문의 종결 · 사유 미기록');
+  assert.match(one(await d.locator('.isd-ai').innerText()),/^AI ?2025년 옥상\(우레탄\) 건은 가격 사유로 실주했습니다/);assert.equal(await d.locator('[data-idv="site-reopen"]').count(),1);
+  /* 끄기 스위치 */
+  assert.equal(await page.evaluate(()=>{InquiryWorkbench.close();G.siteBadFitOff=true;InquiryWorkbench.open(A);const n=document.querySelectorAll('#inq-inbox-dialog .isd-card.badfit').length;InquiryWorkbench.close();G.siteBadFitOff=false;B.inquiries=KEEP;return n;}),0);
   /* 끄면 예전처럼 */
   const off=await page.evaluate(()=>{InquiryWorkbench.close();G.inqSiteOff=true;goPage('inq');paint();InquiryWorkbench.open(A);const dl=document.getElementById('inq-inbox-dialog');return [!!document.querySelector('.il-site i.il-sb'),!!document.querySelector('.il-site b u'),dl.querySelectorAll('.isd-hist,.isd-near,.isd-rel,.isd-scope').length,dl.querySelectorAll('.idv3-bottom').length];});
   assert.deepEqual(off,[false,true,0,1]);
