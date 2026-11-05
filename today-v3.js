@@ -201,11 +201,11 @@
  /* 왼쪽 메뉴 '오늘 업무' 숫자 = 이 화면의 큰 숫자 하나(기한 지남 + 오늘 처리 · 2026-11-05). 쓰는 곳은 setBadge 하나. ownsBadge = 오늘 업무를 이 화면으로 그리는 조건(today-v2 render 와 같음) */
  const setBadge=total=>{const b=document.getElementById('todayBadge');if(b){b.textContent=total||'';b.style.display=total?'':'none';}};
  const ownsBadge=()=>{const G=root.G;return !!(G&&!G.todayV2Off&&enabled()&&TT().enabled&&TT().enabled());};
- /* 다른 화면에 있을 때(저장 직후 · 자료를 새로 받은 뒤) 화면을 그리지 않고 숫자만 다시 센다 — 범위는 오늘 업무 화면과 같음(current) */
+ /* 다른 화면에 있을 때(저장 직후 · 자료를 새로 받은 뒤) 화면을 그리지 않고 숫자만 다시 센다 — 범위는 오늘 업무 화면과 같음(current). 서버 호출은 늘리지 않는다(WorkRequest.quiet) */
  function syncBadge(){
   if(!ownsBadge()||!root.B)return;
-  const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;
-  setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);
+  const count=()=>{const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);};
+  if(root.WorkRequest&&root.WorkRequest.quiet)root.WorkRequest.quiet(count);else count();
  }
  function html(X,rows,legacy){
   const S=st(),W=TT(),V=build(X,rows,legacy),role=V.role,team=V.team,me=V.me;
