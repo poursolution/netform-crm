@@ -16,6 +16,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const ctx=await browser.newContext({viewport:{width:1600,height:1000},timezoneId:'Asia/Seoul'});
   await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   const page=await ctx.newPage();page.on('pageerror',e=>errs.push(String(e.message||e)));
+  await page.clock.setFixedTime(new Date('2026-10-20T12:00:00+09:00'));/* 합성 영업건 등록일은 '오늘-34일'인데 휴지통 메뉴는 고정 날짜(운영 시작 2026-10-01) 전 등록 건에만 나온다 — 오늘을 고정하지 않으면 2026-11-04 부터 등록일이 운영 시작일 이후가 되어 메뉴가 사라진다 */
   await page.goto(`http://127.0.0.1:${srv.address().port}/crm.html`);await page.waitForFunction(()=>window.DealDetailV3&&window.SiteHistory&&window.DealTransfer&&window.DealKeyman&&window.DealPanelsV2&&window.OpsStore&&window.ListPager);await page.evaluate(()=>{window.G=window.G||{};G.dealSameOff=true;});/* 2026-10-08 같은 정보 같은 판단 층은 끄고 본다 */
   await page.evaluate(()=>{
    const day=n=>new Date(Date.now()+n*864e5).toLocaleDateString('en-CA'),at=n=>new Date(Date.now()+n*864e5).toISOString();
@@ -58,6 +59,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* [···] 메뉴: 즐겨찾기 · 소장이 바뀌었어요 · 담당자 변경 · … · 실주 처리 */
   await v.locator('.tf-more').click();await page.waitForTimeout(150);
   assert.deepEqual((await v.locator('.tf-menu button').allInnerTexts()).filter(t=>!/타사 이관|승인 요청/.test(t)),['☆ 즐겨찾기','소장이 바뀌었어요','담당자 변경','보류','실주 처리','휴지통으로 보내기']);/* 운영 시작 전 등록된 이관 자료 · 관리자 → 휴지통(2026-10-07) */
+  assert.deepEqual(await page.evaluate(()=>['2026-09-30','2026-10-01'].map(created=>DealDiscard.can({...B.deals[0],created}))),[true,false],'휴지통 대상 경계: 운영 시작일(2026-10-01) 전 등록만, 그날부터 등록한 건은 메뉴 없음');
   await v.locator('.tf-menu [data-tf="m-repl"]').click();await page.waitForSelector('#detailView .dv3-mgr .dv3-repl');
   assert.match(one(await v.locator('.dv3-repl').innerText()),/^새 관리소장 등록 취소 이영수 소장님은 지우지 않고 이전 소장으로 남깁니다/);
   await v.locator('[data-dv3="replcancel"]').click();await page.waitForTimeout(150);
