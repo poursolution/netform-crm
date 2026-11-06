@@ -21,12 +21,37 @@
  const inqId=q=>String(q&&(q.id||q.inquiry_id)||''),dealId=d=>String(d&&(d.id||d.opportunity_id)||'');
  const recvOf=q=>day(safe(()=>root.inquiryCreatedAt(q),''));
  const byRecv=(a,b)=>recvOf(a).localeCompare(recvOf(b));
+ const attachedTo=q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return String(r['기존 현장 판단']||'')==='같은 공사'?String(r['기존 영업건']||''):'';};
+ const toDeal=q=>safe(()=>root.inquiryDealRefs(q),[]);
+ /* 목록이 영업건마다 부르므로(handoff) 문의 색인을 한 번만 만든다 — 자료가 바뀌면 다시, 아니어도 3초 뒤 다시(InquiryListV3.siteIndex 와 같은 방식) */
+ let IX={src:null,n:-1,at:0,byId:new Map(),byDeal:new Map()};
+ function index(){
+  const all=(root.B&&root.B.inquiries)||[];if(IX.src===all&&IX.n===all.length&&Date.now()-IX.at<3000)return IX;
+  const byId=new Map(),byDeal=new Map(),put=(k,q)=>{if(!k)return;const a=byDeal.get(k);if(a)a.push(q);else byDeal.set(k,[q]);};
+  all.forEach(q=>{const id=inqId(q);if(id)byId.set(id,q);toDeal(q).forEach(k=>put(k,q));put(attachedTo(q),q);});
+  return IX={src:all,n:all.length,at:Date.now(),byId,byDeal};
+ }
+ function directOf(d){
+  const I=index(),out=new Set();safe(()=>root.dealInquiryRefs(d),[]).forEach(k=>{const q=I.byId.get(String(k));if(q)out.add(q);});
+  (I.byDeal.get(dealId(d))||[]).forEach(q=>out.add(q));return [...out].sort(byRecv);
+ }
+ /* ── 문의에서 이어받는 사실(3번 · 2026-11-06 대표 '컨설팅 설계 시작 규칙 유지'): 전환돼도 컨설팅 설계에서 시작하지만, 문의 때 이미 한 방문 · 견적은 다시 시키지 않는다.
+    연결 기록이 있는 문의만 읽고, 영업건 자료에는 쓰지 않는다(읽기 전용). 값이 상태 글에서만 확인되면 날짜는 비워 둔다. 끄면(G.journeyPathOff) null */
+ function handoff(d){
+  if(!on()||!d)return null;const L=directOf(d);if(!L.length)return null;
+  let visit=false,visitAt='',sent=false,sentAt='',quote=null;
+  L.forEach(q=>{
+   const S=safe(()=>root.InquiryFlow.server(q),null)||{},p=safe(()=>root.itemPatch(q,'inq'),null)||{},st=String(q.status||''),v=day(S.visit_done_at||p.visitDoneAt||''),s=day(S.quote_sent_at||p.quoteSentAt||'');
+   if(v||/현장\s*방문\s*완료/.test(st)){visit=true;if(v&&(!visitAt||v<visitAt))visitAt=v;}
+   const Q=safe(()=>root.InquiryFlow.quotes(q),[]).filter(x=>x&&Number(x.amount)>0&&x.sent_at);
+   if(s||Q.length||/견적.*발송\s*완료/.test(st)){sent=true;const k=s||day((Q[Q.length-1]||{}).sent_at);if(k&&k>sentAt)sentAt=k;}
+   if(Q.length){const x=Q[Q.length-1],k=day(x.sent_at);if(!quote||k>quote.day)quote={amount:Number(x.amount),version_no:Number(x.version_no)||Q.length,day:k};}
+  });
+  return visit||sent?{visit,visitAt,sent,sentAt,quote}:null;
+ }
  /* ── 이 영업건의 문의: direct = 연결 기록이 있는 문의 / site = 연결 기록이 없을 때의 같은 현장 후보 ── */
  function inquiriesOf(d){
-  const all=(root.B&&root.B.inquiries)||[],did=dealId(d),refs=safe(()=>root.dealInquiryRefs(d),[]);
-  const attachedTo=q=>{const r=q&&q.raw&&typeof q.raw==='object'?q.raw:{};return String(r['기존 현장 판단']||'')==='같은 공사'?String(r['기존 영업건']||''):'';};
-  const toDeal=q=>safe(()=>root.inquiryDealRefs(q),[]);
-  const direct=all.filter(q=>refs.includes(inqId(q))||(!!did&&toDeal(q).includes(did))||(!!did&&attachedTo(q)===did)).sort(byRecv);
+  const all=(root.B&&root.B.inquiries)||[],direct=directOf(d);
   if(direct.length)return {direct,site:[]};
   const sid=String(d.cleanup_site_id||d.site_id||d.siteId||'');
   const pool=safe(()=>root.operationalInquiries(all),all);
@@ -102,5 +127,5 @@
   if(k==='inq'){const d=root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'?root.CUR_DETAIL.item:null;if(!W().openFromDeal(v,d)&&typeof root.toast==='function')root.toast('이 계정에서 볼 수 없는 문의입니다','warn');return;}
   if(k==='deal'){const d=((root.B&&root.B.deals)||[]).find(x=>root.dealKey(x)===v);if(d){W().close();L3().openDeal(d);}return;}
  });
- root.JourneyPath={on,ofDeal,ofInquiry,inquiriesOf,dealOf,dealHtml,inquiryHtml,stageName};
+ root.JourneyPath={on,ofDeal,ofInquiry,inquiriesOf,handoff,dealOf,dealHtml,inquiryHtml,stageName};
 })(window);

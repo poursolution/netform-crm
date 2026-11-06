@@ -563,10 +563,12 @@
   /* 지금 응대 중심: 가운데 맨 위 = 고객 요청 한 줄(연결된 견적문의 원문 요약 · 견적문의 상세와 같은 함수) · [원문 보기] = 원문 펼침 */
   function reqSync(v,d){
    const c=v.querySelector('.dw-center');if(!c)return;let rq=c.querySelector(':scope>.dv8-req');
-   const q=dv8(d)?inqOf(d)[0]:null;let txt='';try{txt=q?String(root.InquiryWorkbench.originalText(q)||''):'';}catch(e){}
+   /* 연결 기록이 있는 문의만 '고객 요청'으로 보여 준다. 없으면 같은 현장 후보가 하나일 때만 후보라고 적는다 — 같은 현장의 다른 공사 문의가 이 건의 요청처럼 보이지 않게(2026-11-06) */
+   const JP=root.JourneyPath&&root.JourneyPath.on()?root.JourneyPath.inquiriesOf(d):null,cand=!!JP&&!JP.direct.length;
+   const q=dv8(d)?(JP?JP.direct[0]||(JP.site.length===1?JP.site[0]:null):inqOf(d)[0]):null;let txt='';try{txt=q?String(root.InquiryWorkbench.originalText(q)||''):'';}catch(e){}
    const sm=txt&&root.InquiryTidy?root.InquiryTidy.summarize(txt):null,line=sm?(sm.now||sm.later):'';
    if(!line){if(rq)rq.remove();return;}
-   const S=st(d),html='<div class="hd"><b>고객 요청</b><i></i><button type="button" class="lnk" data-dv3="reqorig">'+(S.reqOrig?'원문 접기':'원문 보기 ›')+'</button></div><b class="t">'+h(line)+'</b>'+(sm.now&&sm.later?'<span class="l">'+h(sm.later)+'</span>':'')+(S.reqOrig?'<p class="o">'+h(txt)+'</p>':'');
+   const S=st(d),html='<div class="hd"><b>'+(cand?'같은 현장 문의 · 연결 기록 없음':'고객 요청')+'</b><i></i><button type="button" class="lnk" data-dv3="reqorig">'+(S.reqOrig?'원문 접기':'원문 보기 ›')+'</button></div><b class="t">'+h(line)+'</b>'+(sm.now&&sm.later?'<span class="l">'+h(sm.later)+'</span>':'')+(S.reqOrig?'<p class="o">'+h(txt)+'</p>':'');
    if(!rq)rq=el('div','dv8-req');const before=c.querySelector(':scope>.dv7-drawer')||c.querySelector(':scope>.ddv-talk');if(rq.nextElementSibling!==before||rq.parentElement!==c)c.insertBefore(rq,before);
    if(rq.__h!==html){rq.__h=html;rq.innerHTML=html;}
   }
