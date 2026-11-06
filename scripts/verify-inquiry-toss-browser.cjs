@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await nums(),[2,1,3,2],'접수 2 · 담당 배정 1 · 접촉 · 상담 3 · 방문 · 견적 2');
   assert.deepEqual(await page.evaluate(()=>[InquiryV4.total(),InquiryV5.compute().cols.map(c=>c.length)]),[8,[2,1,3,2]]);
   assert.deepEqual((await T.locator('.tq-stg span').allInnerTexts()).map(one),['접수','담당 배정','접촉 · 상담','방문 · 견적']);
-  assert.match(one(await T.locator('.tq-stg small').nth(3).innerText()),/^견적 보내면 .+\(으\)로$/);
+  assert.match(one(await T.locator('.tq-stg small').nth(3).innerText()),/^견적 보내면 영업건으로$/);
   /* ③ 맨 위 문장 = 가장 급한 일 하나(기준 30분 넘긴 미배정이 있다) */
   assert.equal(one(await T.locator('.tq-hero').innerText()),'담당자를 기다리는 문의가 2건 있어요');
   assert.match(one(await T.locator('.tq-lead').innerText()),/^가장 오래된 건은 .+째 기다리고 있어요 · 진행 중 8건/);
