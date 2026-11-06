@@ -79,7 +79,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await mini.evaluateAll(l=>l.map(x=>x.className)),['done','done','cur',''],'끝난 단계 · 지금 · 남은 단계');
   assert.deepEqual((await mini.locator('b').allInnerTexts()).map(one),['✓ 01 접수','✓ 02 담당 배정','03 접촉 · 상담','04 현장방문 / 견적']);
   const ev=(await mini.locator('span').allInnerTexts()).map(one);assert.match(ev[1],/^배정 · /);assert.match(ev[2],/연결 · 정보 \d \/ 9$/);assert.equal(ev[3],'현장방문 · 견적 전');
-  assert.equal(one(await D.locator('.idv3-next .lb').innerText()),'다음 단계 · 04 현장방문 / 견적');assert.match(one(await D.locator('.idv3-next small').innerText()),/견적서 발송\(완료\)을 저장하면 자동으로 파이프라인 · .+ 단계로 넘어갑니다 · 따로 넘기는 버튼 없음/);
+  assert.equal(one(await D.locator('.idv3-next .lb').innerText()),'다음 단계 · 04 현장방문 / 견적');assert.match(one(await D.locator('.idv3-next small').innerText()),/견적서 발송\(완료\)을 저장하면 자동으로 파이프라인 · .+ 단계로 넘어갑니다$/);
   /* ⑧ 방문 완료는 넘기지 않고, 견적 발송 완료 저장은 그 자리에서 기존 전환 경로를 부른다 */
   await D.locator('[data-idv="step"][data-v="visit"]').click();await D.locator('[data-idv="visitMode"][data-v="완료"]').click();
   assert.equal(one(await D.locator('[data-idv="handoff"]').innerText()),'저장','방문 완료 = 저장만');

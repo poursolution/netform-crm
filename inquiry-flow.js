@@ -163,11 +163,13 @@
   return /견적.*발송\s*완료/.test(s)?'quote_sent':/현장\s*방문\s*완료/.test(s)?'visit_done':'';
  }
  const isQualified=q=>!!qualifiedBy(q);
+ /* 지금 넘겨야 하는가(전환 대기 · 막힌 이유의 기준 하나 · 2026-11-06): 흐름 v5(2026-10-13)부터 실제 전환은 견적 발송 완료 때만 일어난다 — 방문 완료는 04 단계에 머문다. isQualified 는 서버 전환 자격과 같아 그대로 둔다 */
+ function promoReady(q){if(!q)return false;if(!(root.InquiryV5&&root.InquiryV5.on()))return isQualified(q);const S=server(q),p=patchOf(q);return !!(S&&S.quote_sent_at||p.quoteSentAt)||/견적.*발송\s*완료/.test(String(q.status||''));}
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
  root.InquiryFlow={on,RESULT,OLD,RESULTS,NEXT,TWO,CHANNELS,kindOf,readLine,logOf,logs,state,own,firstConnectedAt,firstAttemptAt,attempts,attemptNote,meetingDate,replyDue,phoneHandler,legacyResponded,server,load,take,RPC,LIST,
-  CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,quotes,parseQuoteText,
+  CLOSE,closeReasons,closeReasonText,closeOf,QUALIFY_TEXT,statusQualifies,qualifiedBy,isQualified,promoReady,quotes,parseQuoteText,
   _reset(){SRV.clear();CLOSED.clear();SV++;loadAt=0;}};
 
  /* ── 저장 명령 ── */

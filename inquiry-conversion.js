@@ -10,18 +10,20 @@
  function candidates(){
   const all=typeof root.operationalInquiries==='function'?root.operationalInquiries(root.B?.inquiries||[]):(root.B?.inquiries||[]);
   const qualify=root.QUALIFY_ST instanceof RegExp?root.QUALIFY_ST:/견적.*발송/,closed=root.CLOSED_ST||[];
-  const F=root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;/* 전환 기준은 한 곳(1차 현장방문 완료 또는 견적 발송 완료) — '발송 예정'은 전환 대기가 아니다 */
-  return all.filter(q=>(F?F.isQualified(q):qualify.test(String(q.status||'')))&&closed.indexOf(q.status)<0&&!(root.linkedDeal&&root.linkedDeal(q))&&!(root.promotedInfo&&root.promotedInfo(q)?.linked))
-   .map(q=>{
-    const owner=root.inquiryRoutedOwner?root.inquiryRoutedOwner(q):String(q.assignee||'');
-    const tech=q.brand==='기술자문'||(root.isTechnicalInquiry&&root.isTechnicalInquiry(q));
-    const branch=root.itemOwnerTeam&&root.itemOwnerTeam(q)==='gyeongnam';
-    const prof=owner&&root.repProfile?root.repProfile(owner):null;
-    const why=tech?'기술자문 문의 — 기술자문 연동으로 관리':branch?'경남지사 건 — 지사 흐름에서 처리'
-     :!owner?'영업담당 배정 필요':prof&&prof.salesRep===false?'본사 영업담당이 아님('+owner+') — 담당 변경 필요'
-     :root.inquiryLinkUnresolved&&root.inquiryLinkUnresolved(q)?'연결 확인 필요':'';
-    return {q,owner,ok:!why,why};
-   });
+  const F=root.InquiryFlow&&root.InquiryFlow.on()?root.InquiryFlow:null;/* 전환 기준은 한 곳(InquiryFlow.promoReady = 견적 발송 완료) — '발송 예정' · 방문 완료는 전환 대기가 아니다 */
+  return all.filter(q=>(F?F.promoReady(q):qualify.test(String(q.status||'')))&&closed.indexOf(q.status)<0&&!(root.linkedDeal&&root.linkedDeal(q))&&!(root.promotedInfo&&root.promotedInfo(q)?.linked))
+   .map(q=>{const r=whyNot(q);return {q,owner:r.owner,ok:!r.why,why:r.why};});
+ }
+ /* 왜 넘기지 못하는가 — 이 목록과 문의 상세가 같은 문장을 쓴다(2026-11-06) */
+ function whyNot(q){
+  const owner=root.inquiryRoutedOwner?root.inquiryRoutedOwner(q):String(q.assignee||'');
+  const tech=q.brand==='기술자문'||(root.isTechnicalInquiry&&root.isTechnicalInquiry(q));
+  const branch=root.itemOwnerTeam&&root.itemOwnerTeam(q)==='gyeongnam';
+  const prof=owner&&root.repProfile?root.repProfile(owner):null;
+  const why=tech?'기술자문 문의 — 기술자문 연동으로 관리':branch?'경남지사 건 — 지사 흐름에서 처리'
+   :!owner?'영업담당 배정 필요':prof&&prof.salesRep===false?'본사 영업담당이 아님('+owner+') — 담당 변경 필요'
+   :root.inquiryLinkUnresolved&&root.inquiryLinkUnresolved(q)?'연결 확인 필요':'';
+  return {owner,why};
  }
  function style(){
   if(document.getElementById('icv-style'))return;
@@ -77,6 +79,6 @@
   };
   shade.querySelector('[data-close]').focus();
  }
- root.InquiryConversion={candidates,open};
+ root.InquiryConversion={candidates,whyNot,open};
  root.addEventListener('phase1:identity-cleared',close);
 })(window);

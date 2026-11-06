@@ -19,6 +19,8 @@
 .jp-list[hidden]{display:none}
 .jp-list>button{margin:0;height:auto;padding:3px 10px;border:1px solid var(--line2);border-radius:999px;background:var(--card);box-shadow:none;font:inherit;font-size:12px;color:var(--ink2);cursor:pointer}
 .jp-list>button:hover{background:var(--bg)}
+/* 견적을 보냈는데 영업건이 없는 건(문의 상세) — 제목만 위험 색 */
+html #inq-inbox-dialog.idv3 .idv3-next.idv3-stuck .lb,#inq-inbox-dialog .idv3-stuck .lb{color:var(--danger)}
 /* 놓는 자리: 영업건 상세 = 머리 줄 아래 · 진행 띠 위 / 문의 상세 = 진행 띠 아래 */
 #detailView.ddv.dv3 .dv3-subrow>.jp,#detailView.ddv.dv3.dvt.dv7 .dv3-subrow>.jp{order:11;flex:1 0 100%;padding-top:6px}
 #inq-inbox-dialog .idv3-top>.jp{margin-top:8px}

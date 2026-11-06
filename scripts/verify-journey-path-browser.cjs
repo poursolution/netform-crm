@@ -7,7 +7,7 @@ const root=path.join(__dirname,'..');
 const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));if(!t.startsWith(root)||!fs.existsSync(t)||!fs.statSync(t).isFile()){res.writeHead(404);return res.end()}res.setHeader('Content-Type',t.endsWith('.js')?'text/javascript':t.endsWith('.css')?'text/css':'text/html');fs.createReadStream(t).pipe(res)});
 const one=s=>String(s||'').replace(/\s+/g,' ').trim();
 const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-222222222222',Q3:'33333333-3333-4333-8333-333333333333',Q4:'44444444-4444-4444-8444-444444444444',Q5:'55555555-5555-4555-8555-555555555555',Q6:'66666666-6666-4666-8666-666666666666',Q7:'77777777-7777-4777-8777-777777777777',
- Q8:'88888888-1111-4111-8111-111111111111',Q9:'99999999-1111-4111-8111-111111111111',G:'d0000007-0000-4000-8000-000000000007',H:'d0000008-0000-4000-8000-000000000008',
+ QS:'aaaa0000-1111-4111-8111-111111111111',QV:'bbbb0000-1111-4111-8111-111111111111',Q8:'88888888-1111-4111-8111-111111111111',Q9:'99999999-1111-4111-8111-111111111111',G:'d0000007-0000-4000-8000-000000000007',H:'d0000008-0000-4000-8000-000000000008',
  A:'d0000001-0000-4000-8000-00000000000a',B:'d0000002-0000-4000-8000-00000000000b',C:'d0000003-0000-4000-8000-00000000000c',D:'d0000004-0000-4000-8000-00000000000d',E:'d0000005-0000-4000-8000-00000000000e',F:'d0000006-0000-4000-8000-00000000000f'};
 (async()=>{
  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
@@ -38,6 +38,8 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
      inq(ID.Q5,'[합성] 사랑아파트',{status:'현장방문예정',at:'2026-09-15T10:00:00+09:00',created_at:'2026-09-15T10:00:00+09:00',raw:{'문의내용':'[합성] 같은 공사 추가 문의','기존 현장 판단':'같은 공사','기존 영업건':ID.F}}),
      inq(ID.Q6,'[합성] 마루아파트',{site_id:'site-maru',status:'현장방문예정'}),
      inq(ID.Q7,'[합성] 아라아파트',{status:'배정완료',at:'2026-11-05T09:00:00+09:00',created_at:'2026-11-05T09:00:00+09:00'}),
+     inq(ID.QS,'[합성] 타래아파트',{status:'견적서 발송완료'}),
+     inq(ID.QV,'[합성] 파랑아파트',{status:'현장방문 완료'}),
      inq(ID.Q8,'[합성] 차오름아파트',{status:'현장방문 완료',deal_id:ID.G}),
      inq(ID.Q9,'[합성] 하늘아파트',{status:'견적서 발송완료',deal_id:ID.H}),
      inq('88888888-8888-4888-8888-888888888888','[합성] 자람아파트',{status:'배드핏',close_reason:'배드핏(부적합) · 수행불가 공종'})],activities:[],inquiryTrash:[],inquiryCleanupArchived:[]};
@@ -133,6 +135,29 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
   await rowA.locator('.tq-ds').click();await page.waitForSelector('#inq-inbox-dialog .jp');await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(200);
   assert.equal(await page.evaluate(()=>!!(CUR_DETAIL&&CUR_DETAIL.kind==='deal'&&document.getElementById('detailView').classList.contains('on'))),false,'목록에서 연 문의를 닫으면 목록으로');
   await page.locator('#inq-toss .tq-row',{hasText:'나래아파트'}).locator('[data-tq="deal"]').click();await page.waitForTimeout(400);assert.equal(await curDeal(),ID.B,'[영업건 보기]');
+  /* ⑦-2 넘어가는 기준 하나(4번): 안내 문구 = 실제 판정 · 전환 대기 = 견적 발송 완료만 · 방문 완료는 04에 머문다 */
+  await page.evaluate(()=>{G.inqToss=null;goPage('inq');});await page.waitForSelector('#inq-toss .tq-stg');
+  assert.deepEqual((await page.locator('#inq-toss .tq-stg small').allInnerTexts()).map(one),['담당을 정하면 다음 단계','실제 연결되면 다음 단계','방문 · 견적 잡히면 다음 단계','견적 보내면 영업건으로'],'단계 안내 = 실제 조건');
+  assert.deepEqual(await page.locator('#inq-toss .tq-stg small').evaluateAll(l=>l.filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent)),[],'단계 안내 글 잘림 없음');
+  const R=await page.evaluate(ID=>{const q=id=>B.inquiries.find(x=>x.id===id),QS=q(ID.QS),QV=q(ID.QV);return {waitS:isAwaitingPromotion(QS),waitV:isAwaitingPromotion(QV),qualV:InquiryFlow.isQualified(QV),cands:InquiryConversion.candidates().map(x=>x.q.site)};},ID);
+  assert.deepEqual([R.waitS,R.waitV,R.qualV],[true,false,true],'전환 대기 = 견적 발송 완료만 · 서버 전환 자격은 그대로');
+  assert.deepEqual(R.cands,['[합성] 타래아파트'],'전환 대기 목록에 방문 완료 건 없음');
+  /* ⑦-3 견적을 보냈는데 영업건이 없는 건: 이유 + 다시 넘기기 */
+  await page.evaluate(id=>{InquiryWorkbench.open(inqKey(B.inquiries.find(x=>x.id===id)));},ID.QS);await page.waitForSelector('#inq-inbox-dialog .idv3-stuck');
+  const stuck=page.locator('#inq-inbox-dialog .idv3-stuck');
+  assert.equal(one(await stuck.locator('.lb').innerText()),'영업건으로 넘어가지 않았습니다');assert.match(one(await stuck.locator('p').innerText()),/견적 발송은 저장됐지만 영업건이 아직 없습니다/);
+  if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'jr-stuck.png')});
+  await page.evaluate(()=>{window.__ap=window.autoPromote;window.autoPromote=()=>{throw Error('[합성] 서버 거절');};});
+  await stuck.locator('[data-idv="promote"]').click();await page.waitForTimeout(150);
+  assert.match(one(await page.locator('#inq-inbox-dialog .idv3-stuck .idv-err').innerText()),/파이프라인 전환은 하지 못했습니다 — \[합성\] 서버 거절/,'실패하면 이유가 카드에 남는다');
+  await page.evaluate(id=>{window.autoPromote=q=>{q.deal_id=id;return '';};},ID.A);
+  await page.locator('#inq-inbox-dialog [data-idv="promote"]').click();await page.waitForTimeout(200);
+  assert.equal(await page.locator('#inq-inbox-dialog .idv3-stuck').count(),0,'넘어가면 카드가 사라진다');assert.match(one(await page.locator('#inq-inbox-dialog').innerText()),/파이프라인 전환 완료/);
+  await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
+  await page.evaluate(id=>{window.autoPromote=window.__ap;const q=B.inquiries.find(x=>x.id===id);delete q.deal_id;},ID.QS);
+  await page.evaluate(id=>{InquiryWorkbench.open(inqKey(B.inquiries.find(x=>x.id===id)));},ID.QV);await page.waitForSelector('#inq-inbox-dialog .idv3-next');
+  assert.equal(await page.locator('#inq-inbox-dialog .idv3-stuck').count(),0,'방문 완료 건은 막힌 건이 아니다');await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
+  await dealOpen(ID.B);await page.waitForFunction(id=>CUR_DETAIL&&CUR_DETAIL.item.id===id&&document.querySelector('#detailView .jp'),ID.B);await page.waitForTimeout(300);
   /* ⑧ 좁은 폭: 가로 넘침 없음 */
   await page.setViewportSize({width:375,height:800});await page.waitForTimeout(300);
   const nar=await page.evaluate(()=>{const j=document.querySelector('#detailView .jp-row');return {cols:getComputedStyle(j).gridTemplateColumns.split(' ').length,over:j.scrollWidth>j.clientWidth+1,clip:[...j.querySelectorAll('b')].filter(b=>b.scrollWidth>b.clientWidth+1).map(b=>b.textContent)};});
