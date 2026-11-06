@@ -46,6 +46,10 @@
    if(qd&&!qr)return none('견적 예정일 입력 · 요청 근거 미확인','견적 요청 확인','요청 근거 확인 후 기한 판단');
    if(qr)return none('견적 요청 등록 · 예정일 없음','견적 예정일 입력','견적팀에 물량 산출 기한 확인');
    const mt=meetingOf(d);
+   /* 문의에서 이어받은 사실(JourneyPath.handoff · 2026-11-06): 기록 문장만 바꾸고 기한은 새로 만들지 않는다 — 오늘 업무 '기한 지남' 숫자가 늘지 않게 */
+   let hand=null;try{hand=root.JourneyPath?root.JourneyPath.handoff(d):null;}catch(e){}
+   if(hand&&hand.sent)return none('문의 때 견적 발송'+(hand.sentAt?' '+md(hand.sentAt):'')+' · 고객 반응 확인','결과 기록','보낸 견적 고객 반응 확인');
+   if(hand&&hand.visit&&!mt)return none('문의 때 방문 완료'+(hand.visitAt?' '+md(hand.visitAt):'')+' · 견적 요청 전','견적 요청 등록','견적 요청 등록');
    if(mt){const qn=Number(R().quoteRequestDays)||0;if(qn>0)return D('미팅 완료',mt,qn);return Object.assign(none('미팅 완료 '+md(mt)+' · 견적 요청 전','견적 요청 등록','견적 요청 등록'),{dueLabel:'기한 없음 · 설정값 확인'});}
    const scheduled=dayKey(fld(d,'consulting','meeting_date')||fld(d,'first_contact','meeting_date')||'');if(scheduled&&daysTo(scheduled)!==null)return daysTo(scheduled)>=0?D('미팅 예정',scheduled,0):none('지난 미팅 일정 · 실행 여부 미확인','미팅 결과 확인','실행 여부·결과 확인 후 다음 행동 설정');
    return lc?none('미팅 일정 미등록 · 기한 계산 안 함','미팅 일정 입력','미팅 여부 확인 → 일정 등록 또는 보류 사유 등록'):nr('판정 불가 · 미팅 · 연락 기록 없음(이관 전 기록 확인)');}

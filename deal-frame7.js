@@ -109,6 +109,8 @@
    A.push({k:'낙찰금액',v:'타사 · '+(cp||'낙찰사 미입력'),gray:true});
    if(q)A.push({k:'당사 제안',v:eok(q.amount),gray:true});else est();
   }else est();
+  /* 영업건에 견적 버전이 아직 없으면 문의 때 보낸 견적을 보여 준다(읽기만 · 영업건 견적 버전으로 옮기지 않음 · 2026-11-06) */
+  if(!q&&['consulting','sent','relationship','competition'].includes(g)){const hq=safe(()=>root.JourneyPath.handoff(d).quote,null);if(hq)A.unshift({k:'문의 때 견적',v:eok(hq.amount)+' (V'+hq.version_no+')'});}
   return A;
  }
  function line2(d,o){
@@ -220,7 +222,9 @@
   if(g==='consulting'){
    const it=listItem(d,'consulting'),E=(it&&safe(()=>PSB().consultingEvidence(it.row),null))||{bucket:'none',quote:!!str(fld(d,'consulting','quote_request')),task:'기존 연락 · 미팅 기록 확인 → 미팅이 없었다면 일정 협의',scheduled:''};
    if(E.quote){const qd=day(fld(d,'consulting','quote_due'));Object.assign(o,{text:'물량 산출 기한 확인 (견적팀)',short:'견적 요청 등록',done:'견적 버전 등록 = 작성 완료 · 고객 발송 완료는 아님',btn:['견적 버전 등록','quotever'],sit:'견적 요청 등록'+(qd?' · 물량 산출 기한 '+md(qd):' · 견적 예정일 미입력'),cur:3});}
-   else if(E.bucket==='done')Object.assign(o,{text:'견적 요청 등록',short:'미팅 기록 · 견적 요청 전',done:'견적 요청 + 견적 예정일 등록 (작성 · 발송은 따로)',btn:['견적 요청 등록','work7'],row:'quote',sit:'미팅 기록이 있고 견적 요청 전',cur:2});
+   /* 문의 때 이미 보낸 견적(JourneyPath.handoff · 2026-11-06): 컨설팅 설계에서 시작해도 미팅 확인 · 견적 요청을 다시 시키지 않는다. 단계는 담당이 정한다(자동 이동 없음) */
+   else if(E.handQuote){const H=E.hand,qt=H.quote;Object.assign(o,{text:E.task,short:'문의 때 견적 발송',done:E.reacted?'고객 반응을 보고 단계 · 다음 행동 정하기':'고객 반응 기록 · 다음 일정 등록',btn:E.reacted?['단계 바꾸기','stage']:['결과 기록','activity'],sit:'견적문의에서 견적 발송'+(H.sentAt?' '+md(H.sentAt):' · 날짜 미기록')+(qt?' · '+eok(qt.amount)+' (V'+qt.version_no+')':' · 금액 미기록'),seq:['문의 때 방문 · 견적 확인','보낸 견적 고객 반응 확인','단계 정하기','다음 행동 · 날짜'],cur:E.reacted?2:1});}
+   else if(E.bucket==='done')Object.assign(o,{text:'견적 요청 등록',short:E.handVisit?'문의 때 방문 완료 · 견적 요청 전':'미팅 기록 · 견적 요청 전',done:'견적 요청 + 견적 예정일 등록 (작성 · 발송은 따로)',btn:['견적 요청 등록','work7'],row:'quote',sit:E.handVisit?'견적문의에서 현장방문 완료'+(E.hand.visitAt?' '+md(E.hand.visitAt):' · 날짜 미기록')+' · 견적 요청 전':'미팅 기록이 있고 견적 요청 전',cur:2});
    else if(E.bucket==='plan')Object.assign(o,{text:E.task,short:'미팅 예정',done:'확인 연락 결과 기록',sit:'미팅 예정 '+md(day(E.scheduled))+' · 전날 확인 연락',cur:1});
    else Object.assign(o,{text:E.task,short:'미팅 여부 확인 전',done:'미팅 · 상담 결과 기록 — 없었다면 일정 협의',sit:'컨설팅 설계 단계지만 미팅 진행 여부가 확인되지 않음',pending:'미팅 확인 뒤 정해짐',confirmed:false,cur:0});
    return o;
@@ -314,6 +318,7 @@
   }
   /* 날짜 미입력 · 판정 불가 = 파랑(지연 아님) */
   if(g==='sent')return blue('발송 후 '+Q.follow+'일','발송일 없음 · 판정 불가');
+  if(g==='consulting'&&/^문의 때/.test(String(b.why||'')))return blue('기한','다음 업무를 등록하면 정해짐');/* 문의에서 이어받은 건 — 미팅 기준이 아니고 판정 불가도 아니다(JourneyPath.handoff) */
   if(g==='consulting')return blue('미팅 후 '+(Q.quote||3)+'일 기준',/미팅/.test(String(b.why||''))&&/미등록|없음|불가/.test(String(b.why||''))?'미팅 기록이 없어 판정 불가':(b.why||'기한 없음')+' · 판정 불가');
   if(g==='relationship')return blue('다음 연락일','연락 기록 없음 · 판정 불가');
   if(g==='competition')return blue('입찰 마감','일정 없음 · 판정 불가');

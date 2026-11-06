@@ -54,10 +54,14 @@
   const d=r.item,cx=ctxOf(d),f=(cx.consulting||{}).fields||{},fc=(cx.first_contact||{}).fields||{};
   let met='',connected='';try{met=root.PipelineJudge.meetingOf(d);}catch(e){}try{connected=root.ContactState.of(d,'deal').lastConnectedAt||'';}catch(e){}
   const scheduled=nextIsVisit(r)?r.due:(f.meeting_date||fc.meeting_date||''),nd=days(scheduled),quote=!!String(f.quote_request||'').trim();
-  const bucket=met||quote?'done':nd!==null&&nd>=0?'plan':'none';
-  const task=bucket==='done'?(quote?'물량 산출 기한 확인 (견적팀)':'견적 요청 등록'):bucket==='plan'?'미팅 전날 확인 연락':nd!==null&&nd<0?'지난 미팅 일정의 실행 여부·결과 확인':connected?'기존 통화 내용·미팅 진행 여부 확인 → 미팅이 없었다면 일정 협의':'기존 연락·미팅 기록 확인 → 첫 연락 전이면 연락 후 일정 협의';
-  const sub=bucket==='done'?(met?'미팅 완료 기록 있음':'견적 요청 · 미팅 미확인'):bucket==='plan'?ymd(scheduled)+' 미팅 예정':nd!==null&&nd<0?ymd(scheduled)+' 예정 · 실행 여부 확인':'미팅 여부 확인 필요';
-  return {bucket,met,quote,scheduled,task,sub};
+  /* 문의에서 이어받은 사실(JourneyPath.handoff · 2026-11-06): 문의 때 보낸 견적 · 끝낸 방문을 다시 시키지 않는다. 미팅 완료 판정(meetingOf · KPI)은 그대로 */
+  let hand=null;try{hand=root.JourneyPath?root.JourneyPath.handoff(d):null;}catch(e){}
+  const handQuote=!quote&&!!(hand&&hand.sent),handVisit=!quote&&!handQuote&&!met&&!!(hand&&hand.visit);
+  const reacted=handQuote&&!!connected&&!!hand.sentAt&&String(root.PipelineJudge.dayKey(connected)||'')>=hand.sentAt;
+  const bucket=met||quote||handQuote||handVisit?'done':nd!==null&&nd>=0?'plan':'none';
+  const task=handQuote?(reacted?'고객 반응을 보고 단계 정하기':'보낸 견적 고객 반응 확인'):bucket==='done'?(quote?'물량 산출 기한 확인 (견적팀)':'견적 요청 등록'):bucket==='plan'?'미팅 전날 확인 연락':nd!==null&&nd<0?'지난 미팅 일정의 실행 여부·결과 확인':connected?'기존 통화 내용·미팅 진행 여부 확인 → 미팅이 없었다면 일정 협의':'기존 연락·미팅 기록 확인 → 첫 연락 전이면 연락 후 일정 협의';
+  const sub=handQuote?'문의 때 견적 발송'+(hand.sentAt?' '+ymd(hand.sentAt):''):handVisit?'문의 때 방문 완료'+(hand.visitAt?' '+ymd(hand.visitAt):''):bucket==='done'?(met?'미팅 완료 기록 있음':'견적 요청 · 미팅 미확인'):bucket==='plan'?ymd(scheduled)+' 미팅 예정':nd!==null&&nd<0?ymd(scheduled)+' 예정 · 실행 여부 확인':'미팅 여부 확인 필요';
+  return {bucket,met,quote,scheduled,task,sub,hand,handQuote,handVisit,reacted};
  }
  const st=()=>root.G.psb||(root.G.psb={view:'list',bucket:'all',reason:null,page:1});
  const enabled=key=>!root.G.pipeStageBOff&&KEYS.includes(key||root.G.pipelineStage)&&!!root.PipelineListV2;
