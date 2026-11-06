@@ -6,7 +6,7 @@ set local statement_timeout='30s';
 
 create table crm_security.os_b2c_links(
  os_b2c_id text primary key,
- inquiry_id uuid not null references public.inquiries(id),
+ inquiry_id uuid not null references public.inquiries(id) on delete cascade,
  matched_existing boolean not null default false,
  created_by_user_id uuid not null,
  created_by_name text not null,

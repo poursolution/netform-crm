@@ -120,6 +120,15 @@ test('status: reads only linked ids, up to 50, with deal progress and without cu
  }finally{await db.close()}
 });
 
+test('purge: deleting an inquiry in CRM is not blocked; the link goes with it and the event log stays',async()=>{
+ const db=await fixture();try{
+  await db.exec('set role authenticated');const a=await rpc(db,'crm_os_b2c_handoff_v1',base);await db.exec('reset role');
+  await db.query('delete from public.inquiries where id=$1',[a.crm_inquiry_id]);
+  assert.equal(await count(db,'crm_security.os_b2c_links'),0);assert.equal(await count(db,'crm_security.os_b2c_link_events'),1);
+  await db.exec('set role authenticated');assert.equal((await rpc(db,'crm_os_b2c_status_v1',[base.os_b2c_id])).items.length,0);
+ }finally{await db.close()}
+});
+
 test('rollback stops calls and keeps every record',async()=>{
  const db=await fixture();try{
   await db.exec('set role authenticated');await rpc(db,'crm_os_b2c_handoff_v1',base);await db.exec('reset role');
