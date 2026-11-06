@@ -528,7 +528,9 @@
     +(s.step==='visit'?visitToggle(s)+'<div class="idv-fields"><input type="date" data-idv="visitDate" aria-label="방문 날짜" value="'+attr(s.visitDate)+'"><input type="time" data-idv="visitTime" aria-label="방문 시간" value="'+attr(s.visitTime)+'"></div>':'')
     +(s.step==='quote'?'<div class="idv-two small"><button type="button" data-idv="quoteMode" data-v="예정" aria-pressed="'+(s.quoteMode==='예정')+'">발송 예정</button><button type="button" data-idv="quoteMode" data-v="완료" aria-pressed="'+(s.quoteMode==='완료')+'">발송 완료</button></div><div class="idv-fields"><input inputmode="numeric" data-idv="quoteAmt" aria-label="예상 금액(만원)" placeholder="예상 금액 (만원)" value="'+attr(s.quoteAmt)+'"><input type="date" data-idv="quoteDate" aria-label="견적 날짜" value="'+attr(s.quoteDate)+'"></div>':'')
     +(s.step?'<button type="button" class="idv-primary'+(ok?' on':'')+'" data-idv="handoff"'+(ok?'':' disabled')+'>'+stepBtn(s)+'</button><div class="idv-err" data-idv-err></div>':'')
-    +'<small>'+(V5()?'견적서 발송(완료)을 저장하면 자동으로 파이프라인 · '+h(root.InquiryV5.promoStage())+' 단계로 넘어갑니다 · 따로 넘기는 버튼 없음':FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
+    +'<small>'+(V5()?'견적서 발송(완료)을 저장하면 자동으로 파이프라인 · '+h(root.InquiryV5.promoStage())+' 단계로 넘어갑니다':FL()?h(FL().QUALIFY_TEXT):root.CRM_SCHEDULE_V1===true?'방문·견적 사실 저장 · 파이프라인 전환은 별도 확인':'둘 중 하나 저장 → 파이프라인 ‘컨설팅 설계’로 자동 전환')+'</small></div>';}
+  /* 견적을 보냈는데 영업건이 없는 건(전환 실패 · 이관 자료): 왜 막혔는지 보여 주고, 막히지 않았으면 그 자리에서 다시 넘긴다(2026-11-06 · 전환 대기 목록과 같은 기준 · 같은 문장) */
+  if(V5()&&FL()&&!handed&&!attD&&FL().promoReady(q)){const why=root.InquiryConversion?root.InquiryConversion.whyNot(q).why:'';next='<div class="idv3-next idv3-stuck"><span class="lb">영업건으로 넘어가지 않았습니다</span><p>'+h(why||'견적 발송은 저장됐지만 영업건이 아직 없습니다')+'</p>'+(why?'':'<button type="button" class="idv-primary on" data-idv="promote"'+(s.promoBusy?' disabled':'')+'>영업건으로 넘기기</button>')+(s.promoErr?'<div class="idv-err">'+h(s.promoErr)+'</div>':'')+'</div>'+next;}
   const n=W().related(q),list=(n.list||[]).slice(0,5);
   const bottom='<div class="idv3-bottom"><button type="button" class="nr" data-idv="near-toggle"'+(list.length?'':' disabled')+'>근처 현장 <b>'+list.length+'곳</b>'+(n.region?' · '+h(n.region):'')+'</button>'+(admin&&!handed?'<button type="button" class="idv-link" data-idv="reassign">담당 변경</button>':'')+'</div>'
    +(s.nearOpen&&list.length?'<div class="idv-near idv3-near">'+list.map(x=>{const d=x.d,amt=root.oppAmt(d);return '<button type="button" class="idv-ncard mine" data-idv="near" data-v="'+attr(root.dealKey(d))+'"><span class="n1"><b>'+h(String(d.site||'').replace(/^\s*\[[^\]]*\]\s*/,''))+'</b></span><span class="n2"><i></i>'+h(root.stageNoLabel(root.dealStage(d)))+' · '+h(root.repN(d.assignee))+(amt?' · '+h(root.fmtAmt(amt)):'')+'</span></button>';}).join('')+'</div>':'');
@@ -598,7 +600,7 @@
  function tempField(tag,id,value){document.getElementById(id)?.remove();const el=document.createElement(tag);el.id=id;el.hidden=true;if(tag==='select'){const o=document.createElement('option');o.value=o.textContent=value;el.append(o);}el.value=value;document.getElementById('inq-inbox-dialog').append(el);return el;}
  function onClick(e){
   const b=e.target.closest('[data-idv]');if(!b||!curKey)return;const k=b.dataset.idv,v=b.dataset.v,s=st(curKey),q=root.inqCtlFind(curKey,false);if(!q)return;
-  if(closedStatus(q)&&['save','handoff','dial','sms-crm','sms-send','reassign','step'].includes(k))return;
+  if(closedStatus(q)&&['save','handoff','promote','dial','sms-crm','sms-send','reassign','step'].includes(k))return;
   /* 내부 메모 삭제(2026-10-30 대표): 견적문의 메모는 이 PC 브라우저에만 저장된다(서버 명령에 메모가 없음) → 이 PC 기록에서 뺀다 · 한 번 더 눌러야 삭제 */
   if(k==='mdel'){if(s.mdel!==v){s.mdel=v;return reskinFrom();}s.mdel='';const p=root.itemPatch(q,'inq');if(p&&Array.isArray(p.activities))p.activities=p.activities.filter(a=>String(a&&a.id)!==v);if(Array.isArray(q.activities))q.activities=q.activities.filter(a=>String(a&&a.id)!==v);root.saveLocal?.();reskinFrom();toast('내부 메모를 삭제했습니다');return;}
   if(k!=='mdel'&&s.mdel)s.mdel='';
@@ -660,6 +662,8 @@
   if(k==='save')return save(q,s);
   if(k==='assign')return assign(q,s);
   if(k==='handoff')return handoff(q,s,b);
+  /* 다시 넘기기 = 기존 전환 경로 그대로(autoPromote → 서버 전환 명령). 넘어가지 않으면 그 이유를 카드에 남긴다 */
+  if(k==='promote'){s.promoErr='';s.promoBusy=true;let msg='';try{msg=String(root.autoPromote(q)||'');if(!root.inqCtlConverted(q))s.promoErr=msg||'영업건을 만들지 못했습니다';}catch(pe){s.promoErr='파이프라인 전환은 하지 못했습니다 — '+String(pe&&pe.message||pe);}s.promoBusy=false;if(!s.promoErr)toast((q.site||'현장')+' → 파이프라인 등록');try{root.paint();}catch(pe){}return reskinFrom();}
  }
  const meetOf=q=>{try{return root.InquiryListV3&&root.InquiryListV3.meetOf?root.InquiryListV3.meetOf(q):null;}catch(e){return null;}};
  const pad2=n=>String(n).padStart(2,'0'),ymdDash=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),ymdDot=d=>d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(),kday=d=>ymdDot(d)+'('+'일월화수목금토'[d.getDay()]+')';

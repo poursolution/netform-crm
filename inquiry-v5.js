@@ -9,7 +9,7 @@
      01 접수 = 담당 없음 / 02 담당 배정 = 담당 있음 · 실제 연결 없음(부재는 시도로만) / 03 접촉 · 상담 = 실제 연결 1회 이상 /
      04 현장방문 / 견적 = 방문 일정 · 방문 완료 · 견적 요청(발송 예정 · 견적 버전 · 견적요청 결과) 중 하나.
    파이프라인 전환 칸은 없다. 견적 발송 완료를 저장하면 기존 전환 경로(autoPromote → 서버 전환 명령)가 영업건을 만든다(문의 원본 · 이력 연결). 방문 완료만으로는 넘기지 않는다(inquiry-flow.js).
-   만들어지는 단계는 서버 · 전송 계층의 기존 규칙(견적 발송 완료 → 자료 발송완료)을 따른다 — 화면 문구도 그 이름을 읽어서 쓴다(promoStage). 시안의 '컨설팅 설계'로 바꾸려면 전송 계층(operational-adapter promotionStage)과 서버 전환 명령을 같이 바꿔야 한다.
+   만들어지는 단계는 서버 · 전송 계층의 규칙을 따른다(2026-10-13부터 컨설팅 설계) — 화면 문구도 그 이름을 읽어서 쓴다(promoStage). 바꾸려면 전송 계층(operational-adapter promotionStage)과 서버 전환 명령을 같이 바꿔야 한다.
    숫자: 띠 4칸의 합 = 위 탭 = 브랜드 '전체' = 진행 중(InquiryV4.base — 종결 · 휴지통 · 영업건으로 넘긴 문의 제외). 늦음 판정은 목록 · 오늘 업무와 같은 것(InquiryListV3.model 의 late).
    끄기: G.inqV5Off=true → 견적문의 v4(상태 탭 + 목록 옆 상세). */
 (function(root){
@@ -21,7 +21,7 @@
  const RULES=()=>root.OPS_RULES||{},ASSIGN_MIN=()=>Number(RULES().inquiryAssignMinutes)||30,FIRST_H=()=>Number(RULES().towerFirstResponseHours)||2;
  /* 견적 발송 완료로 넘어갈 때 만들어지는 영업건의 단계 이름(기존 전환 규칙에서 읽는다) */
  const promoStage=()=>{try{return String(root.qualifyName('견적서 발송완료')||'')||'자료 발송완료';}catch(e){return '자료 발송완료';}};
- const STG=[['01','접수','담당 지정하면 → 02'],['02','담당 배정','실제 연결되면 → 03'],['03','접촉 · 상담','연결하고 9개 채우면 → 04'],['04','방문 · 견적','']];
+ const STG=[['01','접수','담당 지정하면 → 02'],['02','담당 배정','실제 연결되면 → 03'],['03','접촉 · 상담','방문 · 견적 일정이 잡히면 → 04'],['04','방문 · 견적','']];
  const outOf=i=>i===3?'견적 발송되면 자동으로 파이프라인 · '+promoStage()+'(으)로':STG[i][2];
  const FULL=['접수','담당 배정','접촉 · 상담','현장방문 / 견적'];
  const SHADE=['#e9edf7','#c9d5f1','#94acea','#5d84e0'],SIZE=8;
