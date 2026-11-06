@@ -35,15 +35,24 @@ language sql stable security definer set search_path='' as $fn$
 $fn$;
 revoke all on function crm_security.os_b2c_actor() from public,anon,authenticated,service_role;
 
--- 이름이 정확히 한 명과 맞을 때만 담당으로 잡는다.
+-- CRM 직접 배정과 같은 기준: 로그인이 승인된 영업(rep) 계정 중 이름이 정확히 한 명과 맞을 때만 담당으로 잡는다.
 create function crm_security.os_b2c_owner(p_name text,out user_id uuid,out name text)
 language plpgsql stable security definer set search_path='' as $fn$
 declare n integer;
 begin
- select count(*),min(u.user_id::text)::uuid,min(u.name) into n,user_id,name from public.users u where u.active is true and btrim(u.name)=btrim(coalesce(p_name,''));
+ select count(*),min(u.user_id::text)::uuid,min(u.name) into n,user_id,name from public.users u join crm_security.access_review r on r.user_id=u.user_id
+ where u.active is true and u.auth_uid is not null and r.reviewed_auth_uid=u.auth_uid and r.source_role=u.role and r.permission_role='rep' and r.approved and r.expires_at>now() and btrim(u.name)=btrim(coalesce(p_name,''));
  if n<>1 then user_id:=null;name:=null; end if;
 end $fn$;
 revoke all on function crm_security.os_b2c_owner(text) from public,anon,authenticated,service_role;
+
+-- CRM 담당 이력과 감사 기록에 CRM 직접 배정과 같은 형식으로 남긴다.
+create function crm_security.os_b2c_log_assignment(p_inquiry uuid,p_action text,p_from text,p_to text,p_reason text,p_before jsonb,p_after jsonb,p_at timestamptz,p_auth uuid,p_user uuid,p_actor text) returns void
+language sql security definer set search_path='' as $fn$
+ insert into public.assignment_history(inquiry_id,from_owner,to_owner,reason,actor_name,changed_at) values(p_inquiry,p_from,p_to,p_reason,p_actor,p_at);
+ insert into crm_security.inquiry_audit_events(actor_auth_uid,actor_user_id,inquiry_id,action,before_data,after_data,reason,created_at) values(p_auth,p_user,p_inquiry,p_action,p_before,p_after,p_reason,p_at);
+$fn$;
+revoke all on function crm_security.os_b2c_log_assignment(uuid,text,text,text,text,jsonb,jsonb,timestamptz,uuid,uuid,text) from public,anon,authenticated,service_role;
 
 -- 화면에 돌려주는 값. 전화번호·주소 같은 고객 원문은 넣지 않는다.
 create function crm_security.os_b2c_view(p_os_b2c_id text) returns jsonb
@@ -70,7 +79,7 @@ $fn$;
 
 create function public.crm_os_b2c_handoff_v1(p jsonb) returns jsonb
 language plpgsql security definer set search_path='' as $fn$
-declare a record; o record; v_id text; v_key text; v_phone text; v_brand_key text; v_inquiry uuid; v_existing uuid; v_at timestamptz:=clock_timestamp(); v_raw jsonb; f text;
+declare a record; o record; v_id text; v_key text; v_phone text; v_brand_key text; v_inquiry uuid; v_existing uuid; v_at timestamptz:=clock_timestamp(); v_raw jsonb; f text; v_reason text;
 begin
  select * into a from crm_security.os_b2c_actor();
  if not found then raise exception 'OS_B2C_FORBIDDEN' using errcode='42501'; end if;
@@ -86,6 +95,7 @@ begin
   or length(btrim(p->>'message')) not between 2 and 10000
   or length(p->>'contact_name')>100 or length(p->>'address')>500
   or length(p->>'work_type')>200 or length(p->>'phone')>50
+  or length(coalesce(p->>'consult_channel',''))>50 or length(coalesce(p->>'inflow_path',''))>100
  then raise exception 'INVALID_INQUIRY_FIELDS' using errcode='22023'; end if;
  v_phone:=regexp_replace(p->>'phone','[^0-9]','','g');
  if (btrim(p->>'contact_name')='' and v_phone='')
@@ -113,7 +123,11 @@ begin
   return crm_security.os_b2c_view(v_id)||jsonb_build_object('ok',true,'contract_version',1,'replayed',false,'duplicate_of',v_existing);
  end if;
  select * into o from crm_security.os_b2c_owner(p->>'assignee_name');
+ -- CRM 상세 화면은 한글 칸 이름으로 읽는다(inquiry-workbench.js sourceFields). 같은 값을 그 이름으로도 넣는다.
  v_raw:=jsonb_strip_nulls(jsonb_build_object('source_system','os-b2c','os_b2c_id',v_id,'handoff_key',v_key,'message',btrim(p->>'message'),
+  '문의내용',btrim(p->>'message'),'현장명',btrim(p->>'site_name'),'고객유형',nullif(p->>'customer_type',''),'건물유형',nullif(p->>'building_type',''),'단지개요',nullif(p->>'complex_info',''),
+  '관리사무소',nullif(p->>'office_phone',''),'상담채널',nullif(p->>'consult_channel',''),'공사유형',nullif(btrim(p->>'work_type'),''),'유입경로',nullif(p->>'inflow_path',''),
+  '전화응대자',nullif(p->>'responder',''),'전화 응대자',nullif(p->>'responder',''),'특이사항',nullif(p->>'memo',''),
   'os_consult_channel',p->>'consult_channel','os_received_at',p->>'received_at','os_owner',p->>'assignee_name','os_assigned_at',p->>'assigned_at',
   'os_dup_group',nullif(p->>'dup_group',''),'os_first_contact',p->'first_contact','office_phone',nullif(p->>'office_phone',''),'customer_type',nullif(p->>'customer_type',''),
   'building_type',nullif(p->>'building_type',''),'complex_info',nullif(p->>'complex_info',''),'inflow_path',nullif(p->>'inflow_path',''),'agent_name',nullif(p->>'agent_name',''),
@@ -121,11 +135,18 @@ begin
  insert into public.inquiries(brand,site_name,contact_name,phone,address,work_type,status,received_at,created_at,updated_at,
   assigned_to,assigned_at,assignee_name,source_channel,source,channel,inquiry_type,business_type,raw)
  values(p->>'brand',btrim(p->>'site_name'),nullif(btrim(p->>'contact_name'),''),nullif(v_phone,''),nullif(btrim(p->>'address'),''),nullif(btrim(p->>'work_type'),''),
-  '접수',v_at,v_at,v_at,o.user_id,case when o.user_id is null then null else v_at end,o.name,'os_b2c','OS B2C 접수',p->>'channel','견적문의','견적문의',v_raw)
+  case when o.user_id is null then '접수' else '배정완료' end,v_at,v_at,v_at,o.user_id,case when o.user_id is null then null else v_at end,o.name,
+  coalesce(nullif(btrim(p->>'inflow_path'),''),'OS B2C 접수'),'OS B2C 접수',coalesce(nullif(btrim(p->>'consult_channel'),''),p->>'channel'),'견적문의','견적문의',v_raw)
  returning id into v_inquiry;
  insert into crm_security.os_b2c_links(os_b2c_id,inquiry_id,created_by_user_id,created_by_name) values(v_id,v_inquiry,a.user_id,a.display_name);
  insert into crm_security.os_b2c_link_events(os_b2c_id,inquiry_id,action,to_name,actor_user_id,actor_name) values(v_id,v_inquiry,'create',o.name,a.user_id,a.display_name);
- return crm_security.os_b2c_view(v_id)||jsonb_build_object('ok',true,'contract_version',1,'replayed',false);
+ if o.user_id is not null then
+  v_reason:='OS B2C 배정 · '||v_id||coalesce(' · 1차 연락 '||nullif(p->'first_contact'->>'method',''),'');
+  perform crm_security.os_b2c_log_assignment(v_inquiry,'direct_assign','미배정',o.name,v_reason,
+   jsonb_build_object('assigned_to',null,'assigned_at',null,'status','접수'),jsonb_build_object('assigned_to',o.user_id,'assigned_at',v_at,'status','배정완료'),v_at,a.auth_uid,a.user_id,a.display_name);
+ end if;
+ -- 담당을 못 잡았으면 화면에 알려서 CRM 에서 지정하게 한다.
+ return crm_security.os_b2c_view(v_id)||jsonb_build_object('ok',true,'contract_version',1,'replayed',false,'owner_unmatched',o.user_id is null);
 end $fn$;
 
 create function public.crm_os_b2c_owner_change_v1(p jsonb) returns jsonb
@@ -146,7 +167,10 @@ begin
  -- CRM 에 원래 있던 문의의 담당과 영업건 담당은 CRM 에서 정한다.
  if l.matched_existing and i.assigned_to is not null then raise exception 'EXISTING_OWNER_IN_CRM' using errcode='PT409'; end if;
  if i.deal_id is not null or exists(select 1 from public.deals d where d.origin_inquiry_id=i.id) then raise exception 'DEAL_OWNER_IN_CRM' using errcode='PT409'; end if;
- update public.inquiries x set assigned_to=o.user_id,assignee_name=o.name,assigned_at=v_at,updated_at=v_at where x.id=i.id;
+ update public.inquiries x set assigned_to=o.user_id,assignee_name=o.name,assigned_at=v_at,updated_at=v_at,
+  status=case when i.assigned_to is null and (i.status is null or i.status in ('접수','신규') or i.status like '%영업배정 필요%') then '배정완료' else i.status end where x.id=i.id;
+ perform crm_security.os_b2c_log_assignment(i.id,case when i.assigned_to is null then 'direct_assign' else 'direct_reassign' end,coalesce(nullif(btrim(coalesce(i.assignee_name,'')),''),'미배정'),o.name,'OS B2C 담당 변경 · '||l.os_b2c_id,
+  jsonb_build_object('assigned_to',i.assigned_to,'assigned_at',i.assigned_at,'status',i.status),jsonb_build_object('assigned_to',o.user_id,'assigned_at',v_at),v_at,a.auth_uid,a.user_id,a.display_name);
  insert into crm_security.os_b2c_link_events(os_b2c_id,inquiry_id,action,from_name,to_name,actor_user_id,actor_name) values(l.os_b2c_id,i.id,'owner_change',i.assignee_name,o.name,a.user_id,a.display_name);
  return crm_security.os_b2c_view(l.os_b2c_id)||jsonb_build_object('ok',true,'contract_version',1,'changed',true);
 end $fn$;
