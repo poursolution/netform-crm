@@ -392,7 +392,7 @@
     if(!filter.month&&f.quarter&&Math.ceil(Number(d.slice(5,7))/3)!==Number(f.quarter))return;
     /* 현장명 자리에 사업자명, 사유 자리에 이관 메모('과거 수주 초기 이관…')가 나오던 것(2026-10-01 대표) — 현장명과 계약일만 보인다. 변경·취소 사유는 그대로 */
     const deal=(root.B?.deals||[]).find(x=>String(x.id)===String(r.deal_id)),site=deal&&(deal.site||deal.site_name||deal.name)||r.site_name||r.site||'';
-    out.push({at:d,site:site||(r.brand||'-')+' · 현장명 미확인',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:(e.kind==='signed'?'계약일 ':'적용일 ')+d+(site&&r.brand?' · '+r.brand:'')+(e.kind!=='signed'&&e.reason?' · '+e.reason:''),amt:e.amount_delta});});
+    out.push({at:d,site:site||(r.brand||'-')+' · 현장명 미확인',owner:e.sales_owner_name,stageLabel:kindLabel[e.kind]||e.kind,reason:(e.kind==='signed'?'계약일 ':'적용일 ')+d+(site&&r.brand?' · '+r.brand:'')+(e.kind!=='signed'&&e.reason?' · '+e.reason:''),amt:e.amount_delta,key:deal?'deal:'+root.dealKey(deal):''});});/* 원장 행 → 그 영업건(2026-11-06 여정 5번 · 원장에 영업건 번호가 있다) */
   });
   return out.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
  }
@@ -726,7 +726,10 @@
  }
  function openRecord(key){
   // Recheck the current authorized bundle at click time; never keep stale row objects.
-  const r=rows(),d=r.deals.concat(r.inquiries).find(x=>x.key===key);if(!d)return;
+  const r=rows();let d=r.deals.concat(r.inquiries).find(x=>x.key===key);
+  /* 계약 원장 근거는 지금 기간 · 필터 밖의 영업건일 수 있다 — 이 계정이 받은 영업건이면 연다(2026-11-06) */
+  if(!d&&/^deal:/.test(String(key||''))){const item=(root.B?.deals||[]).find(x=>'deal:'+root.dealKey(x)===key);if(item)d={type:'deal',item};}
+  if(!d)return;
   close(false);root.G._detailPopup=true;
   if(d.type==='inq')root.drwInq(JSON.stringify(d.item));else root.drwDeal(JSON.stringify(d.item));
  }

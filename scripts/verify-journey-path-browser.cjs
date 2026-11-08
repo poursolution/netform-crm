@@ -157,7 +157,15 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
   await page.evaluate(id=>{window.autoPromote=window.__ap;const q=B.inquiries.find(x=>x.id===id);delete q.deal_id;},ID.QS);
   await page.evaluate(id=>{InquiryWorkbench.open(inqKey(B.inquiries.find(x=>x.id===id)));},ID.QV);await page.waitForSelector('#inq-inbox-dialog .idv3-next');
   assert.equal(await page.locator('#inq-inbox-dialog .idv3-stuck').count(),0,'방문 완료 건은 막힌 건이 아니다');await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
-  await dealOpen(ID.B);await page.waitForFunction(id=>CUR_DETAIL&&CUR_DETAIL.item.id===id&&document.querySelector('#detailView .jp'),ID.B);await page.waitForTimeout(300);
+  /* ⑦-4 계약 원장 근거 → 그 영업건(5번): 원장 행에 영업건 번호가 있으면 [열기] · 지금 기간 밖이어도 연다 */
+  const L=await page.evaluate(ID=>{const d=B.deals.find(x=>x.id===ID.B);ContractSalesData.state=()=>({status:'ready',items:[{deal_id:dealKey(d),brand:'POUR솔루션',sales_owner_name:'이필선',events:[{kind:'signed',effective_date:'2026-10-05',amount_delta:2e8,sales_owner_name:'이필선'}]},{deal_id:'not-in-crm',brand:'POUR솔루션',site_name:'[합성] 원장만 있는 현장',events:[{kind:'signed',effective_date:'2026-10-06',amount_delta:1e8,sales_owner_name:'이필선'}]}]});
+   const rows=SalesInsights.contractEvidence({});return rows.map(r=>[r.site,r.key]);},ID);
+  assert.deepEqual(L.map(x=>[x[0],!!x[1]]),[['[합성] 원장만 있는 현장',false],['[합성] 나래아파트',true]],'영업건이 있는 원장 행만 [열기]');
+  await page.evaluate(k=>{closeDetail();SalesInsights.openRecord(k);},L.find(x=>x[1])[1]);
+  await page.waitForFunction(id=>CUR_DETAIL&&CUR_DETAIL.item.id===id&&document.querySelector('#detailView .jp'),ID.B);
+  assert.deepEqual(await page.evaluate(id=>DealFrame7.steps(B.deals.find(x=>x.id===id)).map(s=>[s.key,s.st,s.ev]).slice(4),ID.B),[['construction','done','계약 10.5'],['won','cur','2026.10.2']],'수주 건: 계약 근거가 있으면 계약 · 시공 칸은 지나옴');
+  assert.deepEqual(await page.evaluate(id=>DealFrame7.steps(B.deals.find(x=>x.id===id)).map(s=>s.st).slice(0,4),ID.B),['todo','todo','todo','todo'],'기록 없는 앞 단계는 지나옴으로 그리지 않음');
+  await page.waitForTimeout(300);
   /* ⑧ 좁은 폭: 가로 넘침 없음 */
   await page.setViewportSize({width:375,height:800});await page.waitForTimeout(300);
   const nar=await page.evaluate(()=>{const j=document.querySelector('#detailView .jp-row');return {cols:getComputedStyle(j).gridTemplateColumns.split(' ').length,over:j.scrollWidth>j.clientWidth+1,clip:[...j.querySelectorAll('b')].filter(b=>b.scrollWidth>b.clientWidth+1).map(b=>b.textContent)};});
