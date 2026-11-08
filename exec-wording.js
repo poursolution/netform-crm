@@ -254,5 +254,5 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&WS().why){closeWhy();}});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- root.ExecWording={on,CLOSE,WAIT,closeKind,closeSplit,waitKind,waitSplit,ACT,actionKind,actionSplit,advanceOf,advanced,advanceStats,ADVANCE_RULE,LIMIT,JUDGE_STYLE,firstBefore,loadOf,loadAll,specClose,specWait,specAction,specLoad,openWhy,closeWhy,paintWhy,register,postponeAsk,postponeInfo,logPostpone,postponeCount,markText,MARK,stamp};
+ root.ExecWording={on,CLOSE,WAIT,closeKind,closeSplit,waitKind,waitSplit,ACT,actionKind,actionSplit,advanceOf,advanced,advanceStats,ADVANCE_RULE,LIMIT,JUDGE_STYLE,firstBefore,loadOf,loadAll,specClose,specWait,specAction,specLoad,rowOfInq,rowOfDeal,openWhy,closeWhy,paintWhy,register,postponeAsk,postponeInfo,logPostpone,postponeCount,markText,MARK,stamp};
 })(window);
