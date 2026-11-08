@@ -53,6 +53,16 @@ test('사무실 시간 기준 조회: 시각 · 있음/없음만, 화면과 같�
   await deal(D(3),me,{waiting:{fields:{reason:'예산 미확정',resume_date:'2026-12-01'}}},{stage:'waiting',group:'relationship'});
   await deal(D(4),me,{lost:{fields:{close_reason:''}}},{stage:'lost',group:'closed',lost:'경쟁사 낙찰'});
   await deal(D(5),other,{},{wake:'2026-12-10T00:00:00Z',stage:'waiting',group:'relationship'});
+  await deal(D(6),me,{first_contact:{fields:{meeting_date:'2026-11-03'}},consulting:{fields:{quote_due:'2026-11-12',quote_request:'비밀메모 요청'}},
+   sent:{fields:{followup_date:'2026-11-15'}},compete:{fields:{bid_deadline:'2026-11-30',decision_date:'2026-11-28'}},
+   contract:{fields:{contract_date:'2026-12-01'}},construction:{fields:{start_date:'2026-12-05'}}},{stage:'consulting',group:'consulting'});
+  for(const [type,detail,at] of [['현장방문',{note:'비밀메모 실측함'},'2026-11-02T03:00:00Z'],['미팅',{note:'다음 주 예정'},'2026-11-05T03:00:00Z'],['방문',{result:'취소'},'2026-11-06T03:00:00Z'],['실측',{},'2099-01-01T00:00:00Z']])
+   await db.query("insert into public.activities(id,deal_id,type,detail,occurred_at) values(gen_random_uuid(),$1,$2,$3::jsonb,$4)",[D(6),type,JSON.stringify(detail),at]);
+  for(const [id,type,at] of [[D(3),'담당자변경','2026-11-06T00:00:00Z'],[D(3),'메모','2026-10-25T00:00:00Z']])
+   await db.query("insert into public.activities(id,deal_id,type,detail,occurred_at) values(gen_random_uuid(),$1,$2,'{}'::jsonb,$3)",[id,type,at]);
+  await db.query("update public.deals set last_activity_at='2026-10-15T00:00:00Z' where id=$1",[D(4)]);
+  for(const [due,status] of [['2026-11-25T00:00:00Z','open'],['2026-11-20T00:00:00Z','open'],['2026-11-10T00:00:00Z','completed']])
+   await db.query("insert into public.next_actions(id,deal_id,status,due_at,title) values(gen_random_uuid(),$1,$2,$3,'비밀메모')",[D(1),status,due]);
 
   const page=async(domain,after=null,limit=200)=>(await db.query("select public.crm_office_timing_v1($1,$2,$3) r",[domain,after,limit])).rows[0].r;
   await db.exec('set role authenticated');
@@ -84,6 +94,24 @@ test('사무실 시간 기준 조회: 시각 · 있음/없음만, 화면과 같�
   assert.equal(dt[D(4)].lost_reason_present,true,'단계 칸이 비어도 lost_reason 이 있으면 있음');
   assert.equal(dt[D(5)].hold_review_basis,'wake_up_at');assert.equal(dt[D(5)].hold_reason_present,false);
   assert.ok(dt[D(1)].stage_entered_at);
+  // 정체 재료(definitions_version 2): 시스템 기록은 활동이 아니다 · 활동이 없으면 last_activity_at → 등록일 · 열린 다음 할 일 기한
+  assert.equal(r.definitions_version,3);
+  // 단계 근거 날짜(definitions_version 3 · pipeline-judge.js basis 자리)
+  const b6=dt[D(6)];
+  assert.equal(b6.consulting_quote_due,'2026-11-12');assert.equal(b6.consulting_quote_request_present,true);
+  assert.equal(b6.meeting_scheduled_date,'2026-11-03','consulting.meeting_date 가 없으면 first_contact.meeting_date');
+  assert.equal(b6.meeting_done_date,'2026-11-02','예정 · 취소 기록은 완료 미팅이 아니다');
+  assert.equal(b6.sent_followup_date,'2026-11-15');assert.equal(b6.waiting_resume_date,null);
+  assert.equal(b6.bid_deadline_date,'2026-11-30');assert.equal(b6.decision_date,'2026-11-28');assert.equal(b6.briefing_date,null);assert.equal(b6.any_meeting_date,'2026-11-03');
+  assert.equal(b6.construction_start_date,'2026-12-05');assert.equal(b6.contract_date,'2026-12-01');
+  assert.equal(dt[D(3)].waiting_resume_date,'2026-12-01');assert.equal(dt[D(1)].consulting_quote_request_present,false);
+  assert.ok(!JSON.stringify(b6).includes('비밀'),'요청 글 · 메모 원문 없음');
+  assert.equal(Date.parse(dt[D(1)].last_sales_activity_at),Date.parse('2026-11-04T01:00:00Z'));assert.equal(dt[D(1)].last_sales_activity_basis,'activity');
+  assert.equal(dt[D(3)].last_sales_activity_basis,'activity','담당자변경만 있으면 활동 아님 → 그다음 근거');
+  assert.equal(Date.parse(dt[D(3)].last_sales_activity_at),Date.parse('2026-10-25T00:00:00Z'));
+  assert.equal(dt[D(4)].last_sales_activity_basis,'last_activity_at');assert.equal(Date.parse(dt[D(4)].last_sales_activity_at),Date.parse('2026-10-15T00:00:00Z'));
+  assert.equal(dt[D(5)].last_sales_activity_basis,'created_at');
+  assert.equal(Date.parse(dt[D(1)].next_action_due_at),Date.parse('2026-11-20T00:00:00Z'),'열린 할 일 중 가장 이른 기한');assert.equal(dt[D(5)].next_action_due_at,null);
 
   let p1=await page('deal_timing',null,2);assert.equal(p1.items.length,2);assert.equal(p1.pagination.has_more,true);assert.equal(p1.pagination.next_cursor,D(2));
   p1=await page('deal_timing',p1.pagination.next_cursor,10);assert.equal(p1.items[0].id,D(3));assert.equal(p1.pagination.completeness,'complete');assert.equal(p1.pagination.next_cursor,null);
@@ -98,7 +126,7 @@ test('사무실 시간 기준 조회: 시각 · 있음/없음만, 화면과 같�
   await db.exec("reset role;set test.role='admin';set role anon");await assert.rejects(page('deal_timing'),/permission denied/);
 
   await db.exec("reset role");
-  assert.equal((await db.query("select sum(version)::int n from public.deals")).rows[0].n,15,'읽기만 — 자료 그대로');
+  assert.equal((await db.query("select sum(version)::int n from public.deals")).rows[0].n,18,'읽기만 — 자료 그대로');
   await db.exec(read('sql/office-timing-v1-20261108-rollback.sql'));
   assert.equal((await db.query("select count(*)::int n from pg_proc where proname like 'crm_office%'")).rows[0].n,0,'되돌리기 = 새 함수 4개 모두 지움');
   assert.equal((await db.query("select count(*)::int n from public.inquiries")).rows[0].n,13,'되돌리기는 자료를 건드리지 않음');

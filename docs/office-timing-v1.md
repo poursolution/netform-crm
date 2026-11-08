@@ -5,7 +5,8 @@ SQL: `sql/office-timing-v1-20261108.sql` · 되돌리기: `sql/office-timing-v1-
 
 - 기존 `crm_operational_source_v1`(CRM 화면 전체가 읽는 핵심 조회)은 바꾸지 않는다.
 - 고객 이름 · 연락처 · 주소 · 현장명 · 메모 글은 내보내지 않는다. 레코드 id · 시각 · 있음/없음 · 단계 코드만.
-- 기한을 넘겼는지는 판정하지 않는다(사무실이 기준 시간으로 판정). 장기정체 기준은 대표 결정 전이라 `stage_entered_at` 날짜만.
+- 기한을 넘겼는지는 판정하지 않는다(사무실이 기준 시간으로 판정). `stage_entered_at` 은 단계 체류 날짜일 뿐 정체가 아니다.
+- **정체**(2026-11-08 대표 결정 · PR #736): 진행 중 영업건에 영업 활동 기록이 30일(`stale_days`) 이상 없음 하나. 사무실 판정 = `outcome` 비어 있고 `lifecycle_status`≠closed 인 건 가운데 오늘 − `last_sales_activity_at` ≥ 30일, 단 `next_action_due_at` 이 서울 날짜로 오늘보다 뒤면 제외(definitions_version 2).
 - 화면 전송 목록(`pc-manager-transport.js` rpcAllow)에 넣지 않는다 — 화면이 부르지 않으므로 '서버 적용 대기' 배너 대상이 아니다.
   운영 설치 여부는 `crm_release_manifest_v1` 목록에 `crm_office_timing_v1` 이 있는지로 사무실이 먼저 확인한다(없으면 '미확인' 유지).
 
@@ -59,9 +60,29 @@ SQL: `sql/office-timing-v1-20261108.sql` · 되돌리기: `sql/office-timing-v1-
 | `first_connected_after_sent_at` | 발송 다음 날부터 첫 실제 연결(부재 · 회신대기 · 문자 제외) |
 | `followup_approx` | 늘 true — 화면은 넘어온 견적문의의 연락 · 마지막 의미 있는 연락도 합친다 |
 | `last_customer_contact_at` | 마지막 고객 연락 칸 |
+| `last_sales_activity_at` · `last_sales_activity_basis` | **정체 판정용** 마지막 영업 활동(2026-11-09 추가). 시스템 기록(담당자변경 · 일괄관리 · 장기현장 검토 · 데이터 · 이관 · 병합 · 정리)을 뺀 활동 → `last_activity_at` → 등록일. basis = `activity` / `last_activity_at` / `created_at` / `none` — 화면 crm.html `salesActivityAt` 과 같은 순서 |
+| `consulting_quote_due` · `consulting_quote_request_present` | 물량 산출 기한(consulting.quote_due) · 견적 요청 내용 있음 |
+| `meeting_scheduled_date` | 미팅 예정일(consulting.meeting_date, 없으면 first_contact.meeting_date) |
+| `meeting_done_date` | 완료된 미팅 날짜(현장방문 · 방문 · 미팅 · 실측 · 실사 기록 중 예정 · 취소 · 불발 등이 아닌 것, 오늘까지 가장 늦은 날 — 화면 `meetingOf`) |
+| `sent_followup_date` · `waiting_resume_date` | 후속 확인일(sent.followup_date) · 재개일(waiting.resume_date) |
+| `bid_deadline_date` · `decision_date` · `briefing_date` · `any_meeting_date` | 경쟁 · 입찰 일정(어느 단계 칸이든 · 화면 `anyFld`). 화면 순서 = 입찰 마감 → 결정 → 현설 → 미팅 |
+| `construction_start_date` · `contract_date` · `completion_date` · `closed_at` | 착공 · 계약 · 준공 · 종료 시각 |
+| `next_action_due_at` | 열린 다음 할 일 가운데 가장 이른 기한. 서울 날짜로 오늘보다 뒤면 '기다리는 중' → 정체 아님(crm.html `staleWaiting`) |
 | `hold_reason_present` · `hold_review_date` · `hold_review_basis` | 보류(대기) 사유 있음 · 재검토일 · `resume_date` / `wake_up_at` / `none` |
 | `lost_reason_present` | 실주 사유 있음(단계 정보 lost.fields.close_reason, 없으면 lost_reason) |
 | `updated_at` · `version` | 마지막 수정 · 버전 |
+
+## 기한 판정(화면 pipeline-judge.js `basis`)을 봇이 할 때
+
+조회는 판정 결과를 내보내지 않는다(definitions_version 3). 화면 판정이 고객 합의 대기 · 대기 이유 · 문의 이어받기 · 연락 판정 · 운영 기준값 같은 화면 모듈을 함께 읽어서, 서버에서 따로 만들면 화면과 갈라진다. 봇은 아래 순서를 그대로 옮긴다(그룹은 `stage_code` → 화면 PipelineStages 로 정한다. `stage_group` 은 서버 값이라 다르다).
+1. `next_action_due_at` 있음 → 그날이 기한
+2. consulting: quote_due+요청 → quote_due / quote_due만 · 요청만 → 날짜 미입력 / 완료 미팅 → 기한 없음(설정값 확인) / 미팅 예정(오늘 이후) → 그날, 지난 예정 → 실행 여부 미확인 / 연락 기록 있으면 '미팅 일정 미등록', 없으면 판정 불가
+3. sent: quote_sent_date + 7일 → 없으면 sent_followup_date → 없으면 발송일 미등록 또는 판정 불가
+4. relationship(rapport · silent · waiting): waiting_resume_date → 마지막 연락 + 30일 → 판정 불가
+5. competition: bid_deadline → decision → briefing → any_meeting 날짜 → 없으면 일정 미등록 또는 판정 불가
+6. construction 그룹: construction_start_date + 7일 → contract_date → 계약일 미등록 또는 판정 불가
+7. won · lost: 기한 없음
+'마지막 연락'은 화면 ContactState(시도 · 실제 연결, 넘어온 문의 연락 포함)라 조회에 똑같은 칸이 없다 — `last_customer_contact_at` 으로 근사하고 근사라고 표시한다. 고객 합의 대기 · 대기 이유 · 문의 이어받기는 반영되지 않는다(화면 전용).
 
 ## 운영 적용 순서
 1. 대표가 Supabase SQL 편집기에서 `sql/office-timing-v1-20261108.sql` Run
