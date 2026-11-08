@@ -55,7 +55,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   /* 견적문의 화면: 건수에 복제 줄이 들어가지 않는다(5줄 중 3건) */
   await page.waitForTimeout(500);
   const inq=await page.evaluate(()=>document.body.innerText.replace(/\s+/g,' '));
-  assert.match(inq,/구글시트 연결됨 · 3건/);
+  assert.match(inq,/구글시트 연결됨 · CRM 문의 전체 3건/);
   /* 위 탭 '공사 견적문의 n'은 견적문의 v4 부터 목록 범위(담당 · 브랜드 · 검색)의 진행 중 건수다 — 이 자료의 담당(u-lee)은 명단에 없어 목록에 안 잡히므로, 복제 줄이 빠지는지는 진행 중 자료 건수로 본다 */
   assert.equal(await page.evaluate(()=>operationalInquiries(B.inquiries||[]).filter(q=>!isClosedInq(q)).length),3);assert.match(inq,/공사 견적문의 \d+ /);
   assert.deepEqual(errs,[],'화면 오류 없음: '+errs.join(' | '));

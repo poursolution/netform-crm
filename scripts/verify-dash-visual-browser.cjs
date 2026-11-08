@@ -57,7 +57,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   /* 담당자별 이번 주: 실제 활동자 기준 · 기록 없으면 기록 미확인 · 활동자 미확인은 사람에 안 넣음 */
   const prow=async n=>one(await page.evaluate(n=>{const c=[...document.querySelectorAll('#si-dash .dv-ptab>*')],i=c.findIndex(x=>x.classList.contains('pn')&&x.textContent===n);return c.slice(i,i+5).map(x=>x.textContent).join(' | ');},n));
   assert.match(await prow('이필선'),/^이필선 \| 연결 1 · 방문 0 · 견적 0 \| 확인된 진척 없음 \| 2건 /,'이필선 = 본인이 남긴 연결 1건(영업건 담당으로 넘겨짚지 않음)');
-  assert.match(await prow('황윤선'),/^황윤선 \| 기록 미확인 \| /,'기록 없으면 기록 미확인(0 아님)');
+  assert.match(await prow('황윤선'),/^황윤선 \| 이번 주 기록 0건 \| /,'자료를 받았는데 기록이 없으면 0건(못 읽음 · 불러오는 중과 구분 · 2026-11-08 데이터 점검)');
   assert.match(one(await D.locator('.dv-ptab+.dv-leg').innerText()),/활동자 미확인 기록 1건은 사람에 넣지 않음/,'활동자 모르는 방문 기록 = 사람에 안 넣음');
   const sum=await D.locator('.dv-sum button').evaluateAll(l=>l.map(b=>b.innerText.replace(/\s+/g,' ').trim()));
   assert.ok(sum.some(s=>/^이필선 매탄 임박 고객 연결/.test(s))&&sum.some(s=>/^활동자 미확인 계약 검토 방문/.test(s)),'주요 진행 내용 = 담당 · 현장 · 한 일 · 결과: '+JSON.stringify(sum));
