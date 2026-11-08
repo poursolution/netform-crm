@@ -14,9 +14,11 @@ concurrency:
   group: quality-gate-${{ github.ref }}
   cancel-in-progress: true
 
+# 2026-11-08 병합 시간 줄이기(대표 지시): 한 컴퓨터에서 8분 넘게 걸리던 PC 브라우저 검사를 컴퓨터 4대(smoke 1/4 ~ 4/4)에 나눠 동시에 돌리고,
+# 나머지 계약 검사 · 배포본 조립은 checks 에서 함께 돈다. 필수 검사 이름 quality-gate 는 마지막에 모두 통과했는지만 모아 본다.
 jobs:
-  quality-gate:
-    name: quality-gate
+  checks:
+    name: checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -31,18 +33,7 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
-        run: |
-          deck_only=false
-          parent=$(git rev-parse HEAD^1 2>/dev/null || true)
-          if [ -n "$parent" ] && { [ "$EVENT" = "pull_request" ] || { [ "$EVENT" = "push" ] && [ "$BEFORE" = "$parent" ]; }; }; then
-            files=$(git diff --name-only "$parent" HEAD)
-            echo "$files"
-            if [ -n "$files" ] && ! printf '%s\n' "$files" | grep -qvE '^(live-demo\.html|scene-motion\.html|d03-motion\.html|demo-media/.+)$'; then
-              deck_only=true
-              echo "발표 파일만 바뀌어 CRM 시험을 건너뜁니다."
-            fi
-          fi
-          echo "deck_only=$deck_only" >> "$GITHUB_OUTPUT"
+        run: bash scripts/ci-scope.sh
 
       - name: Use Node.js 24
         if: steps.scope.outputs.deck_only != 'true'
@@ -75,17 +66,13 @@ jobs:
         if: steps.scope.outputs.deck_only != 'true'
         run: node --test tests/dashboard-control-summary.test.cjs
 
-      - name: Install Chromium for the PC smoke test
+      - name: Install Chromium for the browser checks
         if: steps.scope.outputs.deck_only != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Exercise the executive dashboard in a real browser
         if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/verify-dashboard-control-browser.cjs
-
-      - name: Exercise Today and Customer Assets in a real browser
-        if: steps.scope.outputs.deck_only != 'true'
-        run: npm run smoke:pc
 
       - name: Exercise manual inquiry intake in a real browser
         if: steps.scope.outputs.deck_only != 'true'
@@ -98,3 +85,65 @@ jobs:
       - name: Verify release provenance and runtime hashes
         if: steps.scope.outputs.deck_only != 'true'
         run: node scripts/verify-production-manifest.cjs ../deploy/netform-crm-production-pages
+
+  smoke:
+    name: smoke ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Check out reviewed source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Decide whether CRM tests are needed
+        id: scope
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: bash scripts/ci-scope.sh
+
+      - name: Use Node.js 24
+        if: steps.scope.outputs.deck_only != 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked browser test runtime
+        if: steps.scope.outputs.deck_only != 'true'
+        run: npm ci
+
+      - name: Install Chromium for the PC smoke test
+        if: steps.scope.outputs.deck_only != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Exercise Today and Customer Assets in a real browser
+        if: steps.scope.outputs.deck_only != 'true'
+        env:
+          SMOKE_SHARD: ${{ matrix.shard }}/4
+        run: npm run smoke:pc
+
+  quality-gate:
+    name: quality-gate
+    needs: [checks, smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require every check to pass
+        shell: bash
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          SMOKE: ${{ needs.smoke.result }}
+        run: |
+          echo "checks=$CHECKS smoke=$SMOKE"
+          if [ "$CHECKS" != "success" ] || [ "$SMOKE" != "success" ]; then
+            echo "검사가 모두 통과하지 않았습니다."
+            exit 1
+          fi
