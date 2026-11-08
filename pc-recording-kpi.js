@@ -13,7 +13,9 @@
   const end=Date.now()-offsetDays*DAY,start=end-7*DAY;
   /* 2026-10-07 kpi_measure: 다음 할 일 등록률과 같은 분모 — 과거 이관은 뺀다(PipelineScope) */
   const PS=root.PipelineScope,legacy=d=>{try{return !!(PS&&PS.on&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
-  const D=(root.targetDeals?root.targetDeals(name):[]).filter(d=>!legacy(d));
+  /* 2026-11-08 데이터 점검: 분모를 다음 할 일 등록률과 같은 집합으로(진행 중 영업건 · 과거 이관 제외 · PipelineJudge.metricSource). 예전 targetDeals 는 '올해 생성 건'이라 화면 문구 · 다른 지표와 집합이 달랐다(0/36) */
+  const J=root.PipelineJudge&&root.PipelineJudge.on&&root.PipelineJudge.on()&&root.PipelineJudge.metricSource?root.PipelineJudge:null,open=d=>{try{return root.isOpen(d);}catch(e){return false;}};
+  const D=J?J.metricSource('deal',!name||name==='전체'?'전체':name).filter(d=>open(d)&&!legacy(d)):(root.targetDeals?root.targetDeals(name):[]).filter(d=>!legacy(d));
   const Q=(root.operationalInquiries?root.operationalInquiries(root.B?.inquiries||[]):[]).filter(q=>{const at=Date.parse(root.inquiryAssignedAt(q)||'');return at&&at>=end-14*DAY&&at<end&&(!name||name==='전체'||root.repN(root.inquiryRoutedOwner?.(q)||q.assignee)===name);});
   const first=Q.filter(q=>root.inqCtlFirstResponseAt&&root.inqCtlFirstResponseAt(q));
   const active=D.filter(d=>acts(d).some(x=>{const t=actAt(x);return t>=start&&t<end;}));

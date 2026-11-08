@@ -60,10 +60,15 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.match(await p.locator('.kb-todohead').innerText(),/내가 할 일\s*1건 남음 · 0건 조치함/);
   assert.match(await p.locator('.kb-todo').first().innerText(),/신규 문의 1[\s\S]*미배정 · 2일째 미배정[\s\S]*담당 정하기/);
   /* 5번(장기정체) · 6번 · 7번 = 파이프라인 B안 사유와 같은 건 */
+  /* 합성 영업건 날짜가 '오늘 기준 며칠 전'이라 Live 기준일(고정 날짜)과 겹치지 않게 기준일을 앞당겨 B안 사유 건과 대조한다 — Live 기준일 제외는 아래에서 따로 확인 */
+  await page.evaluate(()=>{OPS_RULES.liveFrom='2025-01-01';paintMgmt();});await page.waitForTimeout(200);
   await rows.nth(4).click();await page.waitForTimeout(200);
   assert.match(await page.locator('#kpi-b .kb-link').innerText(),/컨설팅 설계 · 관계관리[\s\S]*단계로 이동 →/);
   const same=await page.evaluate(()=>{const rows=PipelineWorkspace.rows().filter(r=>r.group==='consulting');const it=PipelineStageB.model('consulting',rows).items;return it.filter(i=>i.rs.includes('long')||(i.stall||0)>=30).map(i=>i.row.site).sort();});
   const listed=await page.locator('#kpi-b .kb-todo .t b').allInnerTexts();assert.deepEqual(listed.slice().sort(),same,'장기정체 할 일 = B안 사유 건 '+JSON.stringify([listed,same]));
+  /* 2026-11-08 데이터 점검: Live 기준일 전에 그 단계에 들어온 건은 장기정체 · 실주 완성률 분모에서 빠진다(이관 진입일로 세면 전부 30일 초과) */
+  const pre=await page.evaluate(()=>{OPS_RULES.liveFrom='2099-01-01';const M=KpiB.compute().M;const r=[M[4].den,/이전 진입 \d+건은 판정 불가/.test(M[4].note||''),M[6].den,/이전 실주/.test(M[6].note||'')];OPS_RULES.liveFrom='2025-01-01';return r;});
+  assert.deepEqual(pre,[0,true,0,true],'기준일 전 진입 · 실주는 분모 제외 + 제외 건수 안내');
   await rows.nth(5).click();await page.waitForTimeout(200);assert.match(await page.locator('#kpi-b .kb-todo').first().innerText(),/미팅 후 견적 없는 현장[\s\S]*황윤선 · 미팅[\s\S]*견적 요청 없음[\s\S]*견적 요청 확인/);
   await rows.nth(6).click();await page.waitForTimeout(200);assert.match(await page.locator('#kpi-b .kb-todo').first().innerText(),/사유 없는 실주[\s\S]*이필선 · 실주 사유 없음[\s\S]*사유 요청/);
   if(shot)await page.screenshot({path:shot+'-kpi.png',fullPage:true});

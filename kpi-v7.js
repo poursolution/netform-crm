@@ -61,15 +61,18 @@
   return C.M.map((m,i)=>{
    const q=QN[i],g=m.def[4],lb=!!m.def[5];let v=m.v,num=m.num,den=m.den,cum='';
    if(last){const w=K().weekRowOf(i,-1);v=w?pct(w.numerator,w.denominator):null;num=w?w.numerator:0;den=w?w.denominator:0;}
-   else if(i<2&&C.S){cum=(i===0?'누적 미배정 ':'누적 첫 연락 전 ')+((i===0?C.S.unassigned:C.S.noResponse)||[]).length+'건(이번 주 지표와 별도)';}
+   else if(i<2&&C.S){
+    /* 2026-11-08 데이터 점검: '응대 기록 없음'을 세는 곳이 여럿이라 자료마다 숫자가 달랐다 — 누적 첫 연락 전은 견적문의 목록 '첫 연락 전'과 같은 정의(InquiryV4.base 의 1단계 · 이관 기록 확인 대상 제외) */
+    let fp=null;if(i===1){try{const L4=root.InquiryV4;fp=L4&&L4.base?L4.base().filter(x=>x.step===1&&!(x.review&&x.review.required)).length:null;}catch(e){fp=null;}}
+    cum=(i===0?'누적 미배정 ':'누적 첫 연락 전 ')+(i===1&&fp!=null?fp:((i===0?C.S.unassigned:C.S.noResponse)||[]).length)+'건(이번 주 지표와 별도)';}
    const pilot=PILOT.has(i),nd=v==null,bad=!pilot&&!nd&&(lb?v>g:v<g),gap=nd?0:Math.round(Math.abs(g-v)*10)/10,d=last||v==null||m.last==null?null:Math.round((v-m.last)*10)/10;
    const left=last?0:m.left,total=last?0:m.todos.length,RQ=last?null:reqSplit2(m.todos);
    return {i,key:m.key,grp:q[0],l:q[1],q:q[2],cause:nd&&!pilot?'none':q[3],nd,bad,lb,v,g,gap,left,total,d,num,den,pilot,ok:!nd&&!bad&&!pilot,
     frac:!last&&m.ready===false?'아직 못 잼':den?num+' / '+den+'건':'아직 못 잼',goal:(lb?'≤ ':'')+g+'%',
-    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d==null?'비교 보류':d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i)+(m.unknown?' · 기록·시각 미확인 '+m.unknown+'건(측정 불가·분모 제외)':''),
+    meta:last?'지난주 금요일 저장본':(m.last==null?'지난주 –':'지난주 '+fmt(m.last)+' '+(d==null?'비교 보류':d===0?'→ 그대로':(d>0?'▲':'▼')+Math.abs(d)+'%p'))+' · 누가 '+whoOf(i,m,PV)+(cum?' · '+cum:''),target:'대상: '+TARGET(i)+(m.unknown?' · 기록·시각 미확인 '+m.unknown+'건(측정 불가·분모 제외)':'')+(!last&&m.note?' · '+m.note:''),
     reason:!last&&m.ready===false?m.pendingReason:pilot?'시범 측정 · 평가 제외':nd?'아직 못 잼':bad?'미달 · '+gap+'%p '+(lb?'초과':'부족'):'달성',
     btn:last||!total?'':/* 이번 주 값이 '아직 못 잼'이어도 누적 미처리가 있으면 요청 버튼은 둔다(2026-10-06 집계 ⑤) */!left?'보냄 ✓':i===0?left+'건 배정':i===4?left+'건 판단 요청':i===3?'담당별 요청':i===7?left+'건 다시 확인':reqBtnTxt(RQ),dis:!last&&!!K().requestStatus&&!K().requestStatus().ready||!!RQ&&!RQ.can&&left>0&&![0,3,4,7].includes(i),reqSum:!last&&K().requestStatus&&!K().requestStatus().ready?K().requestStatus().message:RQ&&total?reqSum(RQ,q[3]==='rec'?'기록 없음':'대상'):''};
-  }).sort((a,b)=>(a.nd?2:a.bad?0:1)-(b.nd?2:b.bad?0:1)||b.gap-a.gap||a.i-b.i);
+  }).sort((a,b)=>(a.nd||a.pilot?2:a.bad?0:1)-(b.nd||b.pilot?2:b.bad?0:1)||b.gap-a.gap||a.i-b.i);/* 시범 지표는 '달성'이 아니라 맨 뒤(표시 색과 같은 순서 · 2026-11-08) */
  }
  /* 단계별 기준: 파이프라인 각 단계 화면의 '그래서 뭘 해야 하나' 기준(빨강 사유)을 같은 함수로 — 기준 넘긴 건 = 그 사유가 붙은 건.
     지킨 비율 = 1 − 넘김 ÷ 대상. 대상 = 그 단계의 건(견적 요청 3일은 미팅을 마친 건, 견적문의는 배정된 건 · 후속 단계 건) */
