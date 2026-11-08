@@ -93,14 +93,18 @@
   const low=names().map(n=>({n,s:root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0}})).filter(x=>x.s.deals>0&&(x.s.activity==null||x.s.activity<70)).sort((a,b)=>(a.s.activity??-1)-(b.s.activity??-1));
   M.push({v:rk.activity,num:rk.activeN||0,den:rk.deals||0,todos:low.map(x=>T('rep',x.n,x.n,x.s.deals+'건',x.s.activity==null?'기록 없음 · 측정 불가':'7일 기록 '+x.s.activity+'%','기록 요청',x.n))});
   /* 5 장기정체(컨설팅 · 관계관리) — B안 'long' · 'shift' + 30일 체류 */
-  const cr=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),stale=cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30);
-  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
+  /* 2026-11-08 데이터 점검: Live 기준일(OPS_RULES.liveFrom) 전에 그 단계에 들어온 건(이관 자료 포함)은 체류일을 판정할 수 없어 분모에서 뺀다 — 이관 진입일로 세면 전부 30일을 넘어 100%가 됐다(107/107) */
+  const LIVE=String((root.OPS_RULES&&root.OPS_RULES.liveFrom)||'2026-10-01'),dk=v=>{try{return root.PipelineJudge.dayKey(v)||'';}catch(e){return String(v||'').slice(0,10);}};
+  const enteredOf=it=>{try{return dk(root.stageEnteredAtOf?root.stageEnteredAtOf(it.row.item):'');}catch(e){return '';}};
+  const crAll=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),cr=crAll.filter(it=>{const k=enteredOf(it);return !!k&&k>=LIVE;}),crPre=crAll.length-cr.length,stale=cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30);
+  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,note:crPre?LIVE.slice(5).split('-').map(Number).join('/')+' 이전 진입 '+crPre+'건은 판정 불가 · 분모 제외':'',todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
   /* 6 방문 후 3일 견적 — 컨설팅 B안 '미팅 완료 · 견적 준비' 칸, 'nodue' 사유 */
   const meeting=it=>root.PipelineJudge&&root.PipelineJudge.meetingOf(it.row.item),met=open.filter(it=>it.stage==='consulting'&&meeting(it)),late=met.filter(it=>{const f=((it.row.item.stage_contexts||{}).consulting||{}).fields||{};return !f.quote_request&&root.daysTo(meeting(it))<-3;});
   M.push({v:pct(met.length-late.length,met.length),num:met.length-late.length,den:met.length,todos:late.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',(r.due?'미팅 '+md(r.due)+' · ':'')+'견적 요청 없음 · '+(it.stall||0)+'일','견적 요청 확인',r.owner);})});
   /* 7 실주 사유 — B안 실주 'noreason' · 'nobid' */
-  const lost=items.filter(it=>it.stage==='lost'),noR=lost.filter(it=>it.bucket==='nore');/* 2026-10-07 kpi_measure: 실주 화면 · 측정 기준 a3 와 같은 완료 판정 — 사유 + 재영업 가능 여부(경쟁사 낙찰일 때만 경쟁사 · 낙찰가) */
-  M.push({v:pct(lost.length-noR.length,lost.length),num:lost.length-noR.length,den:lost.length,todos:noR.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',it.rs.includes('noreason')?'실주 사유 없음':it.rs.includes('relist')?'재영업 가능 여부 없음':'낙찰사 · 금액 미기록','사유 요청',r.owner);})});
+  /* 2026-11-08 데이터 점검: Live 기준일 이후 실주만 — 과거 이관 실주는 새 칸(재영업 여부)이 없어 전부 미완성으로 잡혔다(0/303) */
+  const lostAll=items.filter(it=>it.stage==='lost'),lost=lostAll.filter(it=>{const d=it.row.item||{},k=dk(d.closed_at||d.closedAt||d.closed||'');return !!k&&k>=LIVE;}),lostPre=lostAll.length-lost.length,noR=lost.filter(it=>it.bucket==='nore');/* 2026-10-07 kpi_measure: 실주 화면 · 측정 기준 a3 와 같은 완료 판정 — 사유 + 재영업 가능 여부(경쟁사 낙찰일 때만 경쟁사 · 낙찰가) */
+  M.push({v:pct(lost.length-noR.length,lost.length),num:lost.length-noR.length,den:lost.length,note:lostPre?LIVE.slice(5).split('-').map(Number).join('/')+' 이전 실주 · 실주일 미기록 '+lostPre+'건은 분모 제외':'',todos:noR.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',it.rs.includes('noreason')?'실주 사유 없음':it.rs.includes('relist')?'재영업 가능 여부 없음':'낙찰사 · 금액 미기록','사유 요청',r.owner);})});
   /* 8 관리팀 조치 → 처리율: 최근 28일 요청, 대상이 지금 할 일 목록에 없으면 처리됨 */
   const now=Date.now(),recent=W.acts.filter(a=>a.promise_key!=='kpi:8'&&now-Date.parse(a.created_at||0)<28*864e5&&a.target_id);
   const live=new Set();M.forEach((m,i)=>m.todos.forEach(t=>{live.add(KEY(i)+'|'+t.tk);if(t.legacyTk)live.add(KEY(i)+'|'+t.legacyTk);}));
@@ -306,7 +310,10 @@
   const d=new Date();if(!(d.getDay()===5&&d.getHours()>=18)&&d.getDay()!==6&&d.getDay()!==0)return;
   const mon=o.monday(0);if(W.autoAttempt===mon)return;if(W.rows.some(x=>ymd(x.week_start)===mon))return;
   let flag='';try{flag=root.Phase1.storage.getItem('nf_kpi_autosave')||'';}catch(e){}if(flag===mon)return;
-  W.autoAttempt=mon;return Promise.resolve(saveWeek(null)).then(ok=>{if(ok)try{root.Phase1.storage.setItem('nf_kpi_autosave',mon);}catch(e){}});
+  W.autoAttempt=mon;
+  /* 2026-11-08 데이터 점검: 확인 없이 저장하면 화면을 연 사람도 모르게 그 주 기준값이 정해졌다 — 저장 전에 한 번 묻는다(브라우저에서만 · 취소하면 이번에 다시 묻지 않음) */
+  if(typeof root.confirm==='function'&&!root.confirm('이번 주('+mon.slice(5).replace('-','/')+' 주) 관리팀 KPI가 아직 저장되지 않았습니다.\n지금 화면의 값으로 저장할까요? 저장한 값이 이번 주 기준값이 됩니다.'))return;
+  return Promise.resolve(saveWeek(null)).then(ok=>{if(ok)try{root.Phase1.storage.setItem('nf_kpi_autosave',mon);}catch(e){}});
  }
  function onClick(e){
   const b=e.target.closest('#kpi-b [data-kb]');if(!b)return;const a=b.dataset.kb,S=ST();

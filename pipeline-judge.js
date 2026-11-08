@@ -102,7 +102,7 @@
  }
  const inWeek=(v,w)=>{const k=dayKey(v);w=w||week(0);return !!k&&k>=w.mon&&k<=w.fri;};
  /* ── ⑥ 같은 분모: 다음 행동 등록률 = 진행 중 영업건 전체(과거 이관 제외) ── */
- const TARGET={nextRate:'진행 중 영업건 전체(과거 이관 제외) · 오늘 업무 · KPI 같은 값',sameDay:'이번 주 접수 견적문의 · 휴지통 제외',firstContact:'이번 주 배정된 견적문의',activity:'진행 중 영업건(과거 이관 제외) · 최근 7일 기록',stale:'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외)',quote3:'1차 미팅을 마친 컨설팅 설계 건',lostReason:'실주 처리된 영업건',action:'최근 28일 관리팀 요청'};
+ const TARGET={nextRate:'진행 중 영업건 전체(과거 이관 제외) · 오늘 업무 · KPI 같은 값',sameDay:'이번 주 접수 견적문의 · 휴지통 제외',firstContact:'이번 주 배정된 견적문의',activity:'진행 중 영업건(과거 이관 제외) · 최근 7일 기록',stale:'컨설팅 설계 · 관계관리 진행 건(과거 이관 제외 · 10/1 이후 그 단계에 들어온 건)',quote3:'1차 미팅을 마친 컨설팅 설계 건',lostReason:'10/1 이후 실주 처리된 영업건',action:'최근 28일 관리팀 요청'};
  function nextRate(deals){
   const PS=root.PipelineScope,open=d=>{try{return root.isOpen(d);}catch(e){return false;}},legacy=d=>{try{return !!(PS&&PS.on()&&PS.isLegacy(d));}catch(e){return false;}};
   const den=(deals||[]).filter(d=>d&&open(d)&&!legacy(d)),num=den.filter(d=>{const x=nextOf(d);return !!(x&&x.text&&x.due);});

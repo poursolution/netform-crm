@@ -149,7 +149,7 @@
   const tfm=C.DT?C.DT.wonIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},ptm=C.DW?C.DW.partnerIn(ms,mk(P.ty,P.tm+1),C.target):{count:0,amount:0},k1=val(L.ready,cm.net+ptm.amount+tfm.amount,won(cm.net+ptm.amount+tfm.amount)),k2=val(L.ready,C.perf,won(C.perf)),k3=val(true,exp,won(exp));
   const cards=[
    ['이번 달 계약 ('+P.tm+'월)',k1[0],k1[1],P.tm+'월 '+P.td+'일째'+(cm.count+ptm.count>0?' · 계약 '+(cm.count+ptm.count)+'건':'')+' · '+(pmD.getMonth()+1)+'월 '+(pm.net>0?won(pm.net):'없음'),P.y===P.ty?'cs-month':'',P.tm],
-   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],(()=>{const tech=C.pt.list.filter(x=>x.tech),ta=tech.reduce((s,x)=>s+(Number(x.amount)||0),0),tn=tech.reduce((s,x)=>s+(Number(x.signedCount)||0),0),pa=C.pt.amount-ta,pn=C.pt.count-tn,f=(a,n)=>a>0?won(a)+'('+n+'건)':'없음';return '합산 = 계약실적(계약금액 · 계약일) '+f(con.net,con.count)+' + 협약 수주(낙찰금액 · 낙찰일) '+f(pa,pn)+' + 기술자문 실적(낙찰금액 · 낙찰일) '+f(ta,tn)+' + 타사 이관(낙찰금액 · 낙찰일) '+f(C.tf.amount,C.tf.count)+' · VAT 별도';})()+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
+   [P.thisYear?'올해 수주실적':P.label+' 수주실적',k2[0],k2[1],(()=>{const tech=C.pt.list.filter(x=>x.tech),ta=tech.reduce((s,x)=>s+(Number(x.amount)||0),0),tn=tech.reduce((s,x)=>s+(Number(x.signedCount)||0),0),pa=C.pt.amount-ta,pn=C.pt.count-tn,f=(a,n)=>a>0?won(a)+'('+n+'건)':'없음';return '합산 = 계약실적(계약금액 · 계약일) '+f(con.net,con.count)+' + 협약 수주(원장 건 = 계약금액 · 계약일, 원장에 없으면 낙찰금액 · 낙찰일) '+f(pa,pn)+' + 기술자문 실적(원장 건 = 계약금액 · 계약일, 원장에 없으면 낙찰금액 · 낙찰일) '+f(ta,tn)+' + 타사 이관(낙찰금액 · 낙찰일) '+f(C.tf.amount,C.tf.count)+' · VAT 별도';})()+(adv&&adv.n&&!adv.merged?' · 기술자문 낙찰 '+won(adv.sum)+' 별도':''),'ev','contract'],
    ['진행 중 파이프라인',k3[0],k3[1],scopeSub(active.length),'ev','active',root.PipelineScope&&root.PipelineScope.on()?root.PipelineScope.basis():''],
    ['견적문의',q.length+'건','','적합 '+fit+' · '+B.closedText(bad,'n'),'ev','inquiries'],
    ['조치 필요',risk.length+'건',risk.length?'red':'',AS?AS.text:'기한 지남 '+cnt('overdue')+' · 다음 할 일 없음 '+cnt('missing'),'go','control','',AS&&risk.length?'action':''],
@@ -192,7 +192,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const cols=[
    {l:'견적문의',n:q.length,rate:'',drop:null,why:''},
    {l:'적합 문의',n:fit,rate:'적합률 '+pc(fit,q.length),drop:bad.length,dropL:EW?'종결':'',why:B.closedText(bad,'n')},
-   {l:'영업건 전환',n:conv,rate:'전환 '+pc(conv,fit),drop:d2,dropL:EW?'전환 대기':'',why:d2?(EW?'첫 연락 전 '+ws.first+' · 응대 중 '+ws.talk:'아직 문의 단계 · 첫 연락 전 '+noFirst+' · 응대 중 '+Math.max(0,fitOpen.length-noFirst)):''},
+   {l:'영업건 전환',n:conv,rate:'전환 '+pc(conv,fit),drop:d2,dropL:EW?'전환 대기':'',why:d2?(EW?/* 2026-11-08 데이터 점검: '첫 연락 전'에 담당 미배정 건이 섞여 있었다 — 미배정은 따로 적는다 */'첫 연락 전 '+(ws.by.firstOk.length+ws.by.firstLate.length)+(ws.by.noOwner.length?' · 미배정 '+ws.by.noOwner.length:'')+' · 응대 중 '+ws.talk:'아직 문의 단계 · 첫 연락 전 '+noFirst+' · 응대 중 '+Math.max(0,fitOpen.length-noFirst)):''},
    {l:'결과 확정',n:L.ready?cDone:null,rate:'진행 중 '+Math.max(0,conv-cDone),drop:d3,dropL:EW?'진행 중':'',why:d3?'아직 결과 전':''},
    {l:'수주',n:L.ready?cWon:null,rate:'이 문의 집단 메이드율 '+pt(cMade)+' (실주 '+cLost+')',drop:cLost,why:cLost?'실주 '+cLost:''}];
   const max=Math.max(1,...cols.map(c=>c.n||0)),big=EW?-1:d2||d3?(d3>d2?3:2):-1,last=cols.length-1;
