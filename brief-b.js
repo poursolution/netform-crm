@@ -32,7 +32,8 @@
  const GROUPS=[['consulting','견적 준비'],['sent','자료 발송'],['relationship','관계관리'],['competition','경쟁 · 입찰']];
  const DUES=['월요일','수요일','금요일'];
  /* 장기정체 = 이 날수 넘게 접촉 없음(회의 지침: 대기 고객도 2개월에 1회) — 10/16 확정 전 설정값 */
- const STALE=()=>Number((root.OPS_RULES&&root.OPS_RULES.briefStallDays)||60);
+ /* 2026-11-08 대표 결정 「활동 없음 30일 하나」: 브리핑 · 리포트의 장기정체도 crm.html staleDays 하나(예전 briefStallDays 60일 대신) */
+ const STALE=()=>typeof root.staleDays==='function'?root.staleDays():Number((root.OPS_RULES&&root.OPS_RULES.staleDays)||30);
  function win(){
   const n=root.G.briefBNow?new Date(root.G.briefBNow):new Date(),d=new Date(n.getFullYear(),n.getMonth(),n.getDate()),dow=(d.getDay()+6)%7;
   const today=key(d);d.setDate(d.getDate()-dow-(dow===0?7:0));const a=key(d),b=addDays(a,7);
@@ -94,7 +95,7 @@
  /* ── 그 시점의 진행 · 장기정체(생성일 · 종료일 · 연락 기록으로 다시 계산) ── */
  const openAt=(d,T)=>{const c=K(d.created);if(!c||c>=T)return false;if(root.isOpen(d))return true;let z=closedKey(d);if(!z)try{z=K(root.wonDate(d));}catch(e){}return !!z&&z>=T;};
  function lastActKey(d,T){const p=root.itemPatch(d,'deal')||{},A=p.activities||d.activities||[];let m='';(Array.isArray(A)?A:[]).forEach(x=>{if(/단계전환|상태변경|배정|예약/.test(String(x.type||'')))return;const k=K(x.at||x.occurred_at);if(k&&k<T&&k>m)m=k;});return m||K(d.created)||'';}
- const staleAt=(d,T)=>{if(!openAt(d,T))return false;const l=lastActKey(d,T);return !!l&&between(l,T)>STALE();};
+ const staleAt=(d,T)=>{if(!openAt(d,T))return false;const l=lastActKey(d,T);return !!l&&between(l,T)>=STALE();};
  const actedIn=(d,a,b)=>{const l=lastActKey(d,b);return !!l&&l>=a&&l!==K(d.created);};
  /* ── 주간 스냅샷(약속 저장) ── */
  const SN={state:'idle',map:{}},MEM={},SEL={own:{},due:{}};let JERR='',JBUSY=false;const AUTO={};
@@ -183,8 +184,8 @@
   add('contact_review',cr,'이관 기록 확인 '+cr.length+'건','메모 통화 후보·실제 연결일 확인 필요','통화·방문 실행 여부와 후속 업무 확인','금요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
   const nr=AQ.filter(q=>!review(q)&&!(R.InquiryMemo&&R.InquiryMemo.confirmedCallDay(q))&&!R.isClosedInq(q)&&R.inquiryAssigned(q)&&!R.inquiryResponded(q));
   add('no_response',nr,'첫 연락 기록 미확인 '+nr.length+'건 확인','배정됐지만 첫 연락 기록이 없는 문의','담당자 첫 연락 · 결과 기록','월요일',list=>tally(list,q=>R.inquirySalesOwner(q)||'미배정').filter(o=>o[0]!=='미배정').slice(0,2).map(o=>o[0]));
-  const st=OPEN.filter(d=>(R.activityAge(d)||0)>STALE());
-  add('stale60',st,STALE()+'일 이상 미접촉 '+st.length+'건 재접촉','마지막 연락이 '+STALE()+'일을 넘은 진행 건','재접촉 · 담당 재배정','수요일');
+  const st=OPEN.filter(d=>typeof R.isStale==='function'?R.isStale(d):(R.activityAge(d)||0)>=STALE());
+  add('stale60',st,'정체(활동 없음 '+STALE()+'일+) '+st.length+'건 재접촉','마지막 영업 활동이 '+STALE()+'일 이상 지난 진행 건','재접촉 · 담당 재배정','수요일');
   let nm=[];try{const J=R.PipelineJudge;nm=J.nextRate(J.metricSource('deal')).list;nm.forEach(d=>byId.set(String(d.id),d));}catch(e){}
   add('no_next',nm,'다음 행동 미등록 '+nm.length+'건 등록','진행 건인데 다음 할 일 · 날짜가 없음','담당자별 코칭 · 다음 행동 등록 요청','수요일');
   const ce=OPEN.filter(d=>{const c=R.dealStage(d);return c==='contract'?fld(d,'contract','contract_status')!=='체결 완료'&&soon(K(fld(d,'contract','contract_date'))):c==='imminent'&&soon(K(fld(d,'imminent','expected_contract')));});
@@ -324,7 +325,7 @@
     +'<div class="bb-cons">'+(x.con.list.length?x.con.list.map(k=>{const d=x.byId.get(String(k.r.deal_id))||(R.B.deals||[]).find(z=>String(z.id)===String(k.r.deal_id)),work=d?R.dealWorkSummary(d):'';return '<div style="border-left-color:'+(BRAND[k.r.brand]||'#9aa0ab')+'"><div><b>'+h((d&&d.site)||k.r.site_name||'현장명 미확인')+'</b><span>'+h([k.r.brand,work&&!/미분류|미기록/.test(work)?work:'',R.repN(k.r.sales_owner_name),md(k.e.effective_date)].filter(Boolean).join(' · '))+'</span></div><b>'+amt(k.e.amount_delta)+'</b></div>';}).join(''):'<p class="bb-empty">이번 주에 체결된 계약이 없습니다.</p>')+'</div>'
     :'<p class="bb-empty">'+(x.L.status==='loading'||x.L.status==='idle'?'계약실적 원장을 읽는 중입니다…':'계약실적 원장을 읽지 못했습니다 — 숫자를 지어내지 않고 비워 둡니다.')+'</p>')+'</section>';
   /* 5. 담당자별 움직임 */
-  const s5='<section class="bb-card bb-flat"><div class="bb-h"><b>담당자별 움직임</b><span>보유량 → 해결한 문제 → 앞으로 보낸 건 → 계약</span></div><div class="bb-thead bb-pcols"><span>담당</span><span>진행</span><span title="'+STALE()+'일 넘게 접촉 없음">장기정체</span><span>문의 · 견적</span><span>계약</span><span>한 줄</span></div>'
+  const s5='<section class="bb-card bb-flat"><div class="bb-h"><b>담당자별 움직임</b><span>보유량 → 해결한 문제 → 앞으로 보낸 건 → 계약</span></div><div class="bb-thead bb-pcols"><span>담당</span><span>진행</span><span title="영업 활동 기록 '+STALE()+'일 이상 없음">장기정체</span><span>문의 · 견적</span><span>계약</span><span>한 줄</span></div>'
    +x.people.map(p=>'<div class="bb-prow bb-pcols"><b>'+h(p.n)+'</b><span>'+p.o0+' → '+p.o1+(p.o1!==p.o0?' <small>('+(p.o1>p.o0?'+':'')+(p.o1-p.o0)+')</small>':'')+'</span><span>'+p.s0+' → '+p.s1+(p.s1<p.s0?' <em class="up">▼'+(p.s0-p.s1)+'</em>':p.s1>p.s0?' <em class="down">▲'+(p.s1-p.s0)+'</em>':'')+'</span><span>문의 '+p.q+' · 견적 '+p.qt+'</span><b class="'+(p.c.count?'up':'mut')+'">'+(con?(p.c.count?p.c.count+'건 · '+amt(p.c.net):'0건'):'—')+'</b><span class="note'+(p.red?' r':'')+'">'+h(p.note)+'</span></div>').join('')+'</section>';
   /* 6. 다음 주 반드시 끝낼 것 */
   const s6='<section class="bb-card bb-main bb-flat"><div class="bb-h"><b>다음 주 반드시 끝낼 것</b><span>회의에서 담당 · 기한 정하고 [등록] → 다음 주 ‘전주 문제 → 결과’로 그대로 확인</span><i></i>'+(x.ce.length?'<strong>계약 예상 '+x.ce.length+'건 · '+amt(x.ceAmt)+'</strong>':'')+'</div>'
@@ -333,7 +334,7 @@
     :'<p class="bb-empty">규칙에 걸린 항목이 없습니다 — 입찰 임박 · 견적 지연 · 미응대 · 장기 미접촉 · 다음 행동 미등록 · 계약 예상이 생기면 여기에 뜹니다.</p>')+'</section>';
   /* 7. 전체 현황(참고) */
   /* nine_menus 보통(검토서 10절): 전체 파이프라인 숫자를 되풀이하는 칸 — 파이프라인과 같은 숫자임을 적고, 방치 기준(180일)은 위 60일 기준과 다른 것임을 이름에 */
-  const s7='<section class="bb-ref"><div><b>전체 현황 (참고 · 파이프라인과 같은 숫자)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 무연락 '+x.stale180+'건(장기 · 위 60일 기준과 별도)</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
+  const s7='<section class="bb-ref"><div><b>전체 현황 (참고 · 파이프라인과 같은 숫자)</b><span>'+h(scopeLine(x))+(con?' · 올해 수주 '+x.yCon.count+'건 · 연간 메이드율 '+pctText(madeOf(x.yCon.count,x.yLoss)):'')+' · 180일+ 무연락 '+x.stale180+'건(장기 방치 · 위 정체 '+STALE()+'일 기준과 별도)</span></div><div class="row">'+x.people.map(p=>'<span><b>'+h(p.n)+'</b> 진행 '+p.o1+' · 방치 '+p.stale180+(con?' · 수주 '+contractsIn(x.L,w.a.slice(0,4)+'-01-01',w.b,p.n).count:'')+'</span>').join('')+'</div></section>';
   /* 오른쪽: 잔디 미리보기 */
   const J=jandi(x,fixes,regd),store=canStore(),jd=(SN.map[w.a]&&SN.map[w.a].payload&&SN.map[w.a].payload.jandi)||{};
   /* 화면 머리의 발송 안내는 실제 설정값 그대로(2026-10-05 정합성 ⑤) — 꺼져 있는데 '잔디로 발송됩니다'라고 적지 않는다 */

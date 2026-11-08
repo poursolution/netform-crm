@@ -10,7 +10,7 @@
   nearIdle:['수주 임박인데 연락 없음','경쟁·PT / 공사임박 / 입찰 / 계약 단계에서 마지막 연락이 7일 넘었거나 연락 기록이 없는 현장입니다.'],
   noAmount:['금액 미입력','예상금액과 견적금액이 모두 입력되지 않은 현장입니다.'],
   stageSla:['Stage SLA 초과','현재 단계 체류일이 해당 단계의 관리 기준을 초과했습니다.'],
-  stale:['장기정체','현재 화면의 장기정체 기준에 포함된 현장입니다.'],
+  stale:['장기정체','영업 활동 기록이 정체 기준(설정 · 기본 30일) 이상 없는 진행 현장입니다.'],
   workMissing:['공종 미분류','선택된 구조화 공종이 없는 현장입니다.'],
   recontact:['오늘 재접촉','다음 할 일 또는 재접촉 약속일이 오늘이거나 지났습니다.'],
   unassigned:['미배정 문의','현재 영업담당자가 배정되지 않은 문의입니다.'],
@@ -28,7 +28,8 @@
   if(kind==='noNext'||kind==='nextMissing')reason='다음 할 일 없음 · 미등록 기간 '+(missing?relDaysSince(missing)+'일':'미확인');
   if(kind==='overdue')reason=(a?.text||'예정 행동 미기록')+' · 원래 기한 '+String(due||'미기록').slice(0,10)+' · '+(days==null?'초과일 미확인':days+'일 초과');
   if(kind==='noAmount')reason='예상·견적금액 미입력';
-  if(kind==='stageSla'||kind==='stale')reason='현재 단계 '+(stageAge(d)==null?'기간 미확인':stageAge(d)+'일 체류');
+  if(kind==='stageSla')reason='현재 단계 '+(stageAge(d)==null?'기간 미확인':stageAge(d)+'일 체류');
+  if(kind==='stale')reason=activityAge(d)==null?'활동 기록 날짜 미확인':'마지막 영업 활동 '+activityAge(d)+'일 전';
   if(kind==='workMissing')reason='공종 미분류';if(kind==='recontact')reason='재접촉일 '+String(due||m.due||'미기록').slice(0,10);
   return {d,kind,inquiry,owner:inquiry?(inquiryRoutedOwner(d)||'미배정'):repN(d.assignee),stage:inquiry?(d.status||'접수'):stageLabel(dealStage(d)),code:inquiry?(d.status||'접수'):dealStage(d),amount:inquiry?0:oppAmt(d),days,reason,a,last:kind==='nearIdle'?(m.meaningfulAt?String(m.meaningfulAt).slice(0,10)+' · 유효접촉':'유효접촉 기록 없음'):(lastAt?String(lastAt).slice(0,10)+' '+(last?.type||'활동'):'연락 결과 없음')};
  }

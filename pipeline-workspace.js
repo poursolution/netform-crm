@@ -51,7 +51,7 @@ function cardBadge(r){
  if(r.group==='won')return ['ok',r.item.closed_at?String(r.item.closed_at).slice(0,10):'수주'];
  if(r.group==='lost')return ['mut',r.item.closed_at?String(r.item.closed_at).slice(0,10):'실주'];
  if(r.flags.includes('overdue'))return ['hot',Math.abs(r.days)+'일 지남'];
- if(r.flags.includes('stale')&&r.stall!=null)return ['hot',r.stall+'일 정체'];
+ if(r.flags.includes('stale')){let aa=null;try{aa=root.activityAge(r.item);}catch(e){}if(aa!=null)return ['hot','활동 없음 '+aa+'일'];}/* 2026-11-08: 정체 판정(활동 날수)과 같은 숫자 — 예전엔 단계 날수를 적어 판정과 숫자가 달랐다 */
  if(r.group==='relationship'&&r.contactDays!=null&&r.contactDays>=30)return ['hot','마지막 연락 '+r.contactDays+'일 전'];
  if(r.days===0)return ['warn','오늘'];
  if(r.flags.includes('missing'))return ['warn','다음 할 일 없음'];

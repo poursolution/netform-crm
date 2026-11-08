@@ -31,13 +31,13 @@
  const currentFirst=()=>!!(root.ExecWording&&root.ExecWording.on()&&typeof root.ExecWording.firstBefore==='function');
  function groups(r){
   const cur=r.current||[],noNext=cur.filter(d=>issues(d).includes('nextMissing')),over=cur.filter(d=>!noNext.includes(d)&&issues(d).includes('overdue')),used=new Set(noNext.concat(over)),stale=(r.riskDeals||[]).filter(d=>!used.has(d)),inq=inquiriesOf(r),first=currentFirst()?root.ExecWording.firstBefore(r.nm):inq.filter(q=>!root.inquiryResponded(q));
-  const overDays=d=>{const n=nextOf(d),v=n&&n.due?root.daysTo(n.due):null;return v!==null&&v<0?-v:0;},stay=d=>{try{return num(root.stageAge(d));}catch(e){return 0;}};
+  const overDays=d=>{const n=nextOf(d),v=n&&n.due?root.daysTo(n.due):null;return v!==null&&v<0?-v:0;},stay=d=>{try{return num(root.activityAge(d));}catch(e){return 0;}},SD=typeof root.staleDays==='function'?root.staleDays():30;
   const sum=l=>l.reduce((a,d)=>a+amt(d),0),money=(l,pre)=>{const s=sum(l);return s?pre+eok(s):'금액 미정';},byAmt=l=>l.slice().sort((a,b)=>amt(b)-amt(a));
   const G=[];
   if(noNext.length)G.push({k:'nonext',t:'다음 할 일 없음',n:noNext.length,c:RED,amt:money(noNext,'진행 '),bulk:'다음 할 일 등록 요청',kind:'deal',rows:byAmt(noNext).map(d=>({d,note:'날짜 없음'}))});
   if(over.length)G.push({k:'overdue',t:'다음 할 일 날짜 지남',n:over.length,c:AMB,amt:money(over,'진행 ')+' · 최장 '+Math.max(...over.map(overDays))+'일',bulk:'날짜 다시 잡기 요청',kind:'deal',rows:byAmt(over).map(d=>({d,note:overDays(d)+'일 지남'}))});
   if(first.length)G.push({k:'first',t:'신규 배정 · 첫 연락 전',n:first.length,c:RED,amt:money(first,'예상 '),bulk:'첫 연락 요청',kind:'inq',rows:byAmt(first).map(d=>({d,note:'배정 후 CRM 연락 기록 없음'}))});
-  if(stale.length)G.push({k:'stale',t:'30일 넘게 같은 단계',n:stale.length,c:AMB,amt:money(stale,'진행 '),bulk:'진행 · 보류 정리 요청',kind:'deal',rows:byAmt(stale).map(d=>({d,note:stay(d)+'일째'}))});
+  if(stale.length)G.push({k:'stale',t:'정체 · 활동 없음 '+SD+'일+',n:stale.length,c:AMB,amt:money(stale,'진행 '),bulk:'진행 · 보류 정리 요청',kind:'deal',rows:byAmt(stale).map(d=>({d,note:'마지막 활동 '+stay(d)+'일 전'}))});
   return {G,cur,noNext,over,first,stale,inq,overMax:over.length?Math.max(...over.map(overDays)):0,total:G.reduce((a,g)=>a+g.n,0)};
  }
  /* ── 메이드율: 대시보드 '담당자별 메이드율'과 같은 식(직접 수주 + 협약 · 기술자문 + 인정된 타사 이관) ÷ (+ 실주) · 배드핏 제외 · 영업사원 관리의 조회 기간 ── */
@@ -53,7 +53,7 @@
   if(M.noNext.length)cand.push({k:'nonext',n:M.noNext.length,main:'진행 '+c+'건 중 '+M.noNext.length+'건이 다음 할 일 없음',sub:'다음 할 일 없는 건도 '+M.noNext.length+'건'});
   if(M.over.length)cand.push({k:'overdue',n:M.over.length,main:'진행 '+c+'건 중 '+M.over.length+'건이 다음 할 일 날짜 지남',sub:'다음 할 일 날짜 지난 건도 '+M.over.length+'건 · 최장 '+M.overMax+'일'});
   if(M.first.length)cand.push({k:'first',n:M.first.length,main:(currentFirst()?'담당 문의 중 ':('신규 배정 '+M.inq.length+'건 중 '))+M.first.length+'건이 아직 첫 연락 전',sub:(currentFirst()?'담당 문의 ':'신규 배정 ')+M.first.length+'건도 아직 첫 연락 전'});
-  if(M.stale.length)cand.push({k:'stale',n:M.stale.length,main:'진행 '+c+'건 중 '+M.stale.length+'건이 30일 넘게 같은 단계',sub:'30일 넘게 같은 단계인 건도 '+M.stale.length+'건'});
+  if(M.stale.length){const SD=typeof root.staleDays==='function'?root.staleDays():30;cand.push({k:'stale',n:M.stale.length,main:'진행 '+c+'건 중 '+M.stale.length+'건이 '+SD+'일 넘게 활동 없음(정체)',sub:SD+'일 넘게 활동 없는 정체 건도 '+M.stale.length+'건'});}
   if(!cand.length)return {ok:true,k:'',main:'지금 막힌 곳이 없습니다',sub:(r.diagnosis&&r.diagnosis.text)||''};
   const top=cand.slice().sort((a,b)=>b.n-a.n)[0],rest=cand.filter(x=>x!==top),second=rest.find(x=>x.k==='first')||rest.slice().sort((a,b)=>b.n-a.n)[0];
   return {ok:false,k:top.k,main:top.main,sub:second?second.sub:''};
