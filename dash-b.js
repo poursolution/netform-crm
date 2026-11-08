@@ -95,7 +95,7 @@
    const top=list=>{const t=B.tally(list,d=>d.stageLabel)[0];return t?{l:t[0],n:t[1]}:null;};
    let tag='정상',sev=0,why='';
    if(od.length>=BLOCK_OD()){const t=top(od);tag='막힘';sev=3;why='기한 지난 건 '+od.length+'건 · 최장 '+odMax+'일'+(t?' — '+t.l+' 단계에 '+t.n+'건 몰림':'');}
-   else if(mine.length>=5&&stall.length/mine.length>=0.5){const t=top(stall);tag='막힘';sev=3;why=(t?t.l+' 단계에 '+t.n+'건('+Math.round(t.n/mine.length*100)+'%) 정체':'진행 멈춤 '+stall.length+'건')+' — 연락과 다음 할 일이 끊김';}
+   else if(mine.length>=5&&stall.length/mine.length>=0.5){const t=top(stall);tag='막힘';sev=3;why=(t?t.l+' 단계에 '+t.n+'건('+Math.round(t.n/mine.length*100)+'%) 멈춤':'진행 멈춤 '+stall.length+'건')+' — 연락과 다음 할 일이 끊김';}
    else if(mine.length&&(lastDays===null||lastDays>LOSTCUT())){tag='접촉 끊김';sev=2;why=(lastK?md(lastK)+' 이후 기록 없음':'영업 기록 없음')+' · 이번 주 활동 '+wk+'건 — 접촉이 끊김';}
    else if(made!==null&&made<LOWMADE()&&w+l.length>=MINCLOSED()){const tr=B.tally(l,B.lossReason)[0];tag='메이드율 낮음';sev=1;why='실주 '+l.length+'건 · 수주 '+w+'건'+(tr?' — 가장 많은 실주 사유: '+tr[0]+' '+tr[1]+'건':'');}
    return {n,prog:mine.length,exp:mine.reduce((s,d)=>s+(Number(d.expected)||0),0),yr:c.net+ptp.amount+tfp.amount,pt:ptp.amount,tf:tfp.amount,w,l:l.length,made,mo:cm.net+ptm.amount+tfm.amount,fix:fix.length,od:od.length,odMax,last,lastK,lastDays,wk,tag,sev,why,my};
@@ -213,15 +213,15 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   const bars=(parts,mx)=>parts.map(p=>'<div class="ew-bar"><span>'+h(p.l)+'</span><i><u style="width:'+Math.round(p.n/mx*100)+'%;background:'+p.c+'"></u></i><b>'+p.n+'</b></div>').join(''),m1=Math.max(1,...cs.parts.map(p=>p.n)),m2=Math.max(1,...ws.parts.map(p=>p.n));
   return '<div class="ew-two"><section class="ew-box"><b>종결 '+cs.total+'건 · 사유별</b>'+bars(cs.parts,m1)+'<span>유입 품질 판단은 <b>부적합 '+cs.bad+'</b> 기준'+(cs.unknown?' · 사유 미확인 '+cs.unknown+'은 분류 후 다시 판단':'')+'</span></section><section class="ew-box"><b>영업건 전환 대기 '+ws.total+'건 · 나눔</b>'+bars(ws.parts,m2)+'<span>'+ws.parts.map(p=>p.n).join(' + ')+' = '+ws.total+' · 첫 연락 기록이 있으면 응대 중에만 셈</span></section></div>';
  }
- /* 단계별 전주 대비: 최근 7일과 그 전 7일을 단계 이동 기록에서 센다(따로 저장한 값 없이 기록에서 다시 계산). 정체 = 그 시점에 열려 있고 14일 넘게 기록이 없는 건 */
+ /* 단계별 전주 대비: 최근 7일과 그 전 7일을 단계 이동 기록에서 센다(따로 저장한 값 없이 기록에서 다시 계산). 정체 = 그 시점에 열려 있고 영업 활동 기록이 staleDays(기본 30)일 이상 없는 건 — 2026-11-08 대표 결정으로 14일에서 모든 화면 같은 기준으로 */
  /* 단계 전진(2026-10-07 exec_wording): 대시보드 · 영업사원 관리가 같은 함수(ExecWording.advanceStats) — 다음 단계로 이동 + 근거 기록 · 월~금 · 뒤로 이동 · 종결 제외 */
  function advLine(AD){const EWa=R.ExecWording&&R.ExecWording.on()&&R.PipelineJudge?R.ExecWording.advanceStats(AD):null;return EWa?'<p class="ew-adv"><b>단계 전진 '+EWa.n+'건</b> · 이번 주(월~금) · 영업사원 관리와 같은 숫자'+(EWa.noEv.length?' · 근거 기록 없는 이동 '+EWa.noEv.length+'건은 제외':'')+'<br><small>'+h(R.ExecWording.ADVANCE_RULE)+'</small></p>':'';}
  function weekTable(C){
-  const {B,K,P,AD,AQ}=C,STG=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁 · 입찰'],['construction','계약 · 시공']],ORD=STG.map(s=>s[0]),STALE_D=14;
+  const {B,K,P,AD,AQ}=C,STG=[['consulting','컨설팅 설계'],['sent','자료 발송완료'],['relationship','관계관리'],['competition','경쟁 · 입찰'],['construction','계약 · 시공']],ORD=STG.map(s=>s[0]),STALE_D=(typeof R.staleDays==='function'?R.staleDays():30);
   const end=B.addDays(P.today,1),a1=B.addDays(P.today,-6),a0=B.addDays(P.today,-13),inW=(k,a,b)=>!!k&&k>=a&&k<b;
   const E=AD.map(d=>({d,ev:stageEvents(d,K),ck:K(d.created),closed:R.isOpen(d)?'':(B.closedKey(d)||'')}));
   const groupAt=(x,T)=>{if(x.ck&&x.ck>=T)return '';let g=x.ev.length?x.ev[0].from:gOf(R.dealStage(x.d));x.ev.forEach(e=>{if(e.k<T)g=e.to;});if(!x.ev.length&&x.closed&&x.closed<T)return 'closed';return g;};
-  const staleAt=(x,T)=>{if(x.closed&&x.closed<T)return false;const l=B.lastActKey(x.d,T);return !!l&&B.between(l,B.addDays(T,-1))>STALE_D;};
+  const staleAt=(x,T)=>{if(x.closed&&x.closed<T)return false;const l=B.lastActKey(x.d,T);return !!l&&B.between(l,B.addDays(T,-1))>=STALE_D;};
   const count=(a,b,T)=>{const r={};ORD.forEach(g=>r[g]=[0,0,0,0,0]);const tot=[0,0,0,0,0];
    E.forEach(x=>{
     ORD.forEach(g=>{if(B.entered(x.d,g,a,b)){r[g][0]++;tot[0]++;}});
@@ -231,16 +231,16 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    return {r,tot};};
   const now=count(a1,end,end),prev=count(a0,a1,a1);
   const inqNew=(a,b)=>AQ.filter(x=>inW(K(R.inquiryCreatedAt(x)),a,b)).length,inqConv=(a,b)=>AD.filter(d=>inW(K(d.created),a,b)&&!!(d.origin_inquiry_id||d.originInquiryId)).length;
-  const openQ=AQ.filter(x=>{try{if(R.inqCtlConverted(x))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(x))return false;}catch(e){}return true;}),inqStale=openQ.filter(x=>{const k=K(x.lastActivity||R.inquiryCreatedAt(x));return !!k&&B.between(k,P.today)>STALE_D;}).length;
+  const openQ=AQ.filter(x=>{try{if(R.inqCtlConverted(x))return false;if(typeof R.isClosedInq==='function'&&R.isClosedInq(x))return false;}catch(e){}return true;}),inqStale=openQ.filter(x=>{const k=K(x.lastActivity||R.inquiryCreatedAt(x));return !!k&&B.between(k,P.today)>=STALE_D;}).length;
   const diff=(v,p,k)=>{if(p===null)return '';const d=v-p;if(!d)return '';const good=k===2||k===4?d<0:d>0;return '<em class="'+(good?'up':'dn')+'">'+(d>0?'▲':'▼')+Math.abs(d)+'</em>';};
   const row=(l,v,p,tot)=>'<span class="wl'+(tot?' tot':'')+'">'+l+'</span>'+v.map((n,k)=>'<span class="wv'+(tot?' tot':'')+'">'+n+' '+diff(n,p?p[k]:null,k)+'</span>').join('');
   const iq=[inqNew(a1,end),inqConv(a1,end),inqStale,0,0],iqp=[inqNew(a0,a1),inqConv(a0,a1),null,0,0];
   const totN=now.tot.map((v,k)=>v+(k<3?iq[k]:0)),totP=prev.tot.map((v,k)=>k===2?null:v+(k<2?iqp[k]:0));
   const up=STG.map(s=>({l:s[1],d:now.r[s[0]][2]-prev.r[s[0]][2]})).sort((x,y)=>y.d-x.d)[0],wonRow=STG.map(s=>({l:s[1],n:now.r[s[0]][3]})).sort((x,y)=>y.n-x.n)[0];
   const moved=totN[0]+totN[1]+totN[3]+totN[4];
-  const note=!moved&&!(up&&up.d)?'최근 7일 동안 단계 이동 · 결과 기록이 없습니다'+(totN[2]?' · 14일 넘게 멈춘 건 '+totN[2]+'건':''):[up&&up.d>0?up.l+' 정체가 그 전 7일보다 '+up.d+'건 늘었습니다':'',wonRow&&wonRow.n?wonRow.l+'에서 '+wonRow.n+'건이 수주로 넘어갔습니다':'',iq[0]?'새 견적문의 '+iq[0]+'건':''].filter(Boolean).join(' · ')||'최근 7일 단계 이동 '+totN[1]+'건 · 새로 들어온 건 '+totN[0]+'건';
+  const note=!moved&&!(up&&up.d)?'최근 7일 동안 단계 이동 · 결과 기록이 없습니다'+(totN[2]?' · 활동 없음 '+STALE_D+'일+ 정체 '+totN[2]+'건':''):[up&&up.d>0?up.l+' 정체가 그 전 7일보다 '+up.d+'건 늘었습니다':'',wonRow&&wonRow.n?wonRow.l+'에서 '+wonRow.n+'건이 수주로 넘어갔습니다':'',iq[0]?'새 견적문의 '+iq[0]+'건':''].filter(Boolean).join(' · ')||'최근 7일 단계 이동 '+totN[1]+'건 · 새로 들어온 건 '+totN[0]+'건';
   return '<section class="db-card flush db-wks"><div class="db-ch pad"><b>단계별 전주 대비</b><span>최근 7일('+md(a1)+' – '+md(P.today)+') · 숫자 옆 = 그 전 7일과 차이 · 단계 이동 기록에서 계산</span></div><div class="db-wk" role="table" aria-label="단계별 최근 7일 이동">'
-   +['단계','새로 들어옴','다음 단계로','정체 (14일+)','수주','실주'].map((l,i)=>'<span class="wh'+(i?' r':'')+'">'+l+'</span>').join('')
+   +['단계','새로 들어옴','다음 단계로','정체 ('+STALE_D+'일+)','수주','실주'].map((l,i)=>'<span class="wh'+(i?' r':'')+'">'+l+'</span>').join('')
    +row('견적문의',iq,iqp)+STG.map(s=>row(s[1],now.r[s[0]],prev.r[s[0]])).join('')+row('합계',totN,totP,true)+'</div><p class="db-whonote">'+h(note)+'</p>'+advLine(AD)+'</section>';
  }
  function secPerf(C){
@@ -381,7 +381,7 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    if(d.issues.includes('contact')){let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}const n=m&&m.days!=null?m.days:0;if(crmContact(d.item))put(o,'seven',d,'deal',n,d.stageLabel,'마지막 연락 '+n+'일 전');else chk.push({key:d.key,site:d.site,owner:o,kind:'deal',d:n,stage:d.stageLabel,reason:'이관 전 기록의 날짜 '+n+'일 전 · CRM 연락 기록 없음',x:d,col:'sevenchk'});}
    else{let m=null;try{m=R.relationshipMeta(d.item);}catch(e){}if(m&&m.days==null&&!crmContact(d.item))chk.push({key:d.key,site:d.site,owner:o,kind:'deal',d:0,stage:d.stageLabel,reason:'연락 날짜 없음 · 이관 기록 확인',x:d,col:'sevenchk'});}
    if(d.issues.includes('missing'))put(o,'next',d,'deal',age,d.stageLabel,'다음 할 일 없음');
-   if(d.issues.includes('stale'))put(o,'stall',d,'deal',age,d.stageLabel,'단계 '+age+'일째');});
+   if(d.issues.includes('stale')){let aa=0;try{aa=R.activityAge(d.item)||0;}catch(e){}put(o,'stall',d,'deal',aa,d.stageLabel,'마지막 활동 '+aa+'일 전');}});
   const n=(o,c)=>(cells[o+'|'+c]||[]).length,owners=[...new Set(Object.keys(cells).map(k=>k.split('|')[0]))],tot=o=>COLS.reduce((s,c)=>s+n(o,c[0]),0);
   owners.sort((a,b)=>(a==='미배정')-(b==='미배정')||tot(b)-tot(a));
   const colT=c=>owners.reduce((s,o)=>s+n(o,c),0);
@@ -512,8 +512,8 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    ['mgr','관리소장 변경',mgr.length,'cw-bad',mgr.length?'재확인 필요 '+mgrTodo:'',rows(mgr.map(x=>x.d))],
    ['requote','견적금액 변경',rq.length,'cw-ink',rqAvg===null?'':'평균 '+(rqAvg>0?'+':rqAvg<0?'−':'')+Math.abs(rqAvg)+'%',rows(rq.map(x=>x.d))],
    ['comp','새 경쟁사 등장',cmp.length,'cw-bad',cmpTop?cmpTop[0]+' '+cmpTop[1]:'',rows(cmp.map(x=>x.d))],
-   ['stuck',CD+'일+ 정체 신규',stuck.length,'cw-bad',stTop?stTop[0]+' '+stTop[1]:'',rows(stuck)],
-   ['freed','정체 해소',freed.length,'cw-ok',frTop?frTop[0]+' '+frTop[1]:'',rows(freed.map(x=>x.d))]]};
+   ['stuck',CD+'일+ 연락 공백 신규',stuck.length,'cw-bad',stTop?stTop[0]+' '+stTop[1]:'',rows(stuck)],
+   ['freed','연락 공백 해소',freed.length,'cw-ok',frTop?frTop[0]+' '+frTop[1]:'',rows(freed.map(x=>x.d))]]};
  }
  let LASTX=null;
  function ctlExtra(C){
