@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await page.locator('#ptitle').innerText(),'운영 기준 설정');assert.match(await page.locator('#psub').innerText(),/적용 중인 설정만 연결된 화면 계산에 반영됩니다 · 관리자 전용/);
   assert.equal(await page.locator('.menu [data-p="rules"]').isVisible(),true,'사이드바 설정 → 운영 기준 설정');
   /* 목차 7묶음 + 꼬리표 설명 */
-  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 16'/* 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월) 조건부 2항목 + stage7 ① 미팅 후 견적 요청 등록(보류 · 운영 제안) + 2026-10-10 admin_request E: 진행 중 연락두절 · 기록 입력 마감 */,'결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 4'/* + 중요 요청(팝업) */,'보류 · 추후 1']);
+  assert.deepEqual(await v.locator('.ra-nav>button').evaluateAll(a=>a.map(n=>n.querySelector('span').textContent+' '+n.querySelector('i').textContent)),['시간 기준 17'/* 2026-11-08 정체(활동 없음 30일 · 확정 값) 1항목 *//* 2026-10-07 관계관리 v12: 집중 · 일반관리 기간(개월) 조건부 2항목 + stage7 ① 미팅 후 견적 요청 등록(보류 · 운영 제안) + 2026-10-10 admin_request E: 진행 중 연락두절 · 기록 입력 마감 */,'결과 · 실적 7','사유 목록 3','응대 기록 3','사람 · 관계 9','공개 · 권한 4'/* + 중요 요청(팝업) */,'보류 · 추후 1']);
   assert.deepEqual((await v.locator('.ra-legend span').allInnerTexts()).map(s=>s.replace(/\s+/g,' ')),['확정 정책 항목 · 잠금','조건부 관리자가 값 변경','보류 구현 안 함']);
   assert.equal(await v.locator('.ra-sec').count(),8);/* 7묶음 + stage7_2 ④ '적용 예정' 한 묶음 */
   /* 2026-10-10 admin_request E: 상단 묶음 숫자 · 확정 상태 4가지 · 적용 상태 3가지 · 계산 시작점 */
