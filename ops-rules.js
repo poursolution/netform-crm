@@ -17,6 +17,8 @@
   care_focus_months:1,care_general_months:3,long_wait_contact_days:60,transfer_result_check_days:14,
   /* 2026-10-10 admin_request E: 진행 중 연락두절(회의 "월 간격 약 3회") · 기록 입력 마감(영업일 12:00 점검) — 값은 저장되고, 화면 연결은 표시된 적용 상태대로 */
   ongoing_unreachable_attempts:3,record_deadline_hour:12,
+  /* 2026-11-08 대표 결정 「활동 없음 30일 하나」: 정체 = 진행 중 영업건에 영업 활동 기록이 이 날수 이상 없음. 모든 화면의 정체 · 장기정체가 이 값 하나(crm.html isStale)를 본다 */
+  stale_days:30,
   /* day_zones §2: 받는 사람에게 팝업으로 알릴 '중요' 요청 종류(요청 이름). 비어 있으면 새 배정 · 긴급 기한 변경만 팝업 — 어떤 요청을 중요로 볼지는 대표 결정 전이라 기본 비어 있음 */
   important_request_kinds:Object.freeze(['첫 연락 요청']),/* counting 16(2026-10-10 대표 지정): 중요 요청 팝업 기본값 = 관리자 첫 연락 요청. 서버에 저장된 값이 있으면 그 값이 우선 */
   split_own_transfer:true,stage_gates:true,
@@ -43,6 +45,7 @@
    N('unreachable_interval_days','연락두절 시도 간격','최초 실제 연결 전 문의에만 적용합니다. 운영 기본값 · 근거 확인 필요: 기본 1일은 회의에서 확정한 간격이 아닙니다. 진행 중 연락두절의 월 간격 기준과 구분합니다.','cond','일',1,1,7),
    N('ongoing_unreachable_attempts','진행 중 연락두절','진행 중 영업건에서 월 간격으로 연락이 닿지 않은 횟수 기준(회의 "월 간격 약 3회"). 최초 문의 연락두절(위)과 다른 기준 · 아직 어느 화면 계산에도 연결되지 않아 값만 저장됩니다.','cond','회',1,1,10),
    N('inactive_days','활동 없음','진행 중 영업건에 기록이 이 기간 없으면 알림 · 놓침','fix','일'),
+   N('stale_days','정체','진행 중 영업건에 영업 활동 기록(전화 · 방문 · 메모 등, 담당 변경 · 정리 같은 시스템 기록 제외)이 이 기간 이상 없으면 정체. 다음 할 일 날짜가 아직 오지 않은 건은 기다리는 중으로 봅니다. 대시보드 · KPI · 영업사원 관리 · 브리핑이 모두 이 값 하나를 씁니다(2026-11-08 대표 결정).','fix','일'),
    N('quote_followup_days','견적 발송 후 후속','견적 발송 후 이 기간 안에 후속 확인이 없으면 지연','fix','일'),
    /* 2026-10-07 stage7 ①: '미팅 후 견적 요청 등록' 기한은 운영 제안(회의 확정 전) — 값이 정해지기 전에는 목록 기한이 '기한 없음 · 설정값 확인'. 물량 산출 3일 · 5일(견적팀)과는 다른 업무 */
    N('quote_request_days','미팅 후 견적 요청 등록','1차 미팅 후 며칠 안에 견적 요청을 등록하는지. 운영 제안 · 회의 확정 전이라 아직 기한을 계산하지 않습니다(물량 산출 목표 3일 · 최대 5일은 견적 요청 등록일부터 · 견적팀).','hold','일',1,1,14),
@@ -105,7 +108,7 @@
  function sync(){
   const O=root.OPS_RULES;if(!O||typeof O!=='object')return;
   O.inquiryAssignMinutes=get('assign_minutes');O.towerFirstResponseHours=get('first_contact_hours');O.responseSlaHours=get('first_contact_hours');
-  O.contactWarnDays=get('inactive_days');O.stallDays=get('inactive_days');O.inquiryFollowDays=get('quote_followup_days');
+  O.contactWarnDays=get('inactive_days');O.stallDays=get('inactive_days');O.staleDays=get('stale_days');O.inquiryFollowDays=get('quote_followup_days');
   O.waitContactDays=get('long_wait_contact_days');O.longContactDays=get('care_general_months')*30;O.loopContactDays=get('care_focus_months')*30;O.quoteRequestDays=get('quote_request_days');
   /* 단계 바꾸기 '실주'의 사유 선택 = 실주 원인 목록 */
   try{const ST=root.StageTransition,f=ST&&ST.definitions&&ST.definitions.lost&&ST.definitions.lost.fields.find(x=>x.key==='close_reason');if(f){f.label='실주 원인';f.options=reasons('lost');}}catch(e){}

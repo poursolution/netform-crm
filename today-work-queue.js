@@ -83,7 +83,7 @@
    const meta=x.type==='deal'?root.relationshipMeta(x.item):null;
    x.longContact=!!(meta&&meta.days!==null&&meta.days>=(root.OPS_RULES?.longContactDays??90));
    const age=x.type==='deal'?root.stageAge(x.item):null;
-   x.stale=!!x.stale||(age!==null&&age>root.stageSla(root.dealStage(x.item)));
+   /* 2026-11-08 대표 결정: 정체는 issueSet(활동 없음 staleDays) 하나 — 단계 SLA 초과를 정체에 더하지 않는다 */void age;
    x.band=x.overdue?0:x.missingNext?1:x.longContact?2:x.stale?3:x.dueDays===0?4:5;
    x.lag=x.overdue?x.delay*24:x.longContact?meta.days*24:x.stale?(age||0)*24:0;
   }

@@ -26,7 +26,7 @@
   ['2시간 첫 연락','inquiry','견적문의','배정 후 2시간 안 첫 연락 기록 ÷ 배정',90,false,'배정됐는데 첫 연락이 없는 건을 담당에게 바로 요청.'],
   ['다음 할 일 등록률','all','전 단계','다음 할 일 + 날짜 있는 진행 건 ÷ 진행 건',95,false,'다음 할 일이 빈 건이 많은 담당부터 등록 요청.'],
   ['활동 기록률','all','전 단계','7일 안 응대 기록 있는 진행 건 ÷ 진행 건',70,false,'통화하면 결과를 남기게 — 기록이 없으면 다른 지표도 측정이 안 됩니다.'],
-  ['장기정체 비율','consulting','컨설팅 설계 · 관계관리','같은 단계 30일 이상 ÷ 진행 건',10,true,'큰 금액부터 ① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주.'],
+  ['장기정체 비율','consulting','컨설팅 설계 · 관계관리','영업 활동 30일 이상 없음(정체) ÷ 진행 건',10,true,'큰 금액부터 ① 고객 반응 확인 → ② 추진 상태 확인 → ③ 근거 남기고 계속 · 대기 · 보류 · 실주.'],
   ['방문 후 3일 견적','consulting','컨설팅 설계','1차 미팅 후 3일 안 견적 요청 ÷ 미팅 완료 건',80,false,'미팅은 했는데 견적 요청이 없는 건 — 견적 요청 등록 확인.'],
   ['실주 사유 입력','lost','실주','사유 + 재영업 여부 입력된 실주 ÷ 실주 건',100,false,'사유 없는 실주는 다음 영업에 쓸 수 없음 — 사유 입력 요청.'],
   ['관리팀 조치 → 처리율','mgmt','관리팀','최근 28일 요청 중 담당이 처리한 것 ÷ 요청',80,false,'요청만 하고 끝내지 않기 — 답이 없는 요청을 다시 확인.']];
@@ -92,12 +92,12 @@
   /* 4 활동 기록률 */
   const low=names().map(n=>({n,s:root.RecordingKPI?root.RecordingKPI.stats(n,0):{activity:null,deals:0}})).filter(x=>x.s.deals>0&&(x.s.activity==null||x.s.activity<70)).sort((a,b)=>(a.s.activity??-1)-(b.s.activity??-1));
   M.push({v:rk.activity,num:rk.activeN||0,den:rk.deals||0,todos:low.map(x=>T('rep',x.n,x.n,x.s.deals+'건',x.s.activity==null?'기록 없음 · 측정 불가':'7일 기록 '+x.s.activity+'%','기록 요청',x.n))});
-  /* 5 장기정체(컨설팅 · 관계관리) — B안 'long' · 'shift' + 30일 체류 */
+  /* 5 장기정체(컨설팅 · 관계관리) — 2026-11-08 대표 결정 「활동 없음 30일 하나」: crm.html isStale(영업 활동 staleDays 일 이상 없음) 하나. 예전 B안 'long' · 'shift' · 30일 체류(단계 날수)는 쓰지 않는다 */
   /* 2026-11-08 데이터 점검: Live 기준일(OPS_RULES.liveFrom) 전에 그 단계에 들어온 건(이관 자료 포함)은 체류일을 판정할 수 없어 분모에서 뺀다 — 이관 진입일로 세면 전부 30일을 넘어 100%가 됐다(107/107) */
   const LIVE=String((root.OPS_RULES&&root.OPS_RULES.liveFrom)||'2026-10-01'),dk=v=>{try{return root.PipelineJudge.dayKey(v)||'';}catch(e){return String(v||'').slice(0,10);}};
   const enteredOf=it=>{try{return dk(root.stageEnteredAtOf?root.stageEnteredAtOf(it.row.item):'');}catch(e){return '';}};
-  const crAll=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),cr=crAll.filter(it=>{const k=enteredOf(it);return !!k&&k>=LIVE;}),crPre=crAll.length-cr.length,stale=cr.filter(it=>it.rs.includes('long')||it.rs.includes('shift')||(it.stall||0)>=30);
-  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,note:crPre?LIVE.slice(5).split('-').map(Number).join('/')+' 이전 진입 '+crPre+'건은 판정 불가 · 분모 제외':'',todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,(it.stall||0)+'일 정체',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
+  const crAll=open.filter(it=>it.stage==='consulting'||it.stage==='relationship'),cr=crAll.filter(it=>{const k=enteredOf(it);return !!k&&k>=LIVE;}),crPre=crAll.length-cr.length,staleOf=it=>{try{return typeof root.isStale==='function'?root.isStale(it.row.item):(it.stall||0)>=30;}catch(e){return false;}},actDays=it=>{try{return root.activityAge(it.row.item);}catch(e){return null;}},stale=cr.filter(staleOf);
+  M.push({v:pct(stale.length,cr.length),num:stale.length,den:cr.length,note:crPre?LIVE.slice(5).split('-').map(Number).join('/')+' 이전 진입 '+crPre+'건은 판정 불가 · 분모 제외':'',todos:stale.slice().sort((a,b)=>(Number(b.row.amount)||0)-(Number(a.row.amount)||0)).map(it=>{const r=it.row,amt=money(r.amount),kc=root.DealKeyman?root.DealKeyman.changeOf(r.item):null;return T('deal',r.key,r.site,r.owner||'미배정',[amt,actDays(it)!=null?'활동 없음 '+actDays(it)+'일':'활동 기록 없음',kc?'소장 변경':'',it.row.contactDays!=null?it.row.contactDays+'일 무응답':''].filter(Boolean).join(' · '),'상황 확인',r.owner);})});
   /* 6 방문 후 3일 견적 — 컨설팅 B안 '미팅 완료 · 견적 준비' 칸, 'nodue' 사유 */
   const meeting=it=>root.PipelineJudge&&root.PipelineJudge.meetingOf(it.row.item),met=open.filter(it=>it.stage==='consulting'&&meeting(it)),late=met.filter(it=>{const f=((it.row.item.stage_contexts||{}).consulting||{}).fields||{};return !f.quote_request&&root.daysTo(meeting(it))<-3;});
   M.push({v:pct(met.length-late.length,met.length),num:met.length-late.length,den:met.length,todos:late.map(it=>{const r=it.row;return T('deal',r.key,r.site,r.owner||'미배정',(r.due?'미팅 '+md(r.due)+' · ':'')+'견적 요청 없음 · '+(it.stall||0)+'일','견적 요청 확인',r.owner);})});
