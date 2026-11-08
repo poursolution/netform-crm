@@ -61,7 +61,9 @@
  }
  function steps(d){
   const g=groupOf(d),s=idx(g),V=visited(d),T=stageTask(d);
-  const five=ST.slice(0,5).map(([k,l],i)=>{const st=g==='legacy'?'todo':g==='won'?'done':g==='lost'?(V[k]?'done':'todo'):i<s?'done':i===s?'cur':'todo';return {key:k,label:l,st,ev:st==='cur'?(T.short||T.text):st==='done'?stepEv(d,k):'—'};});
+  /* 수주 건도 실주 건처럼 기록이 있는 단계만 '지나옴'(2026-11-06 여정 5번) — 계약 · 시공은 계약 근거가 있으면 지나온 것. 기록 없는 칸은 '기록 없음'(지나오지 않았다고 단정하지 않음) */
+  const wonDone=k=>V[k]||(k==='construction'&&safe(()=>DS().contract(d).state!=='none',false));
+  const five=ST.slice(0,5).map(([k,l],i)=>{const st=g==='legacy'?'todo':g==='won'?(wonDone(k)?'done':'todo'):g==='lost'?(V[k]?'done':'todo'):i<s?'done':i===s?'cur':'todo';return {key:k,label:l,st,ev:st==='cur'?(T.short||T.text):st==='done'?stepEv(d,k):g==='won'?'기록 없음':'—'};});
   const cl=day(d.closed_at||d.closed||''),r=g==='won'?safe(()=>root.DealWin.resultOf(d),null):null,ad=day(r&&r.w&&r.w.award_date||'');
   const end=g==='won'?{key:'won',label:'수주',st:'cur',ev:(ad?'낙찰 '+dot(ad):cl?dot(cl):'날짜 미기록')}:g==='lost'?{key:'lost',label:'실주',st:'cur',ev:cl?dot(cl):'실주일 미기록'}:{key:'end',label:'수주 | 실주',st:'todo',ev:'결과 전'};
   return five.concat([end]);
