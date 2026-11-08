@@ -103,7 +103,7 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   const li4=await page.evaluate(()=>PipelineStageB.itemOf('won',B.deals[4]));assert.deepEqual(li4.btn,['수주 정보','win']);
   await open(4);s=await snap();
   assert.equal(s.drawer,'work');assert.equal(s.title,'수주 정보 보완');assert.match(s.sub,/새 수주 · 실적은 생기지 않음/);
-  assert.deepEqual(s.steps.map(x=>x[0]),['done','done','done','done','done','cur']);assert.equal(s.steps[5][1],'수주');
+  assert.deepEqual(s.steps.map(x=>x[0]),['todo','todo','todo','todo','todo','cur'],'수주 건도 기록이 있는 단계만 지나옴(2026-11-06 여정 5번)');assert.equal(s.steps[5][1],'수주');assert.equal(s.steps[0][2],'기록 없음','기록 없는 칸 = 기록 없음');
   assert.match(await V.locator('.dv7-drawer .dv7-work').innerText(),/계약실적 \(원장\)\s*원장 미등록\s*계약금액 \(영업건 기록\)\s*1억 4,000만원[\s\S]*사후 연락 · 하자 · 추가 공사는 확장관리 업무입니다/);
   await V.locator('[data-dv3="wingo"]').click();await page.waitForTimeout(250);
   assert.equal(await page.locator('#wn-dialog header b').innerText(),'수주 정보 수정');assert.equal(await page.locator('#wn-dialog [data-wn="save"]').innerText(),'수정 저장');
