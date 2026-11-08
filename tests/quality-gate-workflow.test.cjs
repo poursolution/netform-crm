@@ -58,6 +58,35 @@ test('quality gate assembles and verifies the deployable release',()=>{
   assert.match(workflow,/timeout-minutes: 15/);
 });
 
+/* 2026-11-08 병합 시간 줄이기: 브라우저 검사를 4대로 나누고, 필수 검사 quality-gate 는 모두 통과했는지만 모은다 */
+test('quality gate splits the browser smoke across four machines and gathers the result',()=>{
+  assert.match(workflow,/shard: \[1, 2, 3, 4\]/);
+  assert.match(workflow,/SMOKE_SHARD: \$\{\{ matrix\.shard \}\}\/4/);
+  assert.match(workflow,/needs: \[checks, smoke\]/);
+  assert.match(workflow,/if: always\(\)/);
+  assert.equal((workflow.match(/run: bash scripts\/ci-scope\.sh/g)||[]).length,2,'두 작업 모두 같은 발표 전용 판단을 쓴다');
+});
+
+const {spawnSync}=require('node:child_process');
+const smoke=(cmds,env)=>spawnSync(process.execPath,['scripts/run-smoke.cjs',...cmds],{encoding:'utf8',env:Object.assign({},process.env,{SMOKE_JOBS:'2'},env)});
+test('smoke shards cover every check exactly once',()=>{
+  const cmds=Array.from({length:11},(_,i)=>'node -e "console.log(\'c'+i+'\')" scripts/fake-'+i+'.cjs');
+  const seen=[];
+  for(let k=1;k<=4;k++){const r=smoke(cmds,{SMOKE_SHARD:k+'/4'});assert.equal(r.status,0,r.stdout+r.stderr);for(const m of r.stdout.matchAll(/fake-(\d+)\.cjs/g))seen.push(Number(m[1]));}
+  assert.deepEqual(seen.sort((a,b)=>a-b),Array.from({length:11},(_,i)=>i));
+});
+test('a failing smoke check is retried once and still fails when it keeps failing',()=>{
+  const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+  const flag=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'smoke-')),'once');
+  const flakyCmd='node -e "const f=process.argv[1];if(!require(\'fs\').existsSync(f)){require(\'fs\').writeFileSync(f,\'1\');process.exit(1)}" '+JSON.stringify(flag);
+  const r=smoke([flakyCmd]);
+  assert.equal(r.status,0,r.stdout+r.stderr);assert.match(r.stdout,/다시 돌려 통과: 1/);
+  const bad=smoke(['node -e "process.exit(1)"']);
+  assert.equal(bad.status,1);assert.match(bad.stdout,/RETRY/);
+  const off=smoke(['node -e "process.exit(1)"'],{SMOKE_RETRY:'0'});
+  assert.equal(off.status,1);assert.doesNotMatch(off.stdout,/RETRY/);
+});
+
 test('quality gate exercises critical PC screens in a real browser',()=>{
   assert.match(workflow,/run: npm ci/);
   assert.match(workflow,/npx playwright install --with-deps chromium/);
