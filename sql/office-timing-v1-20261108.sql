@@ -14,7 +14,14 @@
 --   ③ 견적 후 7일: 영업건 단계 정보 sent.fields.sent_date(화면 sentEvidence 와 같은 칸 — 없으면 판정 불가) · 그 뒤(서울 날짜로 다음 날부터) 첫 활동 / 첫 실제 연결
 --   ④ 사유: 영업건 보류(sent 와 같은 단계 정보 waiting.fields.reason · resume_date, 없으면 wake_up_at) · 실주 사유(lost.fields.close_reason, 없으면 lost_reason)
 --          견적문의 보류(마지막 inquiry_hold 기록의 사유 · 재검토일 = 열린 다음 할 일 기한, 없으면 next_action_date) · 종결 사유(close_reason · 흐름 종결 사유 · 시트 종료사유)
---   ⑤ stage_entered_at: 날짜만(장기정체 기준은 대표 결정 전 — 판정하지 않음)
+--   ⑤ stage_entered_at: 단계 체류 날짜만(정체 아님 — 판정하지 않음)
+--   ⑥ 정체(2026-11-09 추가 · definitions_version 2): 2026-11-08 대표 결정 '영업 활동 기록 30일 이상 없음' 하나(crm.html isStale · PR #736).
+--      last_sales_activity_at = 시스템 기록(담당자변경 · 일괄관리 · 장기현장 검토 · 데이터 · 이관 · 병합 · 정리)을 뺀 마지막 활동 → 마지막 활동 칸 → 등록일.
+--      next_action_due_at = 열린 다음 할 일 기한(이 날짜가 아직 안 왔으면 '기다리는 중'이라 정체 아님). 30일 판정은 사무실이 한다.
+--   ⑦ 단계 근거 날짜(2026-11-09 추가 · definitions_version 3): 화면 pipeline-judge.js basis 가 읽는 단계 정보 날짜 · 완료된 미팅 날짜를 그대로 내보낸다.
+--      판정 결과(kind · due · why)는 내보내지 않는다 — 화면 판정이 고객 합의 대기(DecisionCollab) · 대기 이유(ContactLink) · 문의 이어받기(JourneyPath) ·
+--      연락 판정(ContactState) · 운영 기준값(OPS_RULES) 같은 화면 모듈을 함께 읽어서, 서버에서 따로 만들면 화면과 갈라진다.
+--      이 파일은 create or replace 라 여러 번 Run 해도 된다(v1 설치 뒤 이 판을 한 번 더 Run).
 -- 권한: 로그인한 CRM 사용자(authenticated)만. 관리자 = 전체, 그 밖 = 기존 can_deal · can_inquiry 범위(사무실 연결이 쓰는 공개 키 + 계정 로그인과 같은 길).
 -- 운영 적용: 대표 Run(Supabase SQL 편집기). 되돌리기: sql/office-timing-v1-20261108-rollback.sql
 begin;
@@ -30,6 +37,22 @@ begin
 exception when others then return null;
 end $fn$;
 revoke all on function crm_security.crm_office_safe_day(text) from public, anon, authenticated, service_role;
+
+-- 단계 정보 날짜 한 칸(stage_contexts[stage].fields[key]) → 서울 날짜. 화면 pipeline-judge.js fld() 와 같은 자리
+create or replace function crm_security.crm_office_ctx_day(cx jsonb, p_stage text, p_key text)
+returns date language sql stable set search_path='' as $fn$
+ select crm_security.crm_office_safe_day(case when jsonb_typeof(cx->p_stage->'fields'->p_key)='string' then cx->p_stage->'fields'->>p_key end)
+$fn$;
+-- 어느 단계든 그 칸이 있는 첫 값(화면 anyFld). 단계 이름 순서로 고른다
+create or replace function crm_security.crm_office_ctx_any_day(cx jsonb, p_key text)
+returns date language sql stable set search_path='' as $fn$
+ select crm_security.crm_office_safe_day(e.value->'fields'->>p_key)
+ from jsonb_each(case when jsonb_typeof(cx)='object' then cx else '{}'::jsonb end) e
+ where jsonb_typeof(e.value->'fields'->p_key)='string' and nullif(btrim(e.value->'fields'->>p_key),'') is not null
+ order by e.key limit 1
+$fn$;
+revoke all on function crm_security.crm_office_ctx_day(jsonb,text,text) from public, anon, authenticated, service_role;
+revoke all on function crm_security.crm_office_ctx_any_day(jsonb,text) from public, anon, authenticated, service_role;
 
 -- 글이 '시도만'인가(부재 · 안 받음 …이 있고 통화함 · 상담 · 견적 …이 없음). inquiry-flow.js ATT_TXT · CON_TXT 와 같은 글 규칙
 create or replace function crm_security.crm_office_attempt_only(p text)
@@ -206,7 +229,7 @@ begin
  else
   with page as (
    select d.id,d.owner_id,d.stage_code,d.stage_group,d.lifecycle_status,d.outcome,d.created_at,d.stage_entered_at,d.updated_at,
-    d.last_customer_contact_at,d.wake_up_at,d.lost_reason,d.version,
+    d.last_customer_contact_at,d.last_activity_at,d.wake_up_at,d.lost_reason,d.version,d.completion_date,d.closed_at,
     case when jsonb_typeof(d.stage_contexts)='object' then d.stage_contexts else '{}'::jsonb end as cx
    from public.deals d
    where (p_after is null or d.id>p_after) and (v_admin or crm_security.can_deal(d.id,false))
@@ -218,7 +241,19 @@ begin
     nullif(btrim(case when jsonb_typeof(p.cx->'sent'->'fields'->'reaction')='string' then p.cx->'sent'->'fields'->>'reaction' else '' end),'') is not null as reaction_present,
     nullif(btrim(case when jsonb_typeof(p.cx->'waiting'->'fields'->'reason')='string' then p.cx->'waiting'->'fields'->>'reason' else '' end),'') is not null as hold_reason_present,
     crm_security.crm_office_safe_day(case when jsonb_typeof(p.cx->'waiting'->'fields'->'resume_date')='string' then p.cx->'waiting'->'fields'->>'resume_date' end) as resume_day,
-    coalesce(nullif(btrim(case when jsonb_typeof(p.cx->'lost'->'fields'->'close_reason')='string' then p.cx->'lost'->'fields'->>'close_reason' else '' end),''),nullif(btrim(p.lost_reason),'')) is not null as lost_reason_present
+    coalesce(nullif(btrim(case when jsonb_typeof(p.cx->'lost'->'fields'->'close_reason')='string' then p.cx->'lost'->'fields'->>'close_reason' else '' end),''),nullif(btrim(p.lost_reason),'')) is not null as lost_reason_present,
+    -- 정체(2026-11-08 대표 결정 · crm.html salesActivityAt): 시스템 기록(SYSTEM_ACT)을 뺀 마지막 영업 활동 → 마지막 활동 칸 → 등록일
+    (select max(ac.occurred_at) from public.activities ac where ac.deal_id=p.id
+      and not coalesce(ac.type,'') ~ '담당자변경|일괄관리|장기현장 검토|데이터|이관|병합|정리') as sales_act_at,
+    -- 기다리는 중(crm.html staleWaiting): 열린 다음 할 일 가운데 기한이 가장 이른 것(화면 next_action 과 같은 순서)
+    (select n.due_at from public.next_actions n where n.deal_id=p.id and n.status='open' order by n.due_at nulls last,n.id limit 1) as next_due_at,
+    -- 완료된 미팅(화면 pipeline-judge.js meetingOf): 현장방문 · 방문 · 미팅 · 실측 · 실사 기록 가운데 예정 · 취소 · 불발 등이 아닌 것, 오늘(서울)까지의 가장 늦은 날
+    (select max((ac.occurred_at at time zone 'Asia/Seoul')::date) from public.activities ac
+      where ac.deal_id=p.id and btrim(coalesce(ac.type,'')) in ('현장방문','방문','미팅','실측','실사')
+      and not (coalesce(case when jsonb_typeof(ac.detail)='object' then coalesce(ac.detail->>'note','')||' '||coalesce(ac.detail->>'result','')||' '||coalesce(ac.detail->>'status','') when jsonb_typeof(ac.detail)='string' then ac.detail #>> '{}' end,'')
+       ~ '예정|계획|취소|불발|미실시|미완료|못함|못했|안 함|안했|조건부|시간이 맞으면')
+      and not coalesce(case when jsonb_typeof(ac.detail)='object' then ac.detail->>'status' end,'') ~ '^(open|pending|cancelled|canceled|planned)$'
+      and (ac.occurred_at at time zone 'Asia/Seoul')::date<=(now() at time zone 'Asia/Seoul')::date) as meeting_done_day
    from page p
   )
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -241,6 +276,24 @@ begin
       and crm_security.crm_office_activity_kind(ac.type,ac.detail)='connected') end,
     'followup_approx',true,
     'last_customer_contact_at',b.last_customer_contact_at,
+    'last_sales_activity_at',coalesce(b.sales_act_at,b.last_activity_at,b.created_at),
+    'last_sales_activity_basis',case when b.sales_act_at is not null then 'activity' when b.last_activity_at is not null then 'last_activity_at' when b.created_at is not null then 'created_at' else 'none' end,
+    'next_action_due_at',b.next_due_at,
+    -- 단계 근거 날짜(화면 pipeline-judge.js basis 가 읽는 자리 · 날짜 · 있음/없음만)
+    'consulting_quote_due',crm_security.crm_office_ctx_day(b.cx,'consulting','quote_due'),
+    'consulting_quote_request_present',nullif(btrim(case when jsonb_typeof(b.cx->'consulting'->'fields'->'quote_request')='string' then b.cx->'consulting'->'fields'->>'quote_request' else '' end),'') is not null,
+    'meeting_scheduled_date',coalesce(crm_security.crm_office_ctx_day(b.cx,'consulting','meeting_date'),crm_security.crm_office_ctx_day(b.cx,'first_contact','meeting_date')),
+    'meeting_done_date',b.meeting_done_day,
+    'sent_followup_date',crm_security.crm_office_ctx_day(b.cx,'sent','followup_date'),
+    'waiting_resume_date',crm_security.crm_office_ctx_day(b.cx,'waiting','resume_date'),
+    'bid_deadline_date',crm_security.crm_office_ctx_any_day(b.cx,'bid_deadline'),
+    'decision_date',crm_security.crm_office_ctx_any_day(b.cx,'decision_date'),
+    'briefing_date',crm_security.crm_office_ctx_any_day(b.cx,'briefing_date'),
+    'any_meeting_date',crm_security.crm_office_ctx_any_day(b.cx,'meeting_date'),
+    'construction_start_date',crm_security.crm_office_ctx_day(b.cx,'construction','start_date'),
+    'contract_date',crm_security.crm_office_ctx_day(b.cx,'contract','contract_date'),
+    'completion_date',coalesce(b.completion_date,crm_security.crm_office_ctx_day(b.cx,'completion','completion_date')),
+    'closed_at',b.closed_at,
     'hold_reason_present',b.hold_reason_present,
     'hold_review_date',coalesce(b.resume_day,(b.wake_up_at at time zone 'Asia/Seoul')::date),
     'hold_review_basis',case when b.resume_day is not null then 'resume_date' when b.wake_up_at is not null then 'wake_up_at' else 'none' end,
@@ -254,7 +307,7 @@ begin
  items:=case when has_more then raw_items-p_limit else raw_items end;
  next_cursor:=case when has_more and jsonb_array_length(items)>0 then (items->(jsonb_array_length(items)-1)->>'id')::uuid end;
  return jsonb_build_object(
-  'contract_version',1,'resource','office_timing','domain',p_domain,'definitions_version',1,
+  'contract_version',1,'resource','office_timing','domain',p_domain,'definitions_version',3,
   'scope_completeness','actor_authorized_rows_only','actor_user_id',a.user_id,
   'generated_at',now(),
   'items',items,
