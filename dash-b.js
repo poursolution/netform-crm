@@ -196,7 +196,9 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
    {l:'결과 확정',n:L.ready?cDone:null,rate:'진행 중 '+Math.max(0,conv-cDone),drop:d3,dropL:EW?'진행 중':'',why:d3?'아직 결과 전':''},
    {l:'수주',n:L.ready?cWon:null,rate:'이 문의 집단 메이드율 '+pt(cMade)+' (실주 '+cLost+')',drop:cLost,why:cLost?'실주 '+cLost:''}];
   const max=Math.max(1,...cols.map(c=>c.n||0)),big=EW?-1:d2||d3?(d3>d2?3:2):-1,last=cols.length-1;
-  const bar=(c,i)=>'<div class="db-f6c"><div class="bar"><i style="height:'+(c.n?Math.max(3,Math.round(c.n/max*118)):0)+'px;background:'+(i===0?'#9aa0ab':i===big?'#d14a3f':i===last?'#1f9d55':'#3b6ce4')+'"></i></div><span>'+c.l+'</span><b>'+(c.n===null?'<small>불러오는 중</small>':c.n+'<small>건</small>')+'</b><em class="'+(i===big?'red':'')+'">'+h(c.rate)+'</em>'+(c.drop?'<div class="dr"><b>'+(c.dropL||'빠짐')+' '+c.drop+'건</b><span>'+h(c.why)+'</span></div>':'')+'</div>';
+  /* 2026-11-08 여정 6번: 칸 숫자를 누르면 그 칸에 든 문의 목록(왜 이 판단인지 창 · 한 쪽 20건 · 줄 = 문의 상세) */
+  const numH=(c,i)=>c.n===null?'<small>불러오는 중</small>':EW&&c.n>0?'<span class="ew-j db-f6k" role="button" tabindex="0" data-ew-why="funnel" data-col="'+i+'" title="'+attr(c.l+' '+c.n+'건 목록 보기')+'">'+c.n+'<small>건</small></span>':c.n+'<small>건</small>';
+  const bar=(c,i)=>'<div class="db-f6c"><div class="bar"><i style="height:'+(c.n?Math.max(3,Math.round(c.n/max*118)):0)+'px;background:'+(i===0?'#9aa0ab':i===big?'#d14a3f':i===last?'#1f9d55':'#3b6ce4')+'"></i></div><span>'+c.l+'</span><b>'+numH(c,i)+'</b><em class="'+(i===big?'red':'')+'">'+h(c.rate)+'</em>'+(c.drop?'<div class="dr"><b>'+(c.dropL||'빠짐')+' '+c.drop+'건</b><span>'+h(c.why)+'</span></div>':'')+'</div>';
   const badTop=B.tally(bad,B.badfitReason).slice(0,2).map(x=>x[0]).join(' · ');
   const act='견적 발송 '+quotes+' · 경쟁 · 입찰 진입 '+comp+(noFollow?'(견적 후 '+FOLLOW+'일 후속 없음 '+noFollow+')':'')+' · 결과 확정 '+(L.ready?done:'—')+' · 수주 '+(L.ready?C.won:'—')+(L.ready&&lossN?' · 실주 '+lossN+(lossCats?' ('+lossCats+')':''):'');
   const notes=[EW?['문의 품질',bad.length?'종결 '+bad.length+'건 · 사유별 분류 후 품질 판단':'문의 → 적합에서 빠진 건이 없습니다','',bad.length?'close':'']:['문의 품질',bad.length?B.closedText(bad)+'이 문의 → 적합에서 빠짐. 영업 실패가 아니라 유입 품질 문제'+(badTop?' ('+badTop+')':''):'문의 → 적합에서 빠진 건이 없습니다',''],
@@ -848,6 +850,27 @@ const d2=EW?waitL.length:Math.max(0,fit-conv),d3=L.ready?Math.max(0,conv-cDone):
   EW.register('close',()=>EW.openWhy(()=>EW.specClose(core().bad)));
   EW.register('wait',()=>EW.openWhy(()=>EW.specWait(waitingOf(core()))));
   EW.register('action',()=>EW.openWhy(()=>EW.specAction(core().risk)));
+  EW.register('funnel',b=>EW.openWhy(()=>specFunnel(core(),Number(b.dataset.col)||0)));
+ }
+ /* 2026-11-08 여정 6번: 영업 Funnel 칸 숫자 → 그 칸에 든 문의(퍼널과 같은 집단 · 같은 판정 함수). 줄을 누르면 문의 상세 → 경로 줄로 영업건까지 */
+ function specFunnel(C,col){
+  const EW=root.ExecWording,{B,q,P,L}=C,fates=q.map(x=>{try{return inquiryFate(C,x);}catch(e){return 'open';}});
+  const conv=(x,f)=>{if(f==='won'||f==='lost')return true;try{return !!R.inqCtlConverted(x);}catch(e){return false;}};
+  const J={badfit:['종결','na'],won:['수주','ok'],lost:['실주','bad'],deal:['영업 진행 중','ok'],inq:['문의 단계','na']};
+  const kindOf=(x,f)=>f==='badfit'?'badfit':f==='won'?'won':f==='lost'?'lost':conv(x,f)?'deal':'inq';
+  const COLS=[
+   ['견적문의',()=>true,'기간 안 접수한 견적문의 전부','휴지통'],
+   ['적합 문의',(x,f)=>f!=='badfit','견적문의 가운데 종결(부적합 · 중복 · 취소 등)이 아닌 것','종결 문의'],
+   ['영업건 전환',(x,f)=>conv(x,f),'적합 문의 가운데 영업건으로 넘어간 것(결과가 난 문의 포함)','아직 문의 단계 · 종결'],
+   ['결과 확정',(x,f)=>f==='won'||f==='lost','영업건으로 넘어간 문의 가운데 수주 또는 실주로 끝난 것','진행 중 영업건'],
+   ['수주',(x,f)=>f==='won','결과가 난 문의 가운데 계약 원장 근거가 있는 것','실주 · 진행 중']];
+  const c=COLS[Math.max(0,Math.min(COLS.length-1,col))],rows=[],cnt={};
+  q.forEach((x,i)=>{const f=fates[i];if(!c[1](x,f))return;const k=kindOf(x,f);cnt[k]=(cnt[k]||0)+1;let d=null;try{d=R.linkedDeal(x);}catch(e){}
+   const e=k==='badfit'?(()=>{let z=null;try{z=R.InquiryFlow.closeOf(x);}catch(err){}return [z&&z.label,z&&z.reason].filter(Boolean).join(' · ')||'종결 사유 없음';})():d?('영업건 · '+(R.stageLabel?R.stageLabel(R.dealStage(d)):R.dealStage(d)||'')).replace(/ · $/,''):'영업건 없음';
+   rows.push(EW.rowOfInq(x,J[k][0],J[k][1],e));});
+  const ord={bad:0,ok:1,na:2};rows.sort((a,b)=>(ord[a.cls]??3)-(ord[b.cls]??3));
+  const tiles=[['수주',(cnt.won||0)+'건'],['실주',(cnt.lost||0)+'건'],['영업 진행 중',(cnt.deal||0)+'건'],['문의 단계',(cnt.inq||0)+'건'],['종결',(cnt.badfit||0)+'건']].filter(t=>t[1]!=='0건').slice(0,3);
+  return {title:P.label+' 영업 Funnel · '+c[0]+' '+rows.length+'건',hint:'줄을 누르면 문의 상세 · 경로 줄에서 영업건으로',tiles,cond:c[2]+' · 퍼널과 같은 문의 집단('+P.label+' 접수)',exc:c[3]+(L&&!L.ready&&col>=3?' · 계약 원장을 불러오는 중이라 결과가 비어 보일 수 있음':''),sum:Object.keys(cnt).map(k=>J[k][0]+' '+cnt[k]).join(' + ')+' = '+rows.length,rows};
  }
  ewRegister();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ewRegister);
  /* 월 문의 수 — 월별 막대(견적문의)와 같은 조건. 리포트 · 보고서 검증이 같은 숫자를 비교한다(asset_report ⑨) */

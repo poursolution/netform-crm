@@ -70,6 +70,16 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   if(process.env.DUMP)require('fs').writeFileSync(process.env.DUMP,JSON.stringify([await d.locator('.db-f6c').evaluateAll(l=>l.map(n=>[n.querySelector(':scope>span').textContent,n.querySelector(':scope>b').textContent,n.querySelector(':scope>em').textContent,n.querySelector('.dr')?n.querySelector('.dr b').textContent+' | '+n.querySelector('.dr span').textContent:''])),await d.locator('.db-f6c .bar i').evaluateAll(l=>l.map(n=>[n.style.height,getComputedStyle(n).backgroundColor])),await d.locator('.db-f6n>div').allInnerTexts()],null,1));
   assert.deepEqual(await d.locator('.db-f6c').evaluateAll(l=>l.map(n=>[n.querySelector(':scope>span').textContent,n.querySelector(':scope>b').textContent,n.querySelector(':scope>em').textContent,n.querySelector('.dr')?n.querySelector('.dr b').textContent+' | '+n.querySelector('.dr span').textContent:''])),[
    ['견적문의','4건','',''],['적합 문의','3건','적합률 75.0%','종결 1건 | 종결 1 · Bad Fit 1'],['영업건 전환','1건','전환 33.3%','전환 대기 2건 | 첫 연락 전 1 · 미배정 1 · 응대 중 0'/* 2026-11-08 데이터 점검: 미배정은 첫 연락 전에 섞지 않는다 */],['결과 확정','1건','진행 중 0',''],['수주','1건','이 문의 집단 메이드율 100.0% (실주 0)','']],'같은 문의 집단만: 문의 → 적합 → 전환 → 결과 → 수주(2026-10-07 점검)');
+  /* 2026-11-08 여정 6번: 칸 숫자를 누르면 그 칸에 든 문의 목록 — 줄 수 = 칸 숫자, 줄 = 문의 상세로 */
+  assert.equal(await d.locator('.db-f6c [data-ew-why="funnel"]').count(),5,'다섯 칸 숫자 모두 누를 수 있다');
+  for(const [col,n,title] of [[0,4,'견적문의 4건'],[1,3,'적합 문의 3건'],[2,1,'영업건 전환 1건'],[4,1,'수주 1건']]){
+   await d.locator('.db-f6c [data-ew-why="funnel"][data-col="'+col+'"]').click();
+   const ov=page.locator('#ew-why');await ov.waitFor();
+   assert.match(one0(await ov.locator('header b').innerText()),new RegExp('영업 Funnel · '+title));
+   assert.equal(await ov.locator('.km-row').count(),n,title+': 목록 줄 수 = 칸 숫자');
+   assert.equal(await ov.locator('.km-row[data-ew="open"][data-kind="inq"]').count(),n,'줄을 누르면 문의 상세');
+   await ov.locator('[data-ew="close"]').click();await ov.waitFor({state:'detached'});
+  }
   const fbar=await d.locator('.db-f6c .bar i').evaluateAll(l=>l.map(n=>[n.style.height,getComputedStyle(n).backgroundColor]));
   assert.deepEqual(fbar.map(x=>x[1]),['rgb(154, 160, 171)','rgb(59, 108, 228)','rgb(59, 108, 228)','rgb(59, 108, 228)','rgb(31, 157, 85)'],'진행 중 전환 대기는 이탈이 아니라 빨강으로 칠하지 않는다 · 수주 초록(exec_wording)');assert.equal(fbar[0][0],'118px','막대 높이 = 가장 큰 칸 대비');
   assert.deepEqual((await d.locator('.db-f6n>div').allInnerTexts()).map(one0),['문의 품질 · 종결 1건 · 사유별 분류 후 품질 판단','영업건 전환 · 영업건 전환 대기 2건 · 지연 여부 확인 필요','영업력 · 이 문의 집단에서 결과 확정 1건 중 1건 수주 (100.0%) 수주 2 ÷ (수주 2 + 실주 3) · 배드핏 제외','기간 안 활동량 (대상이 다름 · 전체 영업건) · 견적 발송 5 · 경쟁 · 입찰 진입 1 · 결과 확정 5 · 수주 2 · 실주 3 (가격 2 · 기타 1)']);
