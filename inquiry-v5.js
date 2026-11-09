@@ -8,7 +8,7 @@
    단계는 사람이 고르지 않는다 — 기록에서 계산(stageOf):
      01 접수 = 담당 없음 / 02 담당 배정 = 담당 있음 · 실제 연결 없음(부재는 시도로만) / 03 접촉 · 상담 = 실제 연결 1회 이상 /
      04 현장방문 / 견적 = 방문 일정 · 방문 완료 · 견적 요청(발송 예정 · 견적 버전 · 견적요청 결과) 중 하나.
-   파이프라인 전환 칸은 없다. 견적 발송 완료를 저장하면 기존 전환 경로(autoPromote → 서버 전환 명령)가 영업건을 만든다(문의 원본 · 이력 연결). 방문 완료만으로는 넘기지 않는다(inquiry-flow.js).
+   파이프라인 전환 칸은 없다. 견적 발송 완료를 저장하면 기존 전환 경로(autoPromote → 서버 전환 명령)가 영업건을 만든다(문의 원본 · 이력 연결). 2026-11-09 대표 지시로 현장방문 완료도 같은 경로로 넘긴다(끄기 G.visitPromoteOff · inquiry-flow.js).
    만들어지는 단계는 서버 · 전송 계층의 규칙을 따른다(2026-10-13부터 컨설팅 설계) — 화면 문구도 그 이름을 읽어서 쓴다(promoStage). 바꾸려면 전송 계층(operational-adapter promotionStage)과 서버 전환 명령을 같이 바꿔야 한다.
    숫자: 띠 4칸의 합 = 위 탭 = 브랜드 '전체' = 진행 중(InquiryV4.base — 종결 · 휴지통 · 영업건으로 넘긴 문의 제외). 늦음 판정은 목록 · 오늘 업무와 같은 것(InquiryListV3.model 의 late).
    끄기: G.inqV5Off=true → 견적문의 v4(상태 탭 + 목록 옆 상세). */
@@ -31,8 +31,10 @@
   ['first','첫 연락 지연','첫 연락 지연',m=>m.step===1&&m.late,()=>'배정 후 '+FIRST_H()+'시간이 지나도록 실제 연결이 없는 문의(부재는 시도로만)'],
   ['d3','대표회의 D-3','대표회의 D-3',m=>d3(m.meet),()=>'대표회의가 3일 안'],
   ['follow','후속 지연','후속 지연',m=>!!m.follow&&m.late,()=>'마지막 실제 연결 뒤 기준 일수를 넘긴 문의'],
-  ['info','정보 부족','정보 부족',m=>m._s===2&&!!m.follow&&m.miss.length>0,()=>'03 접촉 · 상담 단계인데 필수 확인 9개가 다 차지 않은 문의']];
+  ['info','정보 부족','정보 부족',m=>!INFO_OFF()&&m._s===2&&!!m.follow&&m.miss.length>0,()=>'03 접촉 · 상담 단계인데 필수 확인 9개가 다 차지 않은 문의']];
  const CHIPS=['asg','first','info','d3','follow'];
+ /* 정착 모드(2026-11-09 · settle-mode.js): '정보 부족'(필수 확인 9개) 칩은 숨긴다 — 처음부터 9개를 다 채우라는 압박으로 보였다. 정착된 뒤 다시 켠다. 끄기 G.settleOff */
+ const INFO_OFF=()=>!!(root.SettleMode&&root.SettleMode.on());
  const DEF={st:null,wf:''};
  function st(){const g=root.G;if(!g.inqV5||!g.inqV5._v5)g.inqV5=Object.assign({},DEF,g.inqV5||{},{_v5:true});return g.inqV5;}
  const pad=n=>String(n).padStart(2,'0');
@@ -108,7 +110,7 @@
   if(!host){host=document.createElement('div');host.id='inq-v5';const v4=document.getElementById('inq-v4');if(v4)v4.after(host);else page.append(host);host.addEventListener('click',onClick);}
   const S=st(),V=compute(),keep=host.__tools;if(keep&&host.contains(keep))keep.remove();
   const band='<div class="i5-band" role="group" aria-label="견적문의 단계">'+STG.map((g,i)=>{const o=S.st===i;return '<button type="button" class="i5-step'+(o?' on':'')+'" data-i5="st" data-v="'+i+'" aria-pressed="'+o+'" style="background:'+(o?'#15171c':SHADE[i])+';color:'+(o||i>=2?'#fff':'#15171c')+';clip-path:'+tri(i,4)+'"><b class="i5-n">'+V.cols[i].length+'</b><span><small>'+g[0]+'</small><em>'+h(g[1])+'</em></span></button>';}).join('')+'</div>';
-  const chips='<div class="i5-warn"><span class="i5-lb">확인 필요</span>'+CHIPS.map(k=>{const w=WARN.find(x=>x[0]===k),n=V.warn[k],o=S.wf===k;return '<button type="button" class="i5-chip'+(o?' on':'')+(n||o?'':' zero')+'" data-i5="wf" data-v="'+k+'" aria-pressed="'+o+'" title="'+attr(w[4]())+'">'+h(w[1])+' <b>'+n+'</b></button>';}).join('')
+  const chips='<div class="i5-warn"><span class="i5-lb">확인 필요</span>'+CHIPS.filter(k=>k!=='info'||!INFO_OFF()).map(k=>{const w=WARN.find(x=>x[0]===k),n=V.warn[k],o=S.wf===k;return '<button type="button" class="i5-chip'+(o?' on':'')+(n||o?'':' zero')+'" data-i5="wf" data-v="'+k+'" aria-pressed="'+o+'" title="'+attr(w[4]())+'">'+h(w[1])+' <b>'+n+'</b></button>';}).join('')
    +'<span class="i5-hint">누르면 아래 보드에서 해당 카드만 진하게</span><i></i><span class="i5-more-slot"></span>'+(S.st!=null||S.wf?'<button type="button" class="i5-clear" data-i5="clear">전체 보기</button>':'')+'</div>';
   const board='<div class="i5-board">'+STG.map((g,i)=>{const list=V.cols[i],pg=LP().cut(list,LP().page(S,'c'+i),SIZE),rest=pg.total-pg.rows.length;
    return '<section class="i5-col'+(S.st===i?' on':'')+(S.st!=null&&S.st!==i?' dim':'')+'" aria-label="'+attr(g[0]+' '+g[1])+'"><header><b>'+g[0]+' '+h(g[1])+'</b><span>'+pg.total+'건</span><small>'+h(outOf(i))+'</small></header>'

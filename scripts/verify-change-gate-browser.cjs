@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const T=k=>k+'T10:00:00+09:00',D1='11111111-1111-4111-8111-111111111111';
    B={deals:[{id:D1,site:'[경기 수원] 평동동남아파트',assignee:'이필선',brand:'석민이앤씨',created:'2026-02-01',code:'sent',stage_code:'sent',grp:'영업·관리',amt:3.8e8,nextActionObj:{text:'견적 검토 확인',due:'2026-11-05',status:'open'},lastMeaningfulContactAt:T('2026-10-20'),stage_contexts:{sent:{fields:{sent_date:'2026-09-23',recipient:'박영호 소장',followup_date:'2026-10-25',materials:['견적서']}}},activities:[{id:'a1',type:'전화',note:'견적 3.8억 · 공법 설명 긍정적',at:T('2026-09-28'),actor:'이필선'}]}],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.settleOff=true;/* 예전 필수 규칙을 보는 검사 — 정착 모드(2026-11-09)는 verify-settle-mode-browser */ME={id:'rep1',name:'이필선',role:'rep'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__memo=[];window.__next=[];
    DealDetailV3.memo=async(d,note)=>{__memo.push([d.id,note]);d.activities=Array.isArray(d.activities)?d.activities:[];d.activities.unshift({id:'m'+__memo.length,type:'메모',note,at:new Date().toISOString(),occurred_at:new Date().toISOString(),actor:'이필선'});};

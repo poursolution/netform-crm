@@ -22,11 +22,14 @@
     ||pl.attempt!==(kind==='attempt')||pl.meaningful!==(kind==='connected')||pl.info||!Array.isArray(pl.requests)||pl.requests.length)fail('문의에서 지원하지 않는 저장 계획입니다. 입력을 유지한 채 확인해 주세요.');
    const ex=snapshot(o.existing);
    if((pl.mode==='keep'||pl.mode==='change')&&!ex)fail('이어받을 기존 일정을 확인해 주세요.');
-   if(pl.mode==='none'&&kind!=='attempt'&&!String(pl.reason||'').trim())fail('다음 일정이 없는 이유를 확인해 주세요.');
+   if(pl.mode==='none'&&kind!=='attempt'&&!String(pl.reason||'').trim()&&!(root.SettleMode&&root.SettleMode.on()))fail('다음 일정이 없는 이유를 확인해 주세요.');
    if((pl.mode==='new')!==!!pl.next||(pl.mode==='change')!==!!pl.change||typeof pl.note!=='string'||!pl.note.trim()||pl.note.length>4000)fail('문의 저장 계획의 기록과 일정을 확인해 주세요.');
    const nx=pl.next||pl.change||(pl.mode==='keep'?ex:null);
    Object.assign(p,{sourceText:p.text,text:pl.note,next:String(nx?.purpose||nx?.text||''),due:String(nx?.due||''),plan:clone(pl),existing:ex});
-  }else if(!p.next||!/^\d{4}-\d{2}-\d{2}$/.test(p.due))fail('연락 결과와 다음 행동·날짜를 확인해 주세요.');
+  }else{/* 정착 모드(2026-11-09): 결과만 필수 — 다음 행동 · 날짜가 비면 결과에 맞는 기본값(연결 3일 뒤 다시 연락 · 시도 내일 다시 전화) */
+   if(root.SettleMode&&root.SettleMode.on()&&(!p.next||!/^\d{4}-\d{2}-\d{2}$/.test(p.due))){const att=root.InquiryFlow.kindOf(p.result)!=='connected',d=new Date();d.setDate(d.getDate()+(att?1:3));if(!p.next)p.next=att?'다시 전화':'다시 연락';if(!/^\d{4}-\d{2}-\d{2}$/.test(p.due))p.due=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+   if(!p.next||!/^\d{4}-\d{2}-\d{2}$/.test(p.due))fail('연락 결과와 다음 행동·날짜를 확인해 주세요.');
+  }
   return p;
  }
  function snapshot(n){

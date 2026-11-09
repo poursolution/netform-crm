@@ -19,7 +19,8 @@
   const due=String(o.due||o.due_at||'').slice(0,10);return due&&due>=today()?{text:o.text,due}:null;
  }
  const ownDate=to=>S.definitions[to].fields.some(f=>f.key==='followup_date'||f.key==='contact_date');
- const needsNext=to=>!S.terminal.includes(to)&&!ownDate(to)&&to!=='won';
+ /* 정착 모드(2026-11-09): 단계 칸의 다음 확인일 · 재접촉일이 필수가 아니게 되므로, 그 단계도 공통 '다음 할 일 날짜'를 받는다(칸에 날짜를 적었으면 그 날짜가 다음 할 일) */
+ const needsNext=to=>!S.terminal.includes(to)&&to!=='won'&&(!ownDate(to)||!!(S.settle&&S.settle()));
  /* 단계 항목에 이미 날짜가 있으면(견적 예정일·PT 협의일·계약 예정일) 다음 할 일이 비어 있을 때 그 날짜로 대신 등록 — 같은 날짜를 두 번 묻지 않는다 */
  const AUTO={consulting:['quote_due','견적서 작성·발송'],compete:['meeting_date','PT·협의 준비 확인'],contract:['contract_date','계약 체결 확인']};
  function genericNext(to,input){
@@ -46,7 +47,7 @@
   });
  }
  function fieldHTML(f,v,quotes){
-  const id='sf-'+f.key,label=esc(f.label)+(f.required?' <b aria-label="필수">*</b>':'');
+  const req=S.isRequired?S.isRequired(ctx?ctx.to:'',f):f.required,id='sf-'+f.key,label=esc(f.label)+(req?' <b aria-label="필수">*</b>':'');
   if(f.type==='multi')return '<fieldset class="sf-field"><legend>'+label+'</legend><div class="sf-checks">'+f.options.map(x=>'<label><input type="checkbox" name="'+id+'" value="'+esc(x)+'" '+(Array.isArray(v)&&v.includes(x)?'checked':'')+'>'+esc(x)+'</label>').join('')+'</div></fieldset>';
   let control;
   if(f.type==='select'||f.type==='quote'){
@@ -112,13 +113,16 @@
   const input=collect(),d=ctx.deal,from=ctx.mobile?d.code:fromOf(d);
   /* ops_12 C⑨: 보류의 재접촉 예정일은 재개 날짜와 같다(비워 두면 재개 날짜로 — 서버가 그 날 담당 오늘 업무를 만든다) */
   if(ctx.to==='waiting'&&input&&input.fields&&!input.fields.contact_date&&input.fields.resume_date)input.fields.contact_date=input.fields.resume_date;
+  if(input&&S.fillClose)S.fillClose(ctx.to,input.fields);
   const errors=S.validate(from,ctx.to,input,today());
+  /* 정착 모드: 빈 칸은 보내지 않는다 — 서버 검사가 빈 선택값('')을 잘못된 값으로 거절하지 않게(예: 관계관리 사유를 안 고른 침묵관리) */
+  if(!errors.length&&S.settle&&S.settle()&&!S.terminal.includes(ctx.to))Object.keys(input.fields).forEach(k=>{const v=input.fields[k];if(v==null||v===''||Array.isArray(v)&&!v.length)delete input.fields[k];});
   if(from!==ctx.from)errors.push('현재 단계가 변경되었습니다. 창을 다시 열어 주세요.');
   if(S.terminal.includes(d.outcome))errors.push('이미 종료된 영업기회입니다. 창을 다시 열어 주세요.');
-  if(ctx.to==='sent'&&input.fields.materials.includes('견적서')&&!ctx.quotes.some(q=>String(q.id??q.version??q.version_no)===input.fields.quote_version))errors.push('실제 등록된 견적 Version을 선택해 주세요.');
+  if(ctx.to==='sent'&&(input.fields.materials||[]).includes('견적서')&&!ctx.quotes.some(q=>String(q.id??q.version??q.version_no)===input.fields.quote_version))errors.push('실제 등록된 견적 Version을 선택해 주세요.');
   if(needsNext(ctx.to)){
    if(input.next_due&&input.next_due<today())errors.push('다음 할 일 날짜는 오늘 이후로 골라 주세요.');
-   else if(!genericNext(ctx.to,input)&&!currentNext())errors.push('다음 할 일 날짜를 골라 주세요 — 단계만 바꾸면 흐름이 끊깁니다.');
+   else if(!S.next(ctx.to,input.fields)&&!genericNext(ctx.to,input)&&!currentNext())errors.push('다음 할 일 날짜를 골라 주세요 — 단계만 바꾸면 흐름이 끊깁니다.');
   }
   if(errors.length){document.getElementById('sf-error').textContent=errors.join('\n');return}
   ctx.saving=true;

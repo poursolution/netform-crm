@@ -182,9 +182,9 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(await d.locator('[data-idv="handoff"]').innerText(),'저장','방문 완료 기록도 자동 전환을 약속하지 않음');
   await d.locator('[data-idv="handoff"]').click();await page.waitForFunction(()=>inqCtlFind(A,false).status==='현장방문 완료'||!!document.querySelector('[data-idv-err]')?.textContent);
   assert.equal(await page.evaluate(()=>inqCtlFind(A,false).status),'현장방문 완료',await d.locator('[data-idv-err]').count()?await d.locator('[data-idv-err]').innerText():'방문 완료 사실 ACK');
-  assert.equal(await d.locator('.idv-steps .done').count(),3,'명시적 방문 완료 사실 ACK 뒤에만 진행 막대 전진');
+  assert.equal(await d.locator('.idv-steps .done').count(),4,'방문 완료 사실 ACK 뒤 진행 막대 전진 + 영업건 넘김(2026-11-09 대표: 방문 완료 = 자동 파이프라인)');
   assert.deepEqual(await page.evaluate(()=>__scheduleMocks[A].f.rows),milestone.rows,'완료 사실 기록이 기존 방문 업무를 자동 완료하거나 취소하지 않음');
-  assert.equal(await page.evaluate(()=>B.deals.length),1,'완료 사실 기록만으로 파이프라인 자동 생성 없음');
+  assert.equal(await page.evaluate(()=>B.deals.length),2,'방문 완료 = 영업건 자동 생성(2026-11-09 대표 지시 · 끄기 G.visitPromoteOff)');
   if(shot)await page.screenshot({path:shot+'-assigned.png'});
   /* 딤 클릭으로 닫기, 예전 창 전환 스위치 */
   await page.mouse.click(5,5);assert.equal(await page.locator('#inq-inbox-dialog').count(),0,'딤 클릭 닫기');

@@ -18,7 +18,11 @@
  const kindOf=res=>{const r=RESULTS.find(x=>x[0]===res);return r?r[1]:'';};
  const isAttempt=res=>kindOf(res)==='attempt';
  const isBadfit=res=>kindOf(res)==='badfit';
- const needsNote=res=>kindOf(res)==='connected';
+ /* 정착 모드(2026-11-09 대표 「전부 진행」 · settle-mode.js): 연락 결과만 필수. 상담 내용 · 다음 업무 할 일 · 날짜 · 사유는 권장.
+    왜: 전화 한 통을 남기는 데 칸 5~6개(내용 · 할 일 · 날짜 · 각종 사유)를 채워야 해서 10/1 뒤 응대 기록이 0건이었다.
+    다음 업무는 결과별 제안값(SUGGEST)으로 자동 등록되고, 바꿔도 사유를 묻지 않는다. 끄기 G.settleOff */
+ const settle=()=>{try{return !!(root.SettleMode&&root.SettleMode.on());}catch(e){return false;}};
+ const needsNote=res=>kindOf(res)==='connected'&&!settle();
  const showNote=res=>!!kindOf(res)&&!isAttempt(res);/* 부재 · 번호 오류 = 상담 내용 칸 없음 */
  const meaningful=res=>{const k=kindOf(res);return k==='connected'||k==='badfit';};
  const md=k=>{const m=DATE.exec(String(k||''));if(!m)return '';const x=new Date(Date.UTC(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10)));return (+k.slice(5,7))+'.'+(+k.slice(8,10))+' ('+WEEK[x.getUTCDay()]+')';};
@@ -58,7 +62,9 @@
   let mode=out.badfit?'none':S.mode;
   if(!MODES.some(m=>m[0]===mode)){const d=defaults(res,ex,today);mode=d.mode;}
   if((mode==='keep'||mode==='change')&&!ex){out.error='이어받을 기존 일정이 없습니다 — 새 업무나 다음 일정 없음을 골라 주세요';return out;}
-  const purpose=String(S.purpose==null?'':S.purpose).trim(),date=String(S.date||''),reason=String(S.reason||'').trim();
+  let purpose=String(S.purpose==null?'':S.purpose).trim(),date=String(S.date||'');const reason=String(S.reason||'').trim();
+  /* 정착 모드: 새 업무의 할 일 · 날짜가 비었거나 지난 날짜면 결과별 제안값으로 채운다(오류 대신) */
+  if(settle()&&mode==='new'){const s=SUGGEST[res]||['다시 연락',3];if(!purpose||BAD_PURPOSE.test(purpose))purpose=s[0]||'다시 연락';if(!DATE.test(date)||(today&&date<today))date=addDays(today,s[1]||1);}
   if(mode==='new'){
    if(ex&&!C.scheduleV1){out.error='기존 업무를 보존하는 추가 저장 경로가 아직 연결되지 않았습니다. 기존 일정 유지 또는 날짜 변경을 선택해 주세요';return out;}
    if(!purpose||BAD_PURPOSE.test(purpose)){out.error='다음 업무의 할 일을 적어 주세요 (\'연락하기\'만으로는 저장되지 않습니다)';return out;}
@@ -69,12 +75,13 @@
   if(mode==='change'){
    const issue=rescheduleError(ex,date,today,C.scheduleV1);if(issue){out.error=issue;return out;}
    if(!DATE.test(date)){out.error='바꿀 날짜를 골라 주세요';return out;}
+   /* 일정 저장(crm_schedule_write_v1)은 서버가 날짜 변경 사유를 요구한다(SCHEDULE_REASON_REQUIRED) — 정착 모드에서도 그대로 받는다 */
    if(C.scheduleV1&&!reason){out.error='날짜 변경 사유를 입력해 주세요';return out;}
    if(today&&date<today){out.error='바꿀 날짜는 오늘 이후로 골라 주세요';return out;}
    /* 기한 미루기(exec_wording): 지금 열린 기한보다 늦추면 원래 기한 · 새 기한 · 사유(필수)를 '[기한 변경]' 기록으로 남긴다 */
-   if(DATE.test(String(ex.due||''))&&date>ex.due){if(!reason){out.error='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return out;}postpone={from:ex.due,to:date,reason,over:today&&ex.due<today?Math.round((Date.parse(today+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0};}
+   if(DATE.test(String(ex.due||''))&&date>ex.due){if(!reason&&(!settle()||C.scheduleV1)){out.error='미루는 사유를 입력해 주세요 (원래 기한 · 새 기한 · 사유가 기록됩니다)';return out;}postpone={from:ex.due,to:date,reason,over:today&&ex.due<today?Math.round((Date.parse(today+'T00:00:00Z')-Date.parse(ex.due+'T00:00:00Z'))/864e5):0};}
   }
-  if(mode==='none'&&!reason&&!out.attempt){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
+  if(mode==='none'&&!reason&&!out.attempt&&!settle()){out.error=out.badfit?'배드핏은 사유가 있어야 합니다':'다음 일정이 없는 이유를 넣어 주세요';return out;}
   out.reason=mode==='none'?reason:'';
   out.note=note(ch,res,memo,out.reason)+(postpone?' [기한 변경 요청] 원래 '+postpone.from+' | 새 '+postpone.to+' | 사유 '+postpone.reason:'');
   const type=/방문|실측|미팅/.test(purpose)?'방문':/자료|견적|사진|메일|발송/.test(purpose)?'후속접촉':'전화';

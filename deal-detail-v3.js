@@ -440,13 +440,13 @@
   const hint=el('span','dv3-mvhint');if(foot)foot.prepend(hint);
   /* 필수가 아닌 항목은 접어 둔다(시안처럼 필수만 먼저) — 값이 이미 있으면 보인다 */
   {const ts=form.querySelector('#sf-target'),def0=ts&&T.definitions[ts.value],opt=[];
-   if(def0)def0.fields.forEach(f=>{if(f.required||f.type==='quote')return;const n=form.querySelector('#sf-'+f.key)||form.querySelector('[name="sf-'+f.key+'"]'),fe=n&&n.closest('.sf-field');if(!fe)return;const has=f.type==='multi'?!!form.querySelector('[name="sf-'+f.key+'"]:checked'):!!String(n.value||'').trim();if(!has){fe.classList.add('dv3-opt');opt.push(fe);}});
+   if(def0)def0.fields.forEach(f=>{if(f.required||f.type==='quote')return;/* 2026-11-09 대표 '접어 두는 거 하지 마': 정착 모드로 필수에서 내려온 칸도 접지 않고 그대로 보인다(* 표시만 없음) */const n=form.querySelector('#sf-'+f.key)||form.querySelector('[name="sf-'+f.key+'"]'),fe=n&&n.closest('.sf-field');if(!fe)return;const has=f.type==='multi'?!!form.querySelector('[name="sf-'+f.key+'"]:checked'):!!String(n.value||'').trim();if(!has){fe.classList.add('dv3-opt');opt.push(fe);}});
    const mm=form.querySelector('#sf-memo'),me=mm&&mm.closest('.sf-field');if(me&&!mm.value){me.classList.add('dv3-opt');opt.push(me);}
    if(opt.length&&foot){const more=el('button','dv3-more');more.type='button';more.textContent='+ 선택 항목 '+opt.length+'개';more.onclick=()=>{const on=form.classList.toggle('dv3-showopt');more.textContent=on?'선택 항목 접기':'+ 선택 항목 '+opt.length+'개';};hint.after(more);}}
   const refresh=()=>{
    const t=form.querySelector('#sf-target'),def=t&&T.definitions[t.value];if(!def)return;const miss=[];
    if(!form.querySelector('#sf-date')?.value)miss.push('전환일');
-   def.fields.forEach(f=>{if(!f.required)return;const empty=f.type==='multi'?!form.querySelector('[name="sf-'+f.key+'"]:checked'):!String(form.querySelector('#sf-'+f.key)?.value||'').trim();if(empty)miss.push(f.label);});
+   def.fields.forEach(f=>{if(!(T.isRequired?T.isRequired(t.value,f):f.required))return;const empty=f.type==='multi'?!form.querySelector('[name="sf-'+f.key+'"]:checked'):!String(form.querySelector('#sf-'+f.key)?.value||'').trim();if(empty)miss.push(f.label);});
    const nx=form.querySelector('.sf-next');if(nx&&nx.querySelector('label b')&&!form.querySelector('#sf-next')?.value&&!/비워 두면 위/.test(nx.textContent))miss.push('다음 할 일 날짜');
    {const rr=form.querySelector('#sf-relationship_reason'),rd=form.querySelector('#sf-relationship_reason_detail'),re=rd&&rd.closest('.sf-field');if(rr&&re)re.classList.toggle('dv3-need',rr.value==='기타');}
    const txt=miss.length?'필수 입력: '+miss.join(' · '):'옮기면 응대 이력에 단계 변경과 입력 내용이 함께 남습니다';

@@ -37,7 +37,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     /* C: 예전 방식으로 부재가 최초응대가 된 문의(상태는 전화응대 완료 · 그 시각의 기록이 부재) */
     {id:C,site:'[인천] 송도더샵',status:'전화응대 완료',at:at(4),created_at:at(4),brand:'POUR솔루션',phone:'032-000-1111',contact_name:'박소장',assignee:'이필선',assigned_to:'이필선',assigned_at:at(3.9),first_response_at:at(3),raw:{'문의내용':'옥상 방수'},activities:[{id:'iq-1',type:'단계전환',note:'고객 응대 기록',result:'[전화 · 부재] 두 번 전화했으나 받지 않음',at:at(3),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]});
-   B=__seed();LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqTidyOff=true;/* 예전 상세 배치(첫마디 · 전화 · 문자) — 정리된 상세는 verify-inquiry-tidy-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
+   B=__seed();LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.settleOff=true;/* 예전 필수 규칙을 보는 검사 — 정착 모드(2026-11-09)는 verify-settle-mode-browser */G.inqTidyOff=true;/* 예전 상세 배치(첫마디 · 전화 · 문자) — 정리된 상세는 verify-inquiry-tidy-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{window.__writes.push([op,p]);return 'req-'+window.__writes.length};
    /* 서버 흉내: 저장 명령 · 읽기 함수 */
    window.__srv={};window.__rpc=[];
@@ -241,8 +241,8 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await page.evaluate(async()=>{const keep=CRMRelease.has;CRMRelease.has=n=>!n.startsWith('crm_inquiry_milestone_');__writes.length=0;const q=inqCtlFind(V2,false);let message='';
    try{await InquiryCommand.run('visit',q,{date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date()),done:true});}catch(e){message=e.message;}finally{CRMRelease.has=keep;}
    return [q.status,/아직 연결/.test(message),__writes.length,InquiryFlow.isQualified(q)];}),['전화응대 완료',true,0,false],'미설치 저장을 완료로 표시하지 않음');
-  /* 전송 계층도 같은 기준: 현장방문 완료는 받고, 예정은 거절 */
-  assert.deepEqual(await page.evaluate(()=>{const P=s=>({intent:'inquiry_promote_create',inquiry_id:V2,promotion_mode:'auto',inquiry_status:s,owner:'이필선',from:'',to:'consulting'/* 2026-10-13: 견적 발송 완료도 컨설팅 설계로 */,note:/견적.*발송\s*완료/.test(s)?'견적 발송완료로 파이프라인 인계':/견적.*발송/.test(s)?'견적 준비 단계로 파이프라인 인계':s+' 상태로 파이프라인 인계',name:'고잔푸르지오',work_name:'',brand:'석민이앤씨',client_ref:'local-1'});return ['현장방문 완료','견적서 발송완료','현장방문예정','전화응대 완료'].map(s=>{try{OperationalAdapter.normalize('opportunity_create',V2,0,P(s));return 'ok';}catch(e){return String(e.code||e.message);}});}),['ok','ok','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED','INQUIRY_PROMOTION_INTENT_NOT_CONNECTED']);
+  /* 전송 계층도 서버와 같은 기준(2026-11-09 정착 모드 sql/settle-mode-v1-20261109.sql ③): 현장방문 완료 · 견적 발송 · 현장방문예정 · 전화응대 완료(실제 연결)를 받는다. 화면은 SettleMode.ready() 일 때만 보낸다 */
+  assert.deepEqual(await page.evaluate(()=>{const P=s=>({intent:'inquiry_promote_create',inquiry_id:V2,promotion_mode:'auto',inquiry_status:s,owner:'이필선',from:'',to:'consulting'/* 2026-10-13: 견적 발송 완료도 컨설팅 설계로 */,note:/견적.*발송\s*완료/.test(s)?'견적 발송완료로 파이프라인 인계':/견적.*발송/.test(s)?'견적 준비 단계로 파이프라인 인계':s+' 상태로 파이프라인 인계',name:'고잔푸르지오',work_name:'',brand:'석민이앤씨',client_ref:'local-1'});return ['현장방문 완료','견적서 발송완료','현장방문예정','전화응대 완료'].map(s=>{try{OperationalAdapter.normalize('opportunity_create',V2,0,P(s));return 'ok';}catch(e){return String(e.code||e.message);}});}),['ok','ok','ok','ok']);
   if(shot)await page.screenshot({path:shot+'-flow2.png'});
   await page.evaluate(()=>InquiryWorkbench.close());await page.waitForTimeout(200);
   /* 끄기: 예전 판정(어떤 기록이든 최초응대) */

@@ -26,7 +26,7 @@ async function run(){
     {id:'pf-2',site:'이필선 테스트 현장',assignee:'이필선',brand:'기술자문',created,code:'consulting',stage_code:'consulting',grp:'영업·관리',stage:'컨설팅 설계',amt:8000000},
     {id:'pf-3',site:'황윤선 두 번째 현장',assignee:'황윤선',brand:'석민이앤씨',created,code:'sent',stage_code:'sent',grp:'컨설팅·견적',stage:'견적서 발송완료',amt:3000000}
    ],inquiries:[],activities:[],inquiryTrash:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.settleOff=true;/* 예전 화면을 보는 검사 — 2026-11-09 정착 모드는 verify-settle-mode-browser */ME={id:'admin',name:'송보람',role:'admin'};
    G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';
    document.getElementById('authGate').classList.remove('on');
    window.__businessWrites=0;window.pushWrite=()=>{window.__businessWrites++};

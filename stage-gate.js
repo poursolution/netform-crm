@@ -7,7 +7,9 @@
 (function(root){
  'use strict';
  const R=root,h=v=>R.esc(String(v==null?'':v));
- const enabled=()=>!R.G.stageGateOff&&!!R.CRMRules&&R.CRMRules.get('stage_gates')!==false;
+ /* 정착 모드(2026-11-09 · settle-mode.js): 기록 확인 줄(1차 현장미팅 · 자료 발송일 · 계약일)은 화면에서만 막던 것이라 정착 모드에서는 띄우지 않는다.
+    왜: 기록이 없으면 단계를 못 옮겨서, 기록을 남기지 않던 영업팀이 단계 이동 자체를 하지 않게 됐다(10/1 뒤 단계 정보 저장 0건) */
+ const enabled=()=>!R.G.stageGateOff&&!(R.SettleMode&&R.SettleMode.on())&&!!R.CRMRules&&R.CRMRules.get('stage_gates')!==false;
  const form=()=>document.getElementById('stage-transition-form');
  const val=(f,key)=>{const el=f.querySelector('#sf-'+key);if(el)return String(el.value||'').trim();return [...f.querySelectorAll('[name="sf-'+key+'"]:checked')].map(x=>x.value).join(' · ');};
  function deal(){const c=R.CUR_DETAIL;return c&&c.kind==='deal'&&c.item?c.item:null;}

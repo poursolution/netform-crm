@@ -31,7 +31,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     {id:id(7),site:'[서울 은평] 녹번역e편한세상',status:'현장방문예정',at:at(4),created_at:at(4),brand:'POUR솔루션',phone:'02-300-1180',contact_name:'김소장',...rep,assigned_at:at(3.9),responded_at:at(3),raw:{'문의내용':'옥상 방수 견적','상담채널':'홈페이지'},activities:[{type:'전화',note:'방문 일정 협의',at:at(3),actor:'이필선'}]},
     {id:id(8),site:'[경기 광교] 광교한빛아파트',status:'견적서 발송예정',at:at(6),created_at:at(6),brand:'POUR솔루션',phone:'031-300-1180',contact_name:'최과장',...rep,assigned_at:at(5.9),responded_at:at(4),raw:{'문의내용':'옥상 방수 견적','상담채널':'전화'},activities:[{type:'전화',note:'견적 범위 확인',at:at(4),actor:'이필선'}]}],
     activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.inqTidyOff=true;/* 예전 상세 배치(끄기 경로) — 정리된 상세는 verify-inquiry-tidy-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;G.inqV5=null;G.inqToss=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.settleOff=true;/* 예전 필수 규칙을 보는 검사 — 정착 모드(2026-11-09)는 verify-settle-mode-browser */G.inqTidyOff=true;/* 예전 상세 배치(끄기 경로) — 정리된 상세는 verify-inquiry-tidy-browser */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.inqPeriodMode='snapshot';G.inqV3=null;G.inqV4=null;G.inqV5=null;G.inqToss=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    SB={rpc:async()=>({error:{message:'CONTRACT_UNAVAILABLE'}})};
    window.Phase1={profile:{auth_uid:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',user_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',name:'송보람'},rpc:async()=>{throw Error('CONTRACT_UNAVAILABLE');}};
@@ -50,7 +50,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.deepEqual(await nums(),[2,1,3,2],'접수 2 · 담당 배정 1 · 접촉 · 상담 3 · 방문 · 견적 2');
   assert.deepEqual(await page.evaluate(()=>[InquiryV4.total(),InquiryV5.compute().cols.map(c=>c.length)]),[8,[2,1,3,2]]);
   assert.deepEqual((await T.locator('.tq-stg span').allInnerTexts()).map(one),['접수','담당 배정','접촉 · 상담','방문 · 견적']);
-  assert.match(one(await T.locator('.tq-stg small').nth(3).innerText()),/^견적 보내면 영업건으로$/);
+  assert.match(one(await T.locator('.tq-stg small').nth(3).innerText()),/^방문 · 견적 끝나면 영업건으로$/);
   /* ③ 맨 위 문장 = 가장 급한 일 하나(기준 30분 넘긴 미배정이 있다) */
   assert.equal(one(await T.locator('.tq-hero').innerText()),'담당자를 기다리는 문의가 2건 있어요');
   assert.match(one(await T.locator('.tq-lead').innerText()),/^가장 오래된 건은 .+째 기다리고 있어요 · 진행 중 8건/);
