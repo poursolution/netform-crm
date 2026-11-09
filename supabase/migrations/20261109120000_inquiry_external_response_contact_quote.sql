@@ -262,14 +262,15 @@ GRANT EXECUTE ON FUNCTION private.inquiry_external_flow_validate_v1(jsonb) TO se
 GRANT EXECUTE ON FUNCTION private.inquiry_external_flow_apply_v1(uuid,jsonb,text,timestamptz) TO service_role;
 
 -- 4) 운영 함수 두 곳에 한 줄씩 잇기
+-- 2026-11-09 운영 적용 때: 운영 enqueue 본문엔 응대 내용 조건에 '협약완료 · 해결완료 · 종결이면 내용 없어도 됨'이 더 붙어 있어(10/4 사본과 다름) 기준 문장을 꼬리(then raise exception 'INVALID_RESPONSE'; end if;)로 줄였다 — 운영 · 사본 모두 정확히 1곳.
 DO $migration$
 DECLARE
  targets text[]:=ARRAY['public.crm_inquiry_change_enqueue_v1(jsonb)','public.crm_inquiry_change_apply_v1(text)'];
  anchors text[]:=ARRAY[
-  $a$or nullif(btrim(p_event->>'response_content'),'') is null) then raise exception 'INVALID_RESPONSE'; end if;$a$,
+  $a$then raise exception 'INVALID_RESPONSE'; end if;$a$,
   $a$result:=jsonb_build_object('ok',true,'reason','RESPONSE_SYNCED');$a$];
  additions text[]:=ARRAY[
-  $a$or nullif(btrim(p_event->>'response_content'),'') is null) then raise exception 'INVALID_RESPONSE'; end if;
+  $a$then raise exception 'INVALID_RESPONSE'; end if;
   if p_event->>'kind'='response' then perform private.inquiry_external_flow_validate_v1(p_event); end if; -- inquiry_external_flow_v1$a$,
   $a$result:=private.inquiry_external_flow_apply_v1(i.id,p,p_event_id,source_at); -- inquiry_external_flow_v1$a$];
  target regprocedure; definition text; previous_acl aclitem[]; previous_config text[]; previous_definer boolean; k integer;
