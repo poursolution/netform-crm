@@ -137,15 +137,15 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
   await page.locator('#inq-toss .tq-row',{hasText:'나래아파트'}).locator('[data-tq="deal"]').click();await page.waitForTimeout(400);assert.equal(await curDeal(),ID.B,'[영업건 보기]');
   /* ⑦-2 넘어가는 기준 하나(4번): 안내 문구 = 실제 판정 · 전환 대기 = 견적 발송 완료만 · 방문 완료는 04에 머문다 */
   await page.evaluate(()=>{G.inqToss=null;goPage('inq');});await page.waitForSelector('#inq-toss .tq-stg');
-  assert.deepEqual((await page.locator('#inq-toss .tq-stg small').allInnerTexts()).map(one),['담당을 정하면 다음 단계','실제 연결되면 다음 단계','방문 · 견적 잡히면 다음 단계','견적 보내면 영업건으로'],'단계 안내 = 실제 조건');
+  assert.deepEqual((await page.locator('#inq-toss .tq-stg small').allInnerTexts()).map(one),['담당을 정하면 다음 단계','실제 연결되면 다음 단계','방문 · 견적 잡히면 다음 단계','방문 · 견적 끝나면 영업건으로'],'단계 안내 = 실제 조건(2026-11-09 방문 완료도 자동 전환)');
   assert.deepEqual(await page.locator('#inq-toss .tq-stg small').evaluateAll(l=>l.filter(e=>e.scrollWidth>e.clientWidth+1).map(e=>e.textContent)),[],'단계 안내 글 잘림 없음');
   const R=await page.evaluate(ID=>{const q=id=>B.inquiries.find(x=>x.id===id),QS=q(ID.QS),QV=q(ID.QV);return {waitS:isAwaitingPromotion(QS),waitV:isAwaitingPromotion(QV),qualV:InquiryFlow.isQualified(QV),cands:InquiryConversion.candidates().map(x=>x.q.site)};},ID);
-  assert.deepEqual([R.waitS,R.waitV,R.qualV],[true,false,true],'전환 대기 = 견적 발송 완료만 · 서버 전환 자격은 그대로');
-  assert.deepEqual(R.cands,['[합성] 타래아파트'],'전환 대기 목록에 방문 완료 건 없음');
+  assert.deepEqual([R.waitS,R.waitV,R.qualV],[true,true,true],'전환 대기 = 방문 완료 · 견적 발송 완료(2026-11-09 대표) · 서버 전환 자격은 그대로');
+  assert.deepEqual(R.cands,['[합성] 타래아파트','[합성] 파랑아파트'],'전환 대기 목록 = 견적 발송 · 방문 완료 건(2026-11-09 방문 완료도 자동 전환)');
   /* ⑦-3 견적을 보냈는데 영업건이 없는 건: 이유 + 다시 넘기기 */
   await page.evaluate(id=>{InquiryWorkbench.open(inqKey(B.inquiries.find(x=>x.id===id)));},ID.QS);await page.waitForSelector('#inq-inbox-dialog .idv3-stuck');
   const stuck=page.locator('#inq-inbox-dialog .idv3-stuck');
-  assert.equal(one(await stuck.locator('.lb').innerText()),'영업건으로 넘어가지 않았습니다');assert.match(one(await stuck.locator('p').innerText()),/견적 발송은 저장됐지만 영업건이 아직 없습니다/);
+  assert.equal(one(await stuck.locator('.lb').innerText()),'영업건으로 넘어가지 않았습니다');assert.match(one(await stuck.locator('p').innerText()),/방문 · 견적은 저장됐지만 영업건이 아직 없습니다/);
   if(process.env.SHOT_DIR)await page.screenshot({path:path.join(process.env.SHOT_DIR,'jr-stuck.png')});
   await page.evaluate(()=>{window.__ap=window.autoPromote;window.autoPromote=()=>{throw Error('[합성] 서버 거절');};});
   await stuck.locator('[data-idv="promote"]').click();await page.waitForTimeout(150);
@@ -156,7 +156,7 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
   await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
   await page.evaluate(id=>{window.autoPromote=window.__ap;const q=B.inquiries.find(x=>x.id===id);delete q.deal_id;},ID.QS);
   await page.evaluate(id=>{InquiryWorkbench.open(inqKey(B.inquiries.find(x=>x.id===id)));},ID.QV);await page.waitForSelector('#inq-inbox-dialog .idv3-next');
-  assert.equal(await page.locator('#inq-inbox-dialog .idv3-stuck').count(),0,'방문 완료 건은 막힌 건이 아니다');await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
+  assert.equal(await page.locator('#inq-inbox-dialog .idv3-stuck').count(),1,'방문 완료인데 영업건이 없으면 막힌 건(2026-11-09 방문 완료도 자동 전환) — [영업건으로 넘기기]');await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(150);
   /* ⑦-4 계약 원장 근거 → 그 영업건(5번): 원장 행에 영업건 번호가 있으면 [열기] · 지금 기간 밖이어도 연다 */
   const L=await page.evaluate(ID=>{const d=B.deals.find(x=>x.id===ID.B);ContractSalesData.state=()=>({status:'ready',items:[{deal_id:dealKey(d),brand:'POUR솔루션',sales_owner_name:'이필선',events:[{kind:'signed',effective_date:'2026-10-05',amount_delta:2e8,sales_owner_name:'이필선'}]},{deal_id:'not-in-crm',brand:'POUR솔루션',site_name:'[합성] 원장만 있는 현장',events:[{kind:'signed',effective_date:'2026-10-06',amount_delta:1e8,sales_owner_name:'이필선'}]}]});
    const rows=SalesInsights.contractEvidence({});return rows.map(r=>[r.site,r.key]);},ID);

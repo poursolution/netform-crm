@@ -188,7 +188,8 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  has(html,/function inqStatusQualifies\(s\)\{return window\.InquiryFlow&&InquiryFlow\.on\(\)\?InquiryFlow\.statusQualifies\(s\):QUALIFY_ST\.test\(String\(s\|\|''\)\)\}/);has(html,/  if\(inqStatusQualifies\(to\)&&CLOSED_ST\.indexOf\(to\)<0\)\{/,'상태 변경 → 자동 전환도 같은 기준');
  has(html,/if\(window\.InquiryFlow&&InquiryFlow\.on\(\)\)return InquiryFlow\.promoReady\(q\)&&CLOSED_ST\.indexOf\(q\.status\)<0&&!linkedDeal\(q\);/,'전환 대기 판정(대시보드 · 오늘 업무가 쓰는 함수) = 지금 넘겨야 하는 건');
  F.take({inquiry_id:'q3',visit_done_at:'2026-10-03T03:00:00Z'});const v5=load();v5.InquiryV5={on:()=>true};v5.InquiryFlow.take({inquiry_id:'q3',visit_done_at:'2026-10-03T03:00:00Z'});v5.InquiryFlow.take({inquiry_id:'q4',quote_sent_at:'2026-10-05T03:00:00Z'});
- assert.deepEqual([v5.InquiryFlow.promoReady({id:'q3',status:'현장방문 완료'}),v5.InquiryFlow.isQualified({id:'q3',status:'현장방문 완료'}),v5.InquiryFlow.promoReady({id:'q4'}),v5.InquiryFlow.promoReady({status:'견적서 발송완료'}),v5.InquiryFlow.promoReady({status:'견적서 발송예정'})],[false,true,true,true,false],'흐름 v5: 넘길 건 = 견적 발송 완료만 · 서버 전환 자격은 그대로');
+ assert.deepEqual([v5.InquiryFlow.promoReady({id:'q3',status:'현장방문 완료'}),v5.InquiryFlow.isQualified({id:'q3',status:'현장방문 완료'}),v5.InquiryFlow.promoReady({id:'q4'}),v5.InquiryFlow.promoReady({status:'견적서 발송완료'}),v5.InquiryFlow.promoReady({status:'견적서 발송예정'})],[true,true,true,true,false],'흐름 v5: 넘길 건 = 방문 완료 · 견적 발송 완료(2026-11-09 대표 지시) · 서버 전환 자격은 그대로');
+ v5.G={visitPromoteOff:true};assert.equal(v5.InquiryFlow.promoReady({id:'q3',status:'현장방문 완료'}),false,'끄기 G.visitPromoteOff = 예전처럼 견적 발송 완료만');
  assert.equal(F.promoReady({id:'q3',status:'현장방문 완료'}),true,'흐름 v5 를 끄면 예전 기준');
  has(html,/if\(\/현장\\s\*방문\\s\*완료\/\.test\(t\)\)return t\+' 상태로 파이프라인 인계';/,'인계 사유 문장 = 서버와 같은 모양');
  assert.match(read('inquiry-conversion.js'),/\(F\?F\.promoReady\(q\):qualify\.test\(String\(q\.status\|\|''\)\)\)/,'전환 대기 목록');
