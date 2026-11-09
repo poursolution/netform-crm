@@ -5,7 +5,9 @@
 (function(root){
  'use strict';
  const esc=v=>root.esc(String(v==null?'':v)),attr=v=>root.escAttr(String(v==null?'':v));
- const enabled=()=>!root.G.lostPickOff&&!!root.CRMRules&&typeof root.CRMRules.lostGroups==='function';
+ /* 정착 모드(2026-11-09 · settle-mode.js): 두 걸음(분류 → 세부) 대신 사유 목록에서 한 번만 고른다.
+    왜: 끝난 건을 닫는 일이 무거우면 열린 채로 쌓인다(진행 581건 중 424건이 이관분) */
+ const enabled=()=>!root.G.lostPickOff&&!(root.SettleMode&&root.SettleMode.on())&&!!root.CRMRules&&typeof root.CRMRules.lostGroups==='function';
  function draw(box,sel,cat){
   const groups=root.CRMRules.lostGroups(),cur=sel.value,g=groups.find(x=>x[0]===cat)||null;
   box.dataset.cat=cat||'';

@@ -676,7 +676,7 @@
   if(s.ceOn&&s.tab==='call'&&CEV()){const P=cePlan(q,s);if(!P.ok){root.iqMsg(P.error);return;}if(!CEV().showNote(s.ceRes))s.text='';s.ch=s.ch||'전화';
    if(P.v1){const T2=FL().TWO.of(s.con,'관심 있음');/* 모바일 응대(MobileInquiryEntry)와 같은 변환 */s._ceOptions={ch:P.E.ch,result:T2.res||s.res,text:String(P.E.memo||'').trim(),contact_result:T2.contact_result,customer_reaction:'',plan:P.pl,existing:P.snap};}/* 공통 계획 그대로(모바일과 같은 길) */
    else{s.next=P.next;s.due=P.due;const du=document.getElementById('iq-due');if(du)du.value=P.due;if(P.note&&!String(s.text||'').includes('[기한 변경 요청]'))s.text=(String(s.text||'')+P.note).trim();}}
-  const text=s.text.trim(),v3=!!document.getElementById('inq-inbox-dialog')?.classList.contains('idv3');if(!text&&!(v3&&s.tab==='call'&&s.res))return;
+  const text=s.text.trim(),v3=!!document.getElementById('inq-inbox-dialog')?.classList.contains('idv3'),settle=!!(root.SettleMode&&root.SettleMode.on());/* 정착 모드(2026-11-09): 결과만 고르면 저장 — 내용 · 다음 행동은 권장 */if(!text&&!((v3||settle)&&s.tab==='call'&&s.res))return;
   if((FL()||root.CRM_SCHEDULE_V1===true||root.PCInquirySave?.route(q))&&root.InquiryCommand){
    /* 저장은 명령 하나(InquiryCommand): 응대 기록 = contact_log(시도면 최초응대 · 단계는 그대로), 내부 메모 = memo. 화면이 숨은 입력칸을 만들어 예전 함수를 돌려 부르지 않는다 */
    if(!root.inqCtlRoleMatch(q))return;
@@ -684,7 +684,7 @@
    try{
     if(s.tab==='call'){
      const g=sugOf(q,s),assigned=!!root.inquiryAssigned(q),nextText=(s.next||'').trim()||(g.none?'배드핏 종결 검토':g.act),due=(document.getElementById('iq-due')||{}).value||g.due;
-     if(assigned&&!s._ceOptions&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
+     if(assigned&&!s._ceOptions&&!settle&&(!nextText||!due)){root.iqMsg('다음 행동과 날짜가 있어야 저장됩니다.');return;}
      const options=Object.assign({ch:g.ch,result:g.res,text,next:nextText,due},s._ceOptions?{}:s.con?{contact_result:root.InquiryFlow.TWO.of(s.con,s.rea).contact_result,customer_reaction:root.InquiryFlow.TWO.of(s.con,s.rea).customer_reaction}:{},s._ceOptions||{});
      let refresh=false;
      if(root.PCInquirySave?.route(q)){
@@ -695,6 +695,8 @@
       finally{s.pcSaving=false;controls.forEach(([el,disabled])=>{el.disabled=disabled;});}
       if(root.G?.inqSelKey!==selected||!document.getElementById('inq-inbox-dialog')||Object.keys(form).some(k=>s[k]!==form[k]))return;
       refresh=true;
+       /* 정착 모드(2026-11-09): 실제 연결을 기록했으면 영업건으로(서버 설치 확인 뒤 · InquiryFlow.promoReady 가 판단) */
+       try{if(root.SettleMode?.ready()&&root.InquiryFlow.kindOf(options.result)==='connected'&&root.InquiryFlow.promoReady(q)&&!root.inqCtlConverted(q)&&typeof root.autoPromote==='function')root.autoPromote(q);}catch(e){}
      }else if(root.InquiryCommand.run('contact_log',q,options)!==true){root.iqMsg((document.getElementById('iq-msg')||{}).textContent||'저장하지 못했습니다.');return;}
      reset();delete s._pcRestored;delete s._pcDue;if(refresh)root.paint?.();reskinFrom();toast(options.plan&&CEV()?'기록했습니다 · '+CEV().summary(options.plan,{existing:options.existing}).map(r=>r[0]+' '+r[1]).join(' · '):assigned?g.ch+' · '+resShow(g.res)+(g.none?'':' → '+nextText+' '+kday(new Date(due+'T00:00:00'))):'응대 기록을 저장했습니다');return;
     }
