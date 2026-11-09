@@ -62,39 +62,18 @@ function cardBadge(r){
 function liveRow(r){return !['won','lost','expansion','legacy'].includes(r.group);}
 function liveBasis(){const y=kanbanYear();return (PS()?PS().basis():'기준: 진행 중 영업건 · 수주·실주·확장 제외')+' · '+(y==='전체'?'모든 연도':'공사예정년도 '+y);}
 const legacyCount=()=>PS()?rows(undefined,{legacy:'only'}).length:0;
-/* ── 정착 모드(2026-11-09 대표 「전부 진행」 · settle-mode.js): 릴레잇 이관 자료를 파이프라인 첫 화면에 '정리 필요' 묶음으로 함께 보인다 ──
+/* ── 정착 모드(2026-11-09 · settle-mode.js): 릴레잇 이관 = 칸반 맨 왼쪽 '정리 필요' 칸 ──
    왜: 사이드바 맨 아래 별도 화면에만 있어 "기존 릴레잇 정보 따로 관리하는 느낌"(영업팀). 진행 581건 중 424건이 이관분이다.
-   줄마다 [진행으로](단계 + 다음 할 일 날짜만 — 정착 모드 단계 전환) · [종료](실주 · 배드핏 · 연락두절 중 사유 1개). 숫자(진행 n건 · 금액)에는 넣지 않는다 — 진행 기준은 그대로.
-   끄기 G.settleOff → 예전처럼 사이드바 '과거 이관 · 분류 전'에서만. */
+   처음엔 칸반 위에 회색 상자 + 줄마다 [진행으로] · [종료] 단추로 붙였다가 대표 "밤티" 지적(2026-11-09)으로 다른 칸과 같은 카드 · 같은 동작으로 바꿨다.
+   카드를 단계 칸으로 끌면 그 단계로(정착 모드 단계 전환 = 단계 + 다음 할 일 날짜), 실주 칸으로 끌면 종료(사유 1개), 누르면 상세([영업 재개]).
+   진행 숫자(진행 n건 · 금액)에는 넣지 않는다. 끄기 G.settleOff → 예전처럼 사이드바 '과거 이관 · 분류 전'에서만. */
 const settleOn=()=>!!(root.SettleMode&&root.SettleMode.on());
-function legacyStyle(){if(document.getElementById('pk-legacy-style'))return;const s=document.createElement('style');s.id='pk-legacy-style';
- s.textContent='.pk-legacy{margin:10px 0 14px;border:1px solid #e3e6ec;border-left:4px solid #9aa1ad;border-radius:12px;background:#fafbfc;padding:10px 12px}'
-  +'.pk-legacy-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}.pk-legacy-h b{font-size:14px;color:#33415e}.pk-legacy-h em{font-style:normal;font-weight:800;color:#33415e}.pk-legacy-h small{color:#6b7689;font-size:12px}'
-  +'#pipeline-stage-root .pk-legacy-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px}'
-  +'#pipeline-stage-root .pk-lrow{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e3e6ec;border-radius:9px;padding:5px 8px;min-width:0;height:auto}'
-  +'#pipeline-stage-root .pk-lrow .pk-lsite{flex:1 1 auto;min-width:0;width:auto;height:auto;text-align:left;border:0;box-shadow:none;background:none;padding:0;font:inherit;font-size:13px;font-weight:700;color:#1f2a44;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
-  +'#pipeline-stage-root .pk-lrow small{flex:none;color:#6b7689;font-size:11.5px;white-space:nowrap}'
-  +'#pipeline-stage-root .pk-lrow .pk-lbtn{flex:none;width:auto;height:auto;min-height:0;border:1px solid #d5dae3;border-radius:7px;background:#fff;box-shadow:none;font:inherit;font-size:12px;line-height:1.4;padding:2px 8px;cursor:pointer;white-space:nowrap;color:#33415e}'
-  +'#pipeline-stage-root .pk-lrow .pk-lbtn.go{border-color:#2563eb;color:#2563eb}#pipeline-stage-root .pk-lrow .pk-lbtn:hover{background:#f2f5fa}';
- document.head.append(s);}
-function legacyStrip(){
- if(!settleOn()||!PS())return '';
- const all=rows(undefined,{legacy:'only'}).filter(kanbanYearMatch);if(!all.length)return '';legacyStyle();
- const LP=root.ListPager,S0=state(),items=all.slice().sort((a,b)=>(Number(b.amount)||0)-(Number(a.amount)||0)),cp=LP?LP.cut(items,LP.page(S0,'pk:legacy'),PK_PER):{rows:items.slice(0,PK_PER),pages:1};
- const old=r=>{try{return PS().oldStage(r.item);}catch(e){return '예전 단계';}};
- return '<section class="pk-legacy" data-pk-legacy><div class="pk-legacy-h"><b>정리 필요 · 릴레잇 이관</b><em>'+all.length+'건</em><small>예전 시스템에서 옮겨 온 진행 건 · 진행 숫자에는 아직 넣지 않음 · [진행으로] = 단계 + 다음 할 일 날짜 · [종료] = 사유 1개</small></div>'
-  +'<div class="pk-legacy-list">'+cp.rows.map(r=>'<div class="pk-lrow"><button type="button" class="pk-lsite" data-ps-action="legacy-open" data-value="'+attr(r.key)+'" title="'+attr(r.site+' · '+(r.owner||'미배정')+' · '+old(r))+'">'+h(r.site)+'</button><small>'+h(r.owner&&r.owner!=='미배정'?r.owner:'담당 없음')+'</small>'
-   +button('진행으로','legacy-go',r.key,'pk-lbtn go')+button('종료','legacy-end',r.key,'pk-lbtn')+'</div>').join('')+'</div>'
-  +(LP?LP.html(cp,{ns:'pk',v:'legacy',small:true,info:false}):'')+'</section>';
-}
-function legacyAct(a,v){
- const r=rows(undefined,{legacy:'only'}).find(x=>x.key===v);if(!r)return;
- root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='legacy-open')return;
- const T=root.StageTransition,from=PS()&&PS().fromCode?PS().fromCode(r.item):root.dealStage(r.item),choices=T&&T.choices?T.choices(from):[];
- const code=a==='legacy-end'?'lost':(choices.includes('consulting')?'consulting':choices[0]);
- setTimeout(()=>{if(root.StageTransitionUI?.open)root.StageTransitionUI.open(r.item,false,code);},60);
-}
-/* ── 전체 파이프라인 칸반 v2 (2026-10-01 디자인 핸드오프 'Pipeline Kanban v2') ──
+const legacyCol=()=>settleOn()&&!!PS();
+const legacyRows=()=>rows(undefined,{legacy:'only'});
+function findRow(key){return rows().find(x=>x.key===key)||(legacyCol()?legacyRows().find(x=>x.key===key)||null:null);}
+function legacyColStyle(){if(document.getElementById('pk-legacy-style'))return;const s=document.createElement('style');s.id='pk-legacy-style';
+ s.textContent='.ps-kanban.pk.pk8{grid-template-columns:repeat(7,minmax(0,1fr)) 96px}.ps-kcol[data-pk-col="legacy"]{background:#f4f5f7}@media(max-width:1100px){.ps-kanban.pk.pk8{grid-template-columns:1fr}}';
+ document.head.append(s);}/* ── 전체 파이프라인 칸반 v2 (2026-10-01 디자인 핸드오프 'Pipeline Kanban v2') ──
    7열이 한 화면에(실주는 96px 좁은 열), 카드는 현장명 + 한 줄(상태점·담당자·금액), 열마다 12장 + '더보기'(단계 페이지로).
    카드를 끌어 다른 열에 놓으면 그 단계의 기존 전환창(stage-transition, 한 일·결과·다음 할 일·사유 필수)이 열린다 —
    근거 없이 단계만 옮기지 않는 규칙은 그대로라 '놓자마자 이동·되돌리기'는 넣지 않았다. 저장되면 보드가 다시 그려진다. */
@@ -108,6 +87,7 @@ function judgeOf(r){if(judgeCache.has(r.key))return judgeCache.get(r.key);let b=
 function cardReason(r){
  if(r.group==='won')return ['','수주'+(Number(r.amount)>0?'':' · 낙찰금액 확인')];
  if(r.group==='lost')return ['',r.reason&&r.reason!=='미기록'?'실주 · '+r.reason:'실주 · 사유 보완'];
+ if(r.group==='legacy')return ['',!r.owner||r.owner==='미배정'?'담당부터 정하기':'끌어서 단계 정하기'];/* 정착 모드 '정리 필요' 칸 */
  if(!r.owner||r.owner==='미배정')return ['r','담당 미배정'];
  const J=root.PipelineJudge,b=judgeOf(r);
  /* 줄 글은 한 줄에(2026-10-07 대표): 단계 기한 이름은 짧게 — '마감 · 결정 일정 10.18' → '마감 10.18', '물량 산출 기한' → '물량 산출', '발송 10.11 + 7일' → '발송 10.11+7일' */
@@ -126,9 +106,9 @@ function kanbanCard(r){
 }
 function kanban(all){
  /* pipeline_list ④(2026-10-20): 칸마다 한 쪽 최대 20건 + 쪽 번호(ListPager · '+n건 더보기' 없음) · 정렬 = 확인된 기한 급한 순 → 기한 없음 · 수주 · 실주는 최근 종료 순 · 금액 = 수주는 낙찰 · 그 외 예상 */
- const S=state(),LP=root.ListPager;
- return '<div class="ps-kanban pk">'+PK_COLS.map(([key,name,color])=>{
-  const items=kanbanSort(all.filter(r=>r.group===key),key),lost=key==='lost',cp=LP?LP.cut(items,LP.page(S,'pk:'+key),PK_PER):{rows:items.slice(0,PK_PER),pages:1},shown=cp.rows;
+ const S=state(),LP=root.ListPager,LG=legacyCol(),cols=LG?[['legacy','정리 필요','#9aa1ad']].concat(PK_COLS):PK_COLS;if(LG)legacyColStyle();
+ return '<div class="ps-kanban pk'+(LG?' pk8':'')+'">'+cols.map(([key,name,color])=>{
+  const items=key==='legacy'?legacyRows().filter(kanbanYearMatch).sort((a,b)=>(Number(b.amount)||0)-(Number(a.amount)||0)):kanbanSort(all.filter(r=>r.group===key),key),lost=key==='lost',cp=LP?LP.cut(items,LP.page(S,'pk:'+key),PK_PER):{rows:items.slice(0,PK_PER),pages:1},shown=cp.rows;
   const known=items.filter(r=>Number(r.amount)>0),amount=known.reduce((s,r)=>s+(Number(r.amount)||0),0),unk=items.length-known.length;
   return '<section class="ps-kcol'+(lost?' lost':'')+'" data-pk-col="'+key+'" style="--stage-color:'+color+'"><div class="ps-khead"><div class="ps-kt"><i class="ps-kstage"></i>'+button(name,'stage',key,'ps-ktitle')+'<span class="ps-kn">'+items.length+'</span></div><div class="ps-kmoney" title="'+attr((key==='won'?'낙찰금액 합':'예상금액 합')+(unk?' · 금액 미확인 '+unk+'건 제외':''))+'">'+(lost?'예상 '+moneyShort(amount):(key==='won'?'낙찰 ':'')+moneyShort(amount))+'</div></div>'
    +(lost?'<div class="ps-kdrop">여기로 끌어<br>실주 처리</div>':'')
@@ -140,7 +120,7 @@ function kanban(all){
 let pkDrag=null;
 function pkTargetCode(r,colKey){const def=S.definition(colKey),T=root.StageTransition,from=root.dealStage(r.item),choices=T&&typeof T.choices==='function'?T.choices(from):null;if(!def)return null;if(!choices)return def.codes[0];return def.codes.find(code=>choices.includes(code))||null;}
 function pkDrop(colKey){
- const d=pkDrag;pkDrag=null;if(!d||d.group===colKey)return;const r=rows().find(x=>x.key===d.key);if(!r||r.expansion)return;
+ const d=pkDrag;pkDrag=null;if(!d||d.group===colKey||colKey==='legacy')return;const r=findRow(d.key);if(!r||r.expansion)return;
  const name=(PK_COLS.find(x=>x[0]===colKey)||[])[1]||colKey,code=pkTargetCode(r,colKey);
  if(!code){root.toast?.(r.site+' — 지금 단계에서는 «'+name+'»(으)로 바로 옮길 수 없습니다. 상세에서 가능한 단계를 확인해 주세요.','warn');return;}
  root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));
@@ -208,14 +188,14 @@ function render(){
  const yearSelect=!def&&root.ConstructionYear?'<label>연도<select aria-label="공사예정 연도" data-ps-filter="pipeRepYear">'+root.ConstructionYear.options(root.B?.deals||[]).map(y=>'<option value="'+attr(y)+'"'+(String(y)===kanbanYear()?' selected':'')+'>'+h(y==='전체'?'전체 연도':y==='미입력'?'미입력':y+'년')+'</option>').join('')+'</select></label>':'';
  /* 상단 단계 타일 스트립은 사이드바와 중복이라 전 단계에서 제거했다. */
  /* 단계 목록 v2(2026-10-01 핸드오프): 새 모듈이 그린다. 끄면(G.pipeListV2Off) 아래 예전 화면 */
- if(root.PipelineListV2?.paint(el,key,list)){}else if(!def){el.classList.add('pk-mode');el.innerHTML=pkHead(all.filter(kanbanYearMatch),source)+legacyStrip()+body;}else{el.classList.remove('pk-mode');el.innerHTML='<header class="ps-heading"><div><small>파이프라인 / '+h(title)+'</small><h2>'+h(title)+'</h2><p>'+h(def?.description||'단계별 적재·금액·정체를 한 화면에서 확인하고, 카드를 누르면 상세로 이동합니다.')+'</p></div><b>'+list.length+'건</b></header>'+(!def?kpiStrip(all.filter(kanbanYearMatch)):'')+root.SalesFilters.controls(source.filter(r=>!def||r.group===key).map(r=>({brand:r.item.brand,owner:r.owner,item:r.item})))+'<div class="ps-filters">'+yearSelect+work+'<label>현장 검색<input aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장·담당자·공종"></label>'+button('검색','search')+'</div>'+'<p class="ps-note">'+(def?'현재 적재 기준 · 생성 연도와 무관하게 진행 영업 표시'+(root.G.pipelinePeriod?' · 이전 분석 기간 '+h(root.G.pipelinePeriod):''):'공사예정년도 기준 조회 · 칼럼 제목=단계 페이지 · 카드=상세 화면')+'</p>'+body;}
+ if(root.PipelineListV2?.paint(el,key,list)){}else if(!def){el.classList.add('pk-mode');el.innerHTML=pkHead(all.filter(kanbanYearMatch),source)+body;}else{el.classList.remove('pk-mode');el.innerHTML='<header class="ps-heading"><div><small>파이프라인 / '+h(title)+'</small><h2>'+h(title)+'</h2><p>'+h(def?.description||'단계별 적재·금액·정체를 한 화면에서 확인하고, 카드를 누르면 상세로 이동합니다.')+'</p></div><b>'+list.length+'건</b></header>'+(!def?kpiStrip(all.filter(kanbanYearMatch)):'')+root.SalesFilters.controls(source.filter(r=>!def||r.group===key).map(r=>({brand:r.item.brand,owner:r.owner,item:r.item})))+'<div class="ps-filters">'+yearSelect+work+'<label>현장 검색<input aria-label="단계 현장 검색" data-ps-filter="q" value="'+attr(root.G.q||'')+'" placeholder="현장·담당자·공종"></label>'+button('검색','search')+'</div>'+'<p class="ps-note">'+(def?'현재 적재 기준 · 생성 연도와 무관하게 진행 영업 표시'+(root.G.pipelinePeriod?' · 이전 분석 기간 '+h(root.G.pipelinePeriod):''):'공사예정년도 기준 조회 · 칼럼 제목=단계 페이지 · 카드=상세 화면')+'</p>'+body;}
  el.onclick=click;el.onchange=e=>{const k=e.target.dataset.psFilter,pk=e.target.dataset.pkFilter;const LP=root.ListPager;if(pk==='brand'){root.G.brand=e.target.value;f.page=1;LP&&LP.reset(f);root.paint();return;}if(pk==='owner'){root.SalesScope.change('owner',e.target.value);root.G.rep=e.target.value;f.page=1;LP&&LP.reset(f);root.paint();return;}if(k){root.G[k]=e.target.value;f.page=1;LP&&LP.reset(f);/* 필터가 바뀌면 칸반 칸 쪽도 1쪽으로 */root.paint();}};if(!def)pkBind(el);el.onkeydown=e=>{if(e.key==='Enter'&&e.target.matches('[data-ps-filter="q"]')){root.G.q=e.target.value;f.page=1;root.paint();}};root.PipelineSplit.mount(list);sidebar();return true;
 }
 function click(e){const pk=e.target.closest('[data-pk="page"]');if(pk){root.ListPager.set(state(),'pk:'+pk.dataset.v,pk.dataset.page);root.paint();return;}/* ④ 칸반 칸마다 쪽 번호 */
  const b=e.target.closest('[data-ps-action]');if(!b)return;const a=b.dataset.psAction,v=b.dataset.value;if(a==='stage')open(v);
-  if(['legacy-open','legacy-go','legacy-end'].includes(a)){legacyAct(a,v);return;}/* 정착 모드 '정리 필요' 묶음 */
+  
  if(a==='reload'){if(typeof root.loadData==='function')Promise.resolve(root.loadData()).then(()=>root.paint&&root.paint());return;}/* ① 조회 상태 줄 [다시 불러오기] */
- if(a==='unkeep'){root.G.pipeRepYear='전체';root.G.workFilter='전체';state().page=1;root.paint();return;}/* ①-3 유지한 조건 해제 */if(a==='triage-tab'){state().triage=v;state().page=1;root.paint();}if(a==='page'){state().qpage=Number(b.dataset.page)||1;root.paint();}if(a==='view'){state().view=v;state().page=1;root.paint();}if(a==='status'){state().status=v;state().page=1;root.paint();}if(a==='owner'){const current=root.SalesScope.state().owner;root.SalesScope.change('owner',current===v?'전체':v);state().page=1;root.paint();}if(a==='relseg'){root.G.relSeg=v;state().page=1;root.paint();}if(a==='compseg'){root.G.compSeg=v;state().page=1;root.paint();}if(a==='consseg'){root.G.consSeg=v;state().page=1;root.paint();}if(a==='page'){state().page=Number(v);root.paint();}if(a==='search'){root.G.q=document.querySelector('[data-ps-filter="q"]')?.value||'';state().page=1;root.paint();}if(a==='contract-refresh'){Promise.resolve(root.ContractSalesData?.refresh()).then(refresh);return;}if(['record','process','contact','next','stage-edit','primary'].includes(a)){const r=rows().find(r=>r.key===v);if(!r)return;if(!POPUP_STAGES.includes(root.G.pipelineStage)&&root.PipelineSplit?.select(r,a))return;if(r.expansion){root.ExpansionPool.open(r.expansion.id);return;}root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='process')root.DealDetailWorkspace.run(r.flags.includes('missing')?'next':'contact');else if(a!=='record')root.DealDetailWorkspace.run(a);}}
+ if(a==='unkeep'){root.G.pipeRepYear='전체';root.G.workFilter='전체';state().page=1;root.paint();return;}/* ①-3 유지한 조건 해제 */if(a==='triage-tab'){state().triage=v;state().page=1;root.paint();}if(a==='page'){state().qpage=Number(b.dataset.page)||1;root.paint();}if(a==='view'){state().view=v;state().page=1;root.paint();}if(a==='status'){state().status=v;state().page=1;root.paint();}if(a==='owner'){const current=root.SalesScope.state().owner;root.SalesScope.change('owner',current===v?'전체':v);state().page=1;root.paint();}if(a==='relseg'){root.G.relSeg=v;state().page=1;root.paint();}if(a==='compseg'){root.G.compSeg=v;state().page=1;root.paint();}if(a==='consseg'){root.G.consSeg=v;state().page=1;root.paint();}if(a==='page'){state().page=Number(v);root.paint();}if(a==='search'){root.G.q=document.querySelector('[data-ps-filter="q"]')?.value||'';state().page=1;root.paint();}if(a==='contract-refresh'){Promise.resolve(root.ContractSalesData?.refresh()).then(refresh);return;}if(['record','process','contact','next','stage-edit','primary'].includes(a)){const r=findRow(v);if(!r)return;if(!POPUP_STAGES.includes(root.G.pipelineStage)&&root.PipelineSplit?.select(r,a))return;if(r.expansion){root.ExpansionPool.open(r.expansion.id);return;}root.G._detailPopup=true;root.drwDeal(JSON.stringify(r.item));if(a==='process')root.DealDetailWorkspace.run(r.flags.includes('missing')?'next':'contact');else if(a!=='record')root.DealDetailWorkspace.run(a);}}
 function refresh(){sidebar();if(root.G.page==='today')root.paintTodayHome();if(root.G.page==='pipe'&&root.G.pipelineWorkspace)render();if(['dash','perf','control'].includes(root.G.page))root.SalesInsights?.render();}
 function acknowledgements(){setTimeout(()=>{if(!root.B)return;let changed=false;for(const q of root.Phase1?.queue?.list?.()||[]){if(seen.has(q.request_id)||q.status!=='done'||!q.ack)continue;seen.add(q.request_id);if(!['opportunity_touch','opportunity_favorite'].includes(q.operation))changed=true;if(['transition','close'].includes(q.operation)&&root.G.pipelineWorkspace&&root.G.page==='pipe'&&String(root.CUR_DETAIL?.item?.id)===String(q.object_id)){const d=root.B.deals.find(d=>String(d.id)===String(q.object_id)),key=d&&S.group(root.dealStage(d),root.outcomeOf(d));if(key){const wasOpen=document.getElementById('detailView')?.classList.contains('on');open(key);if(wasOpen){root.G._detailPopup=true;root.drwDeal(JSON.stringify(d));}}}}if(changed)refresh();},0);}
 root.addEventListener('phase1:queue',acknowledgements);root.addEventListener('phase1:identity-cleared',()=>{seen.clear();actor='';document.getElementById('pipeline-stage-root')?.replaceChildren();document.getElementById('pipeline-stage-menu')?.replaceChildren();});

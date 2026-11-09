@@ -312,7 +312,9 @@
   let flag='';try{flag=root.Phase1.storage.getItem('nf_kpi_autosave')||'';}catch(e){}if(flag===mon)return;
   W.autoAttempt=mon;
   /* 2026-11-08 데이터 점검: 확인 없이 저장하면 화면을 연 사람도 모르게 그 주 기준값이 정해졌다 — 저장 전에 한 번 묻는다(브라우저에서만 · 취소하면 이번에 다시 묻지 않음) */
-  if(typeof root.confirm==='function'&&!root.confirm('이번 주('+mon.slice(5).replace('-','/')+' 주) 관리팀 KPI가 아직 저장되지 않았습니다.\n지금 화면의 값으로 저장할까요? 저장한 값이 이번 주 기준값이 됩니다.'))return;
+  /* 2026-11-09 대표 첫 화면 정리(boss-simple.js): 대표 화면에서는 묻지 않고 저장 — 저장했다는 알림(saveWeek 의 '이번 주 지표 n개를 저장했습니다')으로 알린다. 끄기 G.bossSimpleOff */
+  const quiet=!!(root.BossSimple&&root.BossSimple.on());
+  if(!quiet&&typeof root.confirm==='function'&&!root.confirm('이번 주('+mon.slice(5).replace('-','/')+' 주) 관리팀 KPI가 아직 저장되지 않았습니다.\n지금 화면의 값으로 저장할까요? 저장한 값이 이번 주 기준값이 됩니다.'))return;
   return Promise.resolve(saveWeek(null)).then(ok=>{if(ok)try{root.Phase1.storage.setItem('nf_kpi_autosave',mon);}catch(e){}});
  }
  function onClick(e){
