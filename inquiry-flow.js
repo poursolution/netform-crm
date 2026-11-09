@@ -169,7 +169,9 @@
     서버 전환 조건을 함께 넓히는 SQL(crm_settle_mode_v1)이 설치된 뒤에만 — SettleMode.ready() */
  const SETTLE_PROMO=/전화\s*응대\s*완료|현장\s*방문\s*(완료|예정)|견적.*발송/;
  const settlePromo=q=>{try{return !!(q&&root.SettleMode&&root.SettleMode.ready()&&root.inquiryAssigned(q)&&SETTLE_PROMO.test(String(q.status||'')));}catch(e){return false;}};
- function promoReady(q){if(!q)return false;if(settlePromo(q))return true;if(!(root.InquiryV5&&root.InquiryV5.on()))return isQualified(q);const S=server(q),p=patchOf(q);return !!(S&&S.quote_sent_at||p.quoteSentAt)||/견적.*발송\s*완료/.test(String(q.status||''));}
+ /* 2026-11-09 대표 "견적문의에서 방문 갔다 왔으면 자동으로 파이프라인 넘어가게": 방문 완료도 넘길 건(견적 발송 완료와 같은 자리). 끄기 G.visitPromoteOff → 견적 발송 완료만 */
+ const visitPromote=()=>!(root.G&&root.G.visitPromoteOff);
+ function promoReady(q){if(!q)return false;if(settlePromo(q))return true;if(!(root.InquiryV5&&root.InquiryV5.on()))return isQualified(q);const S=server(q),p=patchOf(q);return !!(S&&S.quote_sent_at||p.quoteSentAt)||/견적.*발송\s*완료/.test(String(q.status||''))||(visitPromote()&&qualifiedBy(q)==='visit_done');}
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
@@ -315,7 +317,10 @@
   if(on()&&can(RPC)&&UUID.test(String(q.id||''))){try{const r=await store().rpc(RPC,{type:'visit',inquiry_id:String(q.id),date,time,done});take(r.state);}catch(e){if(!(e&&e.unavailable))throw e;}}
   if(done){const p=patchFor(q);p.visitDoneAt=p.visitDoneAt||new Date(date+'T'+(time||'12:00')+':00').toISOString();setStatus(q,'현장방문 완료');saveLocal();
    /* 전환 요청은 서버가 '현장방문 완료' 상태를 받는 것이 확인된 뒤에만 보낸다(같은 SQL 이 흐름 함수와 전환 조건을 함께 설치한다). 그 전에는 저장만 — 전환 대기 목록에 남는다 */
-   /* 견적문의 흐름 v5(2026-10-13): 방문 완료는 04 현장방문 / 견적 단계에 머문다 — 견적 발송 완료를 저장할 때 파이프라인(컨설팅 설계)으로 넘어간다 */ if(root.InquiryV5&&root.InquiryV5.on()){saveLocal();return {done:true,promoted:false,label:'1차 현장방문 완료',msg:'견적서 발송을 저장하면 파이프라인으로 넘어갑니다'};} const ready=loadedOk&&can(RPC),msg=ready?promote(q):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
+   /* 견적문의 흐름 v5(2026-10-13): 방문 완료는 04 현장방문 / 견적 단계에 머문다 — 견적 발송 완료를 저장할 때 파이프라인(컨설팅 설계)으로 넘어간다 */ if(root.InquiryV5&&root.InquiryV5.on()){saveLocal();
+    /* 2026-11-09 대표: 방문 완료 = 그 자리에서 영업건(컨설팅 설계). 서버 전환 조건은 이미 '현장방문 완료' 상태를 받는다(sql/inquiry-flow-v1-20261005.sql · settle-mode-v1) */
+    if(visitPromote()){let msg='';try{msg=promote(q);}catch(e){msg='파이프라인 전환은 하지 못했습니다 — '+String(e&&e.message||e);}saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
+    return {done:true,promoted:false,label:'1차 현장방문 완료',msg:'견적서 발송을 저장하면 파이프라인으로 넘어갑니다'};} const ready=loadedOk&&can(RPC),msg=ready?promote(q):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';saveLocal();return {done:true,promoted:!!root.inqCtlConverted(q),label:'1차 현장방문 완료',msg};}
   if(date>=today&&root.inquiryAssigned(q)&&nextSet(q,'현장방문'+(time?' '+time:''),date)!==true)throw Error('다음 할 일을 저장하지 못했습니다.');
   setStatus(q,'현장방문예정');saveLocal();return {done:false,promoted:false,label:'현장방문 일정',msg:''};
  }
