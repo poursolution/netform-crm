@@ -166,7 +166,7 @@
  function autoSent(d,o){
   try{
    if(!d||(root.G&&root.G.autoSentOff))return {ok:false,why:'off'};
-   const mobile=!!(o&&o.mobile),from=mobile?d.code:fromOf(d);
+   const mobile=!!(o&&o.mobile),from=!mobile?fromOf(d):d.code;
    if(!['first_contact','consulting'].includes(from)||S.terminal.includes(d.outcome))return {ok:false,why:'stage'};
    if(!S.choices(from).includes('sent'))return {ok:false,why:'choice'};
    const t=today(),sent=/^\d{4}-\d{2}-\d{2}$/.test(String(o&&o.sentDate||''))&&o.sentDate<=t?o.sentDate:t;
