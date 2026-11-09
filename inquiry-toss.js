@@ -34,7 +34,7 @@
  const lib=()=>V5().lib;
  /* 단계 칸 아래 한 줄(칸 폭에 들어가게 짧게) */
  /* 실제 단계 판정(InquiryV5.stageOf)과 같은 말 — 정보 칸 수는 단계 조건이 아니다(2026-11-06) */
- const note=i=>['담당을 정하면 다음 단계','실제 연결되면 다음 단계','방문 · 견적 잡히면 다음 단계','견적 보내면 영업건으로'][i]||'';
+ const note=i=>['담당을 정하면 다음 단계','실제 연결되면 다음 단계','방문 · 견적 잡히면 다음 단계',root.G&&root.G.visitPromoteOff?'견적 보내면 영업건으로':'방문 · 견적 끝나면 영업건으로'/* 2026-11-09 방문 완료도 자동 전환 */][i]||'';
  const workOf=m=>/미분류/.test(String(m.work||''))?'':String(m.work||'');
  function due(m){try{return lib().dueOf(m,m._s);}catch(e){return {t:'',late:false};}}
  function nextOf(m){try{return lib().nextOf(m,m._s);}catch(e){return '';}}
