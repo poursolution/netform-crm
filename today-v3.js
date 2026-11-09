@@ -204,7 +204,7 @@
  /* 다른 화면에 있을 때(저장 직후 · 자료를 새로 받은 뒤) 화면을 그리지 않고 숫자만 다시 센다 — 범위는 오늘 업무 화면과 같음(current). 서버 호출은 늘리지 않는다(WorkRequest.quiet) */
  function syncBadge(){
   if(!ownsBadge()||!root.B)return;
-  const count=()=>{const X=T().data(),V=current(X);if(root.BossSimple&&root.BossSimple.on(V.role)){const M=root.BossSimple.model();setBadge(M.un.length+M.quiet.length+M.big.length);return;}/* 대표 화면 = 정할 것 수 */const DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);};
+  const count=()=>{const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);};
   if(root.WorkRequest&&root.WorkRequest.quiet)root.WorkRequest.quiet(count);else count();
  }
  function html(X,rows,legacy){
@@ -278,10 +278,6 @@
   setBadge(total);
   try{root.DayWord&&root.DayWord.bell();}catch(e){}
   /* design_handoff_pc_today_v6: 4구역 화면(영업사원 · 팀장 · 상무 · 대표)은 파이프라인 단계 화면과 같은 틀(today-v6.js) — 끄기 G.todayV6Off 면 아래 v3 */
-  /* 2026-11-09 대표 첫 화면 정리(boss-simple.js · 끄기 G.bossSimpleOff): 대표 · 영업관리 · 상무 · 팀장 화면은 맨 위 '오늘 대표님이 정할 것' 3줄 + 요약 한 줄, 나머지(팀 전체 4구역 · 보낸 요청 · 요청 보내기)는 '팀 전체 보기'에 접는다 */
-  const BS=root.BossSimple&&root.BossSimple.on(role)?root.BossSimple:null;
-  if(BS){const rest=Z&&root.TodayV6&&root.TodayV6.on()?(()=>{let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}return '<div class="tv3 tv6" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+root.TodayV6.html({Z,S,role,team,me,pass,week,back:backHtml,wrq:WR&&team&&!(root.G&&root.G.t6WrqOff)?WR.sideHtml():'',word:''})+'</div>';})():'<div class="tv3" data-role="'+role+'">'+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';
-   const out=BS.html({top:WR?WR.topHtml():'',rest});const m=/data-bs-total="(\d+)"/.exec(out);setBadge(m?Number(m[1]):0);return out;}
   if(Z&&root.TodayV6&&root.TodayV6.on()){let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}
    return '<div class="tv3 tv6'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+root.TodayV6.html({Z,S,role,team,me,pass,week,back:backHtml,wrq:WR&&team&&!(root.G&&root.G.t6WrqOff)?WR.sideHtml():'',word:root.DayWord&&role!=='mgr'?root.DayWord.lineHtml(V.me):''})+'</div>';}
   return '<div class="tv3'+(WR?' wrq-on':'')+'" data-role="'+role+'" data-total="'+total+'" data-back="'+backN+'">'+(WR?WR.topHtml():'')+wordHtml(role,me)+hero+strip+'<div class="tv3-body"><div class="tv3-main">'+groupsHtml+empty+backHtml+'</div>'+side+'</div></div>';

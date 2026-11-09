@@ -68,7 +68,8 @@
    +'body.bs-on .mhead .ib .dot{display:none}body.bs-on .mhead .ib:has(.dwd-belln,.wrq-belln) .dot{display:block}body.bs-on .mhead .ib .dwd-belln~.wrq-belln{display:none}';
   document.head.append(s);
  }
- function mark(){try{const b=document.body;if(!b)return;b.classList.toggle('bs-on',on());if(on())style();}catch(e){}}
+ /* 2026-11-09 대표 "디자인 건들지 마" — 메뉴 배지 숨김 · 종 빨간 점 같은 화면 꾸밈은 되돌림(bs-on 을 붙이지 않는다). 기능(배너 하루 한 번 · 금요일 KPI 자동 저장)만 남긴다 */
+ function mark(){try{const b=document.body;if(b)b.classList.remove('bs-on');}catch(e){}}
  function click(e){
   const t=e.target.closest&&e.target.closest('.bs [data-bs]');
   if(t){e.preventDefault();const k=t.dataset.key;try{
