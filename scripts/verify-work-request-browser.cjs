@@ -30,7 +30,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      inq(2,'[서울 강남] 강변삼부아파트',14,{status:'배정완료',assignee:'이필선',assigned_to:'10000000-0000-4000-8000-000000000001',assigned_at:at(14),raw:{'문의내용':'지하주차장 재도장 문의','상담채널':'전화','공사유형':'지하주차장 재도장'},work_type:'지하주차장 재도장'}),
      inq(3,'[서울 송파] 가락현대TWELVE',14,{status:'배정완료',assignee:'이필선',assigned_to:'10000000-0000-4000-8000-000000000001',assigned_at:at(14)}),
      inq(4,'[대전] 웰니스병원',19,{status:'배정완료',brand:'석민이앤씨',assignee:'송보람',assigned_to:'송보람',assigned_at:at(19)})],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'u-admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.todayAssist=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.workReq=null;
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.bossSimpleOff=true;/* 예전 화면을 보는 검사 — 2026-11-09 대표 첫 화면 정리는 verify-boss-simple-browser */ME={id:'u-admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.today3=null;G.todayAssist=null;G.tower=null;G.towerRole=null;G.todayQueueOwner='전체';G.workReq=null;
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.__writes=[];window.pushWrite=(op,p)=>{__writes.push([op,p]);return 'req-'+__writes.length;};
    window.__open=[];TodayWorkQueue.open=(k,a)=>{__open.push([k,a||'']);};window.__toasts=[];window.toast=m=>{__toasts.push(String(m));};
    /* 가짜 저장소: sql/work-request-v1-20261005.sql 과 같은 규칙(관리자만 보냄 · 같은 요청 잠금 · 받는 사람만 회신 · 기한이 지나야 재확인) */

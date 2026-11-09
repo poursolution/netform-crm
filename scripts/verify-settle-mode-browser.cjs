@@ -62,18 +62,23 @@ async function stageForm(page,dealIndex,to){
    assert.deepEqual(await stageForm(page,0,'sent'),{req:[],gate:false,picker:false,locked:false},'자료 발송: 필수 칸 없음(다음 할 일은 지금 잡힌 것 유지)');
    assert.deepEqual((await stageForm(page,0,'contract')).req,['계약금액(원)'],'계약금액은 그대로 필수');
    assert.deepEqual(await page.evaluate(()=>[StageTransition.validate('consulting','sent',{transition_date:'2026-11-09',fields:{}},'2026-11-09'),StageTransition.validate('compete','contract',{transition_date:'2026-11-09',fields:{}},'2026-11-09')]),[[],['계약금액(원)을(를) 입력해 주세요.']]);
-   await page.evaluate(()=>PipelineWorkspace.open('all'));await page.waitForSelector('[data-pk-legacy]');
-   assert.equal(one(await page.locator('[data-pk-legacy] .pk-legacy-h').innerText()),'정리 필요 · 릴레잇 이관 3건 예전 시스템에서 옮겨 온 진행 건 · 진행 숫자에는 아직 넣지 않음 · [진행으로] = 단계 + 다음 할 일 날짜 · [종료] = 사유 1개');
-   assert.deepEqual(await page.locator('[data-pk-legacy] .pk-lrow').evaluateAll(l=>l.map(n=>[n.querySelector('.pk-lsite').textContent,n.querySelector('small').textContent,[...n.querySelectorAll('.pk-lbtn')].map(b=>b.textContent).join('|')])),
-    [['[가상] 새솔단지','이필선','진행으로|종료'],['[가상] 별빛마을','황윤선','진행으로|종료'],['[가상] 은하수아파트','담당 없음','진행으로|종료']],'금액 큰 순');
+   await page.evaluate(()=>PipelineWorkspace.open('all'));const L=page.locator('.ps-kcol[data-pk-col="legacy"]');await L.waitFor();
+   /* 정리 필요 = 칸반 맨 왼쪽 칸(2026-11-09 대표 '밤티' 지적 뒤 — 별도 상자 · 줄 단추 없음, 다른 칸과 같은 카드) */
+   assert.equal(await page.locator('[data-pk-legacy],.pk-lrow,.pk-lbtn').count(),0,'예전 회색 상자 · 줄 단추 없음');
+   assert.equal(await page.locator('.ps-kanban.pk .ps-kcol').first().getAttribute('data-pk-col'),'legacy','맨 왼쪽 칸');
+   assert.deepEqual([one(await L.locator('.ps-ktitle').innerText()),await L.locator('.ps-kn').innerText()],['정리 필요','3']);
+   assert.deepEqual(await L.locator('.ps-kcard').evaluateAll(l=>l.map(n=>n.querySelector('.ps-ksite').textContent.trim())),['[가상] 새솔단지','[가상] 별빛마을','[가상] 은하수아파트'],'금액 큰 순');
+   assert.match(one(await L.locator('.ps-kcard').first().innerText()),/끌어서 단계 정하기$/);
+   assert.match(one(await L.locator('.ps-kcard').nth(2).innerText()),/담당부터 정하기$/);
    assert.match(one(await page.locator('.pk-sum').innerText()),/진행 중 2건/,'진행 숫자에는 이관 자료를 넣지 않음');
-   /* [진행으로] = 단계 전환 창(정착 모드: 단계 + 다음 할 일 날짜) */
-   await page.locator('[data-pk-legacy] .pk-lrow').first().locator('.pk-lbtn.go').click();await page.waitForSelector('#stage-transition-form');await page.waitForTimeout(300);
+   assert.deepEqual(await L.locator('.ps-kcard').evaluateAll(l=>l.filter(e=>e.scrollWidth>e.clientWidth+1).length),0,'카드 글 넘침 없음');
+   /* 컨설팅 설계 칸으로 끌면 = 단계 전환 창(정착 모드: 단계 + 다음 할 일 날짜) */
+   await L.locator('.ps-kcard').first().dragTo(page.locator('.ps-kcol[data-pk-col="consulting"]'));await page.waitForSelector('#stage-transition-form');await page.waitForTimeout(300);
    assert.deepEqual(await page.locator('#stage-transition-form').evaluate(f=>[f.querySelector('#sf-target').value,[...f.querySelectorAll('label b[aria-label="필수"]')].map(b=>b.parentElement.textContent.replace('*','').trim())]),['consulting',['다음 할 일 날짜']]/* 전환일 * 는 b 태그 없이 글자로 붙어 있다 */);
    await page.evaluate(()=>StageTransitionUI.close());
-   /* [종료] = 실주 창(사유 1개) */
-   await page.evaluate(()=>PipelineWorkspace.open('all'));await page.waitForSelector('[data-pk-legacy]');
-   await page.locator('[data-pk-legacy] .pk-lrow').nth(1).locator('.pk-lbtn:not(.go)').click();await page.waitForSelector('#stage-transition-form');await page.waitForTimeout(300);
+   /* 실주 칸으로 끌면 = 실주 창(사유 1개) */
+   await page.evaluate(()=>PipelineWorkspace.open('all'));await L.waitFor();
+   await L.locator('.ps-kcard').nth(1).dragTo(page.locator('.ps-kcol[data-pk-col="lost"]'));await page.waitForSelector('#stage-transition-form');await page.waitForTimeout(300);
    assert.equal(await page.locator('#sf-target').inputValue(),'lost');
    assert.deepEqual(errs,[]);await ctx.close();}
   console.log('verify-settle-mode-browser: ok');
