@@ -164,7 +164,12 @@
  }
  const isQualified=q=>!!qualifiedBy(q);
  /* 지금 넘겨야 하는가(전환 대기 · 막힌 이유의 기준 하나 · 2026-11-06): 흐름 v5(2026-10-13)부터 실제 전환은 견적 발송 완료 때만 일어난다 — 방문 완료는 04 단계에 머문다. isQualified 는 서버 전환 자격과 같아 그대로 둔다 */
- function promoReady(q){if(!q)return false;if(!(root.InquiryV5&&root.InquiryV5.on()))return isQualified(q);const S=server(q),p=patchOf(q);return !!(S&&S.quote_sent_at||p.quoteSentAt)||/견적.*발송\s*완료/.test(String(q.status||''));}
+ /* 정착 모드(2026-11-09 대표 「전부 진행」): 담당이 정해진 문의에서 실제 연결(전화응대 완료)이 되면 바로 영업건(컨설팅 설계)으로 넘긴다.
+    왜: 견적 발송 완료 때만 넘어가서 견적 전 문의가 파이프라인에 안 보였다 — "견적문의 따로 관리"(10/1 뒤 전환 0건).
+    서버 전환 조건을 함께 넓히는 SQL(crm_settle_mode_v1)이 설치된 뒤에만 — SettleMode.ready() */
+ const SETTLE_PROMO=/전화\s*응대\s*완료|현장\s*방문\s*(완료|예정)|견적.*발송/;
+ const settlePromo=q=>{try{return !!(q&&root.SettleMode&&root.SettleMode.ready()&&root.inquiryAssigned(q)&&SETTLE_PROMO.test(String(q.status||'')));}catch(e){return false;}};
+ function promoReady(q){if(!q)return false;if(settlePromo(q))return true;if(!(root.InquiryV5&&root.InquiryV5.on()))return isQualified(q);const S=server(q),p=patchOf(q);return !!(S&&S.quote_sent_at||p.quoteSentAt)||/견적.*발송\s*완료/.test(String(q.status||''));}
  /* ⑤ 견적 버전(서버 것이 있으면 서버, 없으면 이 PC 에 적어 둔 것) · 예전 다음 할 일 문장 속 금액 읽기 */
  function quotes(q){const S=server(q),p=patchOf(q),L=S&&Array.isArray(S.quotes)&&S.quotes.length?S.quotes:(Array.isArray(p.quoteVersions)?p.quoteVersions:[]);return L.slice().sort((a,b)=>Number(a.version_no)-Number(b.version_no));}
  const parseQuoteText=t=>{const m=/예상\s*([0-9,]+)\s*만원/.exec(String(t||''));return m?Number(m[1].replace(/,/g,''))*10000:0;};
@@ -223,11 +228,15 @@
   let ch=String(o.ch||'').trim(),res=String(o.result||'').trim(),text=String(o.text||'').trim(),line=String(o.line||'').trim();
   if(line){const r=readLine(line);if(r){ch=ch||r.ch;res=res||r.res;if(!text)text=r.text;}}
   ch=ch||'전화';if(!line){if(!res)throw Error('결과와 다음 행동일을 모두 넣어 주세요.');line=('['+ch+' · '+res+'] '+text).trim();}
-  const kind=kindOf(res)||'connected',next=String(o.next||'').trim(),due=String(o.due||''),rid=uuid(),at=new Date().toISOString(),flow={ch,res,kind,rid,contact_result:o.contact_result,customer_reaction:o.customer_reaction},type=ch==='기타'?'전화':ch;
+  let next=String(o.next||'').trim(),due=String(o.due||'');
+  const kind=kindOf(res)||'connected',rid=uuid(),at=new Date().toISOString(),flow={ch,res,kind,rid,contact_result:o.contact_result,customer_reaction:o.customer_reaction},type=ch==='기타'?'전화':ch;
   const send=()=>{if(kindOf(res)&&UUID.test(String(q.id||'')))queue({type:'contact_log',inquiry_id:String(q.id),request_id:rid,channel:ch,result:res,contact_result:o.contact_result,customer_reaction:o.customer_reaction,content:text.slice(0,4000),next_action:next.slice(0,500),next_check_date:/^\d{4}-\d{2}-\d{2}$/.test(due)?due:'',occurred_at:at});};
   if(!root.inquiryAssigned(q)){/* 배정 전: 기록만(다음 할 일은 배정 뒤) */
    const p=patchFor(q);p.activities=p.activities||[];p.activities.push({id:'lg-'+Date.now(),type,note:line,result:'',at,actor:meName()||root.repN(q.assignee),flow});
    q.lastActivity=p.lastActivity=at;if(kind==='connected'){try{root.touchCustomer(p,type,at);}catch(e){}}saveLocal();send();return true;}
+  /* 정착 모드(2026-11-09 대표 「전부 진행」 · settle-mode.js): 결과만 필수 — 다음 행동 · 날짜가 비면 결과에 맞는 기본값(연결 = 3일 뒤 다시 연락 · 시도 = 내일 다시 전화)으로 등록한다.
+     왜: 결과 + 다음 행동 + 날짜를 다 넣어야 저장돼서 10/1 뒤 받은 문의 46건의 응대 기록이 0건이었다. 끄기 G.settleOff */
+  if((!next||!/^\d{4}-\d{2}-\d{2}$/.test(due))&&root.SettleMode&&root.SettleMode.on()){const att=kind!=='connected';if(!next)next=att?'다시 전화':'다시 연락';if(!/^\d{4}-\d{2}-\d{2}$/.test(due)||due<todayStr())due=plusDays(todayStr(),att?1:3);}
   if(!next||!/^\d{4}-\d{2}-\d{2}$/.test(due))throw Error('결과와 다음 행동일을 모두 넣어 주세요.');
   /* 전송 요청이 중간에 실패하면 이 PC 의 값도 되돌린다(반쯤 바뀐 채 남지 않게) */
   const p0=patchFor(q),before=JSON.parse(JSON.stringify(q)),beforeP=JSON.parse(JSON.stringify(p0));
@@ -242,7 +251,9 @@
     if(ok){const p=patchFor(q);p.activities=p.activities||[];p.activities.push({id:'fu-'+Date.now(),type,note:did,result:line,at,actor:root.repN(q.assignee),flow});q.lastActivity=p.lastActivity=at;if(kind==='connected'){try{root.touchCustomer(p,type,at);}catch(e){}}}
    }
   }catch(e){Object.keys(q).forEach(k=>delete q[k]);Object.assign(q,before);Object.keys(p0).forEach(k=>delete p0[k]);Object.assign(p0,beforeP);throw e;}
-  if(ok){saveLocal();send();}
+  if(ok){saveLocal();send();
+   /* 정착 모드: 실제 연결을 기록하면 그 자리에서 영업건으로(실패해도 응대 기록은 남는다 — 상세의 [영업건으로 넘기기]로 다시) */
+   if(kind==='connected'&&settlePromo(q)&&!root.inqCtlConverted(q)){try{promote(q);saveLocal();}catch(e){try{root.console&&root.console.warn('settle promote: '+(e&&e.message||e));}catch(x){}}}}
   return ok;
  }
  /* 내부 메모: 응대 이력에 한 줄(고객 접점 아님 → 최초응대로 치지 않는다) */
@@ -292,7 +303,7 @@
  const pad2=n=>String(n).padStart(2,'0'),dayOf=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()),todayStr=()=>dayOf(new Date()),plusDays=(ymd,n)=>{const d=new Date(ymd+'T00:00:00');d.setDate(d.getDate()+n);return dayOf(d);};
  function setStatus(q,to){const from=q.status||'접수';if(to===from)return;const p=patchFor(q),at=new Date().toISOString();q.status=p.status=to;q.lastActivity=p.lastActivity=at;p.activities=p.activities||[];p.activities.push({type:'상태변경',note:from+' → '+to,result:'',at,actor:meName()||'관리자'});}
  /* 전환 기준을 채웠으면 그 자리에서 파이프라인으로(기존 전환 경로 autoPromote — 현장 · 브랜드 · 담당 · 문의 연결을 그대로 넘긴다) */
- function promote(q){if(!isQualified(q)||root.inqCtlConverted(q)||typeof root.autoPromote!=='function')return '';return String(root.autoPromote(q)||'');}
+ function promote(q){if(!(isQualified(q)||settlePromo(q))||root.inqCtlConverted(q)||typeof root.autoPromote!=='function')return '';return String(root.autoPromote(q)||'');}
  function localNext(q,text,due,id){const p=patchFor(q);p.nextActionObj={id:id||('na-'+Date.now()),type:'전화',text,due,status:'open'};q.nextActionText=p.nextActionText=text;q.nextAction=p.nextAction=due;}
  /* 1차 현장방문: 일정(예정) = 상태 + 그날 할 일 / 완료 = 전환 기준 충족 → 파이프라인 */
  async function visit(q,o){

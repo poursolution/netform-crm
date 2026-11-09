@@ -31,8 +31,10 @@
   ['first','첫 연락 지연','첫 연락 지연',m=>m.step===1&&m.late,()=>'배정 후 '+FIRST_H()+'시간이 지나도록 실제 연결이 없는 문의(부재는 시도로만)'],
   ['d3','대표회의 D-3','대표회의 D-3',m=>d3(m.meet),()=>'대표회의가 3일 안'],
   ['follow','후속 지연','후속 지연',m=>!!m.follow&&m.late,()=>'마지막 실제 연결 뒤 기준 일수를 넘긴 문의'],
-  ['info','정보 부족','정보 부족',m=>m._s===2&&!!m.follow&&m.miss.length>0,()=>'03 접촉 · 상담 단계인데 필수 확인 9개가 다 차지 않은 문의']];
+  ['info','정보 부족','정보 부족',m=>!INFO_OFF()&&m._s===2&&!!m.follow&&m.miss.length>0,()=>'03 접촉 · 상담 단계인데 필수 확인 9개가 다 차지 않은 문의']];
  const CHIPS=['asg','first','info','d3','follow'];
+ /* 정착 모드(2026-11-09 · settle-mode.js): '정보 부족'(필수 확인 9개) 칩은 숨긴다 — 처음부터 9개를 다 채우라는 압박으로 보였다. 정착된 뒤 다시 켠다. 끄기 G.settleOff */
+ const INFO_OFF=()=>!!(root.SettleMode&&root.SettleMode.on());
  const DEF={st:null,wf:''};
  function st(){const g=root.G;if(!g.inqV5||!g.inqV5._v5)g.inqV5=Object.assign({},DEF,g.inqV5||{},{_v5:true});return g.inqV5;}
  const pad=n=>String(n).padStart(2,'0');
@@ -108,7 +110,7 @@
   if(!host){host=document.createElement('div');host.id='inq-v5';const v4=document.getElementById('inq-v4');if(v4)v4.after(host);else page.append(host);host.addEventListener('click',onClick);}
   const S=st(),V=compute(),keep=host.__tools;if(keep&&host.contains(keep))keep.remove();
   const band='<div class="i5-band" role="group" aria-label="견적문의 단계">'+STG.map((g,i)=>{const o=S.st===i;return '<button type="button" class="i5-step'+(o?' on':'')+'" data-i5="st" data-v="'+i+'" aria-pressed="'+o+'" style="background:'+(o?'#15171c':SHADE[i])+';color:'+(o||i>=2?'#fff':'#15171c')+';clip-path:'+tri(i,4)+'"><b class="i5-n">'+V.cols[i].length+'</b><span><small>'+g[0]+'</small><em>'+h(g[1])+'</em></span></button>';}).join('')+'</div>';
-  const chips='<div class="i5-warn"><span class="i5-lb">확인 필요</span>'+CHIPS.map(k=>{const w=WARN.find(x=>x[0]===k),n=V.warn[k],o=S.wf===k;return '<button type="button" class="i5-chip'+(o?' on':'')+(n||o?'':' zero')+'" data-i5="wf" data-v="'+k+'" aria-pressed="'+o+'" title="'+attr(w[4]())+'">'+h(w[1])+' <b>'+n+'</b></button>';}).join('')
+  const chips='<div class="i5-warn"><span class="i5-lb">확인 필요</span>'+CHIPS.filter(k=>k!=='info'||!INFO_OFF()).map(k=>{const w=WARN.find(x=>x[0]===k),n=V.warn[k],o=S.wf===k;return '<button type="button" class="i5-chip'+(o?' on':'')+(n||o?'':' zero')+'" data-i5="wf" data-v="'+k+'" aria-pressed="'+o+'" title="'+attr(w[4]())+'">'+h(w[1])+' <b>'+n+'</b></button>';}).join('')
    +'<span class="i5-hint">누르면 아래 보드에서 해당 카드만 진하게</span><i></i><span class="i5-more-slot"></span>'+(S.st!=null||S.wf?'<button type="button" class="i5-clear" data-i5="clear">전체 보기</button>':'')+'</div>';
   const board='<div class="i5-board">'+STG.map((g,i)=>{const list=V.cols[i],pg=LP().cut(list,LP().page(S,'c'+i),SIZE),rest=pg.total-pg.rows.length;
    return '<section class="i5-col'+(S.st===i?' on':'')+(S.st!=null&&S.st!==i?' dim':'')+'" aria-label="'+attr(g[0]+' '+g[1])+'"><header><b>'+g[0]+' '+h(g[1])+'</b><span>'+pg.total+'건</span><small>'+h(outOf(i))+'</small></header>'

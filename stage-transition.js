@@ -36,15 +36,25 @@
  function choices(from){return terminal.includes(from)?[]:Object.keys(definitions).filter(k=>k!==from&&(k!=='won'||from==='completion'))}
  function isException(from,to){return !terminal.includes(to)&&to!=='waiting'&&!(normal[from]||[]).includes(to)}
  function validDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||'')))return false;const d=new Date(v+'T00:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===v}
+ /* 정착 모드(2026-11-09 대표 「전부 진행」 · settle-mode.js): 단계를 옮길 때 꼭 받는 값만 남긴다.
+    왜: 단계마다 필수 칸 2~5개를 다 채워야 저장돼서 10/1 뒤 단계 정보 저장 0건 · 새 영업건 0건이었다.
+    남기는 것 = 돈 · 끝 확인(계약 · 시공 · 수주의 금액, 준공의 준공일 · 확인)과 끝 상태의 사유 분류. 나머지 칸은 그대로 보이고 '권장'이 된다.
+    서버 검사(crm_transition_validate_v1)를 함께 푸는 SQL 이 설치된 뒤에만 적용 — SettleMode.ready() */
+ const KEEP={contract:['contract_amount'],construction:['contract_amount'],completion:['completion_date','completion_checks'],won:['completion_date','completion_checks','contract_amount'],lost:['close_reason'],badfit_lead:['close_reason'],nocontact:['close_reason'],support:['close_reason']};
+ const settle=()=>{try{return !!(root.SettleMode&&root.SettleMode.ready());}catch(e){return false;}};
+ /* 끝 상태의 '확인한 내용'은 서버가 5자 이상을 요구한다 — 정착 모드에서는 비우면 화면이 '정착 모드 · 상세 미입력 (사유)'로 적어 보낸다(fillClose). 서버 SQL 없이 되는 것이라 on() 만 본다 */
+ const settleOn=()=>{try{return !!(root.SettleMode&&root.SettleMode.on());}catch(e){return false;}};
+ function isRequired(to,x){if(!x||!x.required)return false;if(x.key==='close_detail'&&terminal.includes(to)&&settleOn())return false;if(!settle())return true;return (KEEP[to]||[]).includes(x.key);}
+ function fillClose(to,fields){if(!terminal.includes(to)||to==='won'||!settleOn()||!fields)return fields;const d=String(fields.close_detail||'').trim();if(d.length<5&&String(fields.close_reason||'').trim())fields.close_detail=(d?d+' · ':'')+'정착 모드 · 상세 미입력 ('+String(fields.close_reason).trim()+')';return fields;}
  function validate(from,to,input,today){
   const def=definitions[to],errors=[];if(!def||!choices(from).includes(to))return ['현재 단계에서 허용되지 않는 전환입니다.'];
   const v=input.fields||{};
   if(!validDate(input.transition_date)||input.transition_date>today)errors.push('전환일은 오늘까지의 유효한 날짜로 입력해 주세요.');
   def.fields.forEach(x=>{const value=v[x.key],empty=value==null||value===''||Array.isArray(value)&&!value.length;
-   if(x.required&&(empty||typeof value==='string'&&!value.trim()))errors.push(x.label+'을(를) 입력해 주세요.');
+   if(isRequired(to,x)&&(empty||typeof value==='string'&&!value.trim()))errors.push(x.label+'을(를) 입력해 주세요.');
    if(empty)return;
    if(x.type==='date'&&!validDate(value))errors.push(x.label+' 날짜를 확인해 주세요.');
-   if(x.type==='money'&&(!Number.isFinite(value)||value<0||x.required&&value===0))errors.push(x.label+'은(는) 유효한 금액이어야 합니다.');
+   if(x.type==='money'&&(!Number.isFinite(value)||value<0||isRequired(to,x)&&value===0))errors.push(x.label+'은(는) 유효한 금액이어야 합니다.');
    if(x.type==='select'&&!x.options.includes(value))errors.push(x.label+' 선택을 확인해 주세요.');
    if(x.type==='multi'&&(!Array.isArray(value)||value.some(y=>!x.options.includes(y))))errors.push(x.label+' 선택을 확인해 주세요.');
   });
@@ -54,7 +64,7 @@
   }
   if(to==='sent'){
    if(v.sent_date>input.transition_date)errors.push('실제 발송일은 전환일보다 늦을 수 없습니다.');
-   if(v.followup_date<v.sent_date)errors.push('다음 확인일은 발송일 이후여야 합니다.');
+   if(v.followup_date&&v.sent_date&&v.followup_date<v.sent_date)errors.push('다음 확인일은 발송일 이후여야 합니다.');
    if(Array.isArray(v.materials)&&v.materials.includes('견적서')&&!v.quote_version)errors.push('발송한 견적 Version을 선택해 주세요.');
   }
   if(Array.isArray(v.support)&&v.support.includes('없음')&&v.support.length>1)errors.push('지원 없음과 지원 요청을 함께 선택할 수 없습니다.');
@@ -118,6 +128,6 @@
   return {fields,sources,pending,review:[...new Set(review)].slice(0,5).map(x=>x.slice(0,180))};
  }
 
- const api={definitions,terminal,normal,choices,isException,validDate,validate,summary,next,evidence};
+ const api={definitions,terminal,normal,choices,isException,validDate,validate,summary,next,evidence,isRequired,settle,settleOn,fillClose,KEEP};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;root.StageTransition=api;
 })(typeof window==='undefined'?globalThis:window);

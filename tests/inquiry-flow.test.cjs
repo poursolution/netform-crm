@@ -192,7 +192,7 @@ test('④ ⑤ 전환 기준 하나 · 견적 = 버전: 상세 · 전환 대기 �
  assert.equal(F.promoReady({id:'q3',status:'현장방문 완료'}),true,'흐름 v5 를 끄면 예전 기준');
  has(html,/if\(\/현장\\s\*방문\\s\*완료\/\.test\(t\)\)return t\+' 상태로 파이프라인 인계';/,'인계 사유 문장 = 서버와 같은 모양');
  assert.match(read('inquiry-conversion.js'),/\(F\?F\.promoReady\(q\):qualify\.test\(String\(q\.status\|\|''\)\)\)/,'전환 대기 목록');
- assert.match(read('operational-adapter.js'),/!\/견적\.\*발송\|현장\\s\*방문\\s\*완료\/\.test\(payload\.inquiry_status\)/,'전송 계층');
+ assert.match(read('operational-adapter.js'),/!\/견적\.\*발송\|현장\\s\*방문\\s\*\(완료\|예정\)\|전화\\s\*응대\\s\*완료\/\.test\(payload\.inquiry_status\)/,'전송 계층(2026-11-09 정착 모드: 실제 연결 · 방문 예정도 — 서버 sql/settle-mode-v1-20261109.sql ③ 과 같은 조건)');
  assert.match(sql.replace(/\r\n/g,'\n'),/a constant text:=\$a\$status_value !~ '견적\.\*발송'\$a\$;\n b constant text:=\$b\$status_value !~ '견적\.\*발송\|현장\[\[:space:\]\]\*방문\[\[:space:\]\]\*완료'\$b\$;/,'서버 전환 명령의 조건 한 곳');
  assert.match(sql,/if n<>1 then raise exception '전환 조건을 바꿀 자리가 %곳입니다\(1곳이어야 함\) — 아무것도 바꾸지 않았습니다',n; end if;/,'자리가 정확히 1곳이 아니면 멈춘다');
  assert.match(fl,/const ready=loadedOk&&can\(RPC\),msg=ready\?promote\(q\):'서버 적용 뒤 전환 대기 목록에서 파이프라인으로 넘길 수 있습니다';/,'방문 완료 전환은 서버가 받는 것이 확인된 뒤에만 보낸다');
