@@ -96,20 +96,18 @@ end $fn$;
 revoke all on function crm_security.crm_office_activity_kind(text,jsonb) from public, anon, authenticated, service_role;
 revoke all on function crm_security.crm_office_attempt_only(text) from public, anon, authenticated, service_role;
 
-create or replace function public.crm_office_timing_v1(p_domain text, p_after uuid default null, p_limit integer default 200)
+-- 본문(2026-11-10 분리): 로그인 확인 없이 서버 안에서만 부른다(사무실 판정 예약 작업 · 아래 공개 함수). 외부 실행 권한 없음.
+--   p_admin=true 면 전체, false 면 기존 can_inquiry · can_deal 범위(로그인한 사람 기준)
+create or replace function crm_security.crm_office_timing_core(p_domain text, p_after uuid, p_limit integer, p_admin boolean)
 returns jsonb language plpgsql stable security definer set search_path='' as $fn$
 declare
- a record; v_admin boolean; raw_items jsonb; items jsonb; has_more boolean; next_cursor uuid; v_memo jsonb:='{}'::jsonb;
+ v_admin boolean; raw_items jsonb; items jsonb; has_more boolean; next_cursor uuid; v_memo jsonb:='{}'::jsonb;
 begin
- select * into a from crm_security.actor();
- if not found or a.user_id is null or a.permission_role not in ('admin','rep','branch','consultation') then
-  raise exception 'forbidden' using errcode='42501';
- end if;
  if p_domain is null or p_domain not in ('inquiry_timing','deal_timing') then
   raise exception 'unsupported office timing domain' using errcode='22023';
  end if;
  if p_limit is null or p_limit<1 or p_limit>500 then raise exception 'invalid limit' using errcode='22023'; end if;
- v_admin:=a.permission_role='admin';
+ v_admin:=coalesce(p_admin,false);
 
  if p_domain='inquiry_timing' then
   -- 메모 속 통화 보완 날(메모 확인 SQL 이 운영에 없으면 빈 값 — 이 함수는 그대로 돈다)
@@ -308,11 +306,24 @@ begin
  next_cursor:=case when has_more and jsonb_array_length(items)>0 then (items->(jsonb_array_length(items)-1)->>'id')::uuid end;
  return jsonb_build_object(
   'contract_version',1,'resource','office_timing','domain',p_domain,'definitions_version',3,
-  'scope_completeness','actor_authorized_rows_only','actor_user_id',a.user_id,
+  'scope_completeness','actor_authorized_rows_only',
   'generated_at',now(),
   'items',items,
   'pagination',jsonb_build_object('completeness',case when has_more then 'partial' else 'complete' end,
    'has_more',has_more,'next_cursor',next_cursor));
+end $fn$;
+revoke all on function crm_security.crm_office_timing_core(text,uuid,integer,boolean) from public, anon, authenticated, service_role;
+
+-- 공개 함수: 로그인한 CRM 사용자 확인 → 본문 호출(응답 모양은 분리 전과 같다)
+create or replace function public.crm_office_timing_v1(p_domain text, p_after uuid default null, p_limit integer default 200)
+returns jsonb language plpgsql stable security definer set search_path='' as $fn$
+declare a record;
+begin
+ select * into a from crm_security.actor();
+ if not found or a.user_id is null or a.permission_role not in ('admin','rep','branch','consultation') then
+  raise exception 'forbidden' using errcode='42501';
+ end if;
+ return crm_security.crm_office_timing_core(p_domain,p_after,p_limit,a.permission_role='admin')||jsonb_build_object('actor_user_id',a.user_id);
 end $fn$;
 revoke all on function public.crm_office_timing_v1(text,uuid,integer) from public, anon, service_role;
 grant execute on function public.crm_office_timing_v1(text,uuid,integer) to authenticated;
