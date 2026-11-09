@@ -125,7 +125,7 @@
    +lab('보낸 방법','<select data-ql="sway" style="'+inp+'"><option>이메일</option><option>카카오톡</option><option>문자</option><option>직접 전달</option></select>')
    +(openFollow(d)?'<div data-ql="sfu" style="background:#fff;border:1px solid #e8eaef;border-radius:14px;padding:12px 13px;font-size:14px;line-height:1.55"><span style="font-size:12px;color:#6b7280;font-weight:700">후속 연락</span><br><b>'+esc(String(openFollow(d).text||openFollow(d).title||''))+'</b> · '+esc(String(openFollow(d).due||openFollow(d).due_at||'').slice(0,10))+'<br><span style="font-size:12.5px;color:#6b7280">이미 잡힌 후속이 있어 새로 만들지 않습니다(재발송도 같음)</span></div>'
     :lab('다음 확인일 (실제 발송일 + 7일)','<input data-ql="snext" type="date" value="'+addDay(kst(0),7)+'" style="'+inp+'">'))
-   +'<div style="font-size:12.5px;color:#6b7280">저장하면 발송 기록'+(openFollow(d)?'만 남고 기존 후속은 그대로입니다':'과 후속 확인 연락 1건이 남습니다')+'. 단계를 발송 완료로 옮기는 것은 상세의 [단계 변경]에서 합니다.</div>'
+   +'<div style="font-size:12.5px;color:#6b7280">저장하면 발송 기록'+(openFollow(d)?'만 남고 기존 후속은 그대로입니다':'과 후속 확인 연락 1건이 남습니다')+'. 컨설팅 설계 단계면 자료 발송완료로 자동으로 옮깁니다.</div>'
    +'<span data-ql-act="send" role="button" tabindex="0" style="min-height:48px;border-radius:12px;background:#15171c;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center">발송 기록 저장</span>');
  }
  function submitSend(d,root,after){
@@ -141,7 +141,8 @@
    const last=sentOf(d),cur=d.nextAction&&d.nextAction.status==='open'?d.nextAction:null;
    w.queueMobileContactOperation('activity',{opportunity_id:String(d.id),intent:'standalone',type:'견적발송',note:(last?'견적 V'+last.version_no+' ':'')+'발송 · '+way+' · 받는 사람 '+to+' · 발송일 '+sd+' · 담당자 기록',occurred_at:new Date().toISOString(),meaningful_contact:false});
    if(!fu)w.queueMobileContactOperation('next_action',{opportunity_id:String(d.id),intent:'standalone',type:'전화',text:'견적 발송 후 확인 연락',due_at:nx});
-   msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). '+(fu?'후속은 기존 업무 그대로':'다음 확인 '+nx);
+   /* 2026-11-09 견적 발송 기록 = 자료 발송완료로 자동(StageTransitionUI.autoSent · 컨설팅 설계 건만 · 끄기 G.autoSentOff) */let moved=false;try{const A=w.StageTransitionUI&&w.StageTransitionUI.autoSent?w.StageTransitionUI.autoSent(d,{mobile:true,version:last?last.version_no:'',recipient:to,sentDate:sd}):null;moved=!!(A&&A.ok);}catch(e){}
+    msg='발송 기록을 저장했습니다(서버 반영 대기 중일 수 있음). '+(moved?'자료 발송완료로 옮겼습니다 · ':'')+(fu?'후속은 기존 업무 그대로':'다음 확인 '+nx);
   }catch(e){msg='저장하지 못했습니다: '+String(e&&e.message||e);}
   after();
  } /* ── 견적 작성(간단견적 · 공법견적) — PC '견적 작성'과 같은 계산(QuoteCompose)과 같은 저장 함수(crm_quote_version_save_v1 · 서버가 다시 계산해 다르면 저장 안 함).

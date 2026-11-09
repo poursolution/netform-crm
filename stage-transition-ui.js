@@ -110,7 +110,7 @@
  }
  function save(){
   if(!ctx||ctx.saving)return;
-  const input=collect(),d=ctx.deal,from=ctx.mobile?d.code:fromOf(d);
+  const input=ctx.auto?ctx.autoInput:collect(),d=ctx.deal,from=ctx.mobile?d.code:fromOf(d);
   /* ops_12 C⑨: 보류의 재접촉 예정일은 재개 날짜와 같다(비워 두면 재개 날짜로 — 서버가 그 날 담당 오늘 업무를 만든다) */
   if(ctx.to==='waiting'&&input&&input.fields&&!input.fields.contact_date&&input.fields.resume_date)input.fields.contact_date=input.fields.resume_date;
   if(input&&S.fillClose)S.fillClose(ctx.to,input.fields);
@@ -124,7 +124,7 @@
    if(input.next_due&&input.next_due<today())errors.push('다음 할 일 날짜는 오늘 이후로 골라 주세요.');
    else if(!S.next(ctx.to,input.fields)&&!genericNext(ctx.to,input)&&!currentNext())errors.push('다음 할 일 날짜를 골라 주세요 — 단계만 바꾸면 흐름이 끊깁니다.');
   }
-  if(errors.length){document.getElementById('sf-error').textContent=errors.join('\n');return}
+  if(errors.length){if(ctx.auto)return {ok:false,errors};document.getElementById('sf-error').textContent=errors.join('\n');return}
   ctx.saving=true;
   const to=ctx.to,at=new Date(input.transition_date+'T00:00:00').toISOString(),actor=ctx.mobile?(G.user?.nm||''):((typeof ME!=='undefined'&&ME?.name)||repN(d.assignee));
   const snapshot={...input,from:ctx.from,to,recorded_at:new Date().toISOString(),actor},text=S.summary(to,input.fields)+(input.skip_reason?'\n전환 사유: '+input.skip_reason:'')+(input.memo?'\n메모: '+input.memo:''),terminal=S.terminal.includes(to),next=S.next(to,input.fields)||genericNext(to,input);
@@ -144,7 +144,7 @@
   const payload={opportunity_id:d.id,from:ctx.from,to,stage_code:ctx.from,at,transition_date:input.transition_date,note:text,reason:input.fields.close_reason||input.skip_reason||text,stage_context:snapshot,stage_contexts:context,contract_amount:update.contract_amount,completion_date:update.completion_date};
   if(terminal)Object.assign(payload,{outcome:to,closed_at:at,won_amount:to==='won'?input.fields.contract_amount:null,completion_date:update.completion_date});
   pushWrite(terminal?'close':'transition',payload);
-  if(ctx.mobile){d.activities=d.activities||[];d.activities.push({id:'stage-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,actor_id:meId(),meaningful_contact:false});d.lastAt=at;d.tl=d.tl||[];d.tl.unshift([input.transition_date,S.definitions[to].label+' — '+text])}else logActivity('단계전환',S.definitions[to].label,text,at,actor,false);
+  if(ctx.mobile){d.activities=d.activities||[];d.activities.push({id:'stage-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,actor_id:meId(),meaningful_contact:false});d.lastAt=at;d.tl=d.tl||[];d.tl.unshift([input.transition_date,S.definitions[to].label+' — '+text])}else if(ctx.auto&&!(typeof CUR_DETAIL!=='undefined'&&CUR_DETAIL&&CUR_DETAIL.item===d)){/* 자동 이동(autoSent): 상세가 열려 있지 않으면 그 영업건 기록에 바로 남긴다 */const p=ctx.patch||{};p.activities=p.activities||[];p.activities.push({id:'local-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,at,actor,meaningful:false});d.activities=p.activities;}else logActivity('단계전환',S.definitions[to].label,text,at,actor,false);
   pushWrite('activity',{opportunity_id:d.id,type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,meaningful_contact:false});
   if(next&&!terminal){const obj={id:'na-'+Date.now(),type:next.type,text:next.text,due:next.due,due_at:next.due,status:'open',assignee:d.assignee};if(ctx.mobile)d.nextAction=obj;else{d.nextActionObj=ctx.patch.nextActionObj=obj;d.nextAction=ctx.patch.nextAction=next.due;d.nextActionText=ctx.patch.nextActionText=next.text}
    /* 서버 단계 변경 명령은 자료 발송(다음 확인일)·관계관리(재접촉일)에서만 다음 할 일을 만든다. 그 밖의 단계에서 고른
@@ -155,7 +155,31 @@
    if(!ctx.mobile)ensureExpansionRecord(d,update.completion_date,true);
    else pushWrite('expansion_pool_upsert',{opportunity_id:d.id,source_opportunity_id:d.id,site_id:d.site_id||null,site_name:d.nm,source_work_summary:d.workSummary||'공종 미분류',source_won_amount:d.won_amount,completion_date:update.completion_date,owner_name:d.rep,expansion_status:'신규 대상',relationship_state:'기존고객',candidate_work_items:['타공종 확인'],next_contact_at:new Date(new Date(update.completion_date+'T00:00:00Z').getTime()+30*864e5).toISOString().slice(0,10)});
   }
+  if(ctx.auto){if(!ctx.mobile)saveLocal();return {ok:true};}
   if(!ctx.mobile)saveLocal();const mobile=ctx.mobile;close();if(mobile){render();toast('전환 기록을 저장 요청했습니다. 서버 반영 상태를 확인해 주세요.');try{navigator.vibrate?.(30);}catch(e){}}else{renderDetail();showDetailErr(saveMsg('단계별 정보를 저장 요청했습니다.'),true)}
+ }
+ /* 견적 발송 → 자료 발송완료 자동(2026-11-09 대표 「1 · 2 · 3번부터」 3번 · 화면은 그대로, 기능만)
+    왜: 견적을 보내고도 단계를 손으로 바꿔야 해서 단계가 컨설팅 설계에 머물렀다(10/1 뒤 단계 정보 저장 0건).
+    무엇: 컨설팅 설계(첫 상담 포함) 영업건에서 견적이 붙은 발송을 기록하면, 창을 열지 않고 같은 단계 변경 저장 길(save)로
+          '자료 발송완료'로 옮긴다 — 발송 자료 견적서 · 견적 Version · 받는 사람 · 발송일 · 다음 확인일(발송일 + 운영 기준 quote_followup_days, 기본 7일).
+          서버가 다음 확인일로 '발송자료 검토 여부 확인' 할 일을 만든다. 이미 발송 단계 이후면 아무것도 하지 않는다. 끄기 G.autoSentOff */
+ function autoSent(d,o){
+  try{
+   if(!d||(root.G&&root.G.autoSentOff))return {ok:false,why:'off'};
+   const mobile=!!(o&&o.mobile),from=!mobile?fromOf(d):d.code;
+   if(!['first_contact','consulting'].includes(from)||S.terminal.includes(d.outcome))return {ok:false,why:'stage'};
+   if(!S.choices(from).includes('sent'))return {ok:false,why:'choice'};
+   const t=today(),sent=/^\d{4}-\d{2}-\d{2}$/.test(String(o&&o.sentDate||''))&&o.sentDate<=t?o.sentDate:t;
+   const days=Number(root.CRMRules&&root.CRMRules.get&&root.CRMRules.get('quote_followup_days'))||7;
+   const add=(k,n)=>{const x=new Date(k+'T00:00:00');x.setDate(x.getDate()+n);return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');};
+   let follow=add(sent,days);if(follow<t)follow=add(t,1);
+   const ver=o&&o.version!=null&&String(o.version)!==''?String(o.version):'';
+   const fields={materials:[ver?'견적서':'기타자료'],recipient:String(o&&o.recipient||'').trim()||'고객',sent_date:sent,followup_date:follow};if(ver)fields.quote_version=ver;
+   const quotes=ver?[{version_no:ver}]:[];
+   const prev=ctx;ctx={deal:d,mobile,from,to:'sent',patch:mobile?null:itemPatch(d,'deal'),drafts:{},quotes,auto:true,autoInput:{transition_date:t,skip_reason:'',memo:'[자동] 견적 발송 기록으로 단계 이동',next_due:'',fields}};
+   let r;try{r=save();}finally{ctx=prev;}
+   return r||{ok:false,why:'unknown'};
+  }catch(e){return {ok:false,why:String(e&&e.message||e)};}
  }
  function installPC(){
   const oldOpen=openTransition,oldConfirm=confirmTransition;
@@ -178,6 +202,6 @@
   const oldClose=commitClose;
   commitClose=function(o){if(o==='won')return amtSheet();return oldClose.apply(this,arguments)};
  }
- root.StageTransitionUI={open,close,save,fieldHTML,installPC,installMobile};
+ root.StageTransitionUI={open,close,save,fieldHTML,installPC,installMobile,autoSent};
  if(document.getElementById('dv-body')||typeof CUR_DETAIL!=='undefined')installPC();else installMobile();
 })(window);
