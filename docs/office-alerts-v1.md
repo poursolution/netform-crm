@@ -13,6 +13,7 @@ SQL: `sql/office-alerts-v1-20261110.sql`(먼저 `sql/office-timing-v1-20261108.s
 | 바로 판정 | `public.crm_office_alerts_refresh_v1()` | 관리자만 |
 
 기준값 = `public.crm_settings` 'ops_rules'(운영 기준 화면), 없으면 화면 기본값: 배정 30분 · 첫 연락 2시간 · 견적 후 7일 · 정체 30일 · 연락 주기 7일.
+**근무시간(2026-11-10 보람님 결정 · 사무실 알림봇과 같게)**: 배정 30분 · 첫 연락 2시간은 평일 08:30~18:00(서울)만 센다. 주말 · 공휴일은 빼고, 밤 · 주말 접수는 다음 근무일 08:30부터. 이 두 규칙은 2026-11-01 접수분부터만 본다(그 전은 사무실 정리봇). 기준표 `crm_security.office_alert_rules`(inquiry_from · work_from · work_to · holidays — 2027년 공휴일은 새로 넣어야 함). 이 두 규칙의 `over_minutes` 는 근무시간 분(하루 = 570분).
 
 ## 규칙(rule)
 | rule | 대상 | 조건 |

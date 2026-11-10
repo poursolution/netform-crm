@@ -26,8 +26,9 @@ test('서버 판정: 규칙별로 잡고, 관리자 전체 · 담당 본인 건�
   const inq=(id,o)=>db.query(`insert into public.inquiries(id,brand,site_name,contact_name,phone,assignee_name,status,received_at,created_at,updated_at,assigned_to,assigned_at,sheet_row,raw,close_reason)
    values($1,'POUR공법','비밀현장','비밀고객','010-1234-5678',$2,$3,now()-$4::interval,now()-$4::interval,now(),$5,$6,1,'{}'::jsonb,$7)`,
    [id,o.to?'담당':'',o.status||'담당자 배정',o.ago||'1 hour',o.to||null,o.assignedAgo?null:null,o.close||null]);
-  await inq(Q(1),{ago:'1 hour',status:'접수'});                                          // 미배정 1시간 → 배정 지연
-  await inq(Q(2),{ago:'3 hours',to:me});await db.query("update public.inquiries set assigned_at=now()-interval '3 hours' where id=$1",[Q(2)]); // 첫 연락 지연
+  // 근무시간으로 세므로 실행 시각(밤 · 주말 · 연휴)과 상관없이 넘도록 8일 전 접수(11/1 접수분부터 규칙 → 2026-11-09 이후 실행 기준)
+  await inq(Q(1),{ago:'8 days',status:'접수'});                                           // 미배정 → 배정 지연
+  await inq(Q(2),{ago:'8 days',to:me});await db.query("update public.inquiries set assigned_at=now()-interval '8 days' where id=$1",[Q(2)]); // 첫 연락 지연
   await inq(Q(3),{ago:'10 minutes',to:me});await db.query("update public.inquiries set assigned_at=now()-interval '10 minutes' where id=$1",[Q(3)]); // 아직 기한 안
   await inq(Q(4),{status:'배드핏',to:other});                                              // 종결 · 사유 없음
   await inq(Q(5),{status:'보류',to:me});                                                   // 보류 · 사유 없음
@@ -58,7 +59,9 @@ test('서버 판정: 규칙별로 잡고, 관리자 전체 · 담당 본인 건�
   assert.ok(has('first_contact_overdue',Q(2)));assert.equal(get('first_contact_overdue',Q(2)).approx,true);assert.equal(get('first_contact_overdue',Q(2)).owner_user_id,me);
   assert.ok(!all.items.some(x=>x.id===Q(3)),'기한 안이면 없음');
   assert.ok(has('close_reason_missing',Q(4)));assert.ok(has('hold_reason_missing',Q(5)));
-  assert.ok(has('assign_overdue',Q(6)));assert.equal(get('assign_overdue',Q(6)).legacy,true,'이관 자료 표시');
+  assert.ok(!has('assign_overdue',Q(6))&&!has('first_contact_overdue',Q(6)),'11/1 전 접수 문의는 배정 · 첫 연락 알림에서 뺌');
+  assert.ok(get('first_contact_overdue',Q(2)).over_minutes<8*570,'지난 시간은 근무시간(하루 570분)으로 셈');
+  assert.equal(all.run.rules.inquiry_from,'2026-11-01');assert.equal(all.run.rules.work_hours,'08:30~18:00');
   assert.ok(has('quote_followup_overdue',D(1)));
   assert.ok(has('stale',D(2)));assert.equal(get('stale',D(2)).legacy,false);assert.ok(!has('inactive',D(2)),'정체면 연락 주기 알림은 따로 안 냄');
   assert.ok(has('inactive',D(3)));assert.ok(!has('stale',D(3)));
@@ -91,11 +94,35 @@ test('서버 판정: 규칙별로 잡고, 관리자 전체 · 담당 본인 건�
  }finally{await db.close();}
 });
 
+test('근무시간 계산: 평일 08:30~18:00 · 주말 · 공휴일 제외 · 밤 접수는 다음 근무일 08:30부터(사무실 bizMs 와 같음)',async()=>{
+ const db=new PGlite();
+ try{
+  await db.exec("create role anon;create role authenticated;create role service_role;create schema crm_security;");
+  await db.exec(read('tests/fixtures/dashboard-read-schema.sql'));
+  await db.exec(`create table crm_security.inquiry_contact_logs(id uuid,inquiry_id uuid,kind text,result text,channel text,occurred_at timestamptz,content text);
+   create function crm_security.actor() returns table(user_id uuid,auth_uid uuid,display_name text,permission_role text) language sql stable as $$ select null::uuid,null::uuid,'x','x' where false $$;
+   create function crm_security.can_deal(target uuid,writing boolean default false) returns boolean language sql stable as $$ select false $$;
+   create function crm_security.can_inquiry(target uuid) returns boolean language sql stable as $$ select false $$;`);
+  await db.exec(read('sql/office-timing-v1-20261108.sql'));await db.exec(read('sql/office-alerts-v1-20261110.sql'));
+  const H="(select holidays from crm_security.office_alert_rules where id=1)";
+  const bm=async(a,b)=>(await db.query(`select crm_security.crm_office_biz_minutes($1::timestamptz,$2::timestamptz,'08:30','18:00',${H}) n`,[a,b])).rows[0].n;
+  const ba=async(a,m)=>(await db.query(`select to_char(crm_security.crm_office_biz_add($1::timestamptz,$2,'08:30','18:00',${H}) at time zone 'Asia/Seoul','YYYY-MM-DD HH24:MI') t`,[a,m])).rows[0].t;
+  assert.equal(await bm('2026-11-06T17:30:00+09:00','2026-11-09T09:00:00+09:00'),60,'금 17:30 → 월 09:00 = 금 30분 + 월 30분');
+  assert.equal(await bm('2026-11-10T07:00:00+09:00','2026-11-10T08:00:00+09:00'),0,'근무 전');
+  assert.equal(await bm('2026-11-10T09:00:00+09:00','2026-11-11T09:00:00+09:00'),570,'하루 = 570분');
+  assert.equal(await bm('2026-10-09T09:00:00+09:00','2026-10-12T09:00:00+09:00'),30,'한글날(금) · 주말 제외');
+  assert.equal(await ba('2026-11-07T22:00:00+09:00',30),'2026-11-09 09:00','토요일 밤 접수 → 월 08:30 부터 30분');
+  assert.equal(await ba('2026-11-10T17:00:00+09:00',120),'2026-11-11 09:30','퇴근 전 1시간 + 다음 날 1시간');
+  assert.equal(await ba('2026-09-23T17:00:00+09:00',120),'2026-09-29 09:30','추석 연휴(24 · 25 · 28) · 주말 건너뜀');
+ }finally{await db.close();}
+});
+
 test('서버 판정 SQL: 예약 등록은 pg_cron 이 있을 때만 · 쓰는 곳은 결과표뿐',()=>{
  const sql=read('sql/office-alerts-v1-20261110.sql');
  assert.match(sql,/if exists\(select 1 from pg_extension where extname='pg_cron'\)/);
  assert.match(sql,/cron\.schedule\('crm-office-alerts','\*\/10 \* \* \* \*'/);
+ assert.match(sql,/crm_office_alerts_notify_v1\(boolean\)'\) is not null then ' select crm_security\.crm_office_alerts_notify_v1\(\);'/,'다시 Run 해도 잔디 알림이 빠지지 않음');
  const writes=[...sql.matchAll(/\b(insert into|update|delete from)\s+([a-z_]+\.[a-z_]+)/gi)].map(m=>m[2]);
- assert.ok(writes.length>0&&writes.every(t=>/^crm_security\.office_alert(s|_runs)$/.test(t)),'영업 자료 표에 쓰지 않음: '+writes.join(','));
+ assert.ok(writes.length>0&&writes.every(t=>/^crm_security\.office_alert(s|_runs|_rules)$/.test(t)),'영업 자료 표에 쓰지 않음: '+writes.join(','));
  assert.ok(!/crm_office_alerts/.test(read('pc-manager-transport.js')),'화면 전송 목록에 넣지 않음');
 });

@@ -23,7 +23,7 @@ test('잔디 알림: 꺼져 있으면 안 보내고, 켜면 새 건만 한 번, 
   const calls=async()=>(await db.query("select * from net.calls order by id")).rows;
   const cycle=async()=>{await db.query("select crm_security.crm_office_alerts_compute_v1()");return (await db.query("select crm_security.crm_office_alerts_notify_v1() r")).rows[0].r;};
 
-  await db.query("insert into public.inquiries(id,brand,site_name,contact_name,phone,status,received_at,created_at,updated_at,assigned_to,assigned_at,sheet_row,raw) values($1,'POUR공법','비밀현장','비밀고객','010-1234-5678','담당자 배정',now()-interval '5 hours',now()-interval '5 hours',now(),$2,now()-interval '5 hours',1,'{}'::jsonb)",[Q(1),me]);
+  await db.query("insert into public.inquiries(id,brand,site_name,contact_name,phone,status,received_at,created_at,updated_at,assigned_to,assigned_at,sheet_row,raw) values($1,'POUR공법','비밀현장','비밀고객','010-1234-5678','담당자 배정',now()-interval '8 days',now()-interval '8 days',now(),$2,now()-interval '8 days',1,'{}'::jsonb)",[Q(1),me]);
   await db.query("insert into public.inquiries(id,brand,status,received_at,created_at,updated_at,sheet_row,raw) values($1,'POUR공법','접수','2026-09-01T00:00:00Z','2026-09-01T00:00:00Z',now(),2,'{}'::jsonb)",[Q(2)]); // 이관 · 미배정
 
   let r=await cycle();assert.equal(r.reason,'not_configured','처음엔 꺼져 있음');assert.equal((await calls()).length,0);
@@ -34,7 +34,7 @@ test('잔디 알림: 꺼져 있으면 안 보내고, 켜면 새 건만 한 번, 
   r=await cycle();assert.equal(r.sent,true);assert.equal(r.items,1,'이관 건은 보내지 않음');
   let c=await calls();assert.equal(c.length,1);assert.equal(c[0].url,HOOK);assert.equal(c[0].headers.Accept,'application/vnd.tosslab.jandi-v2+json');
   const msg=JSON.stringify(c[0].body);
-  assert.match(c[0].body.body,/새로 기준을 넘긴 일 1건/);assert.match(msg,/첫 연락 2시간 넘김 · 담당 김담당 · \d+시간/);
+  assert.match(c[0].body.body,/새로 기준을 넘긴 일 1건/);assert.match(msg,/첫 연락 2시간 넘김 · 담당 김담당 · 근무(일로 \d+일|\s\d+시간) 넘김/);
   assert.equal(c[0].body.connectInfo[0].description,'https://poursolution.github.io/netform-crm/mobile.html?open=inq%3A'+Q(1));
   assert.ok(!/비밀|010-1234/.test(msg),'고객 이름 · 연락처 · 현장명 없음');
 
