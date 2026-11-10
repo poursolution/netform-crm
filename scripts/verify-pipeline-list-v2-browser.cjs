@@ -33,7 +33,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
     deal('l-none','사유 없는 실주','이필선','lost',{outcome:'lost',closed_at:day(-3),stageHistory:[{from:'compete',to:'lost',at:day(-3)}]}),
     deal('l-done','사유 있는 실주','황윤선','lost',{outcome:'lost',closed_at:day(-5),lost_reason:'가격 열세',/* 확인한 내용이 적힌 실주 = 확인된 원인(과제로 이어진다 · rules 6차 ⑧) */stage_contexts:{lost:{fields:{close_reason:'가격 열세',close_detail:'소장 통화 — 경쟁사 낙찰가가 12% 낮았다고 확인'}}},stageHistory:[{from:'sent',to:'lost',at:day(-5)}]})
    ],inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   G.pipeStageBOff=true;/* 단계별 B안(2026-10-03) 뒤에 남는 v2 목록 검사 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
+   G.pipeStageBOff=true;/* 단계별 B안(2026-10-03) 뒤에 남는 v2 목록 검사 */LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.oneTitleOff=true;/* 예전 화면 안 제목까지 보는 검사 — 제목 한 번만(one-title)은 verify-today-v6 */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    window.__open=null;drwDeal=s=>{window.__open=JSON.parse(s).id;};
    PipelineWorkspace.open('consulting');
