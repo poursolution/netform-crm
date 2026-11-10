@@ -48,8 +48,15 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(n.all,n.late+n.now+n.wait+n.fix,'전체 = 네 구역 합');
   const Z=await page.evaluate(()=>{const z=DayZones.last();return {now:z.now.length,late:(z.late||[]).length,wait:z.wait.length,fix:(z.fix||[]).length,total:z.total};});
   assert.deepEqual({late:n.late,now:n.now,wait:n.wait,fix:n.fix},{late:Z.late,now:Z.now,wait:Z.wait,fix:Z.fix},'탭 숫자 = 4구역 판정 그대로');
-  assert.equal(Number(await page.locator('#todayBadge').textContent()),n.late+n.now,'왼쪽 메뉴 배지 = 기한 지남 + 오늘 처리');
-  assert.match(one(await V.locator('.tv6-title').innerText()),/^오늘 업무 오늘 할 일 · 기한 지난 일 · 회신 기다리는 일 · 기록만 채울 일 · /,'제목 = 시안');
+  /* 2026-11-10 대표 "숫자 좀 통일해": 왼쪽 메뉴 = 브랜드 칩 '전체' = 화면 '전체' 탭 */
+  assert.equal(Number(await page.locator('#todayBadge').textContent()),n.all,'왼쪽 메뉴 배지 = 전체 탭');
+  const chipAll=await page.locator('.cf-pill[data-sf-brand="전체"] em').first().textContent().catch(()=>null);if(chipAll!=null)assert.equal(Number(chipAll),n.all,'브랜드 칩 전체 = 전체 탭');
+  assert.match(one(await V.locator('.tv6-title').textContent()),/^오늘 업무오늘 할 일 · 기한 지난 일 · 회신 기다리는 일 · 기록만 채울 일 · /,'제목 글 = 시안');
+  /* 2026-11-10 대표 "전에 디자인 싹 날려줘": 위 공통 제목(오늘 업무)과 같은 화면 안 제목은 숨김 · 끄면 다시 보임 */
+  assert.equal(await V.locator('.tv6-title').isVisible(),false,'화면 안 제목 숨김(위 제목 한 번만)');
+  assert.equal(one(await page.locator('#ptitle').textContent()),'오늘 업무');
+  await page.evaluate(()=>{G.oneTitleOff=true;OneTitle.sync();});assert.equal(await V.locator('.tv6-title').isVisible(),true,'끄기 G.oneTitleOff');await page.evaluate(()=>{G.oneTitleOff=false;OneTitle.sync();});
+  await page.evaluate(()=>{G.todayOneCountOff=true;TodayV3.syncBadge();});assert.equal(Number(await page.locator('#todayBadge').textContent()),n.late+n.now,'끄기 G.todayOneCountOff = 예전(기한 지남 + 오늘 처리)');await page.evaluate(()=>{G.todayOneCountOff=false;TodayV3.syncBadge();});
   assert.equal(tabs.find(t=>t[0]==='late')[3],'rgb(180, 35, 24)');assert.equal(tabs.find(t=>t[0]==='all')[3],'rgb(21, 23, 28)');
   /* 중복 · 설명 칸 없음 */
   /* 2026-10-20 대표 '시안 제대로': 왼쪽 오늘 진단 · 기록 없음 3가지 / 먼저 처리할 곳 카드(기한 지남 · 오늘 처리, 최대 6) / 처리할 업무 */assert.equal(await V.locator('.tv6-left').count(),1);assert.match(one(await V.locator('.tv6-left').innerText()),/^오늘 진단 \d+건 지금 먼저 기한 지남 \d+ · 오늘 처리 \d+ 관리자 요청 붙은 것 \d+건 고객 약속 오늘 \d+건 기한 미확인 \d+건/);assert.match(one(await V.locator('.tv6-left').innerText()),/기록 없음 3가지 현재 업무 미수행 \d+ .* 과거 자료 미확인 \d+ .* 해당 없음 \d+/);
@@ -78,7 +85,8 @@ const one=s=>String(s||'').replace(/\s+/g,' ').trim();
   assert.equal(await page.locator('#today-v2 .tv6 .open,#today-v2 .tv6 .fold,#today-v2 .tv6 [data-t3="sms"],#today-v2 .tv6 [data-tel]').count(),0,'펼침 · 전화 · 문자 없음');
   assert.equal(await V.evaluate(v=>[...v.querySelectorAll('.tv6-row span,.tv6-row b')].every(s=>s.scrollWidth<=s.clientWidth+1||getComputedStyle(s).textOverflow==='ellipsis'||getComputedStyle(s.parentElement).textOverflow==='ellipsis')),true,'글 잘림 없음');
   /* 2026-11-05 대표 "262 > 79": 왼쪽 메뉴 숫자는 언제 다시 그려도 하나 — 예전 목록(TodayWorkQueue)이 전체 건수로 덮어쓰지 않는다 */
-  const want=String(n.late+n.now),rowsAll=await page.evaluate(()=>TodayWorkQueue.data().rows.length);assert.notEqual(rowsAll,n.late+n.now,'검사 자료: 전체 건수와 숫자가 달라야 덮어쓰기를 잡는다');
+  /* 2026-11-10: 숫자 하나 = 전체 탭 */
+  const want=String(n.all),rowsAll=await page.evaluate(()=>TodayWorkQueue.data().rows.length);assert.notEqual(rowsAll,n.all,'검사 자료: 전체 건수와 숫자가 달라야 덮어쓰기를 잡는다');
   await page.evaluate(()=>{window.__bw=[];const b=document.getElementById('todayBadge');window.__bo=new MutationObserver(()=>__bw.push(b.textContent));__bo.observe(b,{childList:true,characterData:true,subtree:true});});
   const seen=async(why)=>{await page.waitForTimeout(300);const r=await page.evaluate(()=>({now:document.getElementById('todayBadge').textContent,w:__bw.splice(0)}));assert.equal(r.now,want,why+' 뒤 숫자');assert.ok(r.w.every(v=>v===want),why+' 중 다른 숫자가 보임: '+JSON.stringify(r.w));};
   await page.evaluate(()=>TodayWorkQueue.setManagerRequests([]));await seen('관리자 요청 도착');

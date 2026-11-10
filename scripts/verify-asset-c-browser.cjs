@@ -32,7 +32,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
      /* 협약시공사 · 기술자문 수주: 누적 수주 = 낙찰금액(예상금액 · 기술자문료가 아니다) */
      deal('d8','수주 뒤 조용한 단지',4,'김성민','won',{outcome:'won',amt:9e8,closed_at:day(-85),created:day(-90),updated:day(-85)})],
     inquiries:[],activities:[],inquiryTrash:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;G.siteStatus='전체';
+   LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.oneTitleOff=true;/* 예전 화면 안 제목까지 보는 검사 — 제목 한 번만(one-title)은 verify-today-v6 */ME={id:'admin',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.sb=null;G.siteStatus='전체';
    document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';window.saveLocal=()=>{};window.pushWrite=()=>'req';
    /* 수주 유형 저장소(서버 확인된 자료)에 협약시공사 · 기술자문 수주 1건 */
    DealWin._take({rows:[{deal_id:'d8',win_status:'confirmed',won_type:'partner_tech',award_company:'코지건설',award_amount:5e8,award_date:day(-85),tech_advisory:true,tech_advisory_amount:1e8,performance_owner:'김성민'}],advisory:[]});
