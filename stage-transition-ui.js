@@ -135,7 +135,10 @@
   if(errors.length){if(ctx.auto)return {ok:false,errors};document.getElementById('sf-error').textContent=errors.join('\n');return}
   ctx.saving=true;
   const to=ctx.to,at=new Date(input.transition_date+'T00:00:00').toISOString(),actor=ctx.mobile?(G.user?.nm||''):((typeof ME!=='undefined'&&ME?.name)||repN(d.assignee));
-  const snapshot={...input,from:ctx.from,to,recorded_at:new Date().toISOString(),actor},text=S.summary(to,input.fields)+(input.skip_reason?'\n전환 사유: '+input.skip_reason:'')+(input.memo?'\n메모: '+input.memo:''),terminal=S.terminal.includes(to),next=S.next(to,input.fields)||genericNext(to,input);
+  /* 2026-11-10 '적용 안 되는 것 찾아': 정착 모드에선 칸을 하나도 안 채우고 옮길 수 있는데, 그러면 기록 문장(note)이 비어 쓰기 단계(operational-adapter)가 TRANSITION_INTENT_NOT_CONNECTED 로 거절했다(화면은 옮겨진 것처럼 보임).
+     비면 '단계 이동: 출발 → 도착' 한 줄을 적는다. 끄기 G.emptyNoteKeep */
+  const text0=S.summary(to,input.fields)+(input.skip_reason?'\n전환 사유: '+input.skip_reason:'')+(input.memo?'\n메모: '+input.memo:''),text=text0.trim()||(root.G&&root.G.emptyNoteKeep?text0:'단계 이동: '+(S.definitions[ctx.from]?.label||ctx.from)+' → '+S.definitions[to].label);
+  const snapshot={...input,from:ctx.from,to,recorded_at:new Date().toISOString(),actor},terminal=S.terminal.includes(to),next=S.next(to,input.fields)||genericNext(to,input);
   const context={...(ctx.patch?.stage_contexts||d.stage_contexts||{}),[to]:snapshot},history=[...(ctx.patch?.stageHistory||d.stageHistory||[]),{at,from:ctx.from,to,reason:text,actor,structured:snapshot}];
   const update={code:to,stage:stageLabel(to),stageAt:at,stageEnteredAt:at,stage_contexts:context,stageHistory:history};
   if(input.fields.contract_amount!==''&&input.fields.contract_amount!=null)update.contract_amount=input.fields.contract_amount;
@@ -155,6 +158,9 @@
      예전엔 빈 선택 칸(재영업 가능 여부 · 경쟁사 · 배운 점 · 재접촉 시기)이 같이 가고 terminal 표시가 없어 쓰기 단계(operational-adapter)에서 CLOSE_INTENT_NOT_CONNECTED 로 거절됐다(10/1 뒤 이 창으로 실주 0건).
      적은 선택 칸은 버리지 않는다 — 기록 문장(note · 이 화면의 단계 기록)에 그대로 남는다. 끄기 G.closeTwoFieldsOff */
   if(terminal&&to!=='won'&&!(root.G&&root.G.closeTwoFieldsOff))payload.stage_context={...snapshot,terminal:true,fields:{close_reason:String(input.fields.close_reason||'').trim(),close_detail:String(input.fields.close_detail||'').trim()}};
+  /* 수주 완료(준공 → 수주)도 같다: 쓰기 단계는 준공일 · 준공 확인(공사 완료 · 준공검사 완료 두 개) · 최종 수주금액 세 칸 + terminal 만 받는다.
+     이긴 이유 · 배운 점 · 하자보증서 전달 같은 나머지는 기록 문장(note)에 남는다 */
+  if(to==='won'&&!(root.G&&root.G.closeTwoFieldsOff))payload.stage_context={...snapshot,terminal:true,fields:{completion_date:input.fields.completion_date,completion_checks:['공사 완료','준공검사 완료'].filter(k=>(input.fields.completion_checks||[]).includes(k)),contract_amount:input.fields.contract_amount}};
   pushWrite(terminal?'close':'transition',payload);
   if(ctx.mobile){d.activities=d.activities||[];d.activities.push({id:'stage-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,actor_id:meId(),meaningful_contact:false});d.lastAt=at;d.tl=d.tl||[];d.tl.unshift([input.transition_date,S.definitions[to].label+' — '+text])}else if(ctx.auto&&!(typeof CUR_DETAIL!=='undefined'&&CUR_DETAIL&&CUR_DETAIL.item===d)){/* 자동 이동(autoSent): 상세가 열려 있지 않으면 그 영업건 기록에 바로 남긴다 */const p=ctx.patch||{};p.activities=p.activities||[];p.activities.push({id:'local-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,at,actor,meaningful:false});d.activities=p.activities;}else logActivity('단계전환',S.definitions[to].label,text,at,actor,false);
   pushWrite('activity',{opportunity_id:d.id,type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,meaningful_contact:false});
