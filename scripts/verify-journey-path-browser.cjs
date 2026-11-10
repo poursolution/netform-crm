@@ -72,7 +72,18 @@ const ID={Q1:'11111111-1111-4111-8111-111111111111',Q2:'22222222-2222-4222-8222-
   assert.deepEqual([T.G.text,T.G.short,T.G.btn[0],T.G.sit,T.G.met],['견적 요청 등록','문의 때 방문 완료 · 견적 요청 전','견적 요청 등록','견적문의에서 현장방문 완료 8.28 · 견적 요청 전',''],'방문 완료 건 = 다음 일은 견적 요청');
   assert.deepEqual([T.H.text,T.H.btn],['고객 반응을 보고 단계 정하기',['단계 바꾸기','stage']],'발송 뒤 연결 기록이 있으면 단계 판단');
   assert.match(T.E.text,/미팅/,'문의 없는 영업건은 예전과 같음');assert.ok(!T.E.amt||T.E.amt[0]!=='문의 때 견적');
-  /* ② 영업건 상세: 띠 위에 한 줄 · 기존 띠 그대로 */
+  /* ②-0 기본(2026-11-10 대표 '왜 중복이야'): 네 칸 줄 없음 · 머리 '현재 건' 줄 끝 [원래 문의 →] 글 링크 하나 · 누르면 문의 창, 닫으면 영업건 */
+  await dealOpen(ID.A);await page.waitForSelector('#detailView .dv8-steps');
+  assert.equal(await page.locator('#detailView .jp').count(),0,'기본은 네 칸 줄 없음');
+  assert.equal(one(await page.locator('#detailView .dv7-meta .jp-lk').innerText()),'원래 문의 8.20 접수 →','현재 건 줄 끝 글 링크');
+  await page.locator('#detailView .dv7-meta .jp-lk').click();await page.waitForSelector('#inq-inbox-dialog');
+  assert.equal(await page.locator('#inq-inbox-dialog .jp').count(),0,'문의 창에도 네 칸 줄 없음');
+  await page.locator('#inq-inbox-dialog .idv3-x').click();await page.waitForTimeout(300);assert.equal(await curDeal(),null);assert.equal(await page.evaluate(()=>CUR_DETAIL&&CUR_DETAIL.item.id),ID.A,'닫으면 보던 영업건');
+  await dealOpen(ID.E);await page.waitForFunction(id=>CUR_DETAIL&&CUR_DETAIL.item.id===id,ID.E);assert.equal(await page.locator('#detailView .jp-lk').count(),0,'문의 연결이 없으면 링크 없음');
+  await dealOpen(ID.D);await page.waitForFunction(id=>CUR_DETAIL&&CUR_DETAIL.item.id===id,ID.D);assert.equal(await page.locator('#detailView .jp-lk').count(),0,'같은 현장 후보는 링크로 만들지 않음');
+  assert.match(await page.evaluate(id=>DealFrame7.stageTask(B.deals.find(x=>x.id===id)).text,ID.A),/고객 반응 확인/,'이어받기(handoff)는 그대로');
+  await page.evaluate(()=>{G.journeyRowOn=true;});
+  /* ② (G.journeyRowOn) 영업건 상세: 띠 위에 한 줄 · 기존 띠 그대로 */
   await dealOpen(ID.A);await page.waitForSelector('#detailView .jp');
   assert.deepEqual((await cells('#detailView')).map(c=>c[3]),['BUTTON','DIV','DIV','DIV'],'원래 문의 칸만 이동 단추');
   assert.equal(await page.locator('#detailView .dv8-steps').count(),1,'기존 6칸 띠는 그대로');

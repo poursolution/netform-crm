@@ -38,6 +38,18 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
   assert.equal(out.r3,'off');assert.equal(out.code3,'consulting','끄기 G.autoSentOff');
   assert.equal(out.r4,true);assert.deepEqual(out.f4.materials,['기타자료'],'견적 Version 이 없으면 기타자료');assert.equal(out.f4.recipient,'고객');
   assert.equal(out.dlg,false,'창을 열지 않는다');
+  /* 단계 바꾸기 창에서 손으로 '자료 발송완료'를 고를 때도 아는 값은 미리(2026-11-10 대표 '단계 바꾸기도') — 다음 확인일 = 발송일 + 7일 · 견적 Version 이 있으면 견적서 + 마지막 Version */
+  const pre=await page.evaluate(()=>{
+   const mk=(n,o)=>Object.assign({id:'bbbbbbbb-0000-4000-8000-0000000000'+n,site:'[가상] 수동'+n,assignee:'이필선',brand:'POUR솔루션',created:'2026-10-03',code:'consulting',stage_code:'consulting',amt:0,amount:0,activities:[],workItems:[],version:3},o||{});
+   const read=()=>{const f=document.getElementById('stage-transition-form');const r={follow:f.querySelector('#sf-followup_date').value,sent:f.querySelector('#sf-sent_date').value,mat:[...f.querySelectorAll('[name="sf-materials"]:checked')].map(x=>x.value),ver:f.querySelector('#sf-quote_version').value};StageTransitionUI.close();return r;};
+   const a=mk('11',{quote_versions:[{version_no:1,amount:1e7},{version_no:2,amount:12e6}]});B.deals.push(a);StageTransitionUI.open(a,false,'sent');const r1=read();
+   const b=mk('12');B.deals.push(b);StageTransitionUI.open(b,false,'sent');const r2=read();
+   G.stageFillOff=true;StageTransitionUI.open(a,false,'sent');const r3=read();G.stageFillOff=false;
+   return {r1,r2,r3};
+  });
+  assert.equal(pre.r1.follow,out.follow,'다음 확인일 = 발송일 + 7일');assert.deepEqual([pre.r1.mat,pre.r1.ver],[['견적서'],'2'],'견적 Version 있으면 견적서 + 마지막 Version');
+  assert.equal(pre.r2.follow,out.follow);assert.deepEqual([pre.r2.mat,pre.r2.ver],[[],''],'견적 Version 이 없으면 고르지 않음(서버가 견적서에 Version 을 요구)');
+  assert.deepEqual([pre.r3.follow,pre.r3.mat],['',[]],'끄기 G.stageFillOff');
   assert.deepEqual(errs,[]);await ctx.close();
   console.log('verify-auto-sent-browser: ok');
  }finally{await browser.close();srv.close();}
