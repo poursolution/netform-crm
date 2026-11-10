@@ -199,6 +199,26 @@
    return r||{ok:false,why:'unknown'};
   }catch(e){return {ok:false,why:String(e&&e.message||e)};}
  }
+ /* 단계 바로 옮기기(2026-11-10 대표 피드백 ③ · quick-move.js): 창을 열지 않고 옮길 수 있는지 미리 본다(quickPlan) — 꼭 채울 칸이 없고,
+    창이 미리 채우는 값(defaults)으로 같은 검사를 통과할 때만. 다음 할 일이 없으면 창의 '3일 후' 칩과 같은 날짜. 옮기기는 같은 저장 길(save · autoMove) */
+ function quickPlan(d,to){
+  if(!d||!S.definitions[to])return {ok:false,why:'stage'};
+  const from=fromOf(d);if(!S.choices(from).includes(to)||S.terminal.includes(d.outcome))return {ok:false,why:'choice'};
+  if(S.definitions[to].fields.some(f=>S.isRequired?S.isRequired(to,f):f.required))return {ok:false,why:'required'};
+  const prev=ctx;ctx={deal:d,mobile:false,from,to,patch:itemPatch(d,'deal'),drafts:{},quotes:execQuoteVersions(d)};
+  try{
+   const df=defaults(to),fields={};Object.entries(df.fields||{}).forEach(([k,v])=>{if(v!=null&&v!==''&&!(Array.isArray(v)&&!v.length))fields[k]=v;});
+   const input={transition_date:today(),skip_reason:'',memo:'',next_due:'',fields};
+   if(needsNext(to)&&!S.next(to,fields)&&!genericNext(to,input)&&!currentNext())input.next_due=addDays(3);
+   const next=S.next(to,fields)||genericNext(to,input)||null,errors=S.validate(from,to,input,today());
+   if(to==='sent'&&(fields.materials||[]).includes('견적서')&&!ctx.quotes.some(q=>String(q.id??q.version??q.version_no)===fields.quote_version))errors.push('견적 Version');
+   return errors.length?{ok:false,why:'validate',errors}:{ok:true,input,label:S.definitions[to].label,next};
+  }finally{ctx=prev;}
+ }
+ function autoMove(d,to,input){
+  const prev=ctx;ctx={deal:d,mobile:false,from:fromOf(d),to,patch:itemPatch(d,'deal'),drafts:{},quotes:execQuoteVersions(d),auto:true,autoInput:JSON.parse(JSON.stringify(input))};
+  let r;try{r=save();}finally{ctx=prev;}return r||{ok:false,why:'unknown'};
+ }
  function installPC(){
   const oldOpen=openTransition,oldConfirm=confirmTransition;
   openTransition=function(){if(CUR_DETAIL?.kind==='deal')return open(CUR_DETAIL.item,false);return oldOpen.apply(this,arguments)};
@@ -220,6 +240,6 @@
   const oldClose=commitClose;
   commitClose=function(o){if(o==='won')return amtSheet();return oldClose.apply(this,arguments)};
  }
- root.StageTransitionUI={open,close,save,fieldHTML,installPC,installMobile,autoSent};
+ root.StageTransitionUI={open,close,save,fieldHTML,installPC,installMobile,autoSent,quickPlan,autoMove};
  if(document.getElementById('dv-body')||typeof CUR_DETAIL!=='undefined')installPC();else installMobile();
 })(window);
