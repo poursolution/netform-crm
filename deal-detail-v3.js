@@ -468,7 +468,7 @@
    return lead.replace(/<span class="tx">([\s\S]*?)<\/span>/,(m,t)=>'<span class="tx dvs-own" data-dv3="owner" role="button" tabindex="0" title="담당자 변경 · 최초 연락 · 실적 귀속 · 변경 이력">'+t.replace(/ · 예상 금액 [^·<]*/,'')+'</span>').replace(/<span class="dvt-won">[\s\S]*?<\/span>/,'');
   }
   function wonInfo(d){try{const SH=root.SiteHistory;if(!(SH&&SH.enabled()))return null;const rows=SH.rowsOf(d).filter(r=>!r.cur&&r.tag==='수주');if(!rows.length)return null;const w=wonRow(d);return {year:w&&w.ym?w.ym.split('.')[0]:'',n:rows.length};}catch(e){return null;}}
-  function l2html(d){const b=String(d.brand||'').trim(),o={brand:b,color:BRAND[b]||'#15171c',won:wonInfo(d),amtAct:rfix(d)?(isClosed(d)?(canCI()?'field':''):($('dv-amt')?'field':'amount')):''};return f7(d)?root.DealFrame7.metaHtml(d)+root.DealFrame7.line2(d,o)+(root.JourneyPath?root.JourneyPath.dealHtml(d):'')+root.DealFrame7.barHtml(d):root.DealSame.line2(d,o);}
+  function l2html(d){const b=String(d.brand||'').trim(),o={brand:b,color:BRAND[b]||'#15171c',won:wonInfo(d),amtAct:rfix(d)?(isClosed(d)?(canCI()?'field':''):($('dv-amt')?'field':'amount')):''};return f7(d)?root.DealFrame7.metaHtml(d).replace(/<\/span>$/,(root.JourneyPath&&root.JourneyPath.dealLink?root.JourneyPath.dealLink(d):'')+'</span>')+root.DealFrame7.line2(d,o)+(root.JourneyPath?root.JourneyPath.dealHtml(d):'')+root.DealFrame7.barHtml(d):root.DealSame.line2(d,o);}
   function buildHead(v,d,closed){
   const top=v.querySelector('.detailtop'),sub=$('dv-sub');if(!top||!sub)return;
   /* 과거 이관 · 분류 전(PipelineScope): 아직 어느 단계도 아니다 — '컨설팅 설계'라고 적지 않고, [단계 바꾸기] 대신 [영업 재개](서버에 저장된 예전 단계 값에서 출발) */
