@@ -40,6 +40,24 @@ test('bigFirst인데 v2가 없으면 v1 첫 100건부터 다시',async()=>{
  assert.equal(r.data.deals.length,150);
  assert.deepEqual(calls.map(c=>c[0]+':'+c[1]),['crm_operational_source_v2:1000','crm_operational_source_v1:100','crm_operational_source_v1:100']);
 });
+/* 2026-11-10 대표 '자료를 불러오지 못했습니다 · statement timeout' */
+test('1000건 한 번이 서버 시간 제한(57014)에 걸리면 그 영역은 100건씩으로 이어 받는다',async()=>{
+ const ids=UUIDS(250);const {root,calls,ready}=boot((name,a)=>name==='crm_operational_source_v2'?{error:{code:'57014',message:'canceling statement due to statement timeout'}}:page(a.p_domain,ids,a.p_after,a.p_limit));
+ await ready;const r=await root.Phase1.read('operational',{domains:['deal_core'],firstPageLimit:100,bigFirst:true});
+ assert.equal(r.data.deals.length,250,'빠짐 없이 다 받는다');
+ assert.deepEqual(calls.map(c=>c[0]+':'+c[1]),['crm_operational_source_v2:1000','crm_operational_source_v1:100','crm_operational_source_v1:100','crm_operational_source_v1:100']);
+ assert.equal(root.missing,undefined,'시간 초과는 함수가 없는 것이 아니다');
+});
+test('끄기 G.readSmallRetryOff = 예전처럼 실패',async()=>{
+ const ids=UUIDS(50);const {root,ready}=boot((name,a)=>name==='crm_operational_source_v2'?{error:{code:'57014',message:'canceling statement due to statement timeout'}}:page(a.p_domain,ids,a.p_after,a.p_limit));
+ await ready;root.G={readSmallRetryOff:true};await assert.rejects(root.Phase1.read('operational',{domains:['deal_core'],firstPageLimit:100,bigFirst:true}));
+});
+test('여러 영역은 동시에 3개까지만 읽는다',async()=>{
+ const ids=UUIDS(10);let live=0,peak=0;const {root,ready}=boot((name,a)=>page(a.p_domain,ids,a.p_after,a.p_limit));
+ const f=root.fetch;root.fetch=async(u,i)=>{live++;peak=Math.max(peak,live);await new Promise(r=>setTimeout(r,5));try{return await f(u,i);}finally{live--;}};
+ await ready;peak=0;const r=await root.Phase1.read('operational',{firstPageLimit:100,bigFirst:true});
+ assert.equal(r.data.deals.length,10);assert.ok(peak<=3,'동시 '+peak);
+});
 test('화면: v2가 있으면 부분 표시를 건너뛴다',()=>{
  const src=fs.readFileSync(require.resolve('../operational-overlay.js'),'utf8');
  assert.match(src,/const bigFirst=root\.CRMRelease\?\.has\?\.\('crm_operational_source_v2'\)!==false/);
