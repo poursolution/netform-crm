@@ -20,7 +20,7 @@ async function open(browser,mode){
    deal(2,'[가상] 푸른숲아파트','sent','황윤선',{created:'2026-10-06'}),deal(3,'[가상] 새솔단지','qualified','이필선',{created:'2025-04-02',amt:240000000,amount:240000000}),
    deal(4,'[가상] 별빛마을','nurturing','황윤선',{created:'2025-01-15'}),deal(5,'[가상] 은하수아파트','potential','',{created:'2025-12-01'})],
    inquiries:[],activities:[],inquiryTrash:[],inquiryCleanupArchived:[],expansion_pool:[]};
-  LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
+  LOCAL={deals:{},inquiries:{},expansionPool:[]};AUTH_ON=true;G.quickMoveOff=true;/* 창을 직접 보는 검사 — 바로 옮기기는 verify-quick-move */ME={id:'adm',name:'송보람',role:'admin'};G.year='전체';G.quarter=0;G.rep='전체';G.brand='전체';G.workFilter='전체';G.q='';G.pipeRepYear='전체';window.saveLocal=()=>{};
   document.getElementById('authGate').classList.remove('on');document.getElementById('load').style.display='none';
   SB={rpc:async(n)=>n==='crm_settle_mode_v1'&&mode==='ready'?{data:{ok:true,version:1}}:{error:{code:'PGRST202',message:'Could not find the function'}}};TOKEN='test';
   if(mode==='off')G.settleOff=true;await SettleMode.check(true);PipelineScope._reset();

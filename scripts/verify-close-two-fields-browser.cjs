@@ -19,7 +19,7 @@ const srv=http.createServer((req,res)=>{const t=path.resolve(root,'.'+decodeURIC
    const U=n=>'cccccccc-0000-4000-8000-0000000000'+String(n).padStart(2,'0');
    const deal=(n,code)=>({id:U(n),site:'[가상] 끝 상태 '+n,assignee:'이필선',brand:'석민이앤씨',created:'2026-08-01',code,stage_code:code,amt:1e8,amount:1e8,activities:[],workItems:[],version:4});
    B={deals:[deal(1,'sent'),deal(2,'consulting'),deal(3,'relationship'),deal(4,'compete'),deal(5,'sent'),deal(6,'consulting'),deal(7,'completion')],inquiries:[],activities:[],expansion_pool:[]};
-   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;ME={id:'adm',name:'송보람',role:'admin'};window.saveLocal=()=>{};
+   LOCAL={deals:{},inquiries:{}};AUTH_ON=true;G.quickMoveOff=true;/* 창을 직접 보는 검사 — 바로 옮기기는 verify-quick-move */ME={id:'adm',name:'송보람',role:'admin'};window.saveLocal=()=>{};
    CRMRules.apply({});/* 운영에서처럼 실주 사유 = 운영 기준 '실주 원인' 목록 */
    SB={rpc:async n=>n==='crm_settle_mode_v1'?{data:{ok:true,version:1}}:{error:{message:'X'}}};await SettleMode.check(true);
    goPage('pipe');await new Promise(r=>setTimeout(r,200));
