@@ -50,13 +50,16 @@ returns text language sql immutable set search_path='' as $fn$
   when 'lost_reason_missing' then '실주 사유 없음' when 'request_overdue' then '관리자 요청 기한 지남'
   else p end
 $fn$;
--- 지난 시간 글
-create or replace function crm_security.crm_office_over_text(m integer)
+-- 지난 시간 글. biz=true(배정 · 첫 연락)는 근무시간으로 센 분이라 '근무 n시간 · 근무일로 n일'(하루 = 570분 · 사무실 bizAgo 와 같음)
+drop function if exists crm_security.crm_office_over_text(integer);
+create or replace function crm_security.crm_office_over_text(m integer, biz boolean default false)
 returns text language sql immutable set search_path='' as $fn$
- select case when m is null then '기록 필요' when m<60 then m||'분 지남' when m<1440 then (m/60)||'시간 '||(m%60)||'분 지남' else (m/1440)||'일 지남' end
+ select case when m is null then '기록 필요'
+  when biz then case when m<60 then '근무 '||m||'분 넘김' when m<570 then '근무 '||(m/60)||'시간 넘김' else '근무일로 '||(m/570)||'일 넘김' end
+  when m<60 then m||'분 지남' when m<1440 then (m/60)||'시간 '||(m%60)||'분 지남' else (m/1440)||'일 지남' end
 $fn$;
 revoke all on function crm_security.crm_office_rule_label(text) from public, anon, authenticated, service_role;
-revoke all on function crm_security.crm_office_over_text(integer) from public, anon, authenticated, service_role;
+revoke all on function crm_security.crm_office_over_text(integer,boolean) from public, anon, authenticated, service_role;
 
 -- 잔디로 보내기(서버 전용). p_test=true 면 조용한 시간 · 새 알림과 상관없이 시험 한 줄을 보낸다
 create or replace function crm_security.crm_office_alerts_notify_v1(p_test boolean default false)
@@ -100,7 +103,7 @@ begin
  select string_agg(crm_security.crm_office_rule_label(rule)||' '||c||'건',' · ' order by c desc,rule) into lines
   from (select rule,count(*) c from pg_temp.office_notify_new group by rule) t;
  select coalesce(jsonb_agg(jsonb_build_object(
-   'title',crm_security.crm_office_rule_label(x.rule)||' · 담당 '||x.owner||' · '||crm_security.crm_office_over_text(x.over_minutes),
+   'title',crm_security.crm_office_rule_label(x.rule)||' · 담당 '||x.owner||' · '||crm_security.crm_office_over_text(x.over_minutes,x.rule in ('assign_overdue','first_contact_overdue')),
    'description',case x.object_type when 'inquiry' then s.app_base||'mobile.html?open=inq%3A'||x.object_id
                                     when 'deal' then s.app_base||'mobile.html?open=deal%3A'||x.object_id
                                     else s.app_base||'crm.html' end)),'[]'::jsonb)

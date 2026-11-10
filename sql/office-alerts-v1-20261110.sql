@@ -50,6 +50,61 @@ alter table crm_security.office_alert_runs enable row level security;
 alter table crm_security.office_alerts enable row level security;
 revoke all on crm_security.office_alert_runs, crm_security.office_alerts from public, anon, authenticated;
 
+-- 판정 기준표(2026-11-10 보람님 결정 · 사무실 알림봇과 같게): 배정 30분 · 첫 연락 2시간은 근무시간(평일 08:30~18:00 서울, 주말 · 공휴일 제외)으로 센다.
+--   밤 · 주말 접수는 다음 근무일 08:30부터. 견적문의 두 규칙은 inquiry_from(2026-11-01) 접수분부터만 본다(그 전은 사무실 정리봇이 따로).
+--   공휴일은 사무실 crm-bots.js HOLIDAYS 와 같은 목록 — 2027년은 새로 넣어야 한다:
+--   update crm_security.office_alert_rules set holidays=holidays||array['2027-01-01'::date] where id=1;
+create table if not exists crm_security.office_alert_rules(
+ id integer primary key default 1 check (id=1),
+ inquiry_from date not null default '2026-11-01',
+ work_from time not null default '08:30',
+ work_to time not null default '18:00',
+ holidays date[] not null default array['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-02','2026-05-05','2026-05-25','2026-06-03','2026-06-08','2026-08-17','2026-09-24','2026-09-25','2026-09-28','2026-10-05','2026-10-09','2026-12-25']::date[],
+ updated_at timestamptz not null default now(),
+ check (work_from<work_to)
+);
+insert into crm_security.office_alert_rules(id) values(1) on conflict (id) do nothing;
+alter table crm_security.office_alert_rules enable row level security;
+revoke all on crm_security.office_alert_rules from public, anon, authenticated;
+
+-- a~b 사이 근무시간(분). 사무실 crm-bots.js bizMs 와 같은 계산
+create or replace function crm_security.crm_office_biz_minutes(a timestamptz, b timestamptz, wf time, wt time, hol date[])
+returns integer language plpgsql immutable set search_path='' as $fn$
+declare d date; s timestamptz; e timestamptz; total numeric:=0;
+begin
+ if a is null or b is null or b<=a then return 0; end if;
+ d:=(a at time zone 'Asia/Seoul')::date;
+ while d<=(b at time zone 'Asia/Seoul')::date loop
+  if extract(isodow from d)<6 and not (d=any(coalesce(hol,'{}'::date[]))) then
+   s:=greatest(a,(d+wf) at time zone 'Asia/Seoul'); e:=least(b,(d+wt) at time zone 'Asia/Seoul');
+   if e>s then total:=total+extract(epoch from (e-s))/60; end if;
+  end if;
+  d:=d+1;
+ end loop;
+ return floor(total)::int;
+end $fn$;
+-- a 부터 근무시간 m 분이 지나는 시각(기한)
+create or replace function crm_security.crm_office_biz_add(a timestamptz, m integer, wf time, wt time, hol date[])
+returns timestamptz language plpgsql immutable set search_path='' as $fn$
+declare d date; s timestamptz; e timestamptz; left_m numeric:=greatest(coalesce(m,0),0);
+begin
+ if a is null then return null; end if;
+ d:=(a at time zone 'Asia/Seoul')::date;
+ for i in 1..400 loop
+  if extract(isodow from d)<6 and not (d=any(coalesce(hol,'{}'::date[]))) then
+   s:=greatest(a,(d+wf) at time zone 'Asia/Seoul'); e:=(d+wt) at time zone 'Asia/Seoul';
+   if e>s then
+    if extract(epoch from (e-s))/60>=left_m then return s+make_interval(secs=>left_m*60); end if;
+    left_m:=left_m-extract(epoch from (e-s))/60;
+   end if;
+  end if;
+  d:=d+1;
+ end loop;
+ return null;
+end $fn$;
+revoke all on function crm_security.crm_office_biz_minutes(timestamptz,timestamptz,time,time,date[]) from public, anon, authenticated, service_role;
+revoke all on function crm_security.crm_office_biz_add(timestamptz,integer,time,time,date[]) from public, anon, authenticated, service_role;
+
 -- 판정 한 번(서버 전용)
 create or replace function crm_security.crm_office_alerts_compute_v1()
 returns jsonb language plpgsql volatile security definer set search_path='' as $fn$
@@ -57,7 +112,10 @@ declare
  v_run uuid; v_now timestamptz:=clock_timestamp(); v_today date:=(clock_timestamp() at time zone 'Asia/Seoul')::date;
  v_live date:='2026-10-01'; s jsonb:='{}'::jsonb; r jsonb; pg jsonb; cur uuid; dom text; v_counts jsonb;
  assign_min int; first_h int; quote_d int; stale_d int; inactive_d int;
+ rr crm_security.office_alert_rules%rowtype;
 begin
+ select * into rr from crm_security.office_alert_rules where id=1;
+ if rr.id is null then rr.inquiry_from:='2026-11-01'; rr.work_from:='08:30'; rr.work_to:='18:00'; rr.holidays:='{}'; end if;
  if to_regclass('public.crm_settings') is not null then
   execute $q$select coalesce((select value from public.crm_settings where key='ops_rules'),'{}'::jsonb)$q$ into s;
   if jsonb_typeof(s) is distinct from 'object' then s:='{}'::jsonb; end if;
@@ -68,7 +126,8 @@ begin
  quote_d:=coalesce(nullif(s->>'quote_followup_days','')::int,7);
  stale_d:=coalesce(nullif(s->>'stale_days','')::int,30);
  inactive_d:=coalesce(nullif(s->>'inactive_days','')::int,7);
- r:=jsonb_build_object('assign_minutes',assign_min,'first_contact_hours',first_h,'quote_followup_days',quote_d,'stale_days',stale_d,'inactive_days',inactive_d,'live_from',v_live);
+ r:=jsonb_build_object('assign_minutes',assign_min,'first_contact_hours',first_h,'quote_followup_days',quote_d,'stale_days',stale_d,'inactive_days',inactive_d,'live_from',v_live,
+  'inquiry_from',rr.inquiry_from,'work_hours',to_char(rr.work_from,'HH24:MI')||'~'||to_char(rr.work_to,'HH24:MI'),'holidays',coalesce(array_length(rr.holidays,1),0),'business_time_rules',jsonb_build_array('assign_overdue','first_contact_overdue'));
  insert into crm_security.office_alert_runs(started_at,rules) values(v_now,r) returning run_id into v_run;
  begin
   foreach dom in array array['inquiry_timing','deal_timing'] loop
@@ -78,29 +137,32 @@ begin
     if dom='inquiry_timing' then
      insert into crm_security.office_alerts(run_id,rule,object_type,object_id,owner_user_id,basis_at,due_at,over_minutes,legacy,approx)
      select v_run,x.rule,'inquiry',x.id,i.assigned_to,x.basis_at,x.due_at,
-      case when x.due_at is null then null else greatest(0,floor(extract(epoch from (v_now-x.due_at))/60))::int end,x.legacy,x.approx
+      case when x.over_m is not null then x.over_m when x.due_at is null then null else greatest(0,floor(extract(epoch from (v_now-x.due_at))/60))::int end,x.legacy,x.approx
      from (
-      select j->>'id' as id,'assign_overdue' as rule,(j->>'received_at')::timestamptz as basis_at,
-       (j->>'received_at')::timestamptz+make_interval(mins=>assign_min) as due_at,
-       ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date<v_live as legacy,false as approx
-      from jsonb_array_elements(pg->'items') j
-      where not (j->>'assigned')::boolean and not (j->>'converted')::boolean and not (j->>'tracking_closed')::boolean
-       and j->>'received_at' is not null and (j->>'received_at')::timestamptz+make_interval(mins=>assign_min)<v_now
+      -- 배정 30분 · 첫 연락 2시간: 근무시간으로 세고(over_m = 기준을 넘긴 근무시간 분), inquiry_from 접수분부터만
+      select c.id,c.rule,c.basis_at,
+       crm_security.crm_office_biz_add(c.basis_at,c.limit_m,rr.work_from,rr.work_to,rr.holidays) as due_at,
+       c.bm-c.limit_m as over_m,false as legacy,c.approx
+      from (
+       select q.*,crm_security.crm_office_biz_minutes(q.basis_at,v_now,rr.work_from,rr.work_to,rr.holidays) as bm from (
+        select j->>'id' as id,'assign_overdue' as rule,(j->>'received_at')::timestamptz as basis_at,assign_min as limit_m,false as approx
+        from jsonb_array_elements(pg->'items') j
+        where not (j->>'assigned')::boolean and not (j->>'converted')::boolean and not (j->>'tracking_closed')::boolean
+         and j->>'received_at' is not null and ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date>=rr.inquiry_from
+        union all
+        select j->>'id','first_contact_overdue',coalesce((j->>'assigned_at')::timestamptz,(j->>'received_at')::timestamptz),first_h*60,true
+        from jsonb_array_elements(pg->'items') j
+        where (j->>'before_first_contact_approx')::boolean and not (j->>'converted')::boolean and not (j->>'tracking_closed')::boolean
+         and j->>'received_at' is not null and ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date>=rr.inquiry_from
+       ) q
+      ) c where c.bm>c.limit_m
       union all
-      select j->>'id','first_contact_overdue',coalesce((j->>'assigned_at')::timestamptz,(j->>'received_at')::timestamptz),
-       coalesce((j->>'assigned_at')::timestamptz,(j->>'received_at')::timestamptz)+make_interval(hours=>first_h),
-       ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date<v_live,true
-      from jsonb_array_elements(pg->'items') j
-      where (j->>'before_first_contact_approx')::boolean
-       and coalesce(j->>'assigned_at',j->>'received_at') is not null
-       and coalesce((j->>'assigned_at')::timestamptz,(j->>'received_at')::timestamptz)+make_interval(hours=>first_h)<v_now
-      union all
-      select j->>'id','close_reason_missing',(j->>'updated_at')::timestamptz,null::timestamptz,
+      select j->>'id','close_reason_missing',(j->>'updated_at')::timestamptz,null::timestamptz,null::int,
        ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date<v_live,false
       from jsonb_array_elements(pg->'items') j
       where (j->>'tracking_closed')::boolean and not (j->>'close_reason_present')::boolean
       union all
-      select j->>'id','hold_reason_missing',(j->>'updated_at')::timestamptz,null::timestamptz,
+      select j->>'id','hold_reason_missing',(j->>'updated_at')::timestamptz,null::timestamptz,null::int,
        ((j->>'received_at')::timestamptz at time zone 'Asia/Seoul')::date<v_live,false
       from jsonb_array_elements(pg->'items') j
       where (j->>'on_hold')::boolean and not (j->>'hold_reason_present')::boolean
@@ -216,7 +278,9 @@ do $$
 begin
  if exists(select 1 from pg_extension where extname='pg_cron') then
   begin
-   perform cron.schedule('crm-office-alerts','*/10 * * * *','select crm_security.crm_office_alerts_compute_v1()');
+   -- 잔디 알림(sql/office-alerts-notify-v1-20261110.sql)이 설치돼 있으면 같이 부른다 — 이 파일을 다시 Run 해도 알림이 빠지지 않게
+   perform cron.schedule('crm-office-alerts','*/10 * * * *','select crm_security.crm_office_alerts_compute_v1();'
+    ||case when to_regprocedure('crm_security.crm_office_alerts_notify_v1(boolean)') is not null then ' select crm_security.crm_office_alerts_notify_v1();' else '' end);
   exception when others then raise notice 'pg_cron schedule skipped: %', sqlerrm;
   end;
  else

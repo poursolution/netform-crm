@@ -9,7 +9,7 @@ begin
  end if;
 end $$;
 drop function if exists crm_security.crm_office_alerts_notify_v1(boolean);
-drop function if exists crm_security.crm_office_over_text(integer);
+drop function if exists crm_security.crm_office_over_text(integer,boolean);
 drop function if exists crm_security.crm_office_rule_label(text);
 drop table if exists crm_security.office_notify_log;
 drop table if exists crm_security.office_alert_notified;
