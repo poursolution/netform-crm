@@ -36,6 +36,14 @@ SQL: `sql/office-alerts-v1-20261110.sql`(먼저 `sql/office-timing-v1-20261108.s
 - 성공한 마지막 회차만 내려 준다(실패한 회차는 `last_run` 에만).
 - 지금은 로그인한 계정으로 읽는다. 로그인 없이 읽으려면 사무실 전용 CRM 계정(읽기 역할)을 따로 만드는 일이 다음 단계(대표 결정).
 
+## 잔디 알림(B안 · 2026-11-10 · `sql/office-alerts-notify-v1-20261110.sql`)
+- 10분 판정 바로 뒤 `crm_security.crm_office_alerts_notify_v1()` 가 **새로 기준을 넘긴 일만** 잔디 토픽으로 보낸다(서버 pg_net · PC 불필요).
+- 보내는 것: 규칙 이름 · 건수 · 담당 이름 · 지난 시간 · 모바일 열기 링크(`mobile.html?open=inq:<id>` · `deal:<id>`). 고객 이름 · 연락처 · 현장명 · 메모는 보내지 않는다. 한 번에 오래된 순 10건까지 카드로(`max_items`).
+- 이관 자료(legacy)는 보내지 않는다. 같은 건은 한 번만 — 해소됐다가 다시 넘기면 다시 보낸다(`office_alert_notified`).
+- 조용한 시간(기본 20시~8시, 서울)에는 보내지 않고 모아 두었다가 아침 첫 판정 때 보낸다.
+- 웹훅 주소는 저장소에 없다. 대표가 SQL 편집기에서 `crm_security.office_notify_settings` 에 넣고 켠다(파일 끝 '켜기' 참고). 밖에서는 읽을 수 없다.
+- 기록: `crm_security.office_notify_log`(30일).
+
 ## 운영 적용
 1. Supabase 대시보드 Database → Extensions 에서 `pg_cron` 켜기(꺼져 있으면 예약 없이 설치되고, 판정은 `crm_office_alerts_refresh_v1()` 를 부를 때만 돈다)
 2. `sql/office-timing-v1-20261108.sql` Run → `sql/office-alerts-v1-20261110.sql` Run(대표)
