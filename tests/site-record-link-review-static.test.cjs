@@ -26,3 +26,11 @@ test('deal and inquiry Site review is admin-only, durable and explicit',()=>{
  assert.match(html,/pc-site-record-review\.js/);
  assert.match(transport,/crm_site_record_link_review_resolve_v1/);
 });
+
+/* 2026-11-10: 고객 자산을 다시 그릴 때마다 무거운 목록(서버 평균 5.7초)을 다시 부르지 않는다 */
+require('node:test')('영업·문의 연결 검토: 같은 화면 · 검색 · 계정이면 10분 안에는 다시 부르지 않고 붙이기만',()=>{
+ const src=require('node:fs').readFileSync(require.resolve('../pc-site-record-review.js'),'utf8'),assert=require('node:assert/strict');
+ assert.match(src,/REUSE_MS=10\*60\*1000/);
+ assert.match(src,/section&&root===mountedRoot&&search===mountedSearch&&profile\.auth_uid===mountedActor&&Date\.now\(\)-loadedAt<REUSE_MS\)\{if\(!section\.isConnected\)root\.append\(section\);/);
+ assert.match(src,/G\.siteReviewReuseOff/);
+});
