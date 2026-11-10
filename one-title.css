@@ -1,0 +1,8 @@
+/* 2026-11-10 대표 "디자인이 개선개선해서 처음 디자인이 겹친다 · 전에 디자인 싹 날려줘":
+   화면마다 제목이 두 번 나왔다 — 위 공통 제목줄(#ptitle · #psub) + 브랜드 칩 아래 화면 안 제목(예전 시안의 제목 · 설명).
+   위 제목과 같은 말인 화면 안 제목 · 설명만 숨긴다(.ot-dup — one-title.js 가 붙임). 화면 안 단추(기술자문 원본 자료 · 발송 이력 · + 문자 보내기 등)는 그대로.
+   끄기: G.oneTitleOff = true (html.ot-off) */
+html:not(.ot-off) .tv6-title.ot-dup{display:none!important}
+html:not(.ot-off) .ot-dup>b,html:not(.ot-off) .ot-dup>b+span{display:none!important}
+html:not(.ot-off) .ps3-head.ot-dup:not(:has(>:not(b):not(b+span))){display:none!important}
+html:not(.ot-off) .plv-intro.ot-dup>i:first-child{display:none!important}

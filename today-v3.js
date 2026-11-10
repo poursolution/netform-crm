@@ -200,11 +200,16 @@
  }
  /* 왼쪽 메뉴 '오늘 업무' 숫자 = 이 화면의 큰 숫자 하나(기한 지남 + 오늘 처리 · 2026-11-05). 쓰는 곳은 setBadge 하나. ownsBadge = 오늘 업무를 이 화면으로 그리는 조건(today-v2 render 와 같음) */
  const setBadge=total=>{const b=document.getElementById('todayBadge');if(b){b.textContent=total||'';b.style.display=total?'':'none';}};
+ /* 2026-11-10 대표 "숫자 좀 통일해"(왼쪽 메뉴 70 · 화면 전체 129 · 브랜드 칩 전체 130): 오늘 업무가 5칸 탭 화면(today-v6)이면 숫자 하나 = '전체' 탭(기한 지남 + 오늘 처리 + 회신 대기 + 기록 보완).
+    왼쪽 메뉴 · 브랜드 칩 · 화면 전체가 모두 이 목록을 센다. 끄기 G.todayOneCountOff = 예전(메뉴 = 기한 지남 + 오늘 처리) */
+ const zoneAll=Z=>[].concat(Z.late||[],Z.now||[],Z.wait||[],Z.fix||[]);
+ const oneCount=()=>!(root.G&&root.G.todayOneCountOff)&&!!(root.TodayV6&&root.TodayV6.on());
+ const zoneTotal=Z=>oneCount()?zoneAll(Z).length:Z.total;
  const ownsBadge=()=>{const G=root.G;return !!(G&&!G.todayV2Off&&enabled()&&TT().enabled&&TT().enabled());};
  /* 다른 화면에 있을 때(저장 직후 · 자료를 새로 받은 뒤) 화면을 그리지 않고 숫자만 다시 센다 — 범위는 오늘 업무 화면과 같음(current). 서버 호출은 늘리지 않는다(WorkRequest.quiet) */
  function syncBadge(){
   if(!ownsBadge()||!root.B)return;
-  const count=()=>{const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;setBadge(Z?Z.total:V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);};
+  const count=()=>{const X=T().data(),V=current(X),DZ=root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;setBadge(Z?zoneTotal(Z):V.groups.filter(g=>!g.aux).flatMap(g=>g.items).length);};
   if(root.WorkRequest&&root.WorkRequest.quiet)root.WorkRequest.quiet(count);else count();
  }
  function html(X,rows,legacy){
@@ -275,7 +280,7 @@
   const side='<aside class="tv3-side">'+(WR&&team?WR.sideHtml():'')+'<section><header><b>'+schedT+'</b><span>지금 '+new Date().toTimeString().slice(0,5)+'</span></header>'+(sc.length?sc.map(e=>'<div class="tv3-ev" role="button" tabindex="0" data-t3="open" data-key="'+attr(e.key)+'"><b>'+h(e.t)+'</b><i></i><div><small>'+h(e.kind)+'</small><b>'+h(e.site)+'</b><span>'+h(e.note)+'</span>'+(e.risk?'<em>'+h(e.risk)+'</em>':'')+'</div></div>').join(''):'<p class="none">오늘 날짜로 잡힌 일정이 없습니다</p>')+'</section>'
    +'<section><header><b>'+dueT+'</b></header>'+(du.length?du.map(x=>'<div class="tv3-due"><span class="'+(x.hot?'hot':'')+'">'+h(x.dd)+'</span><p><b>'+h(siteShort(x.site))+'</b> <small>'+h(x.what)+'</small></p></div>').join(''):'<p class="none">7일 안 마감(입찰 · 결정 일정)이 없습니다</p>')+'</section>'
    +'<section><header><b>'+weekT+'</b></header>'+wk.map(w=>{const red=w.bad&&w.pct<50;return '<div class="tv3-wk"><div><span>'+h(w.label)+'</span><b'+(red?' class="r"':'')+'>'+h(w.v)+'</b></div><u><i style="width:'+Math.max(1,Math.round(w.pct))+'%;background:'+(red?'#d14a3f':'#15171c')+'"></i></u><small>'+h(w.goal)+'</small></div>';}).join('')+(root.DayWord&&role!=='mgr'?root.DayWord.coachHtml(V.me):'')+'</section></aside>';
-  setBadge(total);
+  setBadge(Z?zoneTotal(Z):total);
   try{root.DayWord&&root.DayWord.bell();}catch(e){}
   /* design_handoff_pc_today_v6: 4구역 화면(영업사원 · 팀장 · 상무 · 대표)은 파이프라인 단계 화면과 같은 틀(today-v6.js) — 끄기 G.todayV6Off 면 아래 v3 */
   if(Z&&root.TodayV6&&root.TodayV6.on()){let week=null;try{week=wk.find(x=>/이번 주 연락/.test(x.label))||null;}catch(e){}
@@ -357,6 +362,6 @@
  document.addEventListener('input',e=>{const t=e.target;if(t&&t.matches&&t.matches('#today-v2 .tv3 [data-t3in="em"]'))st().em=t.value;},true);
  document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#today-v2 .tv3 [data-t3="open"]')){e.preventDefault();openKey(e.target.dataset.key);}});
  /* 화면의 큰 숫자와 같은 묶음 항목의 브랜드 목록(브랜드 칩 건수용) */
- function brandItems(X,rows,legacy){return build(X,rows,legacy).groups.filter(g=>!g.aux).flatMap(g=>g.items).map(i=>i.brand||(i.x&&i.x.item&&(i.x.item.brand||(root.inquiryBrandOf&&root.inquiryBrandOf(i.x.item))))||'');}
+ function brandItems(X,rows,legacy){const V=build(X,rows,legacy),DZ=oneCount()&&root.DayZones&&root.DayZones.on(V.role)?root.DayZones:null,Z=DZ?DZ.build(V,X):null;return (Z?zoneAll(Z):V.groups.filter(g=>!g.aux).flatMap(g=>g.items)).map(i=>i.brand||(i.x&&i.x.item&&(i.x.item.brand||(root.inquiryBrandOf&&root.inquiryBrandOf(i.x.item))))||'');}
  root.TodayV3={loadWord,enabled,html,build,brandItems,isBack,STG,current,ownsBadge,syncBadge,execQueue:()=>EXQ.map(x=>x.i.key)};
 })(window);
