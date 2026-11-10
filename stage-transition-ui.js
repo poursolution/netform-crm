@@ -151,6 +151,10 @@
   Object.assign(d,update);if(ctx.patch)Object.assign(ctx.patch,update);
   const payload={opportunity_id:d.id,from:ctx.from,to,stage_code:ctx.from,at,transition_date:input.transition_date,note:text,reason:input.fields.close_reason||input.skip_reason||text,stage_context:snapshot,stage_contexts:context,contract_amount:update.contract_amount,completion_date:update.completion_date};
   if(terminal)Object.assign(payload,{outcome:to,closed_at:at,won_amount:to==='won'?input.fields.contract_amount:null,completion_date:update.completion_date});
+  /* 2026-11-10 대표 '단계 바꾸기 → 실주가 안 옮겨짐': 끝 상태(실주 · 배드핏 · 연락두절 · 지원 종결) 저장은 서버로 '사유 · 확인한 내용' 두 칸 + 끝 상태 표시(terminal)만 받는다.
+     예전엔 빈 선택 칸(재영업 가능 여부 · 경쟁사 · 배운 점 · 재접촉 시기)이 같이 가고 terminal 표시가 없어 쓰기 단계(operational-adapter)에서 CLOSE_INTENT_NOT_CONNECTED 로 거절됐다(10/1 뒤 이 창으로 실주 0건).
+     적은 선택 칸은 버리지 않는다 — 기록 문장(note · 이 화면의 단계 기록)에 그대로 남는다. 끄기 G.closeTwoFieldsOff */
+  if(terminal&&to!=='won'&&!(root.G&&root.G.closeTwoFieldsOff))payload.stage_context={...snapshot,terminal:true,fields:{close_reason:String(input.fields.close_reason||'').trim(),close_detail:String(input.fields.close_detail||'').trim()}};
   pushWrite(terminal?'close':'transition',payload);
   if(ctx.mobile){d.activities=d.activities||[];d.activities.push({id:'stage-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,actor_id:meId(),meaningful_contact:false});d.lastAt=at;d.tl=d.tl||[];d.tl.unshift([input.transition_date,S.definitions[to].label+' — '+text])}else if(ctx.auto&&!(typeof CUR_DETAIL!=='undefined'&&CUR_DETAIL&&CUR_DETAIL.item===d)){/* 자동 이동(autoSent): 상세가 열려 있지 않으면 그 영업건 기록에 바로 남긴다 */const p=ctx.patch||{};p.activities=p.activities||[];p.activities.push({id:'local-'+Date.now(),type:'단계전환',note:S.definitions[to].label,result:text,at,actor,meaningful:false});d.activities=p.activities;}else logActivity('단계전환',S.definitions[to].label,text,at,actor,false);
   pushWrite('activity',{opportunity_id:d.id,type:'단계전환',note:S.definitions[to].label,result:text,occurred_at:at,meaningful_contact:false});
