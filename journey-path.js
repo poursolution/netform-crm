@@ -118,8 +118,16 @@
   return '<div class="jp"><nav class="jp-row" aria-label="문의부터 시공까지 경로">'+S.map(cell).join('')+'</nav>'
    +(multi?'<div class="jp-list" hidden>'+multi.inqs.map(q=>'<button type="button" data-jp="inq" data-v="'+attr(root.inqKey(q))+'">'+h(inqLine(q))+'</button>').join('')+'</div>':'')+'</div>';
  }
- const dealHtml=d=>on()&&d?render(ofDeal(d)):'';
- const inquiryHtml=q=>on()&&q?render(ofInquiry(q)):'';
+ /* 2026-11-10 대표 "왜 중복이야?" · "디자인 핏 망가짐": 네 칸 줄은 바로 아래 단계 띠와 같은 말(영업 · 지금 단계)을 한 번 더 적고 시안에 없는 줄이라 기본은 그리지 않는다.
+    남기는 것: 영업건 → 원래 문의 이동은 머리 '현재 건' 줄 끝 글 링크 하나(dealLink) · 문의 → 영업건은 문의 상세의 [파이프라인에서 보기 →]가 이미 있다.
+    다시 켜기: G.journeyRowOn=true(네 칸 줄) · 이어받기(handoff)는 그대로 G.journeyPathOff 만 본다. */
+ const rowOn=()=>on()&&!!(root.G&&root.G.journeyRowOn);
+ const dealHtml=d=>rowOn()&&d?render(ofDeal(d)):'';
+ const inquiryHtml=q=>rowOn()&&q?render(ofInquiry(q)):'';
+ function dealLink(d){
+  if(!on()||rowOn()||!d)return '';const L=directOf(d);if(!L.length)return '';
+  const r=recvOf(L[0]);return ' · <button type="button" class="jp-lk" data-jp="inq" data-v="'+attr(root.inqKey(L[0]))+'">원래 문의 '+h(r?dot(r).replace(/^\d{4}\./,'')+' 접수':'보기')+(L.length>1?' 외 '+(L.length-1)+'건':'')+' →</button>';
+ }
  /* ── 이동: 문의를 닫으면 보던 영업건으로 돌아온다(InquiryWorkbench.openFromDeal) ── */
  document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('[data-jp]');if(!b)return;const k=b.dataset.jp,v=b.dataset.v;
@@ -127,5 +135,5 @@
   if(k==='inq'){const d=root.CUR_DETAIL&&root.CUR_DETAIL.kind==='deal'?root.CUR_DETAIL.item:null;if(!W().openFromDeal(v,d)&&typeof root.toast==='function')root.toast('이 계정에서 볼 수 없는 문의입니다','warn');return;}
   if(k==='deal'){const d=((root.B&&root.B.deals)||[]).find(x=>root.dealKey(x)===v);if(d){W().close();L3().openDeal(d);}return;}
  });
- root.JourneyPath={on,ofDeal,ofInquiry,inquiriesOf,handoff,dealOf,dealHtml,inquiryHtml,stageName};
+ root.JourneyPath={on,rowOn,ofDeal,ofInquiry,inquiriesOf,handoff,dealOf,dealHtml,inquiryHtml,dealLink,stageName};
 })(window);

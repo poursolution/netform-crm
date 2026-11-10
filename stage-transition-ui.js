@@ -69,6 +69,14 @@
   // Completion evidence can be carried to closure; no check is invented from the stage code.
   if(to==='won')Object.assign(v,saved.completion?.fields||{},old);
   if(to==='sent'&&!Object.keys(evidence.sources).length){v.sent_date=v.sent_date||today();v.recipient=v.recipient||d.site||d.site_name||d.nm||''}
+  /* 2026-11-10 대표 '단계 바꾸기도 불편': 아는 값은 미리 채운다(고칠 때만 손대면 된다 · 끄기 G.stageFillOff)
+     · 다음 확인일 = 발송일 + 운영 기준 quote_followup_days(기본 7일 · 견적 발송 자동과 같은 계산)
+     · 무엇을 발송했나요 = 등록된 견적 Version 이 있으면 '견적서' + 마지막 Version(없으면 비워 둠 — 서버가 견적서에 Version 을 요구한다) */
+  if(to==='sent'&&!(root.G&&root.G.stageFillOff)){
+   if(!v.followup_date&&S.validDate(v.sent_date||'')){const n=Number(root.CRMRules&&root.CRMRules.get&&root.CRMRules.get('quote_followup_days'))||7,x=new Date(v.sent_date+'T00:00:00');x.setDate(x.getDate()+n);v.followup_date=[x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');}
+   const Q=ctx.quotes||[],last=Q[Q.length-1],ver=last?String(last.id??last.version??last.version_no??''):'';
+   if((!Array.isArray(v.materials)||!v.materials.length)&&ver){v.materials=['견적서'];if(!v.quote_version)v.quote_version=ver;}
+  }
   /* 금액은 이미 아는 값으로 미리 채운다(2026-09-26 대표 '최종 금액을 왜 한 번 더 입력해?'): 준공 처리금액 → 계약 단계 계약금액 → 계약실적 원장 잔액
      → 최종 견적금액 → 예상금액 순. 어디서 가져왔는지 칸 아래에 적고, 달라졌을 때만 고치면 된다. */
   ctx.amountSource=null;

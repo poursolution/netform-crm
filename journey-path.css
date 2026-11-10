@@ -29,3 +29,6 @@ html #inq-inbox-dialog.idv3 .idv3-next.idv3-stuck .lb,#inq-inbox-dialog .idv3-st
  .jp-s:nth-child(3){border-left:0}
  .jp-s:nth-child(n+3){border-top:1px solid var(--line2)}
 }
+/* 2026-11-10: 네 칸 줄 대신 머리 '현재 건' 줄 끝 글 링크(원래 문의로) */
+#detailView.ddv.dv3.dvt.dv7 .dv7-meta>.jp-lk{display:inline;height:auto;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:none;font:inherit;font-size:12px;font-weight:600;color:var(--blue,#2563eb);cursor:pointer}
+#detailView.ddv.dv3.dvt.dv7 .dv7-meta>.jp-lk:hover{text-decoration:underline}
